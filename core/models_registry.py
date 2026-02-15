@@ -24,6 +24,12 @@ from src.auth_bc.magic_link.infrastructure.models import MagicLinkModel  # noqa:
 from src.asset_bc.asset.infrastructure.models import AssetModel  # noqa: F401
 from src.asset_bc.asset.infrastructure.models import AssetEventModel  # noqa: F401
 
+# Request BC
+from src.request_bc.request.infrastructure.models import ServiceRequestModel  # noqa: F401
+from src.request_bc.request.infrastructure.models import RequestEventModel  # noqa: F401
+from src.request_bc.request.infrastructure.models import RequestCommentModel  # noqa: F401
+from src.request_bc.request.infrastructure.models import RequestNoteModel  # noqa: F401
+
 __all__ = [
     "CompanyModel",
     "CompanyEmailDomainModel",
@@ -32,4 +38,8 @@ __all__ = [
     "MagicLinkModel",
     "AssetModel",
     "AssetEventModel",
+    "ServiceRequestModel",
+    "RequestEventModel",
+    "RequestCommentModel",
+    "RequestNoteModel",
 ]

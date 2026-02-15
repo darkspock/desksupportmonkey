@@ -10,6 +10,7 @@ from adapters.http.api.companies.routers import router as companies_router
 from adapters.http.api.departments.routers import router as departments_router
 from adapters.http.api.users.routers import router as users_router
 from adapters.http.api.assets.routers import router as assets_router
+from adapters.http.api.requests.routers import router as requests_router
 from adapters.http.api.my.routers import router as my_router
 from adapters.http.middleware.error_handler import register_error_handlers
 from core.config import settings
@@ -44,6 +45,7 @@ def create_app() -> FastAPI:
     application.include_router(departments_router)
     application.include_router(users_router)
     application.include_router(assets_router)
+    application.include_router(requests_router)
     application.include_router(my_router)
 
     @application.on_event("startup")
