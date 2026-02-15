@@ -50,3 +50,6 @@ class AssetRepositoryInterface(ABC):
 
     @abstractmethod
     def find_aging_assets(self, company_id: str, years: int) -> list[dict]: ...
+
+    @abstractmethod
+    def find_all_by_company(self, company_id: str) -> list[Asset]: ...

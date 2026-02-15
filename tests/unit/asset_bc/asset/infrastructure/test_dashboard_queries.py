@@ -83,3 +83,34 @@ class TestFindAgingAssets:
         session.execute.return_value.all.return_value = []
         result = repo.find_aging_assets("comp1", 3)
         assert result == []
+
+
+class TestFindAllByCompany:
+    def test_returns_all_assets(self):
+        repo, session = _make_repo()
+        mock_model = MagicMock()
+        mock_model.id = "a1"
+        mock_model.company_id = "comp1"
+        mock_model.type = "laptop"
+        mock_model.brand = "Dell"
+        mock_model.model = "Latitude"
+        mock_model.serial_number = "SN001"
+        mock_model.status = "in_stock"
+        mock_model.assigned_to = None
+        mock_model.department_id = None
+        mock_model.purchase_date = None
+        mock_model.warranty_expiration = None
+        mock_model.notes = None
+        mock_model.created_at = None
+        mock_model.updated_at = None
+        session.execute.return_value.scalars.return_value.all.return_value = [mock_model]
+
+        result = repo.find_all_by_company("comp1")
+        assert len(result) == 1
+        assert result[0].id == "a1"
+
+    def test_empty_returns_empty(self):
+        repo, session = _make_repo()
+        session.execute.return_value.scalars.return_value.all.return_value = []
+        result = repo.find_all_by_company("comp1")
+        assert result == []

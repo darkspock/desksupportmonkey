@@ -1,0 +1,35 @@
+{% extends "reports/base.html" %}
+
+{% block content %}
+<div class="section">
+    <h2>Technician Performance</h2>
+    {% if by_technician %}
+    <table>
+        <thead>
+            <tr>
+                <th>Technician ID</th>
+                <th>Resolved Count</th>
+                <th>Avg Resolution Time (hours)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tech in by_technician %}
+            <tr>
+                <td>{{ tech.technician_id }}</td>
+                <td>{{ tech.resolved_count }}</td>
+                <td>{{ tech.avg_hours }}h</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: #888;">No resolved requests found for the selected period.</p>
+    {% endif %}
+</div>
+
+{% if date_range %}
+<div class="section" style="font-size: 9px; color: #888;">
+    Date range: {{ date_range.from_date }} to {{ date_range.to_date }}
+</div>
+{% endif %}
+{% endblock %}

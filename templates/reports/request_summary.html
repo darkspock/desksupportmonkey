@@ -1,0 +1,92 @@
+{% extends "reports/base.html" %}
+
+{% block content %}
+<div class="section">
+    <h2>Summary</h2>
+    <div class="cards">
+        <div class="card">
+            <div class="value">{{ total_open }}</div>
+            <div class="label">Open</div>
+        </div>
+        <div class="card">
+            <div class="value">{{ total_resolved }}</div>
+            <div class="label">Resolved</div>
+        </div>
+        <div class="card">
+            <div class="value">{{ avg_resolution_time or "N/A" }}{% if avg_resolution_time %}h{% endif %}</div>
+            <div class="label">Avg Resolution</div>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <h2>By Status</h2>
+    <div class="cards">
+        {% for status, count in by_status.items() %}
+        <div class="card">
+            <div class="value">{{ count }}</div>
+            <div class="label">{{ status | replace("_", " ") | title }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="section">
+    <h2>By Type</h2>
+    <div class="cards">
+        {% for type, count in by_type.items() %}
+        <div class="card">
+            <div class="value">{{ count }}</div>
+            <div class="label">{{ type | replace("_", " ") | title }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="section">
+    <h2>By Priority</h2>
+    <div class="cards">
+        {% for priority, count in by_priority.items() %}
+        <div class="card">
+            <div class="value">{{ count }}</div>
+            <div class="label">{{ priority | title }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% if sla_breaches %}
+<div class="section">
+    <h2>SLA Breach Summary</h2>
+    <div class="alert">
+        <div class="alert-title">{{ sla_breaches | length }} open request(s) breaching SLA</div>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Priority</th>
+                <th>Breach Count</th>
+                <th>SLA Threshold</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for priority, data in sla_summary.items() %}
+            {% if data.breached > 0 %}
+            <tr>
+                <td>{{ priority | title }}</td>
+                <td><span class="badge badge-red">{{ data.breached }}</span></td>
+                <td>{{ data.threshold }}h</td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if date_range %}
+<div class="section" style="font-size: 9px; color: #888;">
+    Date range: {{ date_range.from_date }} to {{ date_range.to_date }}
+</div>
+{% endif %}
+{% endblock %}

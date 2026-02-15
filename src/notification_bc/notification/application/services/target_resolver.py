@@ -15,6 +15,7 @@ class TargetResolver:
             EventType.REQUEST_PRIORITY_CHANGED: self._resolve_request_priority_changed,
             EventType.REQUEST_COMMENT_ADDED: self._resolve_request_comment_added,
             EventType.REQUEST_NOTE_ADDED: self._resolve_request_note_added,
+            EventType.REPORT_READY: self._resolve_report_ready,
         }
         resolver = resolvers.get(event.event_type)
         if resolver is None:
@@ -67,3 +68,7 @@ class TargetResolver:
         if assigned_to:
             targets.add(assigned_to)
         return targets
+
+    def _resolve_report_ready(self, event: DomainEvent) -> set[str]:
+        requested_by = event.payload.get("requested_by")
+        return {requested_by} if requested_by else set()

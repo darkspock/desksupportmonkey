@@ -27,12 +27,7 @@ from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
 from src.request_bc.request.infrastructure.repository import RequestRepository
 
-SLA_THRESHOLDS_HOURS = {
-    "urgent": 4,
-    "high": 24,
-    "medium": 72,
-    "low": 168,
-}
+from src.request_bc.request.domain.constants import SLA_THRESHOLDS_HOURS
 
 router = APIRouter(prefix="/api/v1/dashboard", tags=["Dashboard"])
 

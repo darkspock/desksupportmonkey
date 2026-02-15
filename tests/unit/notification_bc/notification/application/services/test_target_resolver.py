@@ -160,3 +160,35 @@ class TestTargetResolver:
         targets = resolver.resolve(event)
 
         assert targets == []
+
+    def test_report_ready_targets_requester(self):
+        repo = MagicMock()
+        resolver = TargetResolver(user_repo=repo)
+
+        event = DomainEvent(
+            event_type=EventType.REPORT_READY,
+            company_id="comp1",
+            actor_id="system",
+            payload={"requested_by": "user1"},
+            title="Report ready",
+            body="Your report is ready",
+        )
+        targets = resolver.resolve(event)
+
+        assert targets == ["user1"]
+
+    def test_report_ready_no_requester_returns_empty(self):
+        repo = MagicMock()
+        resolver = TargetResolver(user_repo=repo)
+
+        event = DomainEvent(
+            event_type=EventType.REPORT_READY,
+            company_id="comp1",
+            actor_id="system",
+            payload={},
+            title="Report ready",
+            body="Your report is ready",
+        )
+        targets = resolver.resolve(event)
+
+        assert targets == []

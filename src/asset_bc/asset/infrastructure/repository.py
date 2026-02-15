@@ -244,6 +244,14 @@ class AssetRepository(AssetRepositoryInterface):
             for row in rows
         ]
 
+    def find_all_by_company(self, company_id: str) -> list[Asset]:
+        models = self.session.execute(
+            select(AssetModel)
+            .where(AssetModel.company_id == company_id)
+            .order_by(AssetModel.type.asc(), AssetModel.brand.asc())
+        ).scalars().all()
+        return [self._to_entity(m) for m in models]
+
     @staticmethod
     def _to_entity(model: AssetModel) -> Asset:
         return Asset(

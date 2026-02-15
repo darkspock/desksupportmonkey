@@ -33,6 +33,9 @@ from src.request_bc.request.infrastructure.models import RequestNoteModel  # noq
 # Notification BC
 from src.notification_bc.notification.infrastructure.models import NotificationModel  # noqa: F401
 
+# Report BC
+from src.report_bc.report.infrastructure.models import ReportModel  # noqa: F401
+
 __all__ = [
     "CompanyModel",
     "CompanyEmailDomainModel",
@@ -46,4 +49,5 @@ __all__ = [
     "RequestCommentModel",
     "RequestNoteModel",
     "NotificationModel",
+    "ReportModel",
 ]

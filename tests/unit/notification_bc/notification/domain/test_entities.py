@@ -96,4 +96,4 @@ class TestEventType:
         assert EventType.REQUEST_NOTE_ADDED == "request.note_added"
 
     def test_count(self):
-        assert len(EventType) == 6
+        assert len(EventType) == 7

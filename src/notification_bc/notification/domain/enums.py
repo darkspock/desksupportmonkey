@@ -8,3 +8,4 @@ class EventType(str, Enum):
     REQUEST_PRIORITY_CHANGED = "request.priority_changed"
     REQUEST_COMMENT_ADDED = "request.comment_added"
     REQUEST_NOTE_ADDED = "request.note_added"
+    REPORT_READY = "report.ready"
