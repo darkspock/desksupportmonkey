@@ -54,3 +54,14 @@ class AssetEventResponse(BaseModel):
     data: dict
     performed_by: str
     created_at: Optional[datetime] = None
+
+
+class ImportRowErrorResponse(BaseModel):
+    row: int
+    error: str
+
+
+class ImportResponse(BaseModel):
+    total: int
+    successful: int
+    failed: list[ImportRowErrorResponse]

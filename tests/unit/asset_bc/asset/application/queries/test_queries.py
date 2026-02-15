@@ -49,7 +49,46 @@ class TestListAssetsQuery:
 
         assert len(result) == 3
         assert total == 3
-        repo.find_all.assert_called_once_with(company_id="comp1", page=1, page_size=20)
+        repo.find_all.assert_called_once_with(
+            company_id="comp1", page=1, page_size=20,
+            search=None, type=None, status=None,
+            department_id=None, assigned_to=None,
+            sort_by="created_at", sort_order="desc",
+        )
+
+    def test_with_search_param(self):
+        repo = MagicMock()
+        repo.find_all.return_value = ([], 0)
+        handler = ListAssetsQueryHandler(asset_repo=repo)
+
+        handler.handle(ListAssetsQuery(company_id="comp1", search="dell"))
+
+        repo.find_all.assert_called_once()
+        call_kwargs = repo.find_all.call_args.kwargs
+        assert call_kwargs["search"] == "dell"
+
+    def test_with_type_filter(self):
+        repo = MagicMock()
+        repo.find_all.return_value = ([], 0)
+        handler = ListAssetsQueryHandler(asset_repo=repo)
+
+        handler.handle(ListAssetsQuery(company_id="comp1", type="laptop"))
+
+        call_kwargs = repo.find_all.call_args.kwargs
+        assert call_kwargs["type"] == "laptop"
+
+    def test_with_sort(self):
+        repo = MagicMock()
+        repo.find_all.return_value = ([], 0)
+        handler = ListAssetsQueryHandler(asset_repo=repo)
+
+        handler.handle(
+            ListAssetsQuery(company_id="comp1", sort_by="purchase_date", sort_order="asc")
+        )
+
+        call_kwargs = repo.find_all.call_args.kwargs
+        assert call_kwargs["sort_by"] == "purchase_date"
+        assert call_kwargs["sort_order"] == "asc"
 
 
 class TestGetAssetQuery:

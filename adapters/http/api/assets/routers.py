@@ -1,6 +1,7 @@
 import logging
+from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, status
 from sqlalchemy.orm import Session
 
 from adapters.http.api.auth.dependencies import require_role
@@ -10,6 +11,8 @@ from adapters.http.api.assets.schemas import (
     AssignAssetRequest,
     ChangeStatusRequest,
     CreateAssetRequest,
+    ImportResponse,
+    ImportRowErrorResponse,
     UpdateAssetRequest,
 )
 from adapters.http.schemas.responses import PaginationMeta
@@ -56,6 +59,11 @@ from src.asset_bc.asset.application.commands.unassign_asset import (
     AssetNotFoundError as UnassignAssetNotFoundError,
     UnassignAssetCommand,
     UnassignAssetCommandHandler,
+)
+from src.asset_bc.asset.application.commands.import_assets import (
+    ImportAssetsCommand,
+    ImportAssetsCommandHandler,
+    InvalidCSVError,
 )
 from src.asset_bc.asset.domain.entities import Asset, AssetEvent, InvalidAssignmentError
 from src.asset_bc.asset.domain.enums import InvalidStatusTransitionError
@@ -132,6 +140,13 @@ def create_asset(
 def list_assets(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
+    search: Optional[str] = Query(None),
+    type: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    department_id: Optional[str] = Query(None),
+    assigned_to: Optional[str] = Query(None),
+    sort_by: str = Query("created_at"),
+    sort_order: str = Query("desc"),
     current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
     db: Session = Depends(get_db),
 ):
@@ -141,11 +156,63 @@ def list_assets(
             company_id=current_user.company_id,
             page=page,
             page_size=page_size,
+            search=search,
+            type=type,
+            status=status,
+            department_id=department_id,
+            assigned_to=assigned_to,
+            sort_by=sort_by,
+            sort_order=sort_order,
         )
     )
     return {
         "data": [_to_response(a).model_dump(mode="json") for a in assets],
         "meta": PaginationMeta(page=page, page_size=page_size, total=total).model_dump(),
+    }
+
+
+@router.post("/import", status_code=status.HTTP_200_OK)
+async def import_assets(
+    file: UploadFile,
+    current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
+    db: Session = Depends(get_db),
+):
+    if file.size and file.size > 1_048_576:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="File size exceeds 1MB limit",
+        )
+    content = await file.read()
+    try:
+        csv_content = content.decode("utf-8")
+    except UnicodeDecodeError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="File must be UTF-8 encoded",
+        )
+    handler = ImportAssetsCommandHandler(asset_repo=AssetRepository(db))
+    try:
+        result = handler.handle(
+            ImportAssetsCommand(
+                company_id=current_user.company_id,
+                performed_by=current_user.id,
+                csv_content=csv_content,
+            )
+        )
+    except InvalidCSVError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e),
+        )
+    return {
+        "data": ImportResponse(
+            total=result.total,
+            successful=result.successful,
+            failed=[
+                ImportRowErrorResponse(row=e.row, error=e.error)
+                for e in result.failed
+            ],
+        ).model_dump()
     }
 
 

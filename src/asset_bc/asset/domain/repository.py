@@ -17,7 +17,17 @@ class AssetRepositoryInterface(ABC):
 
     @abstractmethod
     def find_all(
-        self, company_id: str, page: int, page_size: int
+        self,
+        company_id: str,
+        page: int,
+        page_size: int,
+        search: Optional[str] = None,
+        type: Optional[str] = None,
+        status: Optional[str] = None,
+        department_id: Optional[str] = None,
+        assigned_to: Optional[str] = None,
+        sort_by: str = "created_at",
+        sort_order: str = "desc",
     ) -> tuple[list[Asset], int]: ...
 
     @abstractmethod

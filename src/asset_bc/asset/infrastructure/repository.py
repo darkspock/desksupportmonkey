@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from src.asset_bc.asset.domain.entities import Asset, AssetEvent
@@ -66,17 +66,57 @@ class AssetRepository(AssetRepositoryInterface):
         ).scalar_one_or_none()
         return self._to_entity(model) if model else None
 
+    ALLOWED_SORT_COLUMNS = {
+        "created_at": AssetModel.created_at,
+        "purchase_date": AssetModel.purchase_date,
+        "warranty_expiration": AssetModel.warranty_expiration,
+    }
+
     def find_all(
-        self, company_id: str, page: int, page_size: int
+        self,
+        company_id: str,
+        page: int,
+        page_size: int,
+        search: Optional[str] = None,
+        type: Optional[str] = None,
+        status: Optional[str] = None,
+        department_id: Optional[str] = None,
+        assigned_to: Optional[str] = None,
+        sort_by: str = "created_at",
+        sort_order: str = "desc",
     ) -> tuple[list[Asset], int]:
-        stmt = select(AssetModel).where(
-            AssetModel.company_id == company_id
-        )
+        stmt = select(AssetModel).where(AssetModel.company_id == company_id)
+
+        if search:
+            pattern = f"%{search}%"
+            stmt = stmt.where(
+                or_(
+                    AssetModel.serial_number.ilike(pattern),
+                    AssetModel.brand.ilike(pattern),
+                    AssetModel.model.ilike(pattern),
+                )
+            )
+        if type is not None:
+            stmt = stmt.where(AssetModel.type == type)
+        if status is not None:
+            stmt = stmt.where(AssetModel.status == status)
+        if department_id is not None:
+            stmt = stmt.where(AssetModel.department_id == department_id)
+        if assigned_to is not None:
+            if assigned_to == "none":
+                stmt = stmt.where(AssetModel.assigned_to.is_(None))
+            else:
+                stmt = stmt.where(AssetModel.assigned_to == assigned_to)
+
         total = self.session.execute(
             select(func.count()).select_from(stmt.subquery())
         ).scalar()
+
+        sort_column = self.ALLOWED_SORT_COLUMNS.get(sort_by, AssetModel.created_at)
+        order = sort_column.asc() if sort_order == "asc" else sort_column.desc()
+
         models = self.session.execute(
-            stmt.order_by(AssetModel.created_at.desc())
+            stmt.order_by(order)
             .offset((page - 1) * page_size)
             .limit(page_size)
         ).scalars().all()
