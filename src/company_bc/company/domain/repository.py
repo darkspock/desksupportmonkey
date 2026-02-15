@@ -1,0 +1,42 @@
+from abc import ABC, abstractmethod
+from typing import Optional
+
+from src.company_bc.company.domain.entities import Company
+
+
+class CompanyRepositoryInterface(ABC):
+
+    @abstractmethod
+    def save(self, company: Company) -> Company:
+        ...
+
+    @abstractmethod
+    def find_by_id(self, company_id: str) -> Optional[Company]:
+        ...
+
+    @abstractmethod
+    def find_by_name(self, name: str) -> Optional[Company]:
+        ...
+
+    @abstractmethod
+    def find_all(
+        self, page: int, page_size: int, search: Optional[str] = None
+    ) -> tuple[list[Company], int]:
+        ...
+
+    @abstractmethod
+    def find_domain(self, domain: str) -> Optional[str]:
+        """Find company_id owning this domain, or None."""
+        ...
+
+    @abstractmethod
+    def save_domains(self, company_id: str, domains: list[str]) -> None:
+        ...
+
+    @abstractmethod
+    def count_users(self, company_id: str) -> int:
+        ...
+
+    @abstractmethod
+    def count_departments(self, company_id: str) -> int:
+        ...
