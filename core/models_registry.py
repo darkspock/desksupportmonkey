@@ -30,6 +30,9 @@ from src.request_bc.request.infrastructure.models import RequestEventModel  # no
 from src.request_bc.request.infrastructure.models import RequestCommentModel  # noqa: F401
 from src.request_bc.request.infrastructure.models import RequestNoteModel  # noqa: F401
 
+# Notification BC
+from src.notification_bc.notification.infrastructure.models import NotificationModel  # noqa: F401
+
 __all__ = [
     "CompanyModel",
     "CompanyEmailDomainModel",
@@ -42,4 +45,5 @@ __all__ = [
     "RequestEventModel",
     "RequestCommentModel",
     "RequestNoteModel",
+    "NotificationModel",
 ]

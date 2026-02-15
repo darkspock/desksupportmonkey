@@ -75,6 +75,9 @@ from src.request_bc.request.domain.entities import ServiceRequest
 from src.request_bc.request.domain.enums import InvalidStatusTransitionError
 from src.request_bc.request.infrastructure.repository import RequestRepository
 from src.auth_bc.user.infrastructure.repository import UserRepository
+from adapters.http.api.dependencies import get_event_bus
+from src.notification_bc.notification.application.services.event_bus import EventBus
+from src.notification_bc.notification.application.services.event_factory import RequestEventFactory
 
 logger = logging.getLogger(__name__)
 
@@ -154,6 +157,7 @@ def create_request(
     body: CreateRequestRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    event_bus: EventBus = Depends(get_event_bus),
 ):
     handler = CreateRequestCommandHandler(request_repo=RequestRepository(db))
     try:
@@ -169,6 +173,10 @@ def create_request(
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+
+    event = RequestEventFactory.request_created(request, actor_id=current_user.id)
+    event_bus.publish(event, db)
+
     return {"data": _to_response(request).model_dump(mode="json")}
 
 
@@ -200,8 +208,15 @@ def change_request_status(
     body: ChangeStatusRequest,
     current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
     db: Session = Depends(get_db),
+    event_bus: EventBus = Depends(get_event_bus),
 ):
-    handler = ChangeRequestStatusCommandHandler(request_repo=RequestRepository(db))
+    repo = RequestRepository(db)
+    existing = repo.find_by_id(request_id, current_user.company_id)
+    if not existing:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
+    old_status = existing.status.value
+
+    handler = ChangeRequestStatusCommandHandler(request_repo=repo)
     try:
         request = handler.handle(
             ChangeRequestStatusCommand(
@@ -217,6 +232,12 @@ def change_request_status(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+
+    event = RequestEventFactory.status_changed(
+        request, old_status=old_status, new_status=request.status.value, actor_id=current_user.id,
+    )
+    event_bus.publish(event, db)
+
     return {"data": _to_response(request).model_dump(mode="json")}
 
 
@@ -226,8 +247,15 @@ def change_request_priority(
     body: ChangePriorityRequest,
     current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
     db: Session = Depends(get_db),
+    event_bus: EventBus = Depends(get_event_bus),
 ):
-    handler = ChangeRequestPriorityCommandHandler(request_repo=RequestRepository(db))
+    repo = RequestRepository(db)
+    existing = repo.find_by_id(request_id, current_user.company_id)
+    if not existing:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
+    old_priority = existing.priority.value
+
+    handler = ChangeRequestPriorityCommandHandler(request_repo=repo)
     try:
         request = handler.handle(
             ChangeRequestPriorityCommand(
@@ -241,6 +269,12 @@ def change_request_priority(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+
+    event = RequestEventFactory.priority_changed(
+        request, old_priority=old_priority, new_priority=request.priority.value, actor_id=current_user.id,
+    )
+    event_bus.publish(event, db)
+
     return {"data": _to_response(request).model_dump(mode="json")}
 
 
@@ -250,6 +284,7 @@ def assign_request(
     body: AssignRequestRequest,
     current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
     db: Session = Depends(get_db),
+    event_bus: EventBus = Depends(get_event_bus),
 ):
     handler = AssignRequestCommandHandler(
         request_repo=RequestRepository(db),
@@ -270,6 +305,10 @@ def assign_request(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     except UserInactiveError:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User is inactive")
+
+    event = RequestEventFactory.request_assigned(request, actor_id=current_user.id)
+    event_bus.publish(event, db)
+
     return {"data": _to_response(request).model_dump(mode="json")}
 
 
@@ -291,8 +330,9 @@ def add_comment(
     body: AddCommentRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    event_bus: EventBus = Depends(get_event_bus),
 ):
-    _verify_request_access(request_id, current_user.company_id, current_user, db)
+    sr = _verify_request_access(request_id, current_user.company_id, current_user, db)
     handler = AddCommentCommandHandler(request_repo=RequestRepository(db))
     try:
         comment = handler.handle(
@@ -307,6 +347,10 @@ def add_comment(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+
+    event = RequestEventFactory.comment_added(sr, actor_id=current_user.id)
+    event_bus.publish(event, db)
+
     return {
         "data": CommentResponse(
             id=comment.id,
@@ -352,8 +396,10 @@ def add_note(
     body: AddCommentRequest,
     current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
     db: Session = Depends(get_db),
+    event_bus: EventBus = Depends(get_event_bus),
 ):
-    handler = AddNoteCommandHandler(request_repo=RequestRepository(db))
+    repo = RequestRepository(db)
+    handler = AddNoteCommandHandler(request_repo=repo)
     try:
         note = handler.handle(
             AddNoteCommand(
@@ -367,6 +413,12 @@ def add_note(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+
+    sr = repo.find_by_id(request_id, current_user.company_id)
+    if sr:
+        event = RequestEventFactory.note_added(sr, actor_id=current_user.id)
+        event_bus.publish(event, db)
+
     return {
         "data": NoteResponse(
             id=note.id,

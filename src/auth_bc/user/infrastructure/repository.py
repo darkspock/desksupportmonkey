@@ -101,6 +101,21 @@ class UserRepository(UserRepositoryInterface):
             ).scalar()
         ) or 0
 
+    def find_technician_ids_by_company(self, company_id: str) -> list[str]:
+        tech_roles = [
+            UserRole.TECHNICIAN.value,
+            UserRole.ADMIN.value,
+            UserRole.SUPER_ADMIN.value,
+        ]
+        result = self.session.execute(
+            select(UserModel.id).where(
+                UserModel.company_id == company_id,
+                UserModel.role.in_(tech_roles),
+                UserModel.is_active == True,  # noqa: E712
+            )
+        ).scalars().all()
+        return list(result)
+
     @staticmethod
     def _to_entity(model: UserModel) -> User:
         return User(
