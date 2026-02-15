@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from typing import Optional
 
 from sqlalchemy import func, or_, select
@@ -151,6 +152,97 @@ class AssetRepository(AssetRepositoryInterface):
             .order_by(AssetEventModel.created_at.asc())
         ).scalars().all()
         return [self._event_to_entity(m) for m in models]
+
+    def count_by_status(self, company_id: str) -> dict[str, int]:
+        rows = self.session.execute(
+            select(
+                AssetModel.status,
+                func.count().label("cnt"),
+            ).where(
+                AssetModel.company_id == company_id
+            ).group_by(AssetModel.status)
+        ).all()
+        result = {s.value: 0 for s in AssetStatus}
+        for row in rows:
+            result[row[0]] = row[1]
+        return result
+
+    def count_by_type(self, company_id: str) -> dict[str, int]:
+        rows = self.session.execute(
+            select(
+                AssetModel.type,
+                func.count().label("cnt"),
+            ).where(
+                AssetModel.company_id == company_id
+            ).group_by(AssetModel.type)
+        ).all()
+        result = {t.value: 0 for t in AssetType}
+        for row in rows:
+            result[row[0]] = row[1]
+        return result
+
+    def find_expiring_warranties(self, company_id: str, days: int) -> list[dict]:
+        today = date.today()
+        threshold = today + timedelta(days=days)
+        stmt = select(
+            AssetModel.id,
+            AssetModel.brand,
+            AssetModel.model,
+            AssetModel.serial_number,
+            AssetModel.warranty_expiration,
+            AssetModel.assigned_to,
+        ).where(
+            AssetModel.company_id == company_id,
+            AssetModel.status != AssetStatus.DECOMMISSIONED.value,
+            AssetModel.warranty_expiration.isnot(None),
+            AssetModel.warranty_expiration >= today,
+            AssetModel.warranty_expiration <= threshold,
+        ).order_by(AssetModel.warranty_expiration.asc())
+
+        rows = self.session.execute(stmt).all()
+        return [
+            {
+                "id": row[0],
+                "brand": row[1],
+                "model": row[2],
+                "serial_number": row[3],
+                "warranty_expiration": row[4],
+                "assigned_to": row[5],
+                "days_remaining": (row[4] - today).days,
+            }
+            for row in rows
+        ]
+
+    def find_aging_assets(self, company_id: str, years: int) -> list[dict]:
+        today = date.today()
+        threshold_date = date(today.year - years, today.month, today.day)
+        stmt = select(
+            AssetModel.id,
+            AssetModel.brand,
+            AssetModel.model,
+            AssetModel.serial_number,
+            AssetModel.purchase_date,
+            AssetModel.assigned_to,
+        ).where(
+            AssetModel.company_id == company_id,
+            AssetModel.status != AssetStatus.DECOMMISSIONED.value,
+            AssetModel.purchase_date.isnot(None),
+            AssetModel.purchase_date <= threshold_date,
+        ).order_by(AssetModel.purchase_date.asc())
+
+        rows = self.session.execute(stmt).all()
+        return [
+            {
+                "id": row[0],
+                "brand": row[1],
+                "model": row[2],
+                "serial_number": row[3],
+                "purchase_date": row[4],
+                "age_years": round((today - row[4]).days / 365.25, 1),
+                "assigned_to": row[5],
+            }
+            for row in rows
+        ]
 
     @staticmethod
     def _to_entity(model: AssetModel) -> Asset:

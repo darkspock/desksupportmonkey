@@ -1,6 +1,7 @@
+from datetime import date, datetime, timezone
 from typing import Optional
 
-from sqlalchemy import case, func, or_, select
+from sqlalchemy import case, extract, func, or_, select
 from sqlalchemy.orm import Session
 
 from src.request_bc.request.domain.entities import (
@@ -200,6 +201,152 @@ class RequestRepository(RequestRepositoryInterface):
             .order_by(RequestNoteModel.created_at.asc())
         ).scalars().all()
         return [self._note_to_entity(m) for m in models]
+
+    def count_by_status(self, company_id: str) -> dict[str, int]:
+        rows = self.session.execute(
+            select(
+                ServiceRequestModel.status,
+                func.count().label("cnt"),
+            ).where(
+                ServiceRequestModel.company_id == company_id
+            ).group_by(ServiceRequestModel.status)
+        ).all()
+        result = {s.value: 0 for s in RequestStatus}
+        for row in rows:
+            result[row[0]] = row[1]
+        return result
+
+    def count_by_type(self, company_id: str) -> dict[str, int]:
+        rows = self.session.execute(
+            select(
+                ServiceRequestModel.type,
+                func.count().label("cnt"),
+            ).where(
+                ServiceRequestModel.company_id == company_id
+            ).group_by(ServiceRequestModel.type)
+        ).all()
+        result = {t.value: 0 for t in RequestType}
+        for row in rows:
+            result[row[0]] = row[1]
+        return result
+
+    def count_by_priority(self, company_id: str) -> dict[str, int]:
+        rows = self.session.execute(
+            select(
+                ServiceRequestModel.priority,
+                func.count().label("cnt"),
+            ).where(
+                ServiceRequestModel.company_id == company_id
+            ).group_by(ServiceRequestModel.priority)
+        ).all()
+        result = {p.value: 0 for p in RequestPriority}
+        for row in rows:
+            result[row[0]] = row[1]
+        return result
+
+    def avg_resolution_time(
+        self, company_id: str, from_date: Optional[date] = None, to_date: Optional[date] = None
+    ) -> Optional[float]:
+        stmt = select(
+            func.avg(
+                extract("epoch", ServiceRequestModel.resolved_at - ServiceRequestModel.created_at) / 3600
+            )
+        ).where(
+            ServiceRequestModel.company_id == company_id,
+            ServiceRequestModel.resolved_at.isnot(None),
+        )
+        if from_date:
+            stmt = stmt.where(ServiceRequestModel.resolved_at >= datetime(from_date.year, from_date.month, from_date.day, tzinfo=timezone.utc))
+        if to_date:
+            stmt = stmt.where(ServiceRequestModel.resolved_at <= datetime(to_date.year, to_date.month, to_date.day, 23, 59, 59, tzinfo=timezone.utc))
+        result = self.session.execute(stmt).scalar()
+        return round(float(result), 2) if result is not None else None
+
+    def avg_resolution_time_by_technician(
+        self, company_id: str, from_date: Optional[date] = None, to_date: Optional[date] = None
+    ) -> list[dict]:
+        stmt = select(
+            ServiceRequestModel.assigned_to,
+            func.avg(
+                extract("epoch", ServiceRequestModel.resolved_at - ServiceRequestModel.created_at) / 3600
+            ).label("avg_hours"),
+            func.count().label("resolved_count"),
+        ).where(
+            ServiceRequestModel.company_id == company_id,
+            ServiceRequestModel.resolved_at.isnot(None),
+            ServiceRequestModel.assigned_to.isnot(None),
+        ).group_by(ServiceRequestModel.assigned_to)
+        if from_date:
+            stmt = stmt.where(ServiceRequestModel.resolved_at >= datetime(from_date.year, from_date.month, from_date.day, tzinfo=timezone.utc))
+        if to_date:
+            stmt = stmt.where(ServiceRequestModel.resolved_at <= datetime(to_date.year, to_date.month, to_date.day, 23, 59, 59, tzinfo=timezone.utc))
+        rows = self.session.execute(stmt).all()
+        return [
+            {
+                "technician_id": row[0],
+                "avg_hours": round(float(row[1]), 2),
+                "resolved_count": row[2],
+            }
+            for row in rows
+        ]
+
+    def count_by_period(
+        self, company_id: str, bucket: str, from_date: date, to_date: date
+    ) -> list[dict]:
+        period = func.date_trunc(bucket, ServiceRequestModel.created_at).label("period")
+        stmt = select(
+            period,
+            ServiceRequestModel.type,
+            func.count().label("cnt"),
+        ).where(
+            ServiceRequestModel.company_id == company_id,
+            ServiceRequestModel.created_at >= datetime(from_date.year, from_date.month, from_date.day, tzinfo=timezone.utc),
+            ServiceRequestModel.created_at <= datetime(to_date.year, to_date.month, to_date.day, 23, 59, 59, tzinfo=timezone.utc),
+        ).group_by(period, ServiceRequestModel.type).order_by(period)
+        rows = self.session.execute(stmt).all()
+        return [
+            {
+                "period": row[0].isoformat() if hasattr(row[0], "isoformat") else str(row[0]),
+                "type": row[1],
+                "count": row[2],
+            }
+            for row in rows
+        ]
+
+    def find_open_requests_with_age(self, company_id: str) -> list[dict]:
+        stmt = select(
+            ServiceRequestModel.id,
+            ServiceRequestModel.title,
+            ServiceRequestModel.type,
+            ServiceRequestModel.priority,
+            ServiceRequestModel.status,
+            ServiceRequestModel.assigned_to,
+            ServiceRequestModel.created_at,
+            (extract("epoch", func.now() - ServiceRequestModel.created_at) / 3600).label("hours_open"),
+        ).where(
+            ServiceRequestModel.company_id == company_id,
+            ServiceRequestModel.status.in_([
+                RequestStatus.SUBMITTED.value,
+                RequestStatus.IN_REVIEW.value,
+                RequestStatus.IN_PROGRESS.value,
+            ]),
+        ).order_by(
+            (extract("epoch", func.now() - ServiceRequestModel.created_at) / 3600).desc()
+        )
+        rows = self.session.execute(stmt).all()
+        return [
+            {
+                "id": row[0],
+                "title": row[1],
+                "type": row[2],
+                "priority": row[3],
+                "status": row[4],
+                "assigned_to": row[5],
+                "created_at": row[6],
+                "hours_open": round(float(row[7]), 2),
+            }
+            for row in rows
+        ]
 
     @staticmethod
     def _to_entity(model: ServiceRequestModel) -> ServiceRequest:

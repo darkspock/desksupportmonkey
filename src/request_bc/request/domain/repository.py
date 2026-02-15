@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import date
 from typing import Optional
 
 from src.request_bc.request.domain.entities import (
@@ -57,3 +58,30 @@ class RequestRepositoryInterface(ABC):
 
     @abstractmethod
     def find_notes(self, request_id: str) -> list[RequestNote]: ...
+
+    @abstractmethod
+    def count_by_status(self, company_id: str) -> dict[str, int]: ...
+
+    @abstractmethod
+    def count_by_type(self, company_id: str) -> dict[str, int]: ...
+
+    @abstractmethod
+    def count_by_priority(self, company_id: str) -> dict[str, int]: ...
+
+    @abstractmethod
+    def avg_resolution_time(
+        self, company_id: str, from_date: Optional[date] = None, to_date: Optional[date] = None
+    ) -> Optional[float]: ...
+
+    @abstractmethod
+    def avg_resolution_time_by_technician(
+        self, company_id: str, from_date: Optional[date] = None, to_date: Optional[date] = None
+    ) -> list[dict]: ...
+
+    @abstractmethod
+    def count_by_period(
+        self, company_id: str, bucket: str, from_date: date, to_date: date
+    ) -> list[dict]: ...
+
+    @abstractmethod
+    def find_open_requests_with_age(self, company_id: str) -> list[dict]: ...
