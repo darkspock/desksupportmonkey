@@ -82,4 +82,4 @@ Add a QR code and barcode section to the asset detail page. The QR code encodes 
 - Verify barcode renders with correct asset ID
 - Verify print button opens print dialog
 - Verify QR URL navigates to asset page
-- [ ] Pending
+- [x] Done
