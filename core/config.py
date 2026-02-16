@@ -48,14 +48,9 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
 
-    # Email settings
-    SMTP_HOST: str = "localhost"
-    SMTP_PORT: int = 1028
-    SMTP_USERNAME: str = ""
-    SMTP_PASSWORD: str = ""
+    # Email (Brevo HTTP API in production, console in dev)
     SMTP_FROM_EMAIL: str = "noreply@desksupportmonkey.com"
     SMTP_FROM_NAME: str = "DeskSupportMonkey"
-    SMTP_USE_TLS: bool = False
     BREVO_API_KEY: str = ""
 
     # Frontend

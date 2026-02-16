@@ -1,8 +1,5 @@
 import logging
-import smtplib
 from abc import ABC, abstractmethod
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 
 import httpx
 
@@ -52,29 +49,8 @@ class BrevoEmailService(EmailServiceInterface):
             raise
 
 
-class SMTPEmailService(EmailServiceInterface):
-    def send(self, to: str, subject: str, html_body: str) -> None:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"] = settings.SMTP_FROM_EMAIL
-        msg["To"] = to
-        msg.attach(MIMEText(html_body, "html"))
-
-        try:
-            with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-                if settings.SMTP_USE_TLS:
-                    server.starttls()
-                if settings.SMTP_USERNAME:
-                    server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-                server.send_message(msg)
-            logger.info("Email sent to %s: %s", to, subject)
-        except Exception as e:
-            logger.error("Failed to send email to %s: %s", to, str(e))
-            raise
-
-
 class ConsoleEmailService(EmailServiceInterface):
-    """Development email service that prints to console."""
+    """Development email service that logs to console."""
 
     def send(self, to: str, subject: str, html_body: str) -> None:
         logger.info("=== EMAIL (dev mode) ===")
@@ -84,11 +60,9 @@ class ConsoleEmailService(EmailServiceInterface):
 
 
 def get_email_service() -> EmailServiceInterface:
-    """Return the appropriate email service for the current environment."""
+    """Brevo in production (BREVO_API_KEY set), console in dev."""
     if settings.BREVO_API_KEY:
         return BrevoEmailService()
-    if settings.ENVIRONMENT == "production":
-        return SMTPEmailService()
     return ConsoleEmailService()
 
 
