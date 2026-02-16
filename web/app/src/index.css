@@ -1,1 +1,21 @@
 @import "tailwindcss";
+
+:root {
+  --dsm-surface: #ffffff;
+  --dsm-surface-subtle: #f8fafc;
+  --dsm-text: #0f172a;
+  --dsm-text-muted: #475569;
+  --dsm-border: #e2e8f0;
+  --dsm-accent: #2563eb;
+  --dsm-focus: #93c5fd;
+}
+
+body {
+  color: var(--dsm-text);
+  background: var(--dsm-surface-subtle);
+}
+
+:focus-visible {
+  outline: 2px solid var(--dsm-focus);
+  outline-offset: 2px;
+}

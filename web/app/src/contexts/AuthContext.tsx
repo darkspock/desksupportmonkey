@@ -1,5 +1,7 @@
+/* eslint-disable react-hooks/set-state-in-effect, react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import api from '../lib/api';
+import { AUTH_UNAUTHORIZED_EVENT } from '../lib/authEvents';
 import type { User } from '../types';
 
 interface AuthState {
@@ -40,6 +42,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       setState((s) => ({ ...s, loading: false }));
     }
+  }, [fetchUser, state.token]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleUnauthorized = () => {
+      setState({ user: null, token: null, loading: false });
+    };
+
+    window.addEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
+    return () => {
+      window.removeEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
+    };
   }, []);
 
   const login = async (token: string) => {

@@ -1,13 +1,21 @@
-import { useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { AuthShell } from '../../components/auth/AuthShell';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
+import { getDefaultRouteForRole, getSafeReturnTo } from '../../lib/navigation';
+import { useI18n } from '../../lib/i18n';
 
 type LoginMode = 'magic-link' | 'password';
 
 export default function LoginPage() {
   const { user, login } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+
+  const returnTo = useMemo(() => getSafeReturnTo(params.get('returnTo')), [params]);
+
   const [mode, setMode] = useState<LoginMode>('magic-link');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,7 +23,9 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  if (user) return <Navigate to="/" replace />;
+  if (user) {
+    return <Navigate to={returnTo ?? getDefaultRouteForRole(user.role)} replace />;
+  }
 
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +35,7 @@ export default function LoginPage() {
       await api.post('/auth/magic-link', { email });
       setSent(true);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Failed to send magic link';
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('auth.login.error_send_magic');
       setError(msg);
     } finally {
       setLoading(false);
@@ -39,9 +49,9 @@ export default function LoginPage() {
     try {
       const { data } = await api.post('/auth/login', { email, password });
       await login(data.data.access_token);
-      navigate('/', { replace: true });
+      navigate(returnTo ?? '/', { replace: true });
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Login failed';
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('auth.login.error_login_failed');
       setError(msg);
     } finally {
       setLoading(false);
@@ -49,98 +59,103 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-sm">
-        <div className="bg-white rounded-xl shadow-sm border p-8">
-          <div className="flex items-center justify-center gap-3 mb-1">
-            <img src="/logo.png" alt="DeskSupportMonkey" className="w-10 h-10" />
-            <h1 className="text-2xl font-bold text-gray-900">DeskSupportMonkey</h1>
-          </div>
-          <p className="text-sm text-gray-500 mb-6">Sign in with your corporate email</p>
-
-          {/* Tab toggle */}
-          <div className="flex mb-5 border rounded-lg overflow-hidden">
-            <button
-              onClick={() => { setMode('magic-link'); setError(''); }}
-              className={`flex-1 py-2 text-sm font-medium ${mode === 'magic-link' ? 'bg-blue-600 text-white' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
-            >
-              Magic Link
-            </button>
-            <button
-              onClick={() => { setMode('password'); setError(''); }}
-              className={`flex-1 py-2 text-sm font-medium ${mode === 'password' ? 'bg-blue-600 text-white' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
-            >
-              Password
-            </button>
-          </div>
-
-          {mode === 'magic-link' && sent ? (
-            <div className="text-center">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <p className="text-sm text-gray-600">Check your email for the magic link.</p>
-              <button onClick={() => setSent(false)} className="mt-4 text-sm text-blue-600 hover:underline">
-                Try again
-              </button>
-            </div>
-          ) : mode === 'magic-link' ? (
-            <form onSubmit={handleMagicLink}>
-              {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
-                required
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-              />
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
-              >
-                {loading ? 'Sending...' : 'Send Magic Link'}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handlePasswordLogin}>
-              {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
-                required
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3"
-              />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-                required
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-              />
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
-              >
-                {loading ? 'Signing in...' : 'Sign In'}
-              </button>
-              <p className="mt-3 text-center text-xs text-gray-400">For admin accounts</p>
-            </form>
-          )}
-
-          <p className="mt-4 text-center text-sm text-gray-500">
-            Don't have an account?{' '}
-            <Link to="/auth/register" className="text-blue-600 hover:underline">Register your company</Link>
-          </p>
-        </div>
+    <AuthShell title={t('auth.login.title')} subtitle={t('auth.login.subtitle')}>
+      <div className="mb-5 flex rounded-lg border border-slate-200 overflow-hidden">
+        <button
+          type="button"
+          onClick={() => {
+            setMode('magic-link');
+            setError('');
+          }}
+          className={`flex-1 py-2 text-sm font-medium ${mode === 'magic-link' ? 'bg-blue-600 text-white' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
+        >
+          {t('auth.login.magic_link')}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setMode('password');
+            setError('');
+          }}
+          className={`flex-1 py-2 text-sm font-medium ${mode === 'password' ? 'bg-blue-600 text-white' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
+        >
+          {t('auth.login.password')}
+        </button>
       </div>
-    </div>
+
+      {mode === 'magic-link' && sent ? (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-center">
+          <p className="text-sm font-medium text-emerald-800">{t('auth.login.magic_sent')}</p>
+          <p className="mt-1 text-sm text-emerald-700">{t('auth.login.magic_sent_desc')}</p>
+          <button type="button" onClick={() => setSent(false)} className="mt-3 text-sm text-blue-700 hover:underline">
+            {t('auth.login.send_another')}
+          </button>
+        </div>
+      ) : mode === 'magic-link' ? (
+        <form onSubmit={handleMagicLink} className="space-y-4">
+          {error && <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          <div>
+            <label htmlFor="email" className="mb-1 block text-sm font-medium text-slate-700">{t('auth.login.work_email')}</label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={t('common.placeholder_work_email')}
+              required
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {loading ? t('auth.login.sending') : t('auth.login.send_magic_link')}
+          </button>
+        </form>
+      ) : (
+        <form onSubmit={handlePasswordLogin} className="space-y-4">
+          {error && <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          <div>
+            <label htmlFor="email-password" className="mb-1 block text-sm font-medium text-slate-700">{t('auth.login.email')}</label>
+            <input
+              id="email-password"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={t('common.placeholder_work_email')}
+              required
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            />
+          </div>
+          <div>
+            <label htmlFor="password" className="mb-1 block text-sm font-medium text-slate-700">{t('auth.login.password_label')}</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={t('auth.login.password_placeholder')}
+              required
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {loading ? t('auth.login.signing_in') : t('auth.login.sign_in')}
+          </button>
+          <p className="text-center text-xs text-slate-500">{t('auth.login.password_info')}</p>
+        </form>
+      )}
+
+      <p className="mt-6 text-center text-sm text-slate-600">
+        {t('auth.login.need_workspace')}{' '}
+        <Link to="/auth/register" className="font-medium text-blue-700 hover:underline">{t('auth.login.register_company')}</Link>
+      </p>
+    </AuthShell>
   );
 }

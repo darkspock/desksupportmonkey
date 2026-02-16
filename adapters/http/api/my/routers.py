@@ -40,6 +40,7 @@ from src.request_bc.request.application.queries.my_requests import (
     MyRequestsQueryHandler,
 )
 from src.request_bc.request.infrastructure.repository import RequestRepository
+from src.auth_bc.user.infrastructure.repository import UserRepository
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +89,10 @@ def my_requests(
             status=status,
         )
     )
+    user_repo = UserRepository(db)
+    assigned_ids = [r.assigned_to for r in requests if r.assigned_to]
+    user_map = user_repo.find_by_ids(assigned_ids)
+
     return {
         "data": [
             MyRequestResponse(
@@ -97,6 +102,7 @@ def my_requests(
                 status=r.status.value,
                 priority=r.priority.value,
                 assigned_to=r.assigned_to,
+                assigned_to_email=user_map[r.assigned_to].email if r.assigned_to and r.assigned_to in user_map else None,
                 created_at=r.created_at,
                 updated_at=r.updated_at,
             ).model_dump(mode="json")

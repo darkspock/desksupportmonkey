@@ -1,54 +1,60 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams, Navigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { AuthShell } from '../../components/auth/AuthShell';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
+import { getDefaultRouteForRole, getSafeReturnTo } from '../../lib/navigation';
+import { useI18n } from '../../lib/i18n';
 
 export default function VerifyPage() {
+  const { t } = useI18n();
   const [params] = useSearchParams();
+  const token = params.get('token');
   const { login, user } = useAuth();
   const [error, setError] = useState('');
   const [redirect, setRedirect] = useState<string | null>(null);
+  const verifyCalledRef = useRef(false);
+
+  const returnTo = useMemo(() => getSafeReturnTo(params.get('returnTo')), [params]);
 
   useEffect(() => {
-    const token = params.get('token');
-    if (!token) {
-      setError('Missing token');
-      return;
-    }
+    if (!token || verifyCalledRef.current) return;
+    verifyCalledRef.current = true;
+
     api.post('/auth/verify', { token })
       .then(async (res) => {
         const { access_token, password_set } = res.data.data;
         await login(access_token);
-        // If admin without password, redirect to set-password
+
         if (password_set === false) {
           setRedirect('/auth/set-password');
         } else {
-          setRedirect('/');
+          setRedirect(returnTo ?? '/');
         }
       })
       .catch((err) => {
-        setError(err.response?.data?.detail || 'Verification failed');
+        setError(err.response?.data?.detail || t('auth.verify.error_failed'));
       });
-  }, []);
+  }, [login, returnTo, t, token]);
 
   if (redirect) return <Navigate to={redirect} replace />;
-  if (user && !redirect) return <Navigate to="/" replace />;
+  if (user && !redirect) return <Navigate to={returnTo ?? getDefaultRouteForRole(user.role)} replace />;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white rounded-xl shadow-sm border p-8 w-full max-w-sm text-center">
-        {error ? (
-          <>
-            <p className="text-red-600 mb-4">{error}</p>
-            <a href="/auth/login" className="text-sm text-blue-600 hover:underline">Back to login</a>
-          </>
-        ) : (
-          <>
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent mx-auto mb-4" />
-            <p className="text-sm text-gray-500">Verifying...</p>
-          </>
-        )}
-      </div>
-    </div>
+    <AuthShell title={t('auth.verify.title')} subtitle={t('auth.verify.subtitle')}>
+      {error || !token ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
+          <p className="text-sm text-red-700">{error || t('auth.verify.missing_token')}</p>
+          <Link to="/auth/login" className="mt-3 inline-block text-sm font-medium text-blue-700 hover:underline">
+            {t('auth.back_to_login')}
+          </Link>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center gap-3 py-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+          <p className="text-sm text-slate-600">{t('auth.verify.verifying')}</p>
+        </div>
+      )}
+    </AuthShell>
   );
 }

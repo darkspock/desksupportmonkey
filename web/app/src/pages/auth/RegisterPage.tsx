@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
+import { AuthShell } from '../../components/auth/AuthShell';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
+import { getDefaultRouteForRole } from '../../lib/navigation';
+import { useI18n } from '../../lib/i18n';
 
 export default function RegisterPage() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [name, setName] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [emailDomains, setEmailDomains] = useState('');
@@ -12,7 +16,7 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to={getDefaultRouteForRole(user.role)} replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,11 +27,13 @@ export default function RegisterPage() {
         .split(',')
         .map((d) => d.trim())
         .filter(Boolean);
+
       if (domains.length === 0) {
-        setError('At least one email domain is required');
+        setError(t('auth.register.error_domains_required'));
         setLoading(false);
         return;
       }
+
       await api.post('/register', {
         name,
         admin_email: adminEmail,
@@ -37,7 +43,7 @@ export default function RegisterPage() {
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { detail?: string } } })?.response?.data
-          ?.detail || 'Registration failed';
+          ?.detail || t('auth.register.error_registration_failed');
       setError(msg);
     } finally {
       setLoading(false);
@@ -45,66 +51,73 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-sm">
-        <div className="bg-white rounded-xl shadow-sm border p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Register your company</h1>
-          <p className="text-sm text-gray-500 mb-6">Create a new company account</p>
-
-          {sent ? (
-            <div className="text-center">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <p className="text-sm text-gray-600">Company registered! Check your email for the magic link.</p>
-              <Link to="/auth/login" className="mt-4 inline-block text-sm text-blue-600 hover:underline">
-                Back to login
-              </Link>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit}>
-              {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Company name"
-                required
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3"
-              />
-              <input
-                type="email"
-                value={adminEmail}
-                onChange={(e) => setAdminEmail(e.target.value)}
-                placeholder="Admin email"
-                required
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3"
-              />
-              <input
-                type="text"
-                value={emailDomains}
-                onChange={(e) => setEmailDomains(e.target.value)}
-                placeholder="Email domains (comma-separated, e.g. company.com)"
-                required
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-              />
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
-              >
-                {loading ? 'Registering...' : 'Register Company'}
-              </button>
-              <p className="mt-4 text-center text-sm text-gray-500">
-                Already have an account?{' '}
-                <Link to="/auth/login" className="text-blue-600 hover:underline">Sign in</Link>
-              </p>
-            </form>
-          )}
+    <AuthShell title={t('auth.register.title')} subtitle={t('auth.register.subtitle')}>
+      {sent ? (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-center">
+          <p className="text-sm font-medium text-emerald-800">{t('auth.register.success_title')}</p>
+          <p className="mt-1 text-sm text-emerald-700">{t('auth.register.success_desc')}</p>
+          <Link to="/auth/login" className="mt-4 inline-block text-sm font-medium text-blue-700 hover:underline">
+            {t('auth.back_to_login')}
+          </Link>
         </div>
-      </div>
-    </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+
+          <div>
+            <label htmlFor="company-name" className="mb-1 block text-sm font-medium text-slate-700">{t('auth.register.company_name')}</label>
+            <input
+              id="company-name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t('common.placeholder_company_name')}
+              required
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="admin-email" className="mb-1 block text-sm font-medium text-slate-700">{t('auth.register.admin_email')}</label>
+            <input
+              id="admin-email"
+              type="email"
+              value={adminEmail}
+              onChange={(e) => setAdminEmail(e.target.value)}
+              placeholder={t('common.placeholder_admin_email')}
+              required
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="domains" className="mb-1 block text-sm font-medium text-slate-700">{t('auth.register.allowed_domains')}</label>
+            <input
+              id="domains"
+              type="text"
+              value={emailDomains}
+              onChange={(e) => setEmailDomains(e.target.value)}
+              placeholder={t('common.placeholder_domains')}
+              required
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            />
+            <p className="mt-1 text-xs text-slate-500">{t('auth.register.allowed_domains_help')}</p>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {loading ? t('auth.register.registering') : t('auth.register.register_company')}
+          </button>
+
+          <p className="text-center text-sm text-slate-600">
+            {t('auth.register.already_have_account')}{' '}
+            <Link to="/auth/login" className="font-medium text-blue-700 hover:underline">{t('auth.login.sign_in')}</Link>
+          </p>
+        </form>
+      )}
+    </AuthShell>
   );
 }

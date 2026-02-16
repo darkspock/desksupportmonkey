@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 
 class ChangeRoleRequest(BaseModel):
@@ -10,6 +10,10 @@ class ChangeRoleRequest(BaseModel):
 
 class AssignDepartmentRequest(BaseModel):
     department_id: Optional[str] = None
+
+
+class InviteUserRequest(BaseModel):
+    email: EmailStr
 
 
 class UserDetailResponse(BaseModel):

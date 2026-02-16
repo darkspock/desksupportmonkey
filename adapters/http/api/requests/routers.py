@@ -84,12 +84,24 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/requests", tags=["requests"])
 
 
-def _to_response(request: ServiceRequest, comment_count: int = 0) -> RequestResponse:
+def _user_email_map(user_repo: UserRepository, user_ids: list[str]) -> dict[str, str]:
+    users = user_repo.find_by_ids(user_ids)
+    return {uid: user.email for uid, user in users.items()}
+
+
+def _to_response(
+    request: ServiceRequest,
+    comment_count: int = 0,
+    created_by_email: str | None = None,
+    assigned_to_email: str | None = None,
+) -> RequestResponse:
     return RequestResponse(
         id=request.id,
         company_id=request.company_id,
         created_by=request.created_by,
+        created_by_email=created_by_email,
         assigned_to=request.assigned_to,
+        assigned_to_email=assigned_to_email,
         type=request.type.value,
         title=request.title,
         description=request.description,
@@ -133,6 +145,11 @@ def list_requests(
             assigned_to=effective_assigned_to,
         )
     )
+    user_repo = UserRepository(db)
+    user_ids = [r.created_by for r in requests]
+    user_ids.extend([r.assigned_to for r in requests if r.assigned_to])
+    email_map = _user_email_map(user_repo, user_ids)
+
     return {
         "data": [
             RequestListItemResponse(
@@ -142,7 +159,9 @@ def list_requests(
                 status=r.status.value,
                 priority=r.priority.value,
                 assigned_to=r.assigned_to,
+                assigned_to_email=email_map.get(r.assigned_to) if r.assigned_to else None,
                 created_by=r.created_by,
+                created_by_email=email_map.get(r.created_by),
                 created_at=r.created_at,
                 updated_at=r.updated_at,
             ).model_dump(mode="json")
@@ -177,7 +196,7 @@ def create_request(
     event = RequestEventFactory.request_created(request, actor_id=current_user.id)
     event_bus.publish(event, db)
 
-    return {"data": _to_response(request).model_dump(mode="json")}
+    return {"data": _to_response(request, created_by_email=current_user.email).model_dump(mode="json")}
 
 
 @router.get("/{request_id}")
@@ -199,7 +218,20 @@ def get_request(
         if detail.request.created_by != current_user.id:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
 
-    return {"data": _to_response(detail.request, detail.comment_count).model_dump(mode="json")}
+    user_repo = UserRepository(db)
+    email_map = _user_email_map(
+        user_repo,
+        [detail.request.created_by] + ([detail.request.assigned_to] if detail.request.assigned_to else []),
+    )
+
+    return {
+        "data": _to_response(
+            detail.request,
+            detail.comment_count,
+            created_by_email=email_map.get(detail.request.created_by),
+            assigned_to_email=email_map.get(detail.request.assigned_to) if detail.request.assigned_to else None,
+        ).model_dump(mode="json")
+    }
 
 
 @router.patch("/{request_id}/status")
@@ -356,6 +388,7 @@ def add_comment(
             id=comment.id,
             request_id=comment.request_id,
             author_id=comment.author_id,
+            author_email=current_user.email,
             body=comment.body,
             created_at=comment.created_at,
         ).model_dump(mode="json")
@@ -376,12 +409,15 @@ def list_comments(
         )
     except ListCommentsRequestNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
+    user_repo = UserRepository(db)
+    email_map = _user_email_map(user_repo, [c.author_id for c in comments])
     return {
         "data": [
             CommentResponse(
                 id=c.id,
                 request_id=c.request_id,
                 author_id=c.author_id,
+                author_email=email_map.get(c.author_id),
                 body=c.body,
                 created_at=c.created_at,
             ).model_dump(mode="json")
@@ -424,6 +460,7 @@ def add_note(
             id=note.id,
             request_id=note.request_id,
             author_id=note.author_id,
+            author_email=current_user.email,
             body=note.body,
             created_at=note.created_at,
         ).model_dump(mode="json")
@@ -443,12 +480,15 @@ def list_notes(
         )
     except ListNotesRequestNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
+    user_repo = UserRepository(db)
+    email_map = _user_email_map(user_repo, [n.author_id for n in notes])
     return {
         "data": [
             NoteResponse(
                 id=n.id,
                 request_id=n.request_id,
                 author_id=n.author_id,
+                author_email=email_map.get(n.author_id),
                 body=n.body,
                 created_at=n.created_at,
             ).model_dump(mode="json")

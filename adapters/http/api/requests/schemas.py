@@ -30,7 +30,9 @@ class RequestListItemResponse(BaseModel):
     status: str
     priority: str
     assigned_to: Optional[str] = None
+    assigned_to_email: Optional[str] = None
     created_by: str
+    created_by_email: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -43,6 +45,7 @@ class CommentResponse(BaseModel):
     id: str
     request_id: str
     author_id: str
+    author_email: Optional[str] = None
     body: str
     created_at: Optional[datetime] = None
 
@@ -51,6 +54,7 @@ class NoteResponse(BaseModel):
     id: str
     request_id: str
     author_id: str
+    author_email: Optional[str] = None
     body: str
     created_at: Optional[datetime] = None
 
@@ -59,7 +63,9 @@ class RequestResponse(BaseModel):
     id: str
     company_id: str
     created_by: str
+    created_by_email: Optional[str] = None
     assigned_to: Optional[str] = None
+    assigned_to_email: Optional[str] = None
     type: str
     title: str
     description: str

@@ -1,4 +1,5 @@
 import { cn } from '../../lib/cn';
+import { humanizeToken, useI18n } from '../../lib/i18n';
 
 const variants: Record<string, string> = {
   default: 'bg-gray-100 text-gray-700',
@@ -26,5 +27,10 @@ const statusColors: Record<string, string> = {
 };
 
 export function StatusBadge({ status }: { status: string }) {
-  return <Badge variant={statusColors[status] || 'default'}>{status.replace(/_/g, ' ')}</Badge>;
+  const { t } = useI18n();
+  return (
+    <Badge variant={statusColors[status] || 'default'}>
+      {t(`enum.${status}`, undefined, { defaultValue: humanizeToken(status) })}
+    </Badge>
+  );
 }

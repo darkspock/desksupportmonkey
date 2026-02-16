@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { AuthShell } from '../../components/auth/AuthShell';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
+import { getDefaultRouteForRole } from '../../lib/navigation';
+import { useI18n } from '../../lib/i18n';
 
 export default function SetPasswordPage() {
   const { user, refreshUser } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -12,26 +16,30 @@ export default function SetPasswordPage() {
   const [loading, setLoading] = useState(false);
 
   if (!user) return <Navigate to="/auth/login" replace />;
-  if (user.password_set) return <Navigate to="/" replace />;
+  if (user.password_set) return <Navigate to={getDefaultRouteForRole(user.role)} replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
     if (password.length < 8) {
-      setError('Password must be at least 8 characters');
+      setError(t('auth.set_password.error_min_8'));
       return;
     }
+
     if (password !== confirm) {
-      setError('Passwords do not match');
+      setError(t('auth.set_password.error_mismatch'));
       return;
     }
+
     setLoading(true);
+
     try {
       await api.post('/auth/set-password', { password });
       await refreshUser();
       navigate('/', { replace: true });
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Failed to set password';
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('auth.set_password.error_failed');
       setError(msg);
     } finally {
       setLoading(false);
@@ -39,42 +47,44 @@ export default function SetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-sm">
-        <div className="bg-white rounded-xl shadow-sm border p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Set Your Password</h1>
-          <p className="text-sm text-gray-500 mb-6">
-            As an admin, you need to set a password for your account.
-          </p>
+    <AuthShell title={t('auth.set_password.title')} subtitle={t('auth.set_password.subtitle')}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
-          <form onSubmit={handleSubmit}>
-            {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password (min 8 characters)"
-              required
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3"
-            />
-            <input
-              type="password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              placeholder="Confirm password"
-              required
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
-            >
-              {loading ? 'Setting...' : 'Set Password'}
-            </button>
-          </form>
+        <div>
+          <label htmlFor="new-password" className="mb-1 block text-sm font-medium text-slate-700">{t('auth.set_password.new_password')}</label>
+          <input
+            id="new-password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={t('auth.set_password.placeholder_min_8')}
+            required
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+          />
         </div>
-      </div>
-    </div>
+
+        <div>
+          <label htmlFor="confirm-password" className="mb-1 block text-sm font-medium text-slate-700">{t('auth.set_password.confirm_password')}</label>
+          <input
+            id="confirm-password"
+            type="password"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            placeholder={t('auth.set_password.placeholder_repeat')}
+            required
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+        >
+          {loading ? t('auth.set_password.saving') : t('auth.set_password.submit')}
+        </button>
+      </form>
+    </AuthShell>
   );
 }

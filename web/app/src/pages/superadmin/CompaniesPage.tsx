@@ -6,17 +6,25 @@ import { StatusBadge } from '../../components/ui/Badge';
 import { Table, Th, Td } from '../../components/ui/Table';
 import { Card } from '../../components/ui/Card';
 import { Pagination } from '../../components/ui/Pagination';
-import type { Company, PaginatedResponse } from '../../types';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
+import { EmptyState, ErrorState } from '../../components/ui/StateBlock';
+import { useToast } from '../../hooks/useToast';
+import { useI18n } from '../../lib/i18n';
+import type { Company, CompanyStatus, PaginatedResponse } from '../../types';
 
 export default function CompaniesPage() {
+  const { t } = useI18n();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', admin_email: '', email_domains: '' });
   const [error, setError] = useState('');
+  const [pendingStatusChange, setPendingStatusChange] = useState<{ id: string; name: string; status: CompanyStatus } | null>(null);
+  const [editingCompany, setEditingCompany] = useState<{ id: string; name: string; email_domains: string } | null>(null);
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error: listError, refetch } = useQuery({
     queryKey: ['companies', page, search],
     queryFn: async () => {
       const params: Record<string, unknown> = { page, page_size: 20 };
@@ -37,24 +45,62 @@ export default function CompaniesPage() {
       setShowForm(false);
       setError('');
       queryClient.invalidateQueries({ queryKey: ['companies'] });
+      showToast({ title: t('page.companies.toast_created'), variant: 'success' });
     },
     onError: (err: unknown) => {
-      setError((err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Failed');
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('page.companies.error_generic');
+      setError(detail);
+      showToast({ title: t('page.companies.error_create_title'), description: detail, variant: 'error' });
+    },
+  });
+
+  const updateCompany = useMutation({
+    mutationFn: ({ id, name, emailDomains }: { id: string; name: string; emailDomains: string[] }) =>
+      api.put(`/companies/${id}`, { name, email_domains: emailDomains }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      setEditingCompany(null);
+      showToast({ title: t('page.companies.toast_updated'), variant: 'success' });
+    },
+    onError: (err: unknown) => {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('page.companies.error_update');
+      showToast({ title: t('page.companies.error_update_title'), description: detail, variant: 'error' });
     },
   });
 
   const changeStatus = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) =>
+    mutationFn: ({ id, status }: { id: string; status: CompanyStatus }) =>
       api.patch(`/companies/${id}/status`, { status }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['companies'] }),
+    onSuccess: (_res, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      setPendingStatusChange(null);
+      showToast({ title: t('page.companies.toast_status_changed', { status: t(`enum.${vars.status}`) }), variant: 'success' });
+    },
+    onError: (err: unknown) => {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('page.companies.error_update');
+      showToast({ title: t('page.companies.error_status_title'), description: detail, variant: 'error' });
+    },
   });
+
+  const requestStatusChange = (company: Company, nextStatus: string) => {
+    const status = nextStatus as CompanyStatus;
+
+    if (status === company.status) return;
+
+    if (status === 'suspended' || status === 'deactivated') {
+      setPendingStatusChange({ id: company.id, name: company.name, status });
+      return;
+    }
+
+    changeStatus.mutate({ id: company.id, status });
+  };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-gray-900">Companies</h2>
+        <h2 className="text-xl font-bold text-gray-900">{t('page.companies.title')}</h2>
         <button onClick={() => setShowForm(!showForm)} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
-          {showForm ? 'Cancel' : 'New Company'}
+          {showForm ? t('common.cancel') : t('page.companies.new')}
         </button>
       </div>
 
@@ -63,35 +109,81 @@ export default function CompaniesPage() {
           <form onSubmit={(e) => { e.preventDefault(); create.mutate(); }} className="space-y-3">
             {error && <p className="text-sm text-red-600">{error}</p>}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('table.company_name')}</label>
               <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="w-full border rounded-lg px-3 py-2 text-sm" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Admin Email</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.register.admin_email')}</label>
               <input type="email" value={form.admin_email} onChange={(e) => setForm({ ...form, admin_email: e.target.value })} required className="w-full border rounded-lg px-3 py-2 text-sm" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email Domains (comma-separated)</label>
-              <input value={form.email_domains} onChange={(e) => setForm({ ...form, email_domains: e.target.value })} placeholder="company.com, corp.com" className="w-full border rounded-lg px-3 py-2 text-sm" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('table.email_domains')}</label>
+              <input value={form.email_domains} onChange={(e) => setForm({ ...form, email_domains: e.target.value })} placeholder={t('common.placeholder_domains_short')} className="w-full border rounded-lg px-3 py-2 text-sm" />
             </div>
             <button type="submit" disabled={create.isPending} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm disabled:opacity-50">
-              {create.isPending ? 'Creating...' : 'Create Company'}
+              {create.isPending ? t('page.companies.creating') : t('page.companies.create')}
             </button>
           </form>
         </Card>
       )}
 
+      {editingCompany && (
+        <Card className="mb-4">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">{t('page.companies.edit')}</h3>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('table.name')}</label>
+              <input
+                value={editingCompany.name}
+                onChange={(e) => setEditingCompany({ ...editingCompany, name: e.target.value })}
+                className="w-full border rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('table.email_domains')}</label>
+              <input
+                value={editingCompany.email_domains}
+                onChange={(e) => setEditingCompany({ ...editingCompany, email_domains: e.target.value })}
+                className="w-full border rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  const domains = editingCompany.email_domains.split(',').map((d) => d.trim()).filter(Boolean);
+                  updateCompany.mutate({ id: editingCompany.id, name: editingCompany.name, emailDomains: domains });
+                }}
+                disabled={updateCompany.isPending || !editingCompany.name.trim()}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              >
+                {updateCompany.isPending ? t('auth.set_password.saving') : t('common.save')}
+              </button>
+              <button onClick={() => setEditingCompany(null)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                {t('common.cancel')}
+              </button>
+            </div>
+          </div>
+        </Card>
+      )}
+
       <Card>
         <div className="mb-4">
-          <input placeholder="Search..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="border rounded-lg px-3 py-1.5 text-sm w-48" />
+          <input placeholder={t('common.search')} value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="border rounded-lg px-3 py-1.5 text-sm w-48" />
         </div>
 
-        {isLoading ? <Loading /> : !data?.data.length ? (
-          <p className="text-sm text-gray-500">No companies found.</p>
+        {isLoading ? <Loading /> : isError ? (
+          <ErrorState
+            message={(listError as { response?: { data?: { detail?: string } } })?.response?.data?.detail}
+            onRetry={() => {
+              void refetch();
+            }}
+          />
+        ) : !data?.data.length ? (
+          <EmptyState message={t('page.companies.empty')} />
         ) : (
           <>
             <Table>
-              <thead><tr><Th>Name</Th><Th>Status</Th><Th>Users</Th><Th>Departments</Th><Th>Actions</Th></tr></thead>
+              <thead><tr><Th>{t('table.name')}</Th><Th>{t('table.status')}</Th><Th>{t('table.users')}</Th><Th>{t('table.departments')}</Th><Th>{t('table.actions')}</Th></tr></thead>
               <tbody className="divide-y divide-gray-100">
                 {data.data.map((c) => (
                   <tr key={c.id}>
@@ -100,15 +192,23 @@ export default function CompaniesPage() {
                     <Td>{c.user_count ?? '-'}</Td>
                     <Td>{c.department_count ?? '-'}</Td>
                     <Td>
-                      <select
-                        value={c.status}
-                        onChange={(e) => changeStatus.mutate({ id: c.id, status: e.target.value })}
-                        className="border rounded px-2 py-1 text-xs"
-                      >
-                        <option value="active">Active</option>
-                        <option value="suspended">Suspended</option>
-                        <option value="deactivated">Deactivated</option>
-                      </select>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setEditingCompany({ id: c.id, name: c.name, email_domains: c.email_domains.join(', ') })}
+                          className="text-xs text-blue-600 hover:underline"
+                        >
+                          {t('common.edit')}
+                        </button>
+                        <select
+                          value={c.status}
+                          onChange={(e) => requestStatusChange(c, e.target.value)}
+                          className="border rounded px-2 py-1 text-xs"
+                        >
+                          <option value="active">{t('enum.active')}</option>
+                          <option value="suspended">{t('enum.suspended')}</option>
+                          <option value="deactivated">{t('enum.deactivated')}</option>
+                        </select>
+                      </div>
                     </Td>
                   </tr>
                 ))}
@@ -118,6 +218,24 @@ export default function CompaniesPage() {
           </>
         )}
       </Card>
+
+      <ConfirmDialog
+        open={Boolean(pendingStatusChange)}
+        title={t('page.companies.confirm_status_title')}
+        description={pendingStatusChange ? t('page.companies.confirm_status_desc', { name: pendingStatusChange.name, status: t(`enum.${pendingStatusChange.status}`) }) : ''}
+        confirmLabel={t('common.confirm')}
+        tone="danger"
+        busy={changeStatus.isPending}
+        onCancel={() => setPendingStatusChange(null)}
+        onConfirm={() => {
+          if (pendingStatusChange) {
+            changeStatus.mutate({
+              id: pendingStatusChange.id,
+              status: pendingStatusChange.status,
+            });
+          }
+        }}
+      />
     </div>
   );
 }

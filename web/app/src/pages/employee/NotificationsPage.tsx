@@ -4,14 +4,20 @@ import api from '../../lib/api';
 import { Loading } from '../../components/ui/Loading';
 import { Card } from '../../components/ui/Card';
 import { Pagination } from '../../components/ui/Pagination';
+import { EmptyState, ErrorState } from '../../components/ui/StateBlock';
 import type { Notification, PaginatedResponse } from '../../types';
 import { cn } from '../../lib/cn';
+import { useToast } from '../../hooks/useToast';
+import { formatDateTime } from '../../lib/date';
+import { useI18n } from '../../lib/i18n';
 
 export default function NotificationsPage() {
   const [page, setPage] = useState(1);
+  const { t } = useI18n();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['notifications', page],
     queryFn: async () => {
       const { data } = await api.get('/my/notifications', { params: { page, page_size: 20 } });
@@ -25,6 +31,12 @@ export default function NotificationsPage() {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['notifications-unread'] });
     },
+    onError: () => {
+      showToast({
+        title: t('page.notifications.error_mark_read'),
+        variant: 'error',
+      });
+    },
   });
 
   const markAllRead = useMutation({
@@ -32,22 +44,43 @@ export default function NotificationsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['notifications-unread'] });
+      showToast({
+        title: t('page.notifications.success_mark_all'),
+        variant: 'success',
+      });
+    },
+    onError: () => {
+      showToast({
+        title: t('page.notifications.error_mark_all'),
+        variant: 'error',
+      });
     },
   });
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-gray-900">Notifications</h2>
-        <button onClick={() => markAllRead.mutate()} className="text-sm text-blue-600 hover:underline">
-          Mark all read
+        <h2 className="text-xl font-bold text-gray-900">{t('page.notifications.title')}</h2>
+        <button
+          onClick={() => markAllRead.mutate()}
+          disabled={markAllRead.isPending}
+          className="text-sm text-blue-600 hover:underline disabled:opacity-50"
+        >
+          {markAllRead.isPending ? t('page.notifications.marking') : t('page.notifications.mark_all')}
         </button>
       </div>
       <Card>
         {isLoading ? (
           <Loading />
+        ) : isError ? (
+          <ErrorState
+            message={(error as { response?: { data?: { detail?: string } } })?.response?.data?.detail}
+            onRetry={() => {
+              void refetch();
+            }}
+          />
         ) : !data?.data.length ? (
-          <p className="text-sm text-gray-500">No notifications.</p>
+          <EmptyState message={t('page.notifications.empty')} />
         ) : (
           <>
             <div className="divide-y divide-gray-100">
@@ -59,11 +92,14 @@ export default function NotificationsPage() {
                   <div className="flex-1 min-w-0">
                     <p className={cn('text-sm', !n.is_read ? 'font-semibold text-gray-900' : 'text-gray-700')}>{n.title}</p>
                     <p className="text-sm text-gray-500 truncate">{n.body}</p>
-                    <p className="text-xs text-gray-400 mt-1">{new Date(n.created_at).toLocaleString()}</p>
+                    <p className="text-xs text-gray-400 mt-1">{formatDateTime(n.created_at)}</p>
                   </div>
                   {!n.is_read && (
-                    <button onClick={() => markRead.mutate(n.id)} className="text-xs text-blue-600 hover:underline shrink-0">
-                      Mark read
+                    <button
+                      onClick={() => markRead.mutate(n.id)}
+                      className="text-xs text-blue-600 hover:underline shrink-0"
+                    >
+                      {t('page.notifications.mark_read')}
                     </button>
                   )}
                 </div>

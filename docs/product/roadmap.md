@@ -13,7 +13,7 @@
 | E6 | Report Generation | Celery async tasks, PDF generation, MinIO storage | Medium | Done |
 | E7 | Frontend | React app, routing, layouts, pages for all modules | High | Done |
 | E8 | Seed Data & Demo | Demo data, demo script, Docker Compose polish | Low | Done |
-| E9 | UX Improvements | Invite users, departments edit, and other frontend UX polish | Medium | Pending |
+| E9 | UX Improvements | Invite users, departments edit, frontend quality uplift, and reliability hardening | Medium | Done |
 
 ---
 
@@ -139,6 +139,12 @@ E8: Seed Data & Demo (after all others)
 - User department assignment from Users page
 - Dashboard: warranty alerts, aging alerts, request trend chart
 - Company edit (name, domains) from Companies page
+- Auth refresh with stronger visual hierarchy and branded login experience
+- Login uses root README branding image source (`web/site/logo.png`)
+- Lightweight design-system foundation (tokens + shared form/action primitives)
+- Improved responsive app shell for tablet/mobile navigation
+- Accessibility polish (keyboard/focus/labels/tooltips)
+- Unified loading/empty/error and mutation feedback patterns
 
 ---
 

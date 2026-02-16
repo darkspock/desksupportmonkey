@@ -1,7 +1,10 @@
+/* eslint-disable react-refresh/only-export-components */
 import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
 import { PageLoading } from './components/ui/Loading';
+import { RequireRole } from './components/auth/RequireRole';
+import { RouteErrorBoundary } from './components/ui/RouteErrorBoundary';
 
 // Lazy-loaded pages
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
@@ -28,38 +31,71 @@ function S({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoading />}>{children}</Suspense>;
 }
 
+const routeErrorElement = <RouteErrorBoundary />;
+
 export const router = createBrowserRouter([
-  { path: '/auth/login', element: <S><LoginPage /></S> },
-  { path: '/auth/register', element: <S><RegisterPage /></S> },
-  { path: '/auth/verify', element: <S><VerifyPage /></S> },
-  { path: '/auth/set-password', element: <S><SetPasswordPage /></S> },
+  { path: '/auth/login', element: <S><LoginPage /></S>, errorElement: routeErrorElement },
+  { path: '/auth/register', element: <S><RegisterPage /></S>, errorElement: routeErrorElement },
+  { path: '/auth/verify', element: <S><VerifyPage /></S>, errorElement: routeErrorElement },
+  { path: '/auth/set-password', element: <S><SetPasswordPage /></S>, errorElement: routeErrorElement },
   // Legacy routes (redirect)
-  { path: '/login', element: <Navigate to="/auth/login" replace /> },
-  { path: '/verify', element: <Navigate to="/auth/verify" replace /> },
+  { path: '/login', element: <Navigate to="/auth/login" replace />, errorElement: routeErrorElement },
+  { path: '/verify', element: <Navigate to="/auth/verify" replace />, errorElement: routeErrorElement },
   {
     path: '/',
     element: <AppLayout />,
+    errorElement: routeErrorElement,
     children: [
-      { index: true, element: <Navigate to="/my/equipment" replace /> },
-      // Employee
+      // Employee (and auth users)
       { path: 'my/equipment', element: <S><MyEquipmentPage /></S> },
       { path: 'my/requests', element: <S><MyRequestsPage /></S> },
       { path: 'my/requests/new', element: <S><NewRequestPage /></S> },
       { path: 'my/notifications', element: <S><NotificationsPage /></S> },
-      // Technician+
-      { path: 'requests', element: <S><RequestQueuePage /></S> },
+      // Shared detail route (ownership validated by backend)
       { path: 'requests/:id', element: <S><RequestDetailPage /></S> },
-      { path: 'assets', element: <S><AssetListPage /></S> },
-      { path: 'assets/new', element: <S><AssetFormPage /></S> },
-      { path: 'assets/import', element: <S><AssetImportPage /></S> },
-      { path: 'assets/:id', element: <S><AssetDetailPage /></S> },
+      // Technician+
+      {
+        path: 'requests',
+        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><RequestQueuePage /></S></RequireRole>,
+      },
+      {
+        path: 'assets',
+        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><AssetListPage /></S></RequireRole>,
+      },
+      {
+        path: 'assets/new',
+        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><AssetFormPage /></S></RequireRole>,
+      },
+      {
+        path: 'assets/import',
+        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><AssetImportPage /></S></RequireRole>,
+      },
+      {
+        path: 'assets/:id',
+        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><AssetDetailPage /></S></RequireRole>,
+      },
       // Admin+
-      { path: 'dashboard', element: <S><DashboardPage /></S> },
-      { path: 'users', element: <S><UsersPage /></S> },
-      { path: 'departments', element: <S><DepartmentsPage /></S> },
-      { path: 'reports', element: <S><ReportsPage /></S> },
+      {
+        path: 'dashboard',
+        element: <RequireRole roles={['admin', 'super_admin']}><S><DashboardPage /></S></RequireRole>,
+      },
+      {
+        path: 'users',
+        element: <RequireRole roles={['admin', 'super_admin']}><S><UsersPage /></S></RequireRole>,
+      },
+      {
+        path: 'departments',
+        element: <RequireRole roles={['admin', 'super_admin']}><S><DepartmentsPage /></S></RequireRole>,
+      },
+      {
+        path: 'reports',
+        element: <RequireRole roles={['admin', 'super_admin']}><S><ReportsPage /></S></RequireRole>,
+      },
       // Super Admin
-      { path: 'companies', element: <S><CompaniesPage /></S> },
+      {
+        path: 'companies',
+        element: <RequireRole roles={['super_admin']}><S><CompaniesPage /></S></RequireRole>,
+      },
     ],
   },
 ]);

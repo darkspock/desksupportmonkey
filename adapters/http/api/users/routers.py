@@ -8,6 +8,7 @@ from adapters.http.api.auth.dependencies import require_role
 from adapters.http.api.users.schemas import (
     AssignDepartmentRequest,
     ChangeRoleRequest,
+    InviteUserRequest,
     UserDetailResponse,
 )
 from adapters.http.schemas.responses import PaginationMeta
@@ -15,6 +16,15 @@ from core.database import get_db
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
 from core.email import SMTPEmailService
+from src.auth_bc.company_lookup.infrastructure.service import CompanyLookupService
+from src.auth_bc.magic_link.application.commands.create_magic_link import (
+    CompanyRestrictedError,
+    CreateMagicLinkCommand,
+    CreateMagicLinkCommandHandler,
+    InvalidEmailDomainError,
+    RateLimitExceededError,
+)
+from src.auth_bc.magic_link.infrastructure.repository import MagicLinkRepository
 from src.auth_bc.user.application.commands.change_user_role import (
     CannotAssignSuperAdminError,
     CannotChangeSelfError,
@@ -52,6 +62,7 @@ from src.auth_bc.user.application.queries.get_user_detail import (
 )
 from src.auth_bc.user.infrastructure.repository import UserRepository
 from src.company_bc.department.infrastructure.repository import DepartmentRepository
+from src.company_bc.company.infrastructure.repository import CompanyRepository
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +111,63 @@ def list_users(
         "data": [_to_response(u).model_dump(mode="json") for u in users],
         "meta": PaginationMeta(page=page, page_size=page_size, total=total).model_dump(),
     }
+
+
+@router.post("/invite", status_code=status.HTTP_201_CREATED)
+def invite_user(
+    body: InviteUserRequest,
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
+    db: Session = Depends(get_db),
+):
+    company_id = current_user.company_id
+    email = body.email.lower().strip()
+    if not company_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid company context")
+
+    company = CompanyRepository(db).find_by_id(company_id)
+    if not company:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
+
+    domain = email.split("@", 1)[-1]
+    if domain not in [d.lower() for d in company.email_domains]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email domain is not allowed for this company",
+        )
+
+    user_repo = UserRepository(db)
+    existing_user = user_repo.find_by_email(email)
+    if existing_user and existing_user.company_id == company_id and existing_user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User with this email already exists",
+        )
+
+    handler = CreateMagicLinkCommandHandler(
+        magic_link_repo=MagicLinkRepository(db),
+        company_lookup=CompanyLookupService(db),
+        email_service=SMTPEmailService(),
+        user_repo=user_repo,
+    )
+    try:
+        handler.handle(CreateMagicLinkCommand(email=email))
+    except InvalidEmailDomainError:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email domain is not allowed for this company",
+        )
+    except CompanyRestrictedError:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Company access is currently restricted",
+        )
+    except RateLimitExceededError:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many requests. Please wait before requesting another invite.",
+        )
+
+    return {"data": {"message": "Invitation sent"}}
 
 
 @router.get("/{user_id}")

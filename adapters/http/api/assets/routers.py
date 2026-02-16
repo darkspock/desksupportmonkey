@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from adapters.http.api.auth.dependencies import require_role
 from adapters.http.api.assets.schemas import (
+    AssignableUserResponse,
     AssetEventResponse,
     AssetResponse,
     AssignAssetRequest,
@@ -75,7 +76,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/assets", tags=["assets"])
 
 
-def _to_response(asset: Asset) -> AssetResponse:
+def _to_response(asset: Asset, assigned_to_email: str | None = None) -> AssetResponse:
     return AssetResponse(
         id=asset.id,
         company_id=asset.company_id,
@@ -85,6 +86,7 @@ def _to_response(asset: Asset) -> AssetResponse:
         serial_number=asset.serial_number,
         status=asset.status.value,
         assigned_to=asset.assigned_to,
+        assigned_to_email=assigned_to_email,
         department_id=asset.department_id,
         purchase_date=asset.purchase_date,
         warranty_expiration=asset.warranty_expiration,
@@ -94,13 +96,14 @@ def _to_response(asset: Asset) -> AssetResponse:
     )
 
 
-def _event_to_response(event: AssetEvent) -> AssetEventResponse:
+def _event_to_response(event: AssetEvent, performed_by_email: str | None = None) -> AssetEventResponse:
     return AssetEventResponse(
         id=event.id,
         asset_id=event.asset_id,
         event_type=event.event_type,
         data=event.data,
         performed_by=event.performed_by,
+        performed_by_email=performed_by_email,
         created_at=event.created_at,
     )
 
@@ -165,8 +168,17 @@ def list_assets(
             sort_order=sort_order,
         )
     )
+    user_repo = UserRepository(db)
+    assigned_ids = [a.assigned_to for a in assets if a.assigned_to]
+    user_map = user_repo.find_by_ids(assigned_ids)
     return {
-        "data": [_to_response(a).model_dump(mode="json") for a in assets],
+        "data": [
+            _to_response(
+                a,
+                assigned_to_email=user_map[a.assigned_to].email if a.assigned_to and a.assigned_to in user_map else None,
+            ).model_dump(mode="json")
+            for a in assets
+        ],
         "meta": PaginationMeta(page=page, page_size=page_size, total=total).model_dump(),
     }
 
@@ -216,6 +228,25 @@ async def import_assets(
     }
 
 
+@router.get("/assignable-users")
+def list_assignable_users(
+    current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
+    db: Session = Depends(get_db),
+):
+    users, _ = UserRepository(db).find_all_by_company(
+        company_id=current_user.company_id,
+        page=1,
+        page_size=500,
+        is_active=True,
+    )
+    return {
+        "data": [
+            AssignableUserResponse(id=u.id, email=u.email, name=u.name).model_dump(mode="json")
+            for u in users
+        ]
+    }
+
+
 @router.get("/{asset_id}")
 def get_asset(
     asset_id: str,
@@ -229,7 +260,11 @@ def get_asset(
         )
     except GetAssetNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
-    return {"data": _to_response(asset).model_dump(mode="json")}
+    assigned_to_email = None
+    if asset.assigned_to:
+        assigned_user = UserRepository(db).find_by_id(asset.assigned_to)
+        assigned_to_email = assigned_user.email if assigned_user else None
+    return {"data": _to_response(asset, assigned_to_email=assigned_to_email).model_dump(mode="json")}
 
 
 @router.put("/{asset_id}")
@@ -257,7 +292,11 @@ def update_asset(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
-    return {"data": _to_response(asset).model_dump(mode="json")}
+    assigned_to_email = None
+    if asset.assigned_to:
+        assigned_user = UserRepository(db).find_by_id(asset.assigned_to)
+        assigned_to_email = assigned_user.email if assigned_user else None
+    return {"data": _to_response(asset, assigned_to_email=assigned_to_email).model_dump(mode="json")}
 
 
 @router.patch("/{asset_id}/status")
@@ -283,7 +322,11 @@ def change_asset_status(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
-    return {"data": _to_response(asset).model_dump(mode="json")}
+    assigned_to_email = None
+    if asset.assigned_to:
+        assigned_user = UserRepository(db).find_by_id(asset.assigned_to)
+        assigned_to_email = assigned_user.email if assigned_user else None
+    return {"data": _to_response(asset, assigned_to_email=assigned_to_email).model_dump(mode="json")}
 
 
 @router.get("/{asset_id}/history")
@@ -299,7 +342,16 @@ def get_asset_history(
         )
     except HistoryAssetNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
-    return {"data": [_event_to_response(e).model_dump(mode="json") for e in events]}
+    user_map = UserRepository(db).find_by_ids([e.performed_by for e in events])
+    return {
+        "data": [
+            _event_to_response(
+                e,
+                performed_by_email=user_map[e.performed_by].email if e.performed_by in user_map else None,
+            ).model_dump(mode="json")
+            for e in events
+        ]
+    }
 
 
 @router.patch("/{asset_id}/assign")
@@ -330,7 +382,11 @@ def assign_asset(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User is inactive")
     except InvalidAssignmentError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
-    return {"data": _to_response(asset).model_dump(mode="json")}
+    assigned_to_email = None
+    if asset.assigned_to:
+        assigned_user = UserRepository(db).find_by_id(asset.assigned_to)
+        assigned_to_email = assigned_user.email if assigned_user else None
+    return {"data": _to_response(asset, assigned_to_email=assigned_to_email).model_dump(mode="json")}
 
 
 @router.patch("/{asset_id}/unassign")
@@ -352,4 +408,4 @@ def unassign_asset(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
     except InvalidAssignmentError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
-    return {"data": _to_response(asset).model_dump(mode="json")}
+    return {"data": _to_response(asset, assigned_to_email=None).model_dump(mode="json")}

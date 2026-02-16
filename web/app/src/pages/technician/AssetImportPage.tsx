@@ -3,16 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
 import { Card } from '../../components/ui/Card';
+import { useI18n } from '../../lib/i18n';
 
 export default function AssetImportPage() {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<{ created: number; errors: string[] } | null>(null);
 
   const mutation = useMutation({
     mutationFn: async () => {
-      if (!file) throw new Error('No file selected');
+      if (!file) throw new Error(t('page.asset_import.no_file'));
       const formData = new FormData();
       formData.append('file', file);
       const { data } = await api.post('/assets/import', formData, {
@@ -28,25 +30,25 @@ export default function AssetImportPage() {
 
   return (
     <div className="max-w-xl">
-      <h2 className="text-xl font-bold text-gray-900 mb-4">Import Assets from CSV</h2>
+      <h2 className="text-xl font-bold text-gray-900 mb-4">{t('page.asset_import.title')}</h2>
       <Card>
         <p className="text-sm text-gray-500 mb-4">
-          CSV must include columns: type, brand, model, serial_number. Optional: purchase_date, warranty_expiration, notes.
+          {t('page.asset_import.help')}
         </p>
 
         {result ? (
           <div>
-            <p className="text-sm text-green-600 mb-2">{result.created} assets imported successfully.</p>
+            <p className="text-sm text-green-600 mb-2">{t('page.asset_import.success', { count: result.created })}</p>
             {result.errors?.length > 0 && (
               <div className="bg-red-50 border border-red-200 rounded p-3 mb-4">
-                <p className="text-sm text-red-600 font-medium mb-1">{result.errors.length} error(s):</p>
+                <p className="text-sm text-red-600 font-medium mb-1">{t('page.asset_import.errors', { count: result.errors.length })}</p>
                 <ul className="text-xs text-red-500 list-disc pl-4">
                   {result.errors.map((e, i) => <li key={i}>{e}</li>)}
                 </ul>
               </div>
             )}
             <button onClick={() => navigate('/assets')} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">
-              Back to Assets
+              {t('page.asset_import.back_to_assets')}
             </button>
           </div>
         ) : (
@@ -59,9 +61,9 @@ export default function AssetImportPage() {
             />
             <div className="flex gap-3">
               <button type="submit" disabled={!file || mutation.isPending} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm disabled:opacity-50">
-                {mutation.isPending ? 'Importing...' : 'Import'}
+                {mutation.isPending ? t('page.asset_import.importing') : t('page.asset_import.import')}
               </button>
-              <button type="button" onClick={() => navigate(-1)} className="px-4 py-2 rounded-lg text-sm border hover:bg-gray-50">Cancel</button>
+              <button type="button" onClick={() => navigate(-1)} className="px-4 py-2 rounded-lg text-sm border hover:bg-gray-50">{t('common.cancel')}</button>
             </div>
           </form>
         )}

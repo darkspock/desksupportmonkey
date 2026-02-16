@@ -20,6 +20,7 @@ class MyRequestResponse(BaseModel):
     status: str
     priority: str
     assigned_to: Optional[str] = None
+    assigned_to_email: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

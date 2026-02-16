@@ -39,6 +39,7 @@ class AssetResponse(BaseModel):
     serial_number: str
     status: str
     assigned_to: Optional[str] = None
+    assigned_to_email: Optional[str] = None
     department_id: Optional[str] = None
     purchase_date: Optional[date] = None
     warranty_expiration: Optional[date] = None
@@ -53,7 +54,14 @@ class AssetEventResponse(BaseModel):
     event_type: str
     data: dict
     performed_by: str
+    performed_by_email: Optional[str] = None
     created_at: Optional[datetime] = None
+
+
+class AssignableUserResponse(BaseModel):
+    id: str
+    email: str
+    name: Optional[str] = None
 
 
 class ImportRowErrorResponse(BaseModel):

@@ -4,6 +4,7 @@ export type UserRole = 'super_admin' | 'admin' | 'technician' | 'employee';
 export interface User {
   id: string;
   email: string;
+  name?: string | null;
   role: UserRole;
   company_id: string | null;
   department_id: string | null;
@@ -65,6 +66,7 @@ export interface Asset {
   serial_number: string;
   status: AssetStatus;
   assigned_to: string | null;
+  assigned_to_email?: string | null;
   department_id: string | null;
   purchase_date: string | null;
   warranty_expiration: string | null;
@@ -79,7 +81,14 @@ export interface AssetEvent {
   event_type: string;
   data: Record<string, unknown>;
   performed_by: string;
+  performed_by_email?: string | null;
   created_at: string;
+}
+
+export interface AssignableUser {
+  id: string;
+  email: string;
+  name?: string | null;
 }
 
 // Request
@@ -91,7 +100,9 @@ export interface ServiceRequest {
   id: string;
   company_id: string;
   created_by: string;
+  created_by_email?: string | null;
   assigned_to: string | null;
+  assigned_to_email?: string | null;
   type: RequestType;
   title: string;
   description: string;
@@ -108,7 +119,7 @@ export interface Comment {
   id: string;
   request_id: string;
   author_id: string;
-  author_email: string;
+  author_email?: string | null;
   body: string;
   created_at: string;
 }
@@ -117,6 +128,7 @@ export interface Note {
   id: string;
   request_id: string;
   author_id: string;
+  author_email?: string | null;
   body: string;
   created_at: string;
 }

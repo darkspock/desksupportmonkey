@@ -46,6 +46,15 @@ class UserRepository(UserRepositoryInterface):
         ).scalar_one_or_none()
         return self._to_entity(model) if model else None
 
+    def find_by_ids(self, user_ids: list[str]) -> dict[str, User]:
+        if not user_ids:
+            return {}
+        unique_ids = list(set(user_ids))
+        models = self.session.execute(
+            select(UserModel).where(UserModel.id.in_(unique_ids))
+        ).scalars().all()
+        return {m.id: self._to_entity(m) for m in models}
+
     def find_by_email(self, email: str) -> Optional[User]:
         model = self.session.execute(
             select(UserModel).where(UserModel.email == email.lower().strip())
