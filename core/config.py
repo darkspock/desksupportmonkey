@@ -53,6 +53,9 @@ class Settings(BaseSettings):
     SMTP_FROM_NAME: str = "DeskSupportMonkey"
     BREVO_API_KEY: str = ""
 
+    # Monitoring
+    SENTRY_DSN: str = ""
+
     # Frontend
     FRONTEND_URL: str = "http://localhost:5173"
     CORS_ORIGINS: str = ""

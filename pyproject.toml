@@ -34,6 +34,8 @@ dependencies = [
     "bcrypt>=4.0.0",
     # Email
     "httpx>=0.28.1",
+    # Monitoring
+    "sentry-sdk[fastapi]>=2.0.0",
 ]
 
 [project.optional-dependencies]
