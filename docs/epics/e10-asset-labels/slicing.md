@@ -9,7 +9,7 @@
 
 | # | Feature | Description | Depends | Status |
 |---|---------|-------------|---------|--------|
-| F0 | QR & Barcode Labels | Generate QR code (asset URL) and barcode (asset ID) on asset detail page with print functionality | - | Implemented |
+| F0 | QR & Barcode Labels | Generate QR code (asset URL) and barcode (asset ID) on asset detail page with print functionality | - | Done |
 
 ## Dependency Graph
 
