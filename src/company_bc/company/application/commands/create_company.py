@@ -72,12 +72,6 @@ class CreateCompanyCommandHandler:
             if existing_user:
                 raise UserAlreadyExistsError("User with this email already exists")
 
-            # Ensure admin's email domain is included in company domains
-            admin_domain = email.split("@")[1] if "@" in email else None
-            if admin_domain and admin_domain not in [d.lower().strip() for d in company.email_domains]:
-                company.email_domains.append(admin_domain)
-                self.company_repo.save_domains(company.id, company.email_domains)
-
             user = User.create(
                 email=email,
                 role=UserRole.ADMIN,

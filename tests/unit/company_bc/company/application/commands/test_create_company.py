@@ -77,6 +77,22 @@ class TestCreateCompanyCommand:
             )
         assert "taken.com" in str(exc_info.value)
 
+    def test_admin_domain_not_auto_added_to_company(self, handler):
+        handler.company_repo.find_by_name.return_value = None
+        handler.company_repo.find_domain.return_value = None
+        handler.user_repo.find_by_email.return_value = None
+
+        result = handler.handle(
+            CreateCompanyCommand(
+                name="New Corp",
+                email_domains=["foo.bar"],
+                admin_email="admin@gmail.com",
+            )
+        )
+
+        assert "gmail.com" not in result.email_domains
+        assert result.email_domains == ["foo.bar"]
+
     def test_admin_email_user_exists_raises(self, handler):
         handler.company_repo.find_by_name.return_value = None
         handler.company_repo.find_domain.return_value = None
