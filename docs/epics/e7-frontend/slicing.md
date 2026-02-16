@@ -6,16 +6,16 @@
 
 ## Features
 
-| # | Feature | Description | Depends |
-|---|---------|-------------|---------|
-| F0 | Project Setup | Vite + React + TS + Tailwind + routing + API client + auth context | - |
-| F1 | Auth Flow | Magic link request, verify, JWT storage, protected routes | F0 |
-| F2 | Layout & Navigation | App shell, sidebar, header, role-based menus, notification badge | F1 |
-| F3 | Employee Views | My Equipment, Submit Request, My Requests, Request Detail, Notifications | F2 |
-| F4 | Technician Views | Request Queue, Request Detail (assign/status/notes), Asset CRUD, CSV Import | F2 |
-| F5 | Admin Views | Dashboard (charts + alerts), User Management, Department Management, Reports | F2 |
-| F6 | Super Admin Views | Company list, create, edit, status management | F2 |
-| F7 | Real-Time | WebSocket connection, live notification badge, toast on new events | F2 |
+| # | Feature | Description | Depends | Status |
+|---|---------|-------------|---------|--------|
+| F0 | Project Setup | Vite + React + TS + Tailwind + routing + API client + auth context | - | Done |
+| F1 | Auth Flow | Magic link request, verify, JWT storage, protected routes | F0 | Done |
+| F2 | Layout & Navigation | App shell, sidebar, header, role-based menus, notification badge | F1 | Done |
+| F3 | Employee Views | My Equipment, Submit Request, My Requests, Request Detail, Notifications | F2 | Done |
+| F4 | Technician Views | Request Queue, Request Detail (assign/status/notes), Asset CRUD, CSV Import | F2 | Done |
+| F5 | Admin Views | Dashboard (charts + alerts), User Management, Department Management, Reports | F2 | Done |
+| F6 | Super Admin Views | Company list, create, edit, status management | F2 | Done |
+| F7 | Real-Time | WebSocket connection, live notification badge, toast on new events | F2 | Done |
 
 ## Dependency Graph
 

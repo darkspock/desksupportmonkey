@@ -8,11 +8,11 @@
 
 ## Feature Breakdown
 
-| Feature | Description | User Stories | Complexity |
-|---|---|---|---|
-| **F0** | Request Metrics + Dashboard Router | US-E5-001, US-E5-002, US-E5-004 | Medium-High |
-| **F1** | Asset Metrics + Alert Endpoints | US-E5-003, US-E5-005, US-E5-006 | Medium |
-| **F2** | SLA Breach Alerts | US-E5-007 | Low-Medium |
+| Feature | Description | User Stories | Complexity | Status |
+|---|---|---|---|---|
+| **F0** | Request Metrics + Dashboard Router | US-E5-001, US-E5-002, US-E5-004 | Medium-High | Done |
+| **F1** | Asset Metrics + Alert Endpoints | US-E5-003, US-E5-005, US-E5-006 | Medium | Done |
+| **F2** | SLA Breach Alerts | US-E5-007 | Low-Medium | Done |
 
 ---
 

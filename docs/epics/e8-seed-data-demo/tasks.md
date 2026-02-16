@@ -37,11 +37,11 @@ Create a standalone Python script that populates the database with realistic dem
 - Reports per company: 3 (one per type)
 
 **Acceptance Criteria:**
-- [ ] Script runs without errors on a fresh database (after migrations)
-- [ ] Script is idempotent (can run multiple times safely)
-- [ ] All foreign key relationships are valid
-- [ ] Data covers all enum values (asset types, request statuses, priorities, etc.)
-- [ ] Date ranges span last 90 days for realistic analytics
+- [x] Script runs without errors on a fresh database (after migrations)
+- [x] Script is idempotent (can run multiple times safely)
+- [x] All foreign key relationships are valid
+- [x] Data covers all enum values (asset types, request statuses, priorities, etc.)
+- [x] Date ranges span last 90 days for realistic analytics
 
 ---
 
@@ -57,8 +57,8 @@ Create a standalone Python script that populates the database with realistic dem
 - `make demo-reset` — drops and recreates all tables, then seeds
 
 **Acceptance Criteria:**
-- [ ] `make seed` populates demo data
-- [ ] `make demo-reset` does a clean reset + seed
+- [x] `make seed` populates demo data
+- [x] `make demo-reset` does a clean reset + seed
 
 ---
 
@@ -73,6 +73,6 @@ Create a standalone Python script that populates the database with realistic dem
 Document how to start the demo and explore features per role.
 
 **Acceptance Criteria:**
-- [ ] Quick start instructions (docker, migrate, seed, start)
-- [ ] Login credentials for each role
-- [ ] Feature tour per role (employee, technician, admin, super admin)
+- [x] Quick start instructions (docker, migrate, seed, start)
+- [x] Login credentials for each role
+- [x] Feature tour per role (employee, technician, admin, super admin)

@@ -8,12 +8,12 @@
 
 ## Feature Breakdown
 
-| Feature | Description | User Stories | Complexity |
-|---|---|---|---|
-| **F0** | Request CRUD + State Machine | US-001, US-002, US-003, US-009 | High |
-| **F1** | Technician Queue + Assignment | US-004, US-005 | Medium |
-| **F2** | Comments + Internal Notes | US-006, US-007 | Medium |
-| **F3** | My Requests (Employee) | US-008 | Low |
+| Feature | Description | User Stories | Complexity | Status |
+|---|---|---|---|---|
+| **F0** | Request CRUD + State Machine | US-001, US-002, US-003, US-009 | High | Done |
+| **F1** | Technician Queue + Assignment | US-004, US-005 | Medium | Done |
+| **F2** | Comments + Internal Notes | US-006, US-007 | Medium | Done |
+| **F3** | My Requests (Employee) | US-008 | Low | Done |
 
 ---
 

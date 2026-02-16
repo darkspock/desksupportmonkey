@@ -33,11 +33,11 @@ Update the main Celery application configuration with proper app name, Redis bro
 **File:** `core/celery.py`
 
 **Acceptance Criteria:**
-- [ ] App name set to "desksupportmonkey"
-- [ ] Redis broker URL configured from settings.redis
-- [ ] Task routes configured: core.tasks.* -> reports queue
-- [ ] Beat schedule configured: cleanup-magic-links runs daily with days=7 kwargs
-- [ ] Autodiscover_tasks includes 'core.tasks'
+- [x] App name set to "desksupportmonkey"
+- [x] Redis broker URL configured from settings.redis
+- [x] Task routes configured: core.tasks.* -> reports queue
+- [x] Beat schedule configured: cleanup-magic-links runs daily with days=7 kwargs
+- [x] Autodiscover_tasks includes 'core.tasks'
 
 ---
 
@@ -53,9 +53,9 @@ Create a simple ping task for health checking the Celery worker infrastructure.
 **File:** `core/tasks/ping.py`
 
 **Acceptance Criteria:**
-- [ ] Task decorated with @celery_app.task
-- [ ] Task returns "pong" string
-- [ ] Task can be called asynchronously with .delay() or .apply_async()
+- [x] Task decorated with @celery_app.task
+- [x] Task returns "pong" string
+- [x] Task can be called asynchronously with .delay() or .apply_async()
 
 ---
 
@@ -71,11 +71,11 @@ Create a scheduled task to delete expired magic links from the database. Task ac
 **File:** `core/tasks/cleanup.py`
 
 **Acceptance Criteria:**
-- [ ] Task decorated with @celery_app.task
-- [ ] Accepts days parameter (integer)
-- [ ] Deletes magic_links records older than N days
-- [ ] Returns count of deleted records
-- [ ] Logs cleanup operation with count
+- [x] Task decorated with @celery_app.task
+- [x] Accepts days parameter (integer)
+- [x] Deletes magic_links records older than N days
+- [x] Returns count of deleted records
+- [x] Logs cleanup operation with count
 
 ---
 
@@ -91,11 +91,11 @@ Define abstract base class for storage service operations to enable future imple
 **File:** `core/storage.py`
 
 **Acceptance Criteria:**
-- [ ] StorageServiceInterface class inherits from ABC
-- [ ] Abstract method: upload(file_path: str, key: str) -> str
-- [ ] Abstract method: download(key: str) -> bytes
-- [ ] Abstract method: get_signed_url(key: str, expiration: int) -> str
-- [ ] Abstract method: ensure_bucket(bucket_name: str) -> bool
+- [x] StorageServiceInterface class inherits from ABC
+- [x] Abstract method: upload(file_path: str, key: str) -> str
+- [x] Abstract method: download(key: str) -> bytes
+- [x] Abstract method: get_signed_url(key: str, expiration: int) -> str
+- [x] Abstract method: ensure_bucket(bucket_name: str) -> bool
 
 ---
 
@@ -111,13 +111,13 @@ Implement S3-compatible storage service using boto3 client. Service should read 
 **File:** `core/storage.py`
 
 **Acceptance Criteria:**
-- [ ] S3StorageService class implements StorageServiceInterface
-- [ ] Initializes boto3 client with settings.s3 configuration
-- [ ] upload() uploads file to bucket and returns object key
-- [ ] download() retrieves object bytes from bucket
-- [ ] get_signed_url() generates presigned URL with expiration
-- [ ] ensure_bucket() creates bucket if not exists, returns success bool
-- [ ] Handles boto3 exceptions appropriately
+- [x] S3StorageService class implements StorageServiceInterface
+- [x] Initializes boto3 client with settings.s3 configuration
+- [x] upload() uploads file to bucket and returns object key
+- [x] download() retrieves object bytes from bucket
+- [x] get_signed_url() generates presigned URL with expiration
+- [x] ensure_bucket() creates bucket if not exists, returns success bool
+- [x] Handles boto3 exceptions appropriately
 
 ---
 
@@ -133,9 +133,9 @@ Create package init file for core.tasks module to enable autodiscovery by Celery
 **File:** `core/tasks/__init__.py`
 
 **Acceptance Criteria:**
-- [ ] File exists as Python package marker
-- [ ] Imports ping and cleanup tasks for registration
-- [ ] Exports task names in __all__ list
+- [x] File exists as Python package marker
+- [x] Imports ping and cleanup tasks for registration
+- [x] Exports task names in __all__ list
 
 ---
 
@@ -153,10 +153,10 @@ Ensure reports bucket exists on application startup by calling ensure_bucket() w
 **File:** `app.py`
 
 **Acceptance Criteria:**
-- [ ] Import S3StorageService in app.py startup section
-- [ ] Call ensure_bucket(settings.s3.S3_REPORTS_BUCKET) during startup
-- [ ] Log successful bucket creation/verification
-- [ ] Handle exceptions gracefully with appropriate error logging
+- [x] Import S3StorageService in app.py startup section
+- [x] Call ensure_bucket(settings.s3.S3_REPORTS_BUCKET) during startup
+- [x] Log successful bucket creation/verification
+- [x] Handle exceptions gracefully with appropriate error logging
 
 ---
 
@@ -174,10 +174,10 @@ Test that ping task can be called synchronously and asynchronously, and returns 
 **File:** `tests/integration/test_celery_tasks.py`
 
 **Acceptance Criteria:**
-- [ ] Test calls ping.delay() and waits for result
-- [ ] Asserts result equals "pong"
-- [ ] Test verifies task executes successfully
-- [ ] Uses appropriate fixtures for Celery test configuration
+- [x] Test calls ping.delay() and waits for result
+- [x] Asserts result equals "pong"
+- [x] Test verifies task executes successfully
+- [x] Uses appropriate fixtures for Celery test configuration
 
 ---
 
@@ -193,12 +193,12 @@ Test S3StorageService operations including upload, download, signed URL generati
 **File:** `tests/integration/test_s3_storage.py`
 
 **Acceptance Criteria:**
-- [ ] Test ensure_bucket() creates bucket successfully
-- [ ] Test upload() stores file and returns key
-- [ ] Test download() retrieves correct file contents
-- [ ] Test get_signed_url() returns valid URL
-- [ ] Uses test bucket (separate from production)
-- [ ] Cleans up test objects after test completion
+- [x] Test ensure_bucket() creates bucket successfully
+- [x] Test upload() stores file and returns key
+- [x] Test download() retrieves correct file contents
+- [x] Test get_signed_url() returns valid URL
+- [x] Uses test bucket (separate from production)
+- [x] Cleans up test objects after test completion
 
 ---
 
@@ -214,10 +214,10 @@ Test that application startup correctly creates reports bucket.
 **File:** `tests/integration/test_app_startup.py`
 
 **Acceptance Criteria:**
-- [ ] Test mocks S3StorageService.ensure_bucket()
-- [ ] Test verifies ensure_bucket() called with correct bucket name
-- [ ] Test verifies startup completes without errors
-- [ ] Test handles ensure_bucket() failure scenarios
+- [x] Test mocks S3StorageService.ensure_bucket()
+- [x] Test verifies ensure_bucket() called with correct bucket name
+- [x] Test verifies startup completes without errors
+- [x] Test handles ensure_bucket() failure scenarios
 
 ---
 
@@ -235,10 +235,10 @@ Remove duplicate Celery configuration file to consolidate configuration in core/
 **File:** `core/celery_app.py`
 
 **Acceptance Criteria:**
-- [ ] File core/celery_app.py deleted
-- [ ] No imports reference core/celery_app anywhere in codebase
-- [ ] All Celery imports use core/celery instead
-- [ ] Application starts successfully without errors
+- [x] File core/celery_app.py deleted
+- [x] No imports reference core/celery_app anywhere in codebase
+- [x] All Celery imports use core/celery instead
+- [x] Application starts successfully without errors
 
 ---
 

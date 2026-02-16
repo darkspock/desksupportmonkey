@@ -4,15 +4,15 @@
 
 | # | Epic | Description | Priority | Status |
 |---|---|---|---|---|
-| E0 | Foundation | Project setup, DB, auth, multi-tenancy base | Critical | Pending |
-| E1 | Company Management | Super admin: create companies, assign admins, manage domains | Critical | Pending |
-| E2 | Asset Inventory | Asset CRUD, assignment, history (event sourcing), CSV import | High | Pending |
-| E3 | Service Requests | Employee portal, request state machine, technician queue, comments | High | Pending |
-| E4 | Real-time & Notifications | WebSockets, in-app notifications, pub/sub events | Medium | Pending |
-| E5 | Admin Dashboard | Metrics, charts, alerts, user management | Medium | Pending |
-| E6 | Report Generation | Celery async tasks, PDF generation, MinIO storage | Medium | Pending |
-| E7 | Frontend | React app, routing, layouts, pages for all modules | High | Pending |
-| E8 | Seed Data & Demo | Demo data, demo script, Docker Compose polish | Low | Pending |
+| E0 | Foundation | Project setup, DB, auth, multi-tenancy base | Critical | Done |
+| E1 | Company Management | Super admin: create companies, assign admins, manage domains | Critical | Done |
+| E2 | Asset Inventory | Asset CRUD, assignment, history (event sourcing), CSV import | High | Done |
+| E3 | Service Requests | Employee portal, request state machine, technician queue, comments | High | Done |
+| E4 | Real-time & Notifications | WebSockets, in-app notifications, pub/sub events | Medium | Done |
+| E5 | Admin Dashboard | Metrics, charts, alerts, user management | Medium | Done |
+| E6 | Report Generation | Celery async tasks, PDF generation, MinIO storage | Medium | Done |
+| E7 | Frontend | React app, routing, layouts, pages for all modules | High | Done |
+| E8 | Seed Data & Demo | Demo data, demo script, Docker Compose polish | Low | Done |
 
 ---
 

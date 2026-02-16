@@ -8,11 +8,11 @@
 
 ## Feature Breakdown
 
-| Feature | Description | User Stories | Complexity |
-|---|---|---|---|
-| **F0** | Report Model + API Endpoints | US-E6-001, US-E6-002 | Medium |
-| **F1** | PDF Generation + Celery Task | US-E6-003, US-E6-004, US-E6-005, US-E6-006 | High |
-| **F2** | Notification + Download Integration | US-E6-002 (download), US-E6-006 | Low-Medium |
+| Feature | Description | User Stories | Complexity | Status |
+|---|---|---|---|---|
+| **F0** | Report Model + API Endpoints | US-E6-001, US-E6-002 | Medium | Done |
+| **F1** | PDF Generation + Celery Task | US-E6-003, US-E6-004, US-E6-005, US-E6-006 | High | Done |
+| **F2** | Notification + Download Integration | US-E6-002 (download), US-E6-006 | Low-Medium | Done |
 
 ---
 

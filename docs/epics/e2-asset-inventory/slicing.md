@@ -8,11 +8,11 @@
 
 ## Feature Breakdown
 
-| Feature | Description | User Stories | Complexity |
-|---|---|---|---|
-| **F0** | Asset CRUD + Event Sourcing | US-001, US-002, US-004 | High |
-| **F1** | Asset Assignment + My Equipment | US-003, US-007 | Medium |
-| **F2** | Search, Filters + CSV Import | US-005, US-006 | Medium |
+| Feature | Description | User Stories | Complexity | Status |
+|---|---|---|---|---|
+| **F0** | Asset CRUD + Event Sourcing | US-001, US-002, US-004 | High | Done |
+| **F1** | Asset Assignment + My Equipment | US-003, US-007 | Medium | Done |
+| **F2** | Search, Filters + CSV Import | US-005, US-006 | Medium | Done |
 
 ---
 

@@ -35,13 +35,13 @@ Create reusable mixins for model identity and timestamps. ULIDMixin provides uni
 **File:** `src/core/mixins.py`
 
 **Acceptance Criteria:**
-- [ ] ULIDMixin class implemented with `id` as primary key (String(26))
-- [ ] ULID generation uses `ulid.new().str` as default factory
-- [ ] TimestampMixin class implemented with `created_at` and `updated_at` fields
-- [ ] Both fields use `func.now()` with timezone awareness
-- [ ] `updated_at` has `onupdate=func.now()` for automatic updates
-- [ ] Both mixins inherit from proper SQLAlchemy declarative base
-- [ ] Type hints included for all fields
+- [x] ULIDMixin class implemented with `id` as primary key (String(26))
+- [x] ULID generation uses `ulid.new().str` as default factory
+- [x] TimestampMixin class implemented with `created_at` and `updated_at` fields
+- [x] Both fields use `func.now()` with timezone awareness
+- [x] `updated_at` has `onupdate=func.now()` for automatic updates
+- [x] Both mixins inherit from proper SQLAlchemy declarative base
+- [x] Type hints included for all fields
 
 ---
 
@@ -62,17 +62,17 @@ Implement three core domain models: CompanyModel for tenant isolation, UserModel
 - `src/auth_bc/magic_link/infrastructure/models.py`
 
 **Acceptance Criteria:**
-- [ ] CompanyModel created with fields: name (String(255), not null), subdomain (String(63), unique, not null), is_active (Boolean, default True)
-- [ ] CompanyModel uses ULIDMixin and TimestampMixin
-- [ ] UserModel created with fields: company_id (FK to companies.id), email (String(255), not null), full_name (String(255), not null), role (Enum: OWNER/ADMIN/AGENT), is_active (Boolean, default True)
-- [ ] UserModel uses ULIDMixin and TimestampMixin
-- [ ] UserModel has relationship to CompanyModel (back_populates)
-- [ ] MagicLinkModel created with fields: user_id (FK to users.id), token (String(64), unique, not null), expires_at (DateTime(timezone=True), not null), used_at (DateTime(timezone=True), nullable)
-- [ ] MagicLinkModel uses ULIDMixin and TimestampMixin
-- [ ] MagicLinkModel has relationship to UserModel
-- [ ] All foreign keys have proper CASCADE constraints
-- [ ] All models have __tablename__ defined
-- [ ] Type hints included for all fields and relationships
+- [x] CompanyModel created with fields: name (String(255), not null), subdomain (String(63), unique, not null), is_active (Boolean, default True)
+- [x] CompanyModel uses ULIDMixin and TimestampMixin
+- [x] UserModel created with fields: company_id (FK to companies.id), email (String(255), not null), full_name (String(255), not null), role (Enum: OWNER/ADMIN/AGENT), is_active (Boolean, default True)
+- [x] UserModel uses ULIDMixin and TimestampMixin
+- [x] UserModel has relationship to CompanyModel (back_populates)
+- [x] MagicLinkModel created with fields: user_id (FK to users.id), token (String(64), unique, not null), expires_at (DateTime(timezone=True), not null), used_at (DateTime(timezone=True), nullable)
+- [x] MagicLinkModel uses ULIDMixin and TimestampMixin
+- [x] MagicLinkModel has relationship to UserModel
+- [x] All foreign keys have proper CASCADE constraints
+- [x] All models have __tablename__ defined
+- [x] Type hints included for all fields and relationships
 
 ### TASK-F0-003: Create Initial Database Migration
 
@@ -86,19 +86,19 @@ Generate Alembic migration for all three tables with proper indexes and foreign 
 **File:** `src/infrastructure/database/migrations/versions/001_initial_schema.py`
 
 **Acceptance Criteria:**
-- [ ] Migration creates `companies` table with all fields from CompanyModel
-- [ ] Unique index on companies.subdomain
-- [ ] Migration creates `users` table with all fields from UserModel
-- [ ] Foreign key from users.company_id to companies.id with CASCADE on delete
-- [ ] Composite unique index on (company_id, email) in users table
-- [ ] Index on users.email for login lookups
-- [ ] Migration creates `magic_links` table with all fields from MagicLinkModel
-- [ ] Foreign key from magic_links.user_id to users.id with CASCADE on delete
-- [ ] Unique index on magic_links.token
-- [ ] Index on (token, expires_at) for validation queries
-- [ ] Index on (user_id, used_at) for audit queries
-- [ ] Migration includes proper downgrade() function to drop all tables and indexes
-- [ ] Migration tested with upgrade and downgrade commands
+- [x] Migration creates `companies` table with all fields from CompanyModel
+- [x] Unique index on companies.subdomain
+- [x] Migration creates `users` table with all fields from UserModel
+- [x] Foreign key from users.company_id to companies.id with CASCADE on delete
+- [x] Composite unique index on (company_id, email) in users table
+- [x] Index on users.email for login lookups
+- [x] Migration creates `magic_links` table with all fields from MagicLinkModel
+- [x] Foreign key from magic_links.user_id to users.id with CASCADE on delete
+- [x] Unique index on magic_links.token
+- [x] Index on (token, expires_at) for validation queries
+- [x] Index on (user_id, used_at) for audit queries
+- [x] Migration includes proper downgrade() function to drop all tables and indexes
+- [x] Migration tested with upgrade and downgrade commands
 
 ---
 
@@ -116,14 +116,14 @@ Define standard Pydantic response schemas for API consistency. Includes success 
 **File:** `src/adapters/http/schemas/responses.py`
 
 **Acceptance Criteria:**
-- [ ] SuccessResponse[T] generic schema with data field
-- [ ] PaginationMeta schema with total, page, per_page, total_pages fields
-- [ ] ListResponse[T] generic schema with data (list) and meta (PaginationMeta) fields
-- [ ] ErrorDetail schema with field (optional) and message fields
-- [ ] ErrorResponse schema with type, title, status, detail, errors (list of ErrorDetail, optional)
-- [ ] All schemas use Pydantic v2 ConfigDict with from_attributes=True
-- [ ] Type hints use proper Generic typing
-- [ ] Schemas are JSON-serializable
+- [x] SuccessResponse[T] generic schema with data field
+- [x] PaginationMeta schema with total, page, per_page, total_pages fields
+- [x] ListResponse[T] generic schema with data (list) and meta (PaginationMeta) fields
+- [x] ErrorDetail schema with field (optional) and message fields
+- [x] ErrorResponse schema with type, title, status, detail, errors (list of ErrorDetail, optional)
+- [x] All schemas use Pydantic v2 ConfigDict with from_attributes=True
+- [x] Type hints use proper Generic typing
+- [x] Schemas are JSON-serializable
 
 ### TASK-F0-005: Create Error Handler Middleware
 
@@ -137,14 +137,14 @@ Implement FastAPI middleware to catch exceptions and transform them into standar
 **File:** `src/adapters/http/middleware/error_handler.py`
 
 **Acceptance Criteria:**
-- [ ] Middleware function registered with FastAPI app
-- [ ] Catches HTTPException and returns ErrorResponse with proper status code
-- [ ] Catches RequestValidationError (422) and maps to ErrorResponse with field-level errors
-- [ ] Catches generic Exception (500) and returns sanitized ErrorResponse
-- [ ] Logs all 500 errors with full traceback
-- [ ] Does not expose internal error details in production
-- [ ] Returns proper content-type: application/json
-- [ ] Uses RFC 9457 type URIs (e.g., about:blank for generic errors)
+- [x] Middleware function registered with FastAPI app
+- [x] Catches HTTPException and returns ErrorResponse with proper status code
+- [x] Catches RequestValidationError (422) and maps to ErrorResponse with field-level errors
+- [x] Catches generic Exception (500) and returns sanitized ErrorResponse
+- [x] Logs all 500 errors with full traceback
+- [x] Does not expose internal error details in production
+- [x] Returns proper content-type: application/json
+- [x] Uses RFC 9457 type URIs (e.g., about:blank for generic errors)
 
 ### TASK-F0-006: Create Health Check Endpoint
 
@@ -158,13 +158,13 @@ Implement health check endpoint for monitoring and load balancer health checks. 
 **File:** `src/adapters/http/api/health.py`
 
 **Acceptance Criteria:**
-- [ ] GET /health endpoint returns 200 with status, version, database status
-- [ ] Database check executes simple SELECT 1 query
-- [ ] Returns 503 if database is unreachable
-- [ ] Response uses SuccessResponse schema
-- [ ] Endpoint does not require authentication
-- [ ] Response includes timestamp
-- [ ] Version read from environment or hardcoded placeholder
+- [x] GET /health endpoint returns 200 with status, version, database status
+- [x] Database check executes simple SELECT 1 query
+- [x] Returns 503 if database is unreachable
+- [x] Response uses SuccessResponse schema
+- [x] Endpoint does not require authentication
+- [x] Response includes timestamp
+- [x] Version read from environment or hardcoded placeholder
 
 ### TASK-F0-007: Create FastAPI Application Factory
 
@@ -178,15 +178,15 @@ Implement app factory pattern for FastAPI application initialization. Configures
 **File:** `src/app.py`
 
 **Acceptance Criteria:**
-- [ ] create_app() factory function returns configured FastAPI instance
-- [ ] CORS middleware configured with allowed origins from environment
-- [ ] Error handler middleware registered
-- [ ] Health router included with /health prefix
-- [ ] Startup event handler verifies database connection
-- [ ] Startup handler logs successful initialization
-- [ ] App metadata includes title, description, version
-- [ ] Database session dependency configured
-- [ ] Graceful error handling if database unavailable on startup
+- [x] create_app() factory function returns configured FastAPI instance
+- [x] CORS middleware configured with allowed origins from environment
+- [x] Error handler middleware registered
+- [x] Health router included with /health prefix
+- [x] Startup event handler verifies database connection
+- [x] Startup handler logs successful initialization
+- [x] App metadata includes title, description, version
+- [x] Database session dependency configured
+- [x] Graceful error handling if database unavailable on startup
 
 ---
 
@@ -204,12 +204,12 @@ Unit tests for mixins to ensure ULID generation and timestamp behavior work corr
 **File:** `tests/unit/core/test_mixins.py`
 
 **Acceptance Criteria:**
-- [ ] Test ULIDMixin generates valid 26-character ULID
-- [ ] Test ULIDMixin IDs are unique across instances
-- [ ] Test TimestampMixin sets created_at on instantiation
-- [ ] Test TimestampMixin sets updated_at on instantiation
-- [ ] Test updated_at changes on record update (integration with SQLAlchemy)
-- [ ] All tests use pytest fixtures for database session
+- [x] Test ULIDMixin generates valid 26-character ULID
+- [x] Test ULIDMixin IDs are unique across instances
+- [x] Test TimestampMixin sets created_at on instantiation
+- [x] Test TimestampMixin sets updated_at on instantiation
+- [x] Test updated_at changes on record update (integration with SQLAlchemy)
+- [x] All tests use pytest fixtures for database session
 
 ### TASK-F0-009: Create Infrastructure Layer Tests
 
@@ -225,16 +225,16 @@ Integration tests for SQLAlchemy models and database migration. Verifies relatio
 - `tests/integration/infrastructure/test_migrations.py`
 
 **Acceptance Criteria:**
-- [ ] Test CompanyModel CRUD operations
-- [ ] Test UserModel CRUD with company relationship
-- [ ] Test MagicLinkModel CRUD with user relationship
-- [ ] Test unique constraint on companies.subdomain
-- [ ] Test unique constraint on (company_id, email) in users
-- [ ] Test cascade delete from company to users
-- [ ] Test cascade delete from user to magic_links
-- [ ] Test migration applies cleanly to empty database
-- [ ] Test migration downgrades without errors
-- [ ] All tests use pytest fixtures with transaction rollback
+- [x] Test CompanyModel CRUD operations
+- [x] Test UserModel CRUD with company relationship
+- [x] Test MagicLinkModel CRUD with user relationship
+- [x] Test unique constraint on companies.subdomain
+- [x] Test unique constraint on (company_id, email) in users
+- [x] Test cascade delete from company to users
+- [x] Test cascade delete from user to magic_links
+- [x] Test migration applies cleanly to empty database
+- [x] Test migration downgrades without errors
+- [x] All tests use pytest fixtures with transaction rollback
 
 ### TASK-F0-010: Create HTTP Layer Tests
 
@@ -251,17 +251,17 @@ Integration tests for HTTP layer including response schemas, error handling, hea
 - `tests/unit/http/test_response_schemas.py`
 
 **Acceptance Criteria:**
-- [ ] Test response schemas serialize correctly
-- [ ] Test error handler returns 400 for bad requests
-- [ ] Test error handler returns 404 for not found
-- [ ] Test error handler returns 422 for validation errors with field details
-- [ ] Test error handler returns 500 for unhandled exceptions
-- [ ] Test error handler does not leak internal errors
-- [ ] Test GET /health returns 200 with proper structure
-- [ ] Test GET /health returns 503 when database unavailable
-- [ ] Test FastAPI app initializes successfully
-- [ ] Test CORS headers present in responses
-- [ ] All tests use TestClient from FastAPI
+- [x] Test response schemas serialize correctly
+- [x] Test error handler returns 400 for bad requests
+- [x] Test error handler returns 404 for not found
+- [x] Test error handler returns 422 for validation errors with field details
+- [x] Test error handler returns 500 for unhandled exceptions
+- [x] Test error handler does not leak internal errors
+- [x] Test GET /health returns 200 with proper structure
+- [x] Test GET /health returns 503 when database unavailable
+- [x] Test FastAPI app initializes successfully
+- [x] Test CORS headers present in responses
+- [x] All tests use TestClient from FastAPI
 
 ---
 
@@ -279,14 +279,14 @@ Create .env.example file with all required environment variables for bootstrappi
 **File:** `.env.example`
 
 **Acceptance Criteria:**
-- [ ] DATABASE_URL with PostgreSQL example
-- [ ] CORS_ORIGINS with localhost examples
-- [ ] APP_ENV (development/staging/production)
-- [ ] APP_VERSION placeholder
-- [ ] LOG_LEVEL configuration
-- [ ] All variables have descriptive comments
-- [ ] Sensitive values use placeholder format
-- [ ] File includes setup instructions at top
+- [x] DATABASE_URL with PostgreSQL example
+- [x] CORS_ORIGINS with localhost examples
+- [x] APP_ENV (development/staging/production)
+- [x] APP_VERSION placeholder
+- [x] LOG_LEVEL configuration
+- [x] All variables have descriptive comments
+- [x] Sensitive values use placeholder format
+- [x] File includes setup instructions at top
 
 ---
 

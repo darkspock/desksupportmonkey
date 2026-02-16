@@ -8,12 +8,12 @@
 
 ## Feature Breakdown
 
-| Feature | Description | User Stories | Complexity |
-|---|---|---|---|
-| **F0** | Notification Entity + Storage + Endpoints | US-003, US-004 | Medium |
-| **F1** | Event Bus + Target Resolver | US-002, US-006 | High |
-| **F2** | Event Emission from Request Commands | US-002 (integration) | Medium |
-| **F3** | WebSocket + Real-Time Push | US-001, US-005 | High |
+| Feature | Description | User Stories | Complexity | Status |
+|---|---|---|---|---|
+| **F0** | Notification Entity + Storage + Endpoints | US-003, US-004 | Medium | Done |
+| **F1** | Event Bus + Target Resolver | US-002, US-006 | High | Done |
+| **F2** | Event Emission from Request Commands | US-002 (integration) | Medium | Done |
+| **F3** | WebSocket + Real-Time Push | US-001, US-005 | High | Done |
 
 ---
 

@@ -28,11 +28,11 @@ F1 and F2 both depend on F0 but are independent of each other. They can be built
 
 ## Features Summary
 
-| # | Feature | Dependencies | Value Delivered | Complexity |
-|---|---|---|---|---|
-| F0 | Bootstrapping | None | App boots, DB works, API responds, response standards | M |
-| F1 | Authentication & Authorization | F0 | Magic link login, JWT, RBAC, multi-tenancy, super admin bootstrap | L |
-| F2 | Async Infrastructure | F0 | Celery worker runs, MinIO stores files, magic link cleanup task | S |
+| # | Feature | Dependencies | Value Delivered | Complexity | Status |
+|---|---|---|---|---|---|
+| F0 | Bootstrapping | None | App boots, DB works, API responds, response standards | M | Done |
+| F1 | Authentication & Authorization | F0 | Magic link login, JWT, RBAC, multi-tenancy, super admin bootstrap | L | Done |
+| F2 | Async Infrastructure | F0 | Celery worker runs, MinIO stores files, magic link cleanup task | S | Done |
 
 ---
 

@@ -35,10 +35,10 @@ Create the UserRole enumeration with hierarchical role definitions for the syste
 **File:** `src/auth_bc/user/domain/enums.py`
 
 **Acceptance Criteria:**
-- [ ] Enum contains SUPER_ADMIN, ADMIN, TECHNICIAN, EMPLOYEE values
-- [ ] Each enum value has appropriate string representation
-- [ ] Enum is importable and usable in other modules
-- [ ] Documentation includes role hierarchy description
+- [x] Enum contains SUPER_ADMIN, ADMIN, TECHNICIAN, EMPLOYEE values
+- [x] Each enum value has appropriate string representation
+- [x] Enum is importable and usable in other modules
+- [x] Documentation includes role hierarchy description
 
 ---
 
@@ -54,12 +54,12 @@ Implement the User domain entity with all required attributes and business metho
 **File:** `src/auth_bc/user/domain/entities.py`
 
 **Acceptance Criteria:**
-- [ ] Entity has id, email, name, role, company_id, is_active, created_at, updated_at attributes
-- [ ] Factory method create() validates email format and sets defaults
-- [ ] Method deactivate() sets is_active to False
-- [ ] Method change_role() updates role with validation
-- [ ] Entity is immutable except through defined methods
-- [ ] All business rules are enforced at entity level
+- [x] Entity has id, email, name, role, company_id, is_active, created_at, updated_at attributes
+- [x] Factory method create() validates email format and sets defaults
+- [x] Method deactivate() sets is_active to False
+- [x] Method change_role() updates role with validation
+- [x] Entity is immutable except through defined methods
+- [x] All business rules are enforced at entity level
 
 ---
 
@@ -75,13 +75,13 @@ Implement the MagicLink domain entity for passwordless authentication. Include t
 **File:** `src/auth_bc/magic_link/domain/entities.py`
 
 **Acceptance Criteria:**
-- [ ] Entity has id, email, token, expires_at, used_at, created_at attributes
-- [ ] Factory method create() generates secure random token
-- [ ] Factory method sets expiration to 15 minutes from creation
-- [ ] Method mark_used() sets used_at timestamp
-- [ ] Method is_expired() checks current time against expires_at
-- [ ] Method is_used() checks if used_at is set
-- [ ] Token generation uses cryptographically secure random
+- [x] Entity has id, email, token, expires_at, used_at, created_at attributes
+- [x] Factory method create() generates secure random token
+- [x] Factory method sets expiration to 15 minutes from creation
+- [x] Method mark_used() sets used_at timestamp
+- [x] Method is_expired() checks current time against expires_at
+- [x] Method is_used() checks if used_at is set
+- [x] Token generation uses cryptographically secure random
 
 ---
 
@@ -97,11 +97,11 @@ Define the repository interface for User entity persistence operations. This int
 **File:** `src/auth_bc/user/domain/repository.py`
 
 **Acceptance Criteria:**
-- [ ] Abstract save(user: User) -> User method defined
-- [ ] Abstract find_by_id(user_id: str) -> Optional[User] method defined
-- [ ] Abstract find_by_email(email: str) -> Optional[User] method defined
-- [ ] Interface uses proper type hints
-- [ ] Documentation describes expected behavior for each method
+- [x] Abstract save(user: User) -> User method defined
+- [x] Abstract find_by_id(user_id: str) -> Optional[User] method defined
+- [x] Abstract find_by_email(email: str) -> Optional[User] method defined
+- [x] Interface uses proper type hints
+- [x] Documentation describes expected behavior for each method
 
 ---
 
@@ -117,12 +117,12 @@ Define the repository interface for MagicLink entity persistence operations incl
 **File:** `src/auth_bc/magic_link/domain/repository.py`
 
 **Acceptance Criteria:**
-- [ ] Abstract save(magic_link: MagicLink) -> MagicLink method defined
-- [ ] Abstract find_by_token(token: str) -> Optional[MagicLink] method defined
-- [ ] Abstract count_recent_by_email(email: str, minutes: int) -> int method defined
-- [ ] Abstract delete_older_than(minutes: int) -> int method defined
-- [ ] Interface uses proper type hints
-- [ ] Documentation describes rate limiting and cleanup behavior
+- [x] Abstract save(magic_link: MagicLink) -> MagicLink method defined
+- [x] Abstract find_by_token(token: str) -> Optional[MagicLink] method defined
+- [x] Abstract count_recent_by_email(email: str, minutes: int) -> int method defined
+- [x] Abstract delete_older_than(minutes: int) -> int method defined
+- [x] Interface uses proper type hints
+- [x] Documentation describes rate limiting and cleanup behavior
 
 ---
 
@@ -138,11 +138,11 @@ Implement domain service to determine company_id based on email domain. This ser
 **File:** `src/auth_bc/company_lookup/domain/service.py`
 
 **Acceptance Criteria:**
-- [ ] Method get_company_id_by_email_domain(email: str) -> Optional[str] implemented
-- [ ] Service queries company repository for domain match
-- [ ] Returns None if no company found for domain
-- [ ] Email domain extraction handles edge cases
-- [ ] Service is stateless and injectable
+- [x] Method get_company_id_by_email_domain(email: str) -> Optional[str] implemented
+- [x] Service queries company repository for domain match
+- [x] Returns None if no company found for domain
+- [x] Email domain extraction handles edge cases
+- [x] Service is stateless and injectable
 
 ---
 
@@ -165,10 +165,10 @@ Create proper Python package structure with __init__.py files for all domain mod
 - `src/auth_bc/company_lookup/domain/__init__.py`
 
 **Acceptance Criteria:**
-- [ ] All directories have __init__.py files
-- [ ] Key exports are defined in __init__.py where appropriate
-- [ ] Import paths work correctly from other modules
-- [ ] No circular import issues
+- [x] All directories have __init__.py files
+- [x] Key exports are defined in __init__.py where appropriate
+- [x] Import paths work correctly from other modules
+- [x] No circular import issues
 
 ---
 
@@ -186,13 +186,13 @@ Implement the concrete UserRepository using SQLAlchemy and PostgreSQL. Include p
 **File:** `src/auth_bc/user/infrastructure/repository.py`
 
 **Acceptance Criteria:**
-- [ ] Implements UserRepositoryInterface
-- [ ] save() method handles both insert and update operations
-- [ ] find_by_id() returns None if user not found
-- [ ] find_by_email() is case-insensitive
-- [ ] Proper exception handling for database errors
-- [ ] Uses tenant-aware queries (extends TenantBaseRepository)
-- [ ] Database session management is correct
+- [x] Implements UserRepositoryInterface
+- [x] save() method handles both insert and update operations
+- [x] find_by_id() returns None if user not found
+- [x] find_by_email() is case-insensitive
+- [x] Proper exception handling for database errors
+- [x] Uses tenant-aware queries (extends TenantBaseRepository)
+- [x] Database session management is correct
 
 ---
 
@@ -208,13 +208,13 @@ Implement the concrete MagicLinkRepository with efficient queries for token vali
 **File:** `src/auth_bc/magic_link/infrastructure/repository.py`
 
 **Acceptance Criteria:**
-- [ ] Implements MagicLinkRepositoryInterface
-- [ ] save() persists magic link with all attributes
-- [ ] find_by_token() uses indexed query for performance
-- [ ] count_recent_by_email() filters by time window correctly
-- [ ] delete_older_than() uses bulk delete for expired links
-- [ ] Proper exception handling and logging
-- [ ] Database session management is correct
+- [x] Implements MagicLinkRepositoryInterface
+- [x] save() persists magic link with all attributes
+- [x] find_by_token() uses indexed query for performance
+- [x] count_recent_by_email() filters by time window correctly
+- [x] delete_older_than() uses bulk delete for expired links
+- [x] Proper exception handling and logging
+- [x] Database session management is correct
 
 ---
 
@@ -230,14 +230,14 @@ Create email service abstraction and SMTP implementation for sending magic link 
 **File:** `core/email.py`
 
 **Acceptance Criteria:**
-- [ ] EmailService abstract interface defined with send_email() method
-- [ ] SMTPEmailService implements interface using smtplib
-- [ ] send_magic_link_email() method with proper HTML template
-- [ ] Configuration from environment variables (SMTP_HOST, SMTP_PORT, etc.)
-- [ ] Development mode prints to console instead of sending
-- [ ] Proper error handling for SMTP failures
-- [ ] Email content includes magic link with proper formatting
-- [ ] Configurable sender address and display name
+- [x] EmailService abstract interface defined with send_email() method
+- [x] SMTPEmailService implements interface using smtplib
+- [x] send_magic_link_email() method with proper HTML template
+- [x] Configuration from environment variables (SMTP_HOST, SMTP_PORT, etc.)
+- [x] Development mode prints to console instead of sending
+- [x] Proper error handling for SMTP failures
+- [x] Email content includes magic link with proper formatting
+- [x] Configurable sender address and display name
 
 ---
 
@@ -253,13 +253,13 @@ Implement JWT token creation and validation service using HS256 algorithm. Inclu
 **File:** `core/jwt.py`
 
 **Acceptance Criteria:**
-- [ ] create_token(user_id: str, email: str, role: str, company_id: str) -> str method
-- [ ] decode_token(token: str) -> dict method with validation
-- [ ] Uses JWT_SECRET from environment variables
-- [ ] Default token expiration of 24 hours (configurable)
-- [ ] Tokens include sub, email, role, company_id claims
-- [ ] Proper exception handling for invalid/expired tokens
-- [ ] Uses PyJWT library with HS256 algorithm
+- [x] create_token(user_id: str, email: str, role: str, company_id: str) -> str method
+- [x] decode_token(token: str) -> dict method with validation
+- [x] Uses JWT_SECRET from environment variables
+- [x] Default token expiration of 24 hours (configurable)
+- [x] Tokens include sub, email, role, company_id claims
+- [x] Proper exception handling for invalid/expired tokens
+- [x] Uses PyJWT library with HS256 algorithm
 
 ---
 
@@ -275,14 +275,14 @@ Create multi-tenancy support with context management and base repository class t
 **File:** `core/tenant.py`
 
 **Acceptance Criteria:**
-- [ ] TenantContext class stores current company_id in context var
-- [ ] set_tenant(company_id: str) method to set context
-- [ ] get_tenant() -> Optional[str] method to retrieve context
-- [ ] clear_tenant() method to reset context
-- [ ] TenantBaseRepository base class for tenant-aware repositories
-- [ ] Auto-filtering of queries by company_id when context is set
-- [ ] Super admin bypass (no filtering when role is SUPER_ADMIN)
-- [ ] Thread-safe context variable implementation
+- [x] TenantContext class stores current company_id in context var
+- [x] set_tenant(company_id: str) method to set context
+- [x] get_tenant() -> Optional[str] method to retrieve context
+- [x] clear_tenant() method to reset context
+- [x] TenantBaseRepository base class for tenant-aware repositories
+- [x] Auto-filtering of queries by company_id when context is set
+- [x] Super admin bypass (no filtering when role is SUPER_ADMIN)
+- [x] Thread-safe context variable implementation
 
 ---
 
@@ -300,15 +300,15 @@ Implement CQRS command to create and send magic link for authentication. Include
 **File:** `src/auth_bc/magic_link/application/commands/create_magic_link.py`
 
 **Acceptance Criteria:**
-- [ ] CreateMagicLinkCommand dataclass with email field
-- [ ] CreateMagicLinkCommandHandler class with handle() method
-- [ ] Rate limiting: max 3 links per 15 minutes per email
-- [ ] User validation: check user exists and is active
-- [ ] Company lookup by email domain
-- [ ] Create magic link entity with 15-minute expiration
-- [ ] Save to repository and send email via EmailService
-- [ ] Return success/failure result with appropriate error messages
-- [ ] Proper logging of command execution
+- [x] CreateMagicLinkCommand dataclass with email field
+- [x] CreateMagicLinkCommandHandler class with handle() method
+- [x] Rate limiting: max 3 links per 15 minutes per email
+- [x] User validation: check user exists and is active
+- [x] Company lookup by email domain
+- [x] Create magic link entity with 15-minute expiration
+- [x] Save to repository and send email via EmailService
+- [x] Return success/failure result with appropriate error messages
+- [x] Proper logging of command execution
 
 ---
 
@@ -324,16 +324,16 @@ Implement CQRS command to verify magic link token and generate JWT access token.
 **File:** `src/auth_bc/magic_link/application/commands/verify_magic_link.py`
 
 **Acceptance Criteria:**
-- [ ] VerifyMagicLinkCommand dataclass with token field
-- [ ] VerifyMagicLinkCommandHandler class with handle() method
-- [ ] Validate token exists in database
-- [ ] Check token is not expired using is_expired()
-- [ ] Check token is not already used using is_used()
-- [ ] Mark token as used via mark_used()
-- [ ] Load user by email and validate is_active
-- [ ] Generate JWT using JWTService with user claims
-- [ ] Return JWT token or validation error
-- [ ] Proper logging and error handling
+- [x] VerifyMagicLinkCommand dataclass with token field
+- [x] VerifyMagicLinkCommandHandler class with handle() method
+- [x] Validate token exists in database
+- [x] Check token is not expired using is_expired()
+- [x] Check token is not already used using is_used()
+- [x] Mark token as used via mark_used()
+- [x] Load user by email and validate is_active
+- [x] Generate JWT using JWTService with user claims
+- [x] Return JWT token or validation error
+- [x] Proper logging and error handling
 
 ---
 
@@ -349,13 +349,13 @@ Implement CQRS query to retrieve current user information from database using us
 **File:** `src/auth_bc/user/application/queries/get_current_user.py`
 
 **Acceptance Criteria:**
-- [ ] GetCurrentUserQuery dataclass with user_id field
-- [ ] GetCurrentUserQueryHandler class with handle() method
-- [ ] Find user by ID using UserRepository
-- [ ] Return user entity or None if not found
-- [ ] Validate user is_active
-- [ ] Proper error handling for database errors
-- [ ] Query is read-only (no mutations)
+- [x] GetCurrentUserQuery dataclass with user_id field
+- [x] GetCurrentUserQueryHandler class with handle() method
+- [x] Find user by ID using UserRepository
+- [x] Return user entity or None if not found
+- [x] Validate user is_active
+- [x] Proper error handling for database errors
+- [x] Query is read-only (no mutations)
 
 ---
 
@@ -375,10 +375,10 @@ Create proper Python package structure for application layer with clean exports 
 - `src/auth_bc/magic_link/application/commands/__init__.py`
 
 **Acceptance Criteria:**
-- [ ] All application directories have __init__.py files
-- [ ] Commands and queries are properly exported
-- [ ] Import paths work from HTTP layer
-- [ ] No circular import issues
+- [x] All application directories have __init__.py files
+- [x] Commands and queries are properly exported
+- [x] Import paths work from HTTP layer
+- [x] No circular import issues
 
 ---
 
@@ -394,12 +394,12 @@ Optionally create a simple command/query bus for decoupled handler invocation. T
 **File:** `core/cqrs.py`
 
 **Acceptance Criteria:**
-- [ ] CommandBus class with register_handler() and dispatch() methods
-- [ ] QueryBus class with register_handler() and dispatch() methods
-- [ ] Type-safe handler registration and invocation
-- [ ] Dependency injection support for handlers
-- [ ] Thread-safe handler registry
-- [ ] Or document direct handler instantiation pattern if bus not used
+- [x] CommandBus class with register_handler() and dispatch() methods
+- [x] QueryBus class with register_handler() and dispatch() methods
+- [x] Type-safe handler registration and invocation
+- [x] Dependency injection support for handlers
+- [x] Thread-safe handler registry
+- [x] Or document direct handler instantiation pattern if bus not used
 
 ---
 
@@ -417,13 +417,13 @@ Define Pydantic schemas for API request/response validation in authentication en
 **File:** `adapters/http/api/auth/schemas.py`
 
 **Acceptance Criteria:**
-- [ ] MagicLinkRequest schema with email field and validation
-- [ ] VerifyRequest schema with token field
-- [ ] TokenResponse schema with access_token and token_type fields
-- [ ] UserResponse schema with id, email, name, role, company_id fields
-- [ ] Proper Pydantic validators for email format
-- [ ] Schema examples for OpenAPI documentation
-- [ ] Exclude sensitive fields from UserResponse
+- [x] MagicLinkRequest schema with email field and validation
+- [x] VerifyRequest schema with token field
+- [x] TokenResponse schema with access_token and token_type fields
+- [x] UserResponse schema with id, email, name, role, company_id fields
+- [x] Proper Pydantic validators for email format
+- [x] Schema examples for OpenAPI documentation
+- [x] Exclude sensitive fields from UserResponse
 
 ---
 
@@ -439,15 +439,15 @@ Implement FastAPI dependencies for authentication and authorization including JW
 **File:** `adapters/http/api/auth/dependencies.py`
 
 **Acceptance Criteria:**
-- [ ] get_current_user() dependency extracts and validates JWT from Authorization header
-- [ ] Dependency uses JWTService to decode token
-- [ ] Dependency executes GetCurrentUserQuery to load user
-- [ ] Dependency sets TenantContext with user's company_id
-- [ ] require_role() dependency factory for role-based authorization
-- [ ] Role hierarchy enforced: super_admin > admin > technician > employee
-- [ ] Proper HTTP 401 for authentication failures
-- [ ] Proper HTTP 403 for authorization failures
-- [ ] Clear error messages in exceptions
+- [x] get_current_user() dependency extracts and validates JWT from Authorization header
+- [x] Dependency uses JWTService to decode token
+- [x] Dependency executes GetCurrentUserQuery to load user
+- [x] Dependency sets TenantContext with user's company_id
+- [x] require_role() dependency factory for role-based authorization
+- [x] Role hierarchy enforced: super_admin > admin > technician > employee
+- [x] Proper HTTP 401 for authentication failures
+- [x] Proper HTTP 403 for authorization failures
+- [x] Clear error messages in exceptions
 
 ---
 
@@ -463,15 +463,15 @@ Implement FastAPI router with all authentication endpoints including magic link 
 **File:** `adapters/http/api/auth/routers.py`
 
 **Acceptance Criteria:**
-- [ ] POST /api/v1/auth/magic-link endpoint creates magic link
-- [ ] POST /api/v1/auth/verify endpoint verifies token and returns JWT
-- [ ] GET /api/v1/auth/me endpoint returns current user (requires auth)
-- [ ] Proper request/response schema validation
-- [ ] HTTP status codes: 200 for success, 400 for validation, 401 for auth failures
-- [ ] OpenAPI documentation with descriptions and examples
-- [ ] Proper error handling with structured error responses
-- [ ] Instantiate and invoke command/query handlers
-- [ ] Router integrated into main FastAPI app
+- [x] POST /api/v1/auth/magic-link endpoint creates magic link
+- [x] POST /api/v1/auth/verify endpoint verifies token and returns JWT
+- [x] GET /api/v1/auth/me endpoint returns current user (requires auth)
+- [x] Proper request/response schema validation
+- [x] HTTP status codes: 200 for success, 400 for validation, 401 for auth failures
+- [x] OpenAPI documentation with descriptions and examples
+- [x] Proper error handling with structured error responses
+- [x] Instantiate and invoke command/query handlers
+- [x] Router integrated into main FastAPI app
 
 ---
 
@@ -487,14 +487,14 @@ Implement startup logic to automatically create super admin user if SUPER_ADMIN_
 **File:** `app.py` (or appropriate startup module)
 
 **Acceptance Criteria:**
-- [ ] Check for SUPER_ADMIN_EMAIL environment variable on startup
-- [ ] Query UserRepository for existing user with that email
-- [ ] If not exists, create User entity with SUPER_ADMIN role
-- [ ] Set company_id to None for super admin (company-agnostic)
-- [ ] Save user via UserRepository
-- [ ] Log creation or skip if already exists
-- [ ] Handle errors gracefully (log warning, don't crash app)
-- [ ] Only run once during application startup
+- [x] Check for SUPER_ADMIN_EMAIL environment variable on startup
+- [x] Query UserRepository for existing user with that email
+- [x] If not exists, create User entity with SUPER_ADMIN role
+- [x] Set company_id to None for super admin (company-agnostic)
+- [x] Save user via UserRepository
+- [x] Log creation or skip if already exists
+- [x] Handle errors gracefully (log warning, don't crash app)
+- [x] Only run once during application startup
 
 ---
 
@@ -514,10 +514,10 @@ Create proper Python package structure for HTTP/API layer.
 - `adapters/http/api/auth/__init__.py`
 
 **Acceptance Criteria:**
-- [ ] All adapter directories have __init__.py files
-- [ ] Router is exported for easy import in main app
-- [ ] Import paths work correctly
-- [ ] No circular import issues
+- [x] All adapter directories have __init__.py files
+- [x] Router is exported for easy import in main app
+- [x] Import paths work correctly
+- [x] No circular import issues
 
 ---
 
@@ -538,14 +538,14 @@ Write comprehensive unit tests for all domain entities, value objects, and domai
 - `tests/unit/auth_bc/company_lookup/domain/test_service.py`
 
 **Acceptance Criteria:**
-- [ ] Test User entity factory method and business methods
-- [ ] Test MagicLink entity token generation, expiration, and usage
-- [ ] Test CompanyDomainLookup service with various email domains
-- [ ] Test edge cases and validation errors
-- [ ] Test immutability of entities
-- [ ] 100% code coverage for domain layer
-- [ ] Use pytest fixtures for test data
-- [ ] Tests are fast and isolated (no database)
+- [x] Test User entity factory method and business methods
+- [x] Test MagicLink entity token generation, expiration, and usage
+- [x] Test CompanyDomainLookup service with various email domains
+- [x] Test edge cases and validation errors
+- [x] Test immutability of entities
+- [x] 100% code coverage for domain layer
+- [x] Use pytest fixtures for test data
+- [x] Tests are fast and isolated (no database)
 
 ---
 
@@ -566,14 +566,14 @@ Write integration tests for repositories, email service, JWT service, and tenant
 - `tests/integration/core/test_tenant.py`
 
 **Acceptance Criteria:**
-- [ ] Test UserRepository CRUD operations with real database
-- [ ] Test MagicLinkRepository queries and cleanup methods
-- [ ] Test EmailService with mock SMTP server
-- [ ] Test JWTService token creation and validation
-- [ ] Test TenantContext isolation between requests
-- [ ] Use pytest fixtures for database setup/teardown
-- [ ] Use transaction rollback for test isolation
-- [ ] Tests verify SQL queries are correct
+- [x] Test UserRepository CRUD operations with real database
+- [x] Test MagicLinkRepository queries and cleanup methods
+- [x] Test EmailService with mock SMTP server
+- [x] Test JWTService token creation and validation
+- [x] Test TenantContext isolation between requests
+- [x] Use pytest fixtures for database setup/teardown
+- [x] Use transaction rollback for test isolation
+- [x] Tests verify SQL queries are correct
 
 ---
 
@@ -592,14 +592,14 @@ Write unit tests for command and query handlers using mocked dependencies.
 - `tests/unit/auth_bc/user/application/queries/test_get_current_user.py`
 
 **Acceptance Criteria:**
-- [ ] Test CreateMagicLinkCommand handler with rate limiting scenarios
-- [ ] Test VerifyMagicLinkCommand handler with valid/expired/used tokens
-- [ ] Test GetCurrentUserQuery handler with existing/missing users
-- [ ] Mock all repository and service dependencies
-- [ ] Test error handling and validation logic
-- [ ] Test business rule enforcement
-- [ ] Use pytest-mock for mocking
-- [ ] Tests are fast and isolated
+- [x] Test CreateMagicLinkCommand handler with rate limiting scenarios
+- [x] Test VerifyMagicLinkCommand handler with valid/expired/used tokens
+- [x] Test GetCurrentUserQuery handler with existing/missing users
+- [x] Mock all repository and service dependencies
+- [x] Test error handling and validation logic
+- [x] Test business rule enforcement
+- [x] Use pytest-mock for mocking
+- [x] Tests are fast and isolated
 
 ---
 
@@ -617,16 +617,16 @@ Write end-to-end API tests for all authentication endpoints using TestClient.
 - `tests/e2e/api/auth/test_auth_flow.py`
 
 **Acceptance Criteria:**
-- [ ] Test POST /api/v1/auth/magic-link with valid/invalid emails
-- [ ] Test POST /api/v1/auth/verify with valid/expired/used tokens
-- [ ] Test GET /api/v1/auth/me with valid/invalid JWT
-- [ ] Test complete auth flow: request link -> verify -> access protected endpoint
-- [ ] Test authorization with different roles
-- [ ] Test tenant isolation (user can't access other company data)
-- [ ] Test rate limiting for magic link creation
-- [ ] Use FastAPI TestClient with test database
-- [ ] Tests verify HTTP status codes and response schemas
-- [ ] Clean up test data after each test
+- [x] Test POST /api/v1/auth/magic-link with valid/invalid emails
+- [x] Test POST /api/v1/auth/verify with valid/expired/used tokens
+- [x] Test GET /api/v1/auth/me with valid/invalid JWT
+- [x] Test complete auth flow: request link -> verify -> access protected endpoint
+- [x] Test authorization with different roles
+- [x] Test tenant isolation (user can't access other company data)
+- [x] Test rate limiting for magic link creation
+- [x] Use FastAPI TestClient with test database
+- [x] Tests verify HTTP status codes and response schemas
+- [x] Clean up test data after each test
 
 ---
 
@@ -646,16 +646,16 @@ Document all required environment variables and create .env.example file with se
 - `docs/configuration.md`
 
 **Acceptance Criteria:**
-- [ ] JWT_SECRET with random default for development
-- [ ] JWT_EXPIRATION_HOURS with default of 24
-- [ ] SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD
-- [ ] SMTP_FROM_EMAIL and SMTP_FROM_NAME
-- [ ] EMAIL_ENABLED (true/false for dev mode)
-- [ ] SUPER_ADMIN_EMAIL for auto-creation
-- [ ] DATABASE_URL for PostgreSQL connection
-- [ ] Clear comments explaining each variable
-- [ ] Sensitive values marked as "CHANGE_IN_PRODUCTION"
-- [ ] Documentation includes setup instructions
+- [x] JWT_SECRET with random default for development
+- [x] JWT_EXPIRATION_HOURS with default of 24
+- [x] SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD
+- [x] SMTP_FROM_EMAIL and SMTP_FROM_NAME
+- [x] EMAIL_ENABLED (true/false for dev mode)
+- [x] SUPER_ADMIN_EMAIL for auto-creation
+- [x] DATABASE_URL for PostgreSQL connection
+- [x] Clear comments explaining each variable
+- [x] Sensitive values marked as "CHANGE_IN_PRODUCTION"
+- [x] Documentation includes setup instructions
 
 ---
 
@@ -673,15 +673,15 @@ Create Alembic database migrations for users and magic_links tables with proper 
 - `migrations/versions/002_create_magic_links_table.py`
 
 **Acceptance Criteria:**
-- [ ] users table with all entity fields (id, email, name, role, company_id, is_active, created_at, updated_at)
-- [ ] Unique constraint on email (case-insensitive)
-- [ ] Index on company_id for tenant filtering
-- [ ] magic_links table with all entity fields (id, email, token, expires_at, used_at, created_at)
-- [ ] Unique index on token for fast lookup
-- [ ] Index on email and created_at for rate limiting queries
-- [ ] Proper foreign key constraints if needed
-- [ ] Down migrations that cleanly remove tables
-- [ ] Migrations are idempotent and reversible
+- [x] users table with all entity fields (id, email, name, role, company_id, is_active, created_at, updated_at)
+- [x] Unique constraint on email (case-insensitive)
+- [x] Index on company_id for tenant filtering
+- [x] magic_links table with all entity fields (id, email, token, expires_at, used_at, created_at)
+- [x] Unique index on token for fast lookup
+- [x] Index on email and created_at for rate limiting queries
+- [x] Proper foreign key constraints if needed
+- [x] Down migrations that cleanly remove tables
+- [x] Migrations are idempotent and reversible
 
 ---
 

@@ -28,11 +28,11 @@ F1 and F2 both depend on F0 but are independent of each other.
 
 ## Features Summary
 
-| # | Feature | Dependencies | Value Delivered | Complexity |
-|---|---|---|---|---|
-| F0 | Company CRUD + Email Domains | E0 | Companies exist, domain matching works, initial admin assigned | M |
-| F1 | Company Status + Auth Integration | F0 | Company lifecycle, auth respects status, security enforcement | M |
-| F2 | Departments + User Management | F0 | Full org structure, admin manages users and departments | L |
+| # | Feature | Dependencies | Value Delivered | Complexity | Status |
+|---|---|---|---|---|---|
+| F0 | Company CRUD + Email Domains | E0 | Companies exist, domain matching works, initial admin assigned | M | Done |
+| F1 | Company Status + Auth Integration | F0 | Company lifecycle, auth respects status, security enforcement | M | Done |
+| F2 | Departments + User Management | F0 | Full org structure, admin manages users and departments | L | Done |
 
 ---
 
