@@ -13,6 +13,7 @@ from adapters.http.api.assets.routers import router as assets_router
 from adapters.http.api.requests.routers import router as requests_router
 from adapters.http.api.my.routers import router as my_router
 from adapters.http.api.dashboard.routers import router as dashboard_router
+from adapters.http.api.registration.routers import router as registration_router
 from adapters.http.api.reports.routers import router as reports_router
 from adapters.http.ws.websocket import router as ws_router
 from adapters.http.middleware.error_handler import register_error_handlers
@@ -44,6 +45,7 @@ def create_app() -> FastAPI:
     # Routers
     application.include_router(health_router)
     application.include_router(auth_router)
+    application.include_router(registration_router)
     application.include_router(companies_router)
     application.include_router(departments_router)
     application.include_router(users_router)

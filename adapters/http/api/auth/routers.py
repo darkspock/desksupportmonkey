@@ -77,6 +77,7 @@ def request_magic_link(
         magic_link_repo=MagicLinkRepository(db),
         company_lookup=CompanyLookupService(db),
         email_service=SMTPEmailService(),
+        user_repo=UserRepository(db),
     )
     try:
         handler.handle(CreateMagicLinkCommand(email=body.email))

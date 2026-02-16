@@ -8,11 +8,11 @@ export function AppLayout() {
   const { user, loading } = useAuth();
 
   if (loading) return <PageLoading />;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/auth/login" replace />;
 
   // Admin/super_admin without password must set it first
   if ((user.role === 'admin' || user.role === 'super_admin') && user.password_set === false) {
-    return <Navigate to="/set-password" replace />;
+    return <Navigate to="/auth/set-password" replace />;
   }
 
   return (

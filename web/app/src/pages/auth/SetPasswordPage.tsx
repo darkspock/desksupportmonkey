@@ -11,7 +11,7 @@ export default function SetPasswordPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/auth/login" replace />;
   if (user.password_set) return <Navigate to="/" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {

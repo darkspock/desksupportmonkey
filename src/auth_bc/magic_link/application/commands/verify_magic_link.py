@@ -62,17 +62,16 @@ class VerifyMagicLinkCommandHandler:
         magic_link.mark_used()
         self.magic_link_repo.update_used_at(magic_link.id, magic_link.used_at)
 
-        # Check company status before proceeding
-        result = self.company_lookup.find_company_by_email_domain(magic_link.email)
-        if result is None:
-            raise InvalidTokenError("Company not found for this email domain")
-        company_id, is_active = result
-        if not is_active:
-            raise CompanyRestrictedError("Company access is currently restricted")
-
-        # Find or create user
+        # Find existing user or create via company lookup
         user = self.user_repo.find_by_email(magic_link.email)
         if user is None:
+            # New user: must match a company domain
+            result = self.company_lookup.find_company_by_email_domain(magic_link.email)
+            if result is None:
+                raise InvalidTokenError("Company not found for this email domain")
+            company_id, is_active = result
+            if not is_active:
+                raise CompanyRestrictedError("Company access is currently restricted")
             user = User.create(
                 email=magic_link.email,
                 role=UserRole.EMPLOYEE,
@@ -80,6 +79,11 @@ class VerifyMagicLinkCommandHandler:
             )
             self.user_repo.save(user)
             logger.info("Created new user %s with employee role", user.email)
+        else:
+            # Existing user: check their company is active via domain lookup
+            result = self.company_lookup.find_company_by_email_domain(magic_link.email)
+            if result is not None and not result[1]:
+                raise CompanyRestrictedError("Company access is currently restricted")
 
         if not user.is_active:
             raise InvalidTokenError("User account is deactivated")

@@ -13,6 +13,7 @@
 | E6 | Report Generation | Celery async tasks, PDF generation, MinIO storage | Medium | Done |
 | E7 | Frontend | React app, routing, layouts, pages for all modules | High | Done |
 | E8 | Seed Data & Demo | Demo data, demo script, Docker Compose polish | Low | Done |
+| E9 | UX Improvements | Invite users, departments edit, and other frontend UX polish | Medium | Pending |
 
 ---
 
@@ -121,6 +122,23 @@ E8: Seed Data & Demo (after all others)
 - Demo walkthrough script (documentation)
 - Docker Compose verified end-to-end
 - .env.example with defaults
+
+### E9: UX Improvements
+- Invite users by email from Users page (admin sends magic link)
+- Departments page: add edit/rename functionality
+- Asset detail page: proper formatted event history instead of raw JSON
+- Resolve user IDs to names/emails across request views, dashboard, and notes
+- Asset assignment UI (assign/unassign from asset detail page)
+- Standardize date format to YYYY/MM/DD across all pages (11 instances)
+- Confirmation dialogs for destructive actions (delete, deactivate, status changes)
+- Toast notifications for silent mutations (mark-read, toggle active, status change, delete)
+- Empty state CTAs (MyEquipmentPage)
+- i18n: Spanish and English with language selector in header
+- Asset edit and status change from detail page
+- Request priority change from detail page
+- User department assignment from Users page
+- Dashboard: warranty alerts, aging alerts, request trend chart
+- Company edit (name, domains) from Companies page
 
 ---
 

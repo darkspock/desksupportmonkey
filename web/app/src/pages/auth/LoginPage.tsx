@@ -52,7 +52,10 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-sm">
         <div className="bg-white rounded-xl shadow-sm border p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">DeskSupportMonkey</h1>
+          <div className="flex items-center justify-center gap-3 mb-1">
+            <img src="/logo.png" alt="DeskSupportMonkey" className="w-10 h-10" />
+            <h1 className="text-2xl font-bold text-gray-900">DeskSupportMonkey</h1>
+          </div>
           <p className="text-sm text-gray-500 mb-6">Sign in with your corporate email</p>
 
           {/* Tab toggle */}
@@ -134,7 +137,7 @@ export default function LoginPage() {
 
           <p className="mt-4 text-center text-sm text-gray-500">
             Don't have an account?{' '}
-            <Link to="/register" className="text-blue-600 hover:underline">Register your company</Link>
+            <Link to="/auth/register" className="text-blue-600 hover:underline">Register your company</Link>
           </p>
         </div>
       </div>

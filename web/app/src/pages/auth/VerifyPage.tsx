@@ -21,7 +21,7 @@ export default function VerifyPage() {
         await login(access_token);
         // If admin without password, redirect to set-password
         if (password_set === false) {
-          setRedirect('/set-password');
+          setRedirect('/auth/set-password');
         } else {
           setRedirect('/');
         }
@@ -40,7 +40,7 @@ export default function VerifyPage() {
         {error ? (
           <>
             <p className="text-red-600 mb-4">{error}</p>
-            <a href="/login" className="text-sm text-blue-600 hover:underline">Back to login</a>
+            <a href="/auth/login" className="text-sm text-blue-600 hover:underline">Back to login</a>
           </>
         ) : (
           <>

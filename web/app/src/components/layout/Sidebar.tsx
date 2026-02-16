@@ -28,9 +28,12 @@ export function Sidebar() {
 
   return (
     <aside className="w-56 shrink-0 bg-gray-900 text-white min-h-screen flex flex-col">
-      <div className="p-4 border-b border-gray-700">
-        <h1 className="text-lg font-bold tracking-tight">DSM</h1>
-        <p className="text-xs text-gray-400">DeskSupportMonkey</p>
+      <div className="p-4 border-b border-gray-700 flex items-center gap-3">
+        <img src="/logo.png" alt="DeskSupportMonkey" className="w-9 h-9 rounded" />
+        <div>
+          <h1 className="text-lg font-bold tracking-tight leading-tight">DSM</h1>
+          <p className="text-xs text-gray-400">DeskSupportMonkey</p>
+        </div>
       </div>
       <nav className="flex-1 p-2 space-y-0.5">
         {visible.map((item) => (

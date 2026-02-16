@@ -29,10 +29,13 @@ function S({ children }: { children: React.ReactNode }) {
 }
 
 export const router = createBrowserRouter([
-  { path: '/login', element: <S><LoginPage /></S> },
-  { path: '/register', element: <S><RegisterPage /></S> },
-  { path: '/verify', element: <S><VerifyPage /></S> },
-  { path: '/set-password', element: <S><SetPasswordPage /></S> },
+  { path: '/auth/login', element: <S><LoginPage /></S> },
+  { path: '/auth/register', element: <S><RegisterPage /></S> },
+  { path: '/auth/verify', element: <S><VerifyPage /></S> },
+  { path: '/auth/set-password', element: <S><SetPasswordPage /></S> },
+  // Legacy routes (redirect)
+  { path: '/login', element: <Navigate to="/auth/login" replace /> },
+  { path: '/verify', element: <Navigate to="/auth/verify" replace /> },
   {
     path: '/',
     element: <AppLayout />,

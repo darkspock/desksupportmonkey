@@ -1,4 +1,4 @@
-.PHONY: start stop start-docker start-backend queue start-queue-bg install logs db-migrate db-upgrade test lint clean seed demo-reset
+.PHONY: start stop start-docker start-backend start-frontend start-frontend-bg queue start-queue-bg install install-frontend logs db-migrate db-upgrade test lint clean seed demo-reset
 
 # Colors for terminal output
 GREEN := \033[0;32m
@@ -9,13 +9,14 @@ NC := \033[0m # No Color
 # Main Commands
 # =============================================================================
 
-## Start all services (Docker + Backend + Celery)
+## Start all services (Docker + Backend + Celery + Frontend)
 start:
 	@echo "$(GREEN)Starting all services...$(NC)"
 	@make start-docker
 	@echo "$(GREEN)Waiting for Docker services to be healthy...$(NC)"
 	@sleep 3
 	@make start-queue-bg
+	@make start-frontend-bg
 	@make start-backend
 
 ## Stop all services
@@ -23,6 +24,7 @@ stop:
 	@echo "$(YELLOW)Stopping all services...$(NC)"
 	@-pkill -f "uvicorn app:app" 2>/dev/null || true
 	@-pkill -f "celery" 2>/dev/null || true
+	@-pkill -f "vite.*web/app" 2>/dev/null || true
 	@docker-compose down
 	@echo "$(GREEN)All services stopped$(NC)"
 
@@ -57,14 +59,28 @@ start-queue-bg:
 	@echo "  - Celery queues: reports"
 	@echo "  - Celery logs: /tmp/celery-dsm.log"
 
+## Start frontend (Vite dev server)
+start-frontend:
+	@echo "$(GREEN)Starting frontend...$(NC)"
+	@cd web/app && npm run dev
+
+## Start frontend in background
+start-frontend-bg:
+	@echo "$(GREEN)Starting frontend in background...$(NC)"
+	@cd web/app && npm run dev > /tmp/frontend-dsm.log 2>&1 &
+	@echo "  - Frontend: http://localhost:5173"
+	@echo "  - Frontend logs: /tmp/frontend-dsm.log"
+
 # =============================================================================
 # Installation
 # =============================================================================
 
-## Install dependencies
+## Install dependencies (backend + frontend)
 install:
-	@echo "$(GREEN)Installing dependencies...$(NC)"
+	@echo "$(GREEN)Installing backend dependencies...$(NC)"
 	@uv sync --all-extras
+	@echo "$(GREEN)Installing frontend dependencies...$(NC)"
+	@cd web/app && npm install
 
 # =============================================================================
 # Database
@@ -141,11 +157,12 @@ clean:
 help:
 	@echo "Available commands:"
 	@echo ""
-	@echo "  $(GREEN)make start$(NC)          - Start all services (Docker + Backend + Celery)"
+	@echo "  $(GREEN)make start$(NC)          - Start all services (Docker + Backend + Celery + Frontend)"
 	@echo "  $(GREEN)make stop$(NC)           - Stop all services"
 	@echo ""
 	@echo "  $(GREEN)make start-docker$(NC)   - Start Docker containers only"
 	@echo "  $(GREEN)make start-backend$(NC)  - Start backend API only"
+	@echo "  $(GREEN)make start-frontend$(NC) - Start frontend dev server only"
 	@echo "  $(GREEN)make queue$(NC)          - Start Celery worker (reports queue)"
 	@echo ""
 	@echo "  $(GREEN)make install$(NC)        - Install dependencies"
@@ -160,6 +177,7 @@ help:
 	@echo "  $(GREEN)make clean$(NC)          - Clean generated files"
 	@echo ""
 	@echo "Services:"
+	@echo "  - Frontend:       http://localhost:5173"
 	@echo "  - Backend API:    http://localhost:8000"
 	@echo "  - API Docs:       http://localhost:8000/docs"
 	@echo "  - Mailpit:        http://localhost:8028"

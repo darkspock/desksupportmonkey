@@ -58,7 +58,7 @@ export default function RequestDetailPage() {
   });
 
   const assign = useMutation({
-    mutationFn: () => api.patch(`/requests/${id}/assign`, { assigned_to: user?.id }),
+    mutationFn: () => api.patch(`/requests/${id}/assign`, { user_id: user?.id }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['request', id] }),
   });
 

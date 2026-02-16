@@ -6,6 +6,7 @@ from core.email import EmailServiceInterface, send_magic_link_email
 from src.auth_bc.company_lookup.domain.service import CompanyLookupInterface
 from src.auth_bc.magic_link.domain.entities import MagicLink
 from src.auth_bc.magic_link.domain.repository import MagicLinkRepositoryInterface
+from src.auth_bc.user.domain.repository import UserRepositoryInterface
 
 logger = logging.getLogger(__name__)
 
@@ -35,10 +36,12 @@ class CreateMagicLinkCommandHandler:
         magic_link_repo: MagicLinkRepositoryInterface,
         company_lookup: CompanyLookupInterface,
         email_service: EmailServiceInterface,
+        user_repo: UserRepositoryInterface | None = None,
     ):
         self.magic_link_repo = magic_link_repo
         self.company_lookup = company_lookup
         self.email_service = email_service
+        self.user_repo = user_repo
 
     def handle(self, command: CreateMagicLinkCommand) -> None:
         email = command.email.lower().strip()
@@ -47,7 +50,13 @@ class CreateMagicLinkCommandHandler:
         # Check email domain matches a company (with status awareness)
         result = self.company_lookup.find_company_by_email_domain(email)
         if result is None:
-            raise InvalidEmailDomainError("Only corporate email addresses are allowed")
+            # Allow existing users (e.g. admins registered with non-company domains)
+            if self.user_repo:
+                existing_user = self.user_repo.find_by_email(email)
+                if existing_user and existing_user.is_active:
+                    result = (existing_user.company_id, True)
+            if result is None:
+                raise InvalidEmailDomainError("Only corporate email addresses are allowed")
 
         company_id, is_active = result
         if not is_active:
