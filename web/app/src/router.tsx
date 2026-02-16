@@ -11,6 +11,7 @@ const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
 const VerifyPage = lazy(() => import('./pages/auth/VerifyPage'));
 const SetPasswordPage = lazy(() => import('./pages/auth/SetPasswordPage'));
+const ChangePasswordPage = lazy(() => import('./pages/auth/ChangePasswordPage'));
 const MyEquipmentPage = lazy(() => import('./pages/employee/MyEquipmentPage'));
 const MyRequestsPage = lazy(() => import('./pages/employee/MyRequestsPage'));
 const NewRequestPage = lazy(() => import('./pages/employee/NewRequestPage'));
@@ -25,6 +26,7 @@ const DashboardPage = lazy(() => import('./pages/admin/DashboardPage'));
 const UsersPage = lazy(() => import('./pages/admin/UsersPage'));
 const DepartmentsPage = lazy(() => import('./pages/admin/DepartmentsPage'));
 const ReportsPage = lazy(() => import('./pages/admin/ReportsPage'));
+const CompanySettingsPage = lazy(() => import('./pages/admin/CompanySettingsPage'));
 const CompaniesPage = lazy(() => import('./pages/superadmin/CompaniesPage'));
 
 function S({ children }: { children: React.ReactNode }) {
@@ -38,6 +40,7 @@ export const router = createBrowserRouter([
   { path: '/auth/register', element: <S><RegisterPage /></S>, errorElement: routeErrorElement },
   { path: '/auth/verify', element: <S><VerifyPage /></S>, errorElement: routeErrorElement },
   { path: '/auth/set-password', element: <S><SetPasswordPage /></S>, errorElement: routeErrorElement },
+  { path: '/auth/change-password', element: <S><ChangePasswordPage /></S>, errorElement: routeErrorElement },
   // Legacy routes (redirect)
   { path: '/login', element: <Navigate to="/auth/login" replace />, errorElement: routeErrorElement },
   { path: '/verify', element: <Navigate to="/auth/verify" replace />, errorElement: routeErrorElement },
@@ -90,6 +93,10 @@ export const router = createBrowserRouter([
       {
         path: 'reports',
         element: <RequireRole roles={['admin', 'super_admin']}><S><ReportsPage /></S></RequireRole>,
+      },
+      {
+        path: 'settings/company',
+        element: <RequireRole roles={['admin']}><S><CompanySettingsPage /></S></RequireRole>,
       },
       // Super Admin
       {

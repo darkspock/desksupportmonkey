@@ -2,25 +2,46 @@ import logging
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from adapters.http.api.auth.dependencies import get_current_user
+from adapters.http.api.auth.dependencies import get_current_user, require_role
 from adapters.http.api.my.schemas import (
     MyEquipmentResponse,
+    MyCompanySettingsResponse,
     MyRequestResponse,
     NotificationListMeta,
     NotificationResponse,
+    UpdateMyCompanySettingsRequest,
 )
 from adapters.http.schemas.responses import PaginationMeta
 from core.database import get_db
 from src.auth_bc.user.domain.entities import User
+from src.auth_bc.user.domain.enums import UserRole
 from src.asset_bc.asset.application.queries.my_equipment import (
     MyEquipmentQuery,
     MyEquipmentQueryHandler,
 )
 from src.asset_bc.asset.domain.entities import Asset
 from src.asset_bc.asset.infrastructure.repository import AssetRepository
+from src.company_bc.company.application.commands.update_company import (
+    CompanyNotFoundError as UpdateCompanyNotFoundError,
+)
+from src.company_bc.company.application.commands.update_company import (
+    DomainAlreadyTakenError as UpdateDomainTakenError,
+)
+from src.company_bc.company.application.commands.update_company import (
+    UpdateCompanyCommand,
+    UpdateCompanyCommandHandler,
+)
+from src.company_bc.company.application.queries.get_company import (
+    CompanyNotFoundError as GetCompanyNotFoundError,
+)
+from src.company_bc.company.application.queries.get_company import (
+    GetCompanyQuery,
+    GetCompanyQueryHandler,
+)
+from src.company_bc.company.infrastructure.repository import CompanyRepository
 from src.notification_bc.notification.application.commands.mark_all_read import (
     MarkAllReadCommand,
     MarkAllReadCommandHandler,
@@ -174,3 +195,73 @@ def mark_all_notifications_read(
     handler = MarkAllReadCommandHandler(notification_repo=NotificationRepository(db))
     marked_count = handler.handle(MarkAllReadCommand(user_id=current_user.id))
     return {"data": {"marked_count": marked_count}}
+
+
+@router.get("/company-settings")
+def get_my_company_settings(
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
+    db: Session = Depends(get_db),
+):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only company admins can access company settings",
+        )
+    if not current_user.company_id:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Current user has no company assigned",
+        )
+
+    handler = GetCompanyQueryHandler(company_repo=CompanyRepository(db))
+    try:
+        detail = handler.handle(GetCompanyQuery(company_id=current_user.company_id))
+    except GetCompanyNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
+
+    return {
+        "data": MyCompanySettingsResponse(
+            id=detail.company.id,
+            name=detail.company.name,
+            email_domains=detail.company.email_domains,
+        ).model_dump(mode="json")
+    }
+
+
+@router.put("/company-settings")
+def update_my_company_settings(
+    body: UpdateMyCompanySettingsRequest,
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
+    db: Session = Depends(get_db),
+):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only company admins can update company settings",
+        )
+    if not current_user.company_id:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Current user has no company assigned",
+        )
+
+    handler = UpdateCompanyCommandHandler(company_repo=CompanyRepository(db))
+    try:
+        company = handler.handle(
+            UpdateCompanyCommand(
+                company_id=current_user.company_id,
+                email_domains=body.email_domains,
+            )
+        )
+    except UpdateCompanyNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
+    except UpdateDomainTakenError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+
+    return {
+        "data": MyCompanySettingsResponse(
+            id=company.id,
+            name=company.name,
+            email_domains=company.email_domains,
+        ).model_dump(mode="json")
+    }

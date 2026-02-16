@@ -44,6 +44,12 @@ export interface Company {
   created_at: string;
 }
 
+export interface CompanySettings {
+  id: string;
+  name: string;
+  email_domains: string[];
+}
+
 // Department
 export interface Department {
   id: string;

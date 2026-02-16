@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class MyEquipmentResponse(BaseModel):
@@ -40,3 +40,13 @@ class NotificationListMeta(BaseModel):
     page_size: int
     total: int
     unread_count: int
+
+
+class MyCompanySettingsResponse(BaseModel):
+    id: str
+    name: str
+    email_domains: list[str]
+
+
+class UpdateMyCompanySettingsRequest(BaseModel):
+    email_domains: list[str] = Field(min_length=1)

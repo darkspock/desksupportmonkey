@@ -15,6 +15,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const companyName = user?.company_name?.trim();
+  const canManagePassword = user?.role === 'admin' || user?.role === 'super_admin';
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -89,6 +90,15 @@ export function Header({ onMenuToggle }: HeaderProps) {
                 <div className="truncate border-b px-3 py-2 text-sm text-gray-700">{companyName}</div>
               )}
               <div className="px-3 py-2 text-xs text-gray-400 border-b">{t(`enum.${user?.role ?? ''}`)}</div>
+              {canManagePassword && (
+                <Link
+                  to="/auth/change-password"
+                  onClick={() => setOpen(false)}
+                  className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  {t('header.change_password')}
+                </Link>
+              )}
               <button onClick={logout} className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-gray-50">
                 {t('header.sign_out')}
               </button>
