@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="web/site/logo.png" alt="DeskSupportMonkey" width="280" />
+</p>
+
 # DeskSupportMonkey
 
 **IT Service Desk & Asset Inventory Platform** — A full-stack, multi-tenant application built entirely with AI-assisted development to demonstrate how production-grade software can be designed, implemented, and validated using AI as a development partner.
