@@ -28,6 +28,7 @@ const es: Record<string, string> = {
   'header.close_navigation': 'Cerrar navegación',
   'header.notifications': 'Notificaciones',
   'header.sign_out': 'Cerrar sesión',
+  'header.change_password': 'Cambiar contraseña',
   'header.language': 'Idioma',
   'header.company': 'Compañía',
 
@@ -39,7 +40,11 @@ const es: Record<string, string> = {
   'nav.users': 'Usuarios',
   'nav.departments': 'Departamentos',
   'nav.reports': 'Reportes',
+  'nav.company_settings': 'Configuración de empresa',
   'nav.companies': 'Compañías',
+  'nav.section_operations': 'Operaciones',
+  'nav.section_management': 'Gestión',
+  'nav.section_platform': 'Plataforma',
 
   'auth.brand_tagline': 'Operaciones IT, mesa de ayuda e inventario en un solo lugar.',
   'auth.brand_subtitle':
@@ -109,6 +114,18 @@ const es: Record<string, string> = {
   'auth.set_password.error_min_8': 'La contraseña debe tener al menos 8 caracteres',
   'auth.set_password.error_mismatch': 'Las contraseñas no coinciden',
   'auth.set_password.error_failed': 'No se pudo guardar la contraseña',
+
+  'auth.change_password.title': 'Cambiar contraseña',
+  'auth.change_password.subtitle': 'Actualiza tu contraseña de admin para un acceso seguro.',
+  'auth.change_password.new_password': 'Nueva contraseña',
+  'auth.change_password.confirm_password': 'Confirmar contraseña',
+  'auth.change_password.placeholder_min_8': 'Mínimo 8 caracteres',
+  'auth.change_password.placeholder_repeat': 'Repite la contraseña',
+  'auth.change_password.saving': 'Guardando...',
+  'auth.change_password.submit': 'Actualizar contraseña',
+  'auth.change_password.error_min_8': 'La contraseña debe tener al menos 8 caracteres',
+  'auth.change_password.error_mismatch': 'Las contraseñas no coinciden',
+  'auth.change_password.error_failed': 'No se pudo actualizar la contraseña',
 
   'errors.unexpected_title': 'Error inesperado',
   'errors.unexpected_detail': 'Algo falló al renderizar esta página.',
@@ -352,6 +369,17 @@ const es: Record<string, string> = {
   'page.departments.error_update_title': 'No se pudo actualizar el departamento',
   'page.departments.error_delete': 'No se pudo eliminar',
   'page.departments.error_delete_title': 'No se pudo eliminar el departamento',
+
+  'page.company_settings.title': 'Configuración de empresa',
+  'page.company_settings.subtitle': 'Gestiona los dominios de correo permitidos para tu workspace.',
+  'page.company_settings.domains_help': 'Usa comas para añadir varios dominios (por ejemplo: empresa.com, empresa.org).',
+  'page.company_settings.save': 'Guardar cambios',
+  'page.company_settings.saving': 'Guardando...',
+  'page.company_settings.toast_updated': 'Configuración de empresa actualizada',
+  'page.company_settings.error_load': 'No se pudo cargar la configuración de empresa',
+  'page.company_settings.error_update': 'No se pudo actualizar la configuración de empresa',
+  'page.company_settings.error_update_title': 'No se pudo guardar la configuración de empresa',
+  'page.company_settings.error_domains_required': 'Se requiere al menos un dominio de correo',
 
   'page.reports.title': 'Reportes',
   'page.reports.generate_new': 'Generar nuevo reporte',

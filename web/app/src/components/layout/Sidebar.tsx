@@ -10,21 +10,46 @@ interface NavItem {
   roles?: string[];
 }
 
+interface NavSection {
+  labelKey?: string;
+  items: NavItem[];
+}
+
 interface SidebarProps {
   mobileOpen?: boolean;
   onClose?: () => void;
 }
 
-const nav: NavItem[] = [
-  { to: '/my/equipment', labelKey: 'nav.my_equipment' },
-  { to: '/my/requests', labelKey: 'nav.my_requests' },
-  { to: '/requests', labelKey: 'nav.request_queue', roles: ['technician', 'admin', 'super_admin'] },
-  { to: '/assets', labelKey: 'nav.asset_inventory', roles: ['technician', 'admin', 'super_admin'] },
-  { to: '/dashboard', labelKey: 'nav.dashboard', roles: ['admin', 'super_admin'] },
-  { to: '/users', labelKey: 'nav.users', roles: ['admin', 'super_admin'] },
-  { to: '/departments', labelKey: 'nav.departments', roles: ['admin', 'super_admin'] },
-  { to: '/reports', labelKey: 'nav.reports', roles: ['admin', 'super_admin'] },
-  { to: '/companies', labelKey: 'nav.companies', roles: ['super_admin'] },
+const sections: NavSection[] = [
+  {
+    items: [
+      { to: '/my/equipment', labelKey: 'nav.my_equipment' },
+      { to: '/my/requests', labelKey: 'nav.my_requests' },
+    ],
+  },
+  {
+    labelKey: 'nav.section_operations',
+    items: [
+      { to: '/requests', labelKey: 'nav.request_queue', roles: ['technician', 'admin', 'super_admin'] },
+      { to: '/assets', labelKey: 'nav.asset_inventory', roles: ['technician', 'admin', 'super_admin'] },
+    ],
+  },
+  {
+    labelKey: 'nav.section_management',
+    items: [
+      { to: '/dashboard', labelKey: 'nav.dashboard', roles: ['admin', 'super_admin'] },
+      { to: '/users', labelKey: 'nav.users', roles: ['admin', 'super_admin'] },
+      { to: '/departments', labelKey: 'nav.departments', roles: ['admin', 'super_admin'] },
+      { to: '/reports', labelKey: 'nav.reports', roles: ['admin', 'super_admin'] },
+      { to: '/settings/company', labelKey: 'nav.company_settings', roles: ['admin'] },
+    ],
+  },
+  {
+    labelKey: 'nav.section_platform',
+    items: [
+      { to: '/companies', labelKey: 'nav.companies', roles: ['super_admin'] },
+    ],
+  },
 ];
 
 export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
@@ -32,9 +57,22 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const { t } = useI18n();
   const role = user?.role;
   const companyName = user?.company_name?.trim() || user?.email || 'DeskSupportMonkey';
-  const visible = role === 'super_admin'
-    ? nav.filter((item) => item.to === '/companies')
-    : nav.filter((item) => !item.roles || (role && item.roles.includes(role)));
+
+  const baseSections = sections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => !item.roles || (role && item.roles.includes(role))),
+    }))
+    .filter((section) => section.items.length > 0);
+
+  const visibleSections = role === 'super_admin'
+    ? baseSections
+      .map((section) => ({
+        ...section,
+        items: section.items.filter((item) => item.to === '/companies'),
+      }))
+      .filter((section) => section.items.length > 0)
+    : baseSections;
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -63,20 +101,31 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
             <p className="max-w-[150px] truncate text-xs text-gray-400" title={companyName}>{companyName}</p>
           </div>
         </div>
-        <nav className="flex-1 p-2 space-y-0.5">
-          {visible.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                cn(
-                  'block px-3 py-2 rounded text-sm transition-colors',
-                  isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
-                )
-              }
-            >
-              {t(item.labelKey)}
-            </NavLink>
+        <nav className="flex-1 p-2 space-y-4">
+          {visibleSections.map((section, i) => (
+            <div key={i}>
+              {section.labelKey && (
+                <p className="px-3 mb-1 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                  {t(section.labelKey)}
+                </p>
+              )}
+              <div className="space-y-0.5">
+                {section.items.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={({ isActive }) =>
+                      cn(
+                        'block px-3 py-2 rounded text-sm transition-colors',
+                        isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                      )
+                    }
+                  >
+                    {t(item.labelKey)}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
       </aside>
@@ -99,21 +148,32 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                 </svg>
               </button>
             </div>
-            <nav className="p-2 space-y-0.5">
-              {visible.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  onClick={onClose}
-                  className={({ isActive }) =>
-                    cn(
-                      'block px-3 py-2 rounded text-sm transition-colors',
-                      isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
-                    )
-                  }
-                >
-                  {t(item.labelKey)}
-                </NavLink>
+            <nav className="p-2 space-y-4">
+              {visibleSections.map((section, i) => (
+                <div key={i}>
+                  {section.labelKey && (
+                    <p className="px-3 mb-1 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                      {t(section.labelKey)}
+                    </p>
+                  )}
+                  <div className="space-y-0.5">
+                    {section.items.map((item) => (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        onClick={onClose}
+                        className={({ isActive }) =>
+                          cn(
+                            'block px-3 py-2 rounded text-sm transition-colors',
+                            isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                          )
+                        }
+                      >
+                        {t(item.labelKey)}
+                      </NavLink>
+                    ))}
+                  </div>
+                </div>
               ))}
             </nav>
           </aside>

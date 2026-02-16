@@ -1,0 +1,132 @@
+---
+const features = [
+  {
+    title: 'Service Request Management',
+    description: 'Complete lifecycle for IT support requests — from submission to resolution.',
+    details: [
+      'Employees submit incidents, equipment requests, or onboarding tickets',
+      'Technicians pick up, prioritize, and resolve from a shared queue',
+      'Comments and internal notes for team collaboration',
+      'Real-time status updates via WebSocket notifications',
+      'SLA tracking with breach alerts for admins',
+    ],
+    color: 'blue',
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />`,
+  },
+  {
+    title: 'IT Asset Inventory',
+    description: 'Full hardware tracking with assignments, history, and warranty alerts.',
+    details: [
+      'Register laptops, desktops, phones, monitors, printers, and more',
+      'Assign and unassign equipment to users with full audit trail',
+      'CSV bulk import for onboarding existing inventories',
+      'Warranty expiration and aging asset alerts on the dashboard',
+      'Complete event history per asset (created, assigned, status changes)',
+    ],
+    color: 'emerald',
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" />`,
+  },
+  {
+    title: 'Multi-Tenant & Role-Based Access',
+    description: 'Companies, departments, and four distinct user roles with appropriate permissions.',
+    details: [
+      'Self-service company registration with email domain validation',
+      'Four roles: Employee, Technician, Admin, Super Admin',
+      'Employees see only their own requests and equipment',
+      'Technicians manage the request queue and asset inventory',
+      'Admins manage users, departments, reports, and dashboards',
+    ],
+    color: 'purple',
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />`,
+  },
+  {
+    title: 'Dashboard & Reporting',
+    description: 'Real-time operational visibility and exportable PDF reports.',
+    details: [
+      'Request breakdown by status, type, and priority',
+      'Asset distribution charts by status and type',
+      'Technician performance metrics (avg resolution time)',
+      'Trend analysis with configurable date ranges',
+      'Async PDF report generation (Asset Inventory, Request Summary, Technician Performance)',
+    ],
+    color: 'amber',
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />`,
+  },
+  {
+    title: 'Real-Time Notifications',
+    description: 'Instant updates for request assignments, status changes, and comments.',
+    details: [
+      'WebSocket-powered live notifications — no page refresh needed',
+      'Notification bell with unread count in the header',
+      'Notification center with mark-as-read and mark-all',
+      'Event-driven: new request, status change, assignment, comment added',
+      'Persistent notification history per user',
+    ],
+    color: 'rose',
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />`,
+  },
+  {
+    title: 'Passwordless Authentication',
+    description: 'Magic link sign-in for all users, with optional password for admins.',
+    details: [
+      'Magic link authentication via email (Brevo transactional API)',
+      'Optional password login for admin and super admin accounts',
+      'JWT-based sessions with automatic token refresh',
+      'Company-scoped access: users can only join via registered email domains',
+      'Super admin panel for platform-wide management',
+    ],
+    color: 'indigo',
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />`,
+  },
+];
+
+const colorMap: Record<string, { bg: string; text: string; bullet: string }> = {
+  blue: { bg: 'bg-blue-100', text: 'text-blue-600', bullet: 'bg-blue-500' },
+  emerald: { bg: 'bg-emerald-100', text: 'text-emerald-600', bullet: 'bg-emerald-500' },
+  purple: { bg: 'bg-purple-100', text: 'text-purple-600', bullet: 'bg-purple-500' },
+  amber: { bg: 'bg-amber-100', text: 'text-amber-600', bullet: 'bg-amber-500' },
+  rose: { bg: 'bg-rose-100', text: 'text-rose-600', bullet: 'bg-rose-500' },
+  indigo: { bg: 'bg-indigo-100', text: 'text-indigo-600', bullet: 'bg-indigo-500' },
+};
+---
+
+<section class="py-20">
+  <div class="mx-auto max-w-6xl px-6">
+    <div class="text-center mb-14">
+      <h2 class="text-3xl font-bold text-slate-900 sm:text-4xl">Everything your IT team needs</h2>
+      <p class="mt-3 text-lg text-slate-600 max-w-2xl mx-auto">
+        A complete service desk and asset management platform with role-based access,
+        real-time notifications, and reporting — ready to use out of the box.
+      </p>
+    </div>
+
+    <div class="grid gap-8 md:grid-cols-2">
+      {features.map((feature) => {
+        const colors = colorMap[feature.color];
+        return (
+          <div class="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-start gap-4 mb-5">
+              <div class={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${colors.bg} ${colors.text}`}>
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                  <Fragment set:html={feature.icon} />
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-slate-900">{feature.title}</h3>
+                <p class="mt-1 text-sm text-slate-600">{feature.description}</p>
+              </div>
+            </div>
+            <ul class="space-y-2">
+              {feature.details.map((detail) => (
+                <li class="flex items-start gap-2.5">
+                  <span class={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${colors.bullet}`}></span>
+                  <span class="text-sm text-slate-600 leading-relaxed">{detail}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+</section>

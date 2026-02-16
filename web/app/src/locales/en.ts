@@ -28,6 +28,7 @@ const en: Record<string, string> = {
   'header.close_navigation': 'Close navigation',
   'header.notifications': 'Notifications',
   'header.sign_out': 'Sign out',
+  'header.change_password': 'Change password',
   'header.language': 'Language',
   'header.company': 'Company',
 
@@ -39,7 +40,11 @@ const en: Record<string, string> = {
   'nav.users': 'Users',
   'nav.departments': 'Departments',
   'nav.reports': 'Reports',
+  'nav.company_settings': 'Company settings',
   'nav.companies': 'Companies',
+  'nav.section_operations': 'Operations',
+  'nav.section_management': 'Management',
+  'nav.section_platform': 'Platform',
 
   'auth.brand_tagline': 'IT operations, service desk, and inventory in one place.',
   'auth.brand_subtitle':
@@ -109,6 +114,18 @@ const en: Record<string, string> = {
   'auth.set_password.error_min_8': 'Password must be at least 8 characters',
   'auth.set_password.error_mismatch': 'Passwords do not match',
   'auth.set_password.error_failed': 'Failed to set password',
+
+  'auth.change_password.title': 'Change password',
+  'auth.change_password.subtitle': 'Update your admin password for secure access.',
+  'auth.change_password.new_password': 'New password',
+  'auth.change_password.confirm_password': 'Confirm password',
+  'auth.change_password.placeholder_min_8': 'Minimum 8 characters',
+  'auth.change_password.placeholder_repeat': 'Repeat password',
+  'auth.change_password.saving': 'Saving...',
+  'auth.change_password.submit': 'Update password',
+  'auth.change_password.error_min_8': 'Password must be at least 8 characters',
+  'auth.change_password.error_mismatch': 'Passwords do not match',
+  'auth.change_password.error_failed': 'Failed to update password',
 
   'errors.unexpected_title': 'Unexpected error',
   'errors.unexpected_detail': 'Something went wrong while rendering this page.',
@@ -352,6 +369,17 @@ const en: Record<string, string> = {
   'page.departments.error_update_title': 'Failed to update department',
   'page.departments.error_delete': 'Delete failed',
   'page.departments.error_delete_title': 'Failed to delete department',
+
+  'page.company_settings.title': 'Company settings',
+  'page.company_settings.subtitle': 'Manage allowed email domains for your workspace.',
+  'page.company_settings.domains_help': 'Use commas to add multiple domains (for example: company.com, company.org).',
+  'page.company_settings.save': 'Save changes',
+  'page.company_settings.saving': 'Saving...',
+  'page.company_settings.toast_updated': 'Company settings updated',
+  'page.company_settings.error_load': 'Failed to load company settings',
+  'page.company_settings.error_update': 'Failed to update company settings',
+  'page.company_settings.error_update_title': 'Could not save company settings',
+  'page.company_settings.error_domains_required': 'At least one email domain is required',
 
   'page.reports.title': 'Reports',
   'page.reports.generate_new': 'Generate New Report',
