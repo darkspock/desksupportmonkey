@@ -54,13 +54,14 @@ class PasswordLoginCommandHandler:
         if not user.is_active:
             raise AccountInactiveError("Account is inactive")
 
-        # Check company is active
-        result = self.company_lookup.find_company_by_email_domain(user.email)
-        if result is None:
-            raise InvalidCredentialsError("Invalid credentials")
-        company_id, is_active = result
-        if not is_active:
-            raise AccountInactiveError("Account is inactive")
+        # Super admins have no company — skip company check
+        if user.role != UserRole.SUPER_ADMIN:
+            result = self.company_lookup.find_company_by_email_domain(user.email)
+            if result is None:
+                raise InvalidCredentialsError("Invalid credentials")
+            company_id, is_active = result
+            if not is_active:
+                raise AccountInactiveError("Account is inactive")
 
         token = self.jwt_service.create_token(
             user_id=user.id,
