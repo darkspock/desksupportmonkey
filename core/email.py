@@ -67,3 +67,25 @@ def send_magic_link_email(email_service: EmailServiceInterface, to: str, token: 
     </html>
     """
     email_service.send(to, "Sign in to DeskSupportMonkey", html)
+
+
+def send_admin_promotion_email(
+    email_service: EmailServiceInterface,
+    to: str,
+    new_admin_email: str,
+    company_name: str,
+) -> None:
+    """Notify existing admins when a new admin is promoted."""
+    html = f"""
+    <html>
+    <body style="font-family: sans-serif; padding: 20px;">
+        <h2>New Admin Promoted</h2>
+        <p><strong>{new_admin_email}</strong> has been promoted to admin
+        in your organization.</p>
+        <p style="color: #666; font-size: 14px;">
+            If you did not expect this change, please review your team's admin settings.
+        </p>
+    </body>
+    </html>
+    """
+    email_service.send(to, "New admin promoted - DeskSupportMonkey", html)

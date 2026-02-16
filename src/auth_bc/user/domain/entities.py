@@ -16,6 +16,7 @@ class User:
     name: Optional[str] = None
     department_id: Optional[str] = None
     is_active: bool = True
+    password_hash: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -53,3 +54,10 @@ class User:
 
     def assign_department(self, department_id: Optional[str]) -> None:
         self.department_id = department_id
+
+    def set_password_hash(self, hashed: str) -> None:
+        self.password_hash = hashed
+
+    @property
+    def has_password(self) -> bool:
+        return self.password_hash is not None

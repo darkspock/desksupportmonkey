@@ -7,7 +7,7 @@ export default function VerifyPage() {
   const [params] = useSearchParams();
   const { login, user } = useAuth();
   const [error, setError] = useState('');
-  const [done, setDone] = useState(false);
+  const [redirect, setRedirect] = useState<string | null>(null);
 
   useEffect(() => {
     const token = params.get('token');
@@ -17,15 +17,22 @@ export default function VerifyPage() {
     }
     api.post('/auth/verify', { token })
       .then(async (res) => {
-        await login(res.data.data.access_token);
-        setDone(true);
+        const { access_token, password_set } = res.data.data;
+        await login(access_token);
+        // If admin without password, redirect to set-password
+        if (password_set === false) {
+          setRedirect('/set-password');
+        } else {
+          setRedirect('/');
+        }
       })
       .catch((err) => {
         setError(err.response?.data?.detail || 'Verification failed');
       });
   }, []);
 
-  if (done || user) return <Navigate to="/" replace />;
+  if (redirect) return <Navigate to={redirect} replace />;
+  if (user && !redirect) return <Navigate to="/" replace />;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

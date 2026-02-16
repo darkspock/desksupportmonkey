@@ -8,6 +8,7 @@ export interface User {
   company_id: string | null;
   department_id: string | null;
   is_active: boolean;
+  password_set?: boolean;
   created_at: string;
 }
 

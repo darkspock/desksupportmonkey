@@ -14,11 +14,13 @@ from adapters.http.schemas.responses import PaginationMeta
 from core.database import get_db
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
+from core.email import SMTPEmailService
 from src.auth_bc.user.application.commands.change_user_role import (
     CannotAssignSuperAdminError,
     CannotChangeSelfError,
     ChangeUserRoleCommand,
     ChangeUserRoleCommandHandler,
+    LastAdminError,
     UserNotFoundError as RoleUserNotFoundError,
 )
 from src.auth_bc.user.application.commands.deactivate_user import (
@@ -123,7 +125,10 @@ def change_role(
     db: Session = Depends(get_db),
 ):
     company_id = current_user.company_id
-    handler = ChangeUserRoleCommandHandler(user_repo=UserRepository(db))
+    handler = ChangeUserRoleCommandHandler(
+        user_repo=UserRepository(db),
+        email_service=SMTPEmailService(),
+    )
     try:
         user = handler.handle(
             ChangeUserRoleCommand(
@@ -142,6 +147,11 @@ def change_role(
     except CannotAssignSuperAdminError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Cannot assign super_admin role"
+        )
+    except LastAdminError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="At least one admin must remain in the company",
         )
     except ValueError:
         raise HTTPException(

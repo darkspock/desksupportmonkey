@@ -9,6 +9,7 @@ from src.auth_bc.user.application.commands.change_user_role import (
     CannotChangeSelfError,
     ChangeUserRoleCommand,
     ChangeUserRoleCommandHandler,
+    LastAdminError,
     UserNotFoundError as RoleNotFoundError,
 )
 from src.auth_bc.user.application.commands.deactivate_user import (
@@ -32,8 +33,8 @@ from src.auth_bc.user.application.commands.assign_department import (
 from src.company_bc.department.domain.entities import Department
 
 
-def _make_user(user_id="user1", company_id="comp1"):
-    user = User.create(email="test@example.com", role=UserRole.EMPLOYEE, company_id=company_id)
+def _make_user(user_id="user1", company_id="comp1", role=UserRole.EMPLOYEE):
+    user = User.create(email="test@example.com", role=role, company_id=company_id)
     user.id = user_id
     return user
 
@@ -95,6 +96,75 @@ class TestChangeUserRoleCommand:
                     current_user_id="admin1", new_role="super_admin",
                 )
             )
+
+    def test_last_admin_cannot_be_demoted(self):
+        user = _make_user(role=UserRole.ADMIN)
+        repo = MagicMock()
+        repo.find_by_id_and_company.return_value = user
+        repo.count_admins_by_company.return_value = 1
+        handler = ChangeUserRoleCommandHandler(user_repo=repo)
+
+        with pytest.raises(LastAdminError):
+            handler.handle(
+                ChangeUserRoleCommand(
+                    user_id="user1", company_id="comp1",
+                    current_user_id="admin2", new_role="employee",
+                )
+            )
+
+    def test_admin_can_be_demoted_when_multiple_admins(self):
+        user = _make_user(role=UserRole.ADMIN)
+        repo = MagicMock()
+        repo.find_by_id_and_company.return_value = user
+        repo.count_admins_by_company.return_value = 2
+        handler = ChangeUserRoleCommandHandler(user_repo=repo)
+
+        result = handler.handle(
+            ChangeUserRoleCommand(
+                user_id="user1", company_id="comp1",
+                current_user_id="admin2", new_role="employee",
+            )
+        )
+
+        assert result.role == UserRole.EMPLOYEE
+
+    def test_promote_to_admin_sends_notification(self):
+        user = _make_user()
+        existing_admin = _make_user(user_id="admin1", role=UserRole.ADMIN)
+        existing_admin.email = "admin1@example.com"
+        repo = MagicMock()
+        repo.find_by_id_and_company.return_value = user
+        repo.find_admins_by_company.return_value = [existing_admin, user]
+        email_service = MagicMock()
+        handler = ChangeUserRoleCommandHandler(user_repo=repo, email_service=email_service)
+
+        handler.handle(
+            ChangeUserRoleCommand(
+                user_id="user1", company_id="comp1",
+                current_user_id="admin1", new_role="admin",
+            )
+        )
+
+        email_service.send.assert_called_once()
+
+    def test_promote_notification_failure_does_not_block(self):
+        user = _make_user()
+        repo = MagicMock()
+        repo.find_by_id_and_company.return_value = user
+        repo.find_admins_by_company.side_effect = Exception("SMTP error")
+        email_service = MagicMock()
+        handler = ChangeUserRoleCommandHandler(user_repo=repo, email_service=email_service)
+
+        result = handler.handle(
+            ChangeUserRoleCommand(
+                user_id="user1", company_id="comp1",
+                current_user_id="admin1", new_role="admin",
+            )
+        )
+
+        # Role change should still succeed despite email failure
+        assert result.role == UserRole.ADMIN
+        repo.save.assert_called_once()
 
 
 class TestDeactivateUserCommand:

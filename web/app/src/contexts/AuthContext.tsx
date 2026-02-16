@@ -11,6 +11,7 @@ interface AuthState {
 interface AuthContextType extends AuthState {
   login: (token: string) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
   isRole: (...roles: string[]) => boolean;
 }
 
@@ -46,6 +47,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await fetchUser(token);
   };
 
+  const refreshUser = async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      await fetchUser(token);
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     setState({ user: null, token: null, loading: false });
@@ -57,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, isRole }}>
+    <AuthContext.Provider value={{ ...state, login, logout, refreshUser, isRole }}>
       {children}
     </AuthContext.Provider>
   );

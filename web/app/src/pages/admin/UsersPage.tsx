@@ -25,10 +25,19 @@ export default function UsersPage() {
     },
   });
 
+  const [roleError, setRoleError] = useState('');
+
   const changeRole = useMutation({
     mutationFn: ({ userId, role }: { userId: string; role: string }) =>
       api.patch(`/users/${userId}/role`, { role }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+    onSuccess: () => {
+      setRoleError('');
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Failed to change role';
+      setRoleError(msg);
+    },
   });
 
   const toggleActive = useMutation({
@@ -48,6 +57,12 @@ export default function UsersPage() {
             {['employee', 'technician', 'admin'].map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
         </div>
+
+        {roleError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            {roleError}
+          </div>
+        )}
 
         {isLoading ? <Loading /> : !data?.data.length ? (
           <p className="text-sm text-gray-500">No users found.</p>

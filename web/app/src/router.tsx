@@ -5,7 +5,9 @@ import { PageLoading } from './components/ui/Loading';
 
 // Lazy-loaded pages
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
 const VerifyPage = lazy(() => import('./pages/auth/VerifyPage'));
+const SetPasswordPage = lazy(() => import('./pages/auth/SetPasswordPage'));
 const MyEquipmentPage = lazy(() => import('./pages/employee/MyEquipmentPage'));
 const MyRequestsPage = lazy(() => import('./pages/employee/MyRequestsPage'));
 const NewRequestPage = lazy(() => import('./pages/employee/NewRequestPage'));
@@ -28,7 +30,9 @@ function S({ children }: { children: React.ReactNode }) {
 
 export const router = createBrowserRouter([
   { path: '/login', element: <S><LoginPage /></S> },
+  { path: '/register', element: <S><RegisterPage /></S> },
   { path: '/verify', element: <S><VerifyPage /></S> },
+  { path: '/set-password', element: <S><SetPasswordPage /></S> },
   {
     path: '/',
     element: <AppLayout />,

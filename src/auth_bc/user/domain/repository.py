@@ -50,3 +50,13 @@ class UserRepositoryInterface(ABC):
     def find_technician_ids_by_company(self, company_id: str) -> list[str]:
         """Find IDs of all active technician+ users in a company."""
         ...
+
+    @abstractmethod
+    def find_admins_by_company(self, company_id: str) -> list[User]:
+        """Find all active users with ADMIN role in a company."""
+        ...
+
+    @abstractmethod
+    def count_admins_by_company(self, company_id: str) -> int:
+        """Count active admin users in a company."""
+        ...

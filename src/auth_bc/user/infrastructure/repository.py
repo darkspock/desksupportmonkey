@@ -24,6 +24,7 @@ class UserRepository(UserRepositoryInterface):
             existing.company_id = user.company_id
             existing.department_id = user.department_id
             existing.is_active = user.is_active
+            existing.password_hash = user.password_hash
         else:
             model = UserModel(
                 id=user.id,
@@ -33,6 +34,7 @@ class UserRepository(UserRepositoryInterface):
                 company_id=user.company_id,
                 department_id=user.department_id,
                 is_active=user.is_active,
+                password_hash=user.password_hash,
             )
             self.session.add(model)
         self.session.flush()
@@ -116,6 +118,28 @@ class UserRepository(UserRepositoryInterface):
         ).scalars().all()
         return list(result)
 
+    def find_admins_by_company(self, company_id: str) -> list[User]:
+        models = self.session.execute(
+            select(UserModel).where(
+                UserModel.company_id == company_id,
+                UserModel.role == UserRole.ADMIN.value,
+                UserModel.is_active == True,  # noqa: E712
+            )
+        ).scalars().all()
+        return [self._to_entity(m) for m in models]
+
+    def count_admins_by_company(self, company_id: str) -> int:
+        return (
+            self.session.execute(
+                select(func.count()).select_from(UserModel)
+                .where(
+                    UserModel.company_id == company_id,
+                    UserModel.role == UserRole.ADMIN.value,
+                    UserModel.is_active == True,  # noqa: E712
+                )
+            ).scalar()
+        ) or 0
+
     @staticmethod
     def _to_entity(model: UserModel) -> User:
         return User(
@@ -126,6 +150,7 @@ class UserRepository(UserRepositoryInterface):
             company_id=model.company_id,
             department_id=model.department_id,
             is_active=model.is_active,
+            password_hash=model.password_hash,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
