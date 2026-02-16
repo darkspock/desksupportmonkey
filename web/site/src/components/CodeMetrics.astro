@@ -8,8 +8,17 @@ const metrics = [
   { label: 'Bounded Contexts', value: '6' },
   { label: 'Database Migrations', value: '9' },
   { label: 'AI Documentation', value: '~26,700 lines' },
-  { label: 'Built in', value: '24 hours' },
 ];
+
+// Calculation: ~24,200 total lines / 100 lines per day = 242 working days / 22 days per month ≈ 11 months
+const teamBreakdown = [
+  { role: 'Developer', allocation: '100%', months: '11', detail: '~24,200 lines at 100 lines/day' },
+  { role: 'Tech Lead', allocation: '100%', months: '11', detail: 'Architecture, code review, technical decisions' },
+  { role: 'Product Manager', allocation: '30%', months: '3.3', detail: 'Requirements, discovery, prioritization' },
+  { role: 'UX Designer', allocation: '25%', months: '2.8', detail: 'User flows, design, usability' },
+  { role: 'Marketing', allocation: '15%', months: '1.7', detail: 'Marketing site, content, positioning' },
+];
+// Total: ~29.8 person-months ≈ 30 person-months
 ---
 
 <section class="py-20">
@@ -26,7 +35,87 @@ const metrics = [
             <span class="text-sm font-semibold text-slate-900">{item.value}</span>
           </div>
         ))}
+
+        <!-- Built by AI in -->
+        <div class="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-blue-50/50">
+          <span class="text-sm font-medium text-blue-700">Built by AI in</span>
+          <span class="text-sm font-bold text-blue-700">24 hours</span>
+        </div>
+
+        <!-- Human Estimation -->
+        <div class="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50">
+          <span class="text-sm font-medium text-slate-600">
+            Human estimation
+            <button
+              id="human-estimate-info"
+              type="button"
+              class="ml-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-400 text-[10px] font-bold text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors align-middle"
+              aria-label="View team breakdown"
+            >i</button>
+          </span>
+          <span class="text-sm font-semibold text-slate-900">~11 months, 5-person team</span>
+        </div>
       </div>
     </div>
   </div>
 </section>
+
+<!-- Modal -->
+<div id="estimate-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+  <button id="estimate-modal-backdrop" type="button" class="absolute inset-0 bg-black/40" aria-label="Close"></button>
+  <div class="relative z-[101] w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-xl sm:p-8">
+    <div class="flex items-start justify-between mb-5">
+      <div>
+        <h3 class="text-lg font-bold text-slate-900">Human Team Estimation</h3>
+        <p class="mt-1 text-xs text-slate-500">Based on ~24,200 lines of code at 100 lines/day</p>
+      </div>
+      <button id="estimate-modal-close" type="button" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors" aria-label="Close">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="rounded-xl border border-slate-200 overflow-hidden">
+      <div class="grid grid-cols-[1fr_auto_auto] gap-x-4 px-4 py-2.5 bg-slate-50 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+        <span>Role</span>
+        <span class="text-right">Allocation</span>
+        <span class="text-right">Months</span>
+      </div>
+      {teamBreakdown.map((member) => (
+        <div class="grid grid-cols-[1fr_auto_auto] gap-x-4 items-center px-4 py-3 border-t border-slate-100">
+          <div>
+            <span class="text-sm font-medium text-slate-900">{member.role}</span>
+            <p class="text-xs text-slate-400">{member.detail}</p>
+          </div>
+          <span class="text-sm font-semibold text-slate-700 text-right">{member.allocation}</span>
+          <span class="text-sm font-semibold text-slate-900 text-right">{member.months}</span>
+        </div>
+      ))}
+      <div class="grid grid-cols-[1fr_auto_auto] gap-x-4 px-4 py-3 border-t-2 border-slate-200 bg-slate-50">
+        <span class="text-sm font-bold text-slate-900">Total</span>
+        <span></span>
+        <span class="text-sm font-bold text-slate-900 text-right">~30 person-months</span>
+      </div>
+    </div>
+
+    <p class="mt-4 text-xs text-slate-400 text-center">
+      AI built the same scope in 24 hours with a single human architect.
+    </p>
+  </div>
+</div>
+
+<script>
+  const btn = document.getElementById('human-estimate-info');
+  const modal = document.getElementById('estimate-modal');
+  const backdrop = document.getElementById('estimate-modal-backdrop');
+  const closeBtn = document.getElementById('estimate-modal-close');
+
+  function openModal() { modal?.classList.remove('hidden'); modal?.classList.add('flex'); }
+  function closeModal() { modal?.classList.add('hidden'); modal?.classList.remove('flex'); }
+
+  btn?.addEventListener('click', openModal);
+  backdrop?.addEventListener('click', closeModal);
+  closeBtn?.addEventListener('click', closeModal);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+</script>
