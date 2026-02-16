@@ -14,6 +14,7 @@
 | E7 | Frontend | React app, routing, layouts, pages for all modules | High | Done |
 | E8 | Seed Data & Demo | Demo data, demo script, Docker Compose polish | Low | Done |
 | E9 | UX Improvements | Invite users, departments edit, frontend quality uplift, and reliability hardening | Medium | Done |
+| E10 | Asset QR & Barcodes | QR codes and barcodes on asset detail page with print functionality for physical labels | Medium | Done |
 
 ---
 
@@ -37,6 +38,8 @@ E0: Foundation
  └── E7: Frontend (parallel, depends on API endpoints from E1-E6)
 
 E8: Seed Data & Demo (after all others)
+
+E10: Asset QR & Barcodes (depends on E2 + E7)
 ```
 
 ---
@@ -145,6 +148,13 @@ E8: Seed Data & Demo (after all others)
 - Improved responsive app shell for tablet/mobile navigation
 - Accessibility polish (keyboard/focus/labels/tooltips)
 - Unified loading/empty/error and mutation feedback patterns
+
+### E10: Asset QR Codes & Barcodes
+- QR code on asset detail page encoding full URL to asset (scan-to-access)
+- Code 128 barcode encoding asset ID (ULID) for physical identification
+- Print button: opens clean print view with QR, barcode, brand, model, serial number
+- Auth redirect flow: unauthenticated QR scans redirect to login, then back to asset
+- i18n support for all labels (English and Spanish)
 
 ---
 

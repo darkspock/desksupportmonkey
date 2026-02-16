@@ -328,6 +328,10 @@ const en: Record<string, string> = {
   'page.asset_detail.error_status_failed': 'Status update failed',
   'page.asset_detail.error_assignment_failed': 'Assignment failed',
   'page.asset_detail.error_unassign_failed': 'Unassign failed',
+  'page.asset_detail.label_title': 'Asset Label',
+  'page.asset_detail.print_label': 'Print',
+  'page.asset_detail.qr_code': 'QR Code',
+  'page.asset_detail.barcode': 'Barcode',
 
   'page.users.title': 'Users',
   'page.users.invite_user': 'Invite User',

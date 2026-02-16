@@ -11,6 +11,7 @@ import { Table, Th, Td } from '../../components/ui/Table';
 import { formatDate, formatDateTime } from '../../lib/date';
 import { useToast } from '../../hooks/useToast';
 import { useI18n } from '../../lib/i18n';
+import { AssetLabel } from '../../components/AssetLabel';
 import type { Asset, AssetEvent, AssignableUser, AssetStatus } from '../../types';
 
 const STATUS_OPTIONS: AssetStatus[] = ['in_stock', 'assigned', 'in_repair', 'decommissioned'];
@@ -328,6 +329,13 @@ export default function AssetDetailPage() {
 
         {asset.notes && <p className="mt-4 rounded bg-gray-50 p-3 text-sm text-gray-600">{asset.notes}</p>}
       </Card>
+
+      <AssetLabel
+        assetId={id!}
+        serialNumber={asset.serial_number}
+        brand={asset.brand}
+        model={asset.model}
+      />
 
       <Card>
         <h3 className="mb-3 text-sm font-semibold text-gray-900">{t('table.status')}</h3>

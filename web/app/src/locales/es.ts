@@ -328,6 +328,10 @@ const es: Record<string, string> = {
   'page.asset_detail.error_status_failed': 'Error al actualizar estado',
   'page.asset_detail.error_assignment_failed': 'Error de asignación',
   'page.asset_detail.error_unassign_failed': 'Error al desasignar',
+  'page.asset_detail.label_title': 'Etiqueta del activo',
+  'page.asset_detail.print_label': 'Imprimir',
+  'page.asset_detail.qr_code': 'Código QR',
+  'page.asset_detail.barcode': 'Código de barras',
 
   'page.users.title': 'Usuarios',
   'page.users.invite_user': 'Invitar usuario',
