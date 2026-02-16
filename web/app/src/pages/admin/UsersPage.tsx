@@ -37,7 +37,7 @@ export default function UsersPage() {
   const { data: departments } = useQuery({
     queryKey: ['users-departments-options'],
     queryFn: async () => {
-      const { data } = await api.get('/departments', { params: { page: 1, page_size: 200 } });
+      const { data } = await api.get('/departments', { params: { page: 1, page_size: 100 } });
       return data.data as Department[];
     },
   });
@@ -52,6 +52,7 @@ export default function UsersPage() {
       setInviteEmail('');
       setShowInvite(false);
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['asset-assignable-users'] });
       showToast({ title: t('page.users.toast_invitation_sent'), description: t('page.users.toast_invitation_desc'), variant: 'success' });
     },
     onError: (err: unknown) => {
