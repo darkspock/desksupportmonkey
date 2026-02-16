@@ -1,4 +1,4 @@
-.PHONY: start stop start-docker start-backend queue start-queue-bg install logs db-migrate db-upgrade test lint clean
+.PHONY: start stop start-docker start-backend queue start-queue-bg install logs db-migrate db-upgrade test lint clean seed demo-reset
 
 # Colors for terminal output
 GREEN := \033[0;32m
@@ -108,6 +108,19 @@ lint:
 # Utilities
 # =============================================================================
 
+## Seed database with demo data
+seed:
+	@echo "$(GREEN)Seeding demo data...$(NC)"
+	@PYTHONPATH=src uv run python scripts/seed_demo_data.py
+
+## Reset database and seed fresh demo data
+demo-reset:
+	@echo "$(YELLOW)Resetting database...$(NC)"
+	@PYTHONPATH=src alembic downgrade base
+	@PYTHONPATH=src alembic upgrade head
+	@echo "$(GREEN)Seeding demo data...$(NC)"
+	@PYTHONPATH=src uv run python scripts/seed_demo_data.py
+
 ## Show logs from Docker containers
 logs:
 	@docker-compose logs -f
@@ -141,6 +154,8 @@ help:
 	@echo ""
 	@echo "  $(GREEN)make test$(NC)           - Run tests"
 	@echo "  $(GREEN)make lint$(NC)           - Run linters"
+	@echo "  $(GREEN)make seed$(NC)           - Seed database with demo data"
+	@echo "  $(GREEN)make demo-reset$(NC)     - Reset DB and seed fresh demo data"
 	@echo "  $(GREEN)make logs$(NC)           - Show Docker logs"
 	@echo "  $(GREEN)make clean$(NC)          - Clean generated files"
 	@echo ""
