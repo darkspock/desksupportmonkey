@@ -55,6 +55,13 @@ class Settings(BaseSettings):
 
     # Frontend
     FRONTEND_URL: str = "http://localhost:5173"
+    CORS_ORIGINS: str = ""
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        if self.CORS_ORIGINS:
+            return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
+        return [self.FRONTEND_URL]
 
     # Auth settings (nested)
     auth: AuthSettings = AuthSettings()

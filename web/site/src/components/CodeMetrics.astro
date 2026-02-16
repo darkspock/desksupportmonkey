@@ -1,0 +1,32 @@
+---
+const metrics = [
+  { label: 'Total lines of code', value: '~21,000' },
+  { label: 'Backend (Python)', value: '~9,500 lines, 154 files' },
+  { label: 'Frontend (React/TS)', value: '~4,800 lines, 49 files' },
+  { label: 'Tests', value: '~6,000 lines, 433 test cases' },
+  { label: 'Bounded Contexts', value: '6' },
+  { label: 'Database Migrations', value: '9' },
+  { label: 'Pages', value: '19' },
+  { label: 'Components', value: '13' },
+  { label: 'AI Documentation', value: '~22,000 lines' },
+];
+---
+
+<section class="py-20">
+  <div class="mx-auto max-w-6xl px-6">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl font-bold text-slate-900 sm:text-4xl">Code Metrics</h2>
+      <p class="mt-3 text-slate-600">A real-world production application, not a toy demo.</p>
+    </div>
+    <div class="mx-auto max-w-2xl">
+      <div class="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+        {metrics.map((item, i) => (
+          <div class:list={['flex items-center justify-between px-6 py-4', i > 0 && 'border-t border-slate-100']}>
+            <span class="text-sm font-medium text-slate-600">{item.label}</span>
+            <span class="text-sm font-semibold text-slate-900">{item.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,96 @@
+---
+interface Props {
+  appUrl: string;
+}
+
+const { appUrl } = Astro.props;
+const currentPath = Astro.url.pathname;
+
+const navLinks = [
+  { href: '/', label: 'Home' },
+  { href: '/books', label: 'Books' },
+  { href: '/training', label: 'Training' },
+  { href: '/opensource', label: 'GitHub' },
+  { href: '/contact', label: 'Contact' },
+];
+---
+
+<header class="fixed inset-x-0 top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
+  <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+    <a href="/" class="flex items-center gap-2.5">
+      <img src="/logo.png" alt="DeskSupportMonkey" class="h-8 w-8" />
+      <span class="text-lg font-bold text-slate-900 hidden sm:inline">DeskSupportMonkey</span>
+    </a>
+
+    <!-- Desktop nav -->
+    <nav class="hidden md:flex items-center gap-1">
+      {navLinks.map((link) => (
+        <a
+          href={link.href}
+          class:list={[
+            'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+            currentPath === link.href || (link.href !== '/' && currentPath.startsWith(link.href))
+              ? 'text-blue-600 bg-blue-50'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100',
+          ]}
+        >
+          {link.label}
+        </a>
+      ))}
+    </nav>
+
+    <div class="flex items-center gap-2">
+      <a
+        href={`${appUrl}/auth/login`}
+        class="rounded-lg px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors hidden sm:inline-flex"
+      >
+        Log in
+      </a>
+      <a
+        href={`${appUrl}/auth/register`}
+        class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+      >
+        Sign up
+      </a>
+
+      <!-- Mobile hamburger -->
+      <button
+        id="mobile-menu-btn"
+        class="md:hidden ml-1 rounded-lg p-2 text-slate-600 hover:bg-slate-100 transition-colors"
+        aria-label="Open menu"
+      >
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile menu -->
+  <div id="mobile-menu" class="hidden md:hidden border-t border-slate-200 bg-white px-6 pb-4">
+    {navLinks.map((link) => (
+      <a
+        href={link.href}
+        class:list={[
+          'block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+          currentPath === link.href
+            ? 'text-blue-600 bg-blue-50'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100',
+        ]}
+      >
+        {link.label}
+      </a>
+    ))}
+    <div class="mt-2 border-t border-slate-100 pt-2">
+      <a href={`${appUrl}/auth/login`} class="block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100">
+        Log in
+      </a>
+    </div>
+  </div>
+</header>
+
+<script>
+  const btn = document.getElementById('mobile-menu-btn');
+  const menu = document.getElementById('mobile-menu');
+  btn?.addEventListener('click', () => menu?.classList.toggle('hidden'));
+</script>

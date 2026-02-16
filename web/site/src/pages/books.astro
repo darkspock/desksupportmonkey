@@ -1,0 +1,33 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import BookCard from '../components/BookCard.astro';
+---
+
+<BaseLayout title="Books — DeskSupportMonkey" description="Companion books for DDD, software communication, and spec-driven development.">
+  <div class="pt-32 pb-20">
+    <div class="mx-auto max-w-6xl px-6">
+      <div class="text-center mb-14">
+        <h1 class="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">Books</h1>
+        <p class="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
+          DeskSupportMonkey is a companion project to these published books — a real-world reference
+          implementation of the patterns and methodologies they teach.
+        </p>
+      </div>
+
+      <div class="mx-auto max-w-3xl grid gap-8 sm:grid-cols-2">
+        <BookCard
+          title="Domain-Driven Design with Python"
+          link="https://dddpython.com/"
+          description="Learn how to apply Domain-Driven Design patterns in Python. DeskSupportMonkey is the reference implementation — every bounded context, aggregate, and CQRS pattern from the book is here in production code."
+          accent="bg-blue-600"
+        />
+        <BookCard
+          title="The Broken Telephone"
+          link="https://thebrokentelephone.com/"
+          description="A book about communication in software development. Explores how requirements get lost in translation and how Spec-Driven Development prevents the 'broken telephone' effect between stakeholders and developers."
+          accent="bg-slate-800"
+        />
+      </div>
+    </div>
+  </div>
+</BaseLayout>

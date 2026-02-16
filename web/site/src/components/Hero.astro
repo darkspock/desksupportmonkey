@@ -1,0 +1,42 @@
+---
+interface Props {
+  appUrl: string;
+}
+
+const { appUrl } = Astro.props;
+---
+
+<section class="relative overflow-hidden bg-slate-900 pt-32 pb-20 sm:pt-40 sm:pb-28">
+  <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--color-blue-900)_0%,_transparent_60%)] opacity-40"></div>
+  <div class="relative mx-auto max-w-6xl px-6 text-center">
+    <img src="/logo.png" alt="DeskSupportMonkey" class="mx-auto h-24 w-24 sm:h-32 sm:w-32 mb-8 drop-shadow-lg" />
+    <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-6xl">
+      IT support,<br class="hidden sm:block" /> simplified.
+    </h1>
+    <p class="mx-auto mt-5 max-w-xl text-lg text-slate-300">
+      An open-source IT Service Desk & Asset Management platform — built 100% with AI.
+    </p>
+    <div class="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+      <a
+        href={`${appUrl}/auth/register`}
+        class="inline-flex items-center rounded-xl bg-blue-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/30 hover:bg-blue-700 transition-all hover:shadow-blue-600/40"
+      >
+        Get Started
+        <svg class="ml-2 h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+        </svg>
+      </a>
+      <a
+        href="https://github.com/darkspock/desksupportmonkey"
+        target="_blank"
+        rel="noopener"
+        class="inline-flex items-center rounded-xl border border-slate-600 bg-slate-800 px-7 py-3.5 text-sm font-semibold text-slate-200 hover:bg-slate-700 transition-all"
+      >
+        <svg class="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+        </svg>
+        View on GitHub
+      </a>
+    </div>
+  </div>
+</section>

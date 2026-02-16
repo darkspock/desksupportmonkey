@@ -1,0 +1,18 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
+import HighlightsBar from '../components/HighlightsBar.astro';
+import BuiltWithAI from '../components/BuiltWithAI.astro';
+import CodeMetrics from '../components/CodeMetrics.astro';
+import Architecture from '../components/Architecture.astro';
+
+const appUrl = import.meta.env.PUBLIC_APP_URL || 'https://app.desksupportmonkey.com';
+---
+
+<BaseLayout title="DeskSupportMonkey — IT Support, Simplified">
+  <Hero appUrl={appUrl} />
+  <HighlightsBar />
+  <BuiltWithAI />
+  <CodeMetrics />
+  <Architecture />
+</BaseLayout>

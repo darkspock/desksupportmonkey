@@ -1,0 +1,107 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CourseModule from '../components/CourseModule.astro';
+
+const session1 = [
+  { number: 1, title: 'Meet Claudia, Your New Team Member', type: 'theory' },
+  { number: 2, title: 'Introduction to Claude Code', type: 'demo + practice' },
+  { number: 3, title: 'Setting Up a New Project with Claude', type: 'hands-on' },
+  { number: 4, title: 'The Development Workflow — From Idea to Code', type: 'theory' },
+  { number: 5, title: 'Hands-On — Writing the Epic', type: 'workshop' },
+  { number: 6, title: 'Hands-On — Design and Tasks', type: 'workshop' },
+  { number: 7, title: 'Hands-On — Building the Frontend', type: 'live coding' },
+  { number: 8, title: 'Best Practices and Wrap-Up', type: 'theory' },
+];
+
+const session2 = [
+  { number: 9, title: 'The Challenge of Existing Projects', type: 'theory' },
+  { number: 10, title: 'Configuring Claude for an Existing Project', type: 'hands-on' },
+  { number: 11, title: 'MCP for Your Ecosystem', type: 'hands-on' },
+  { number: 12, title: 'Incident Investigation with Claude Code', type: 'hands-on' },
+  { number: 13, title: 'Implementing a Feature in an Existing Project', type: 'live coding' },
+  { number: 14, title: 'Advanced Topics and Team Workflows', type: 'theory' },
+  { number: 15, title: 'Wrap-Up and Action Plan', type: 'workshop' },
+];
+---
+
+<BaseLayout title="AI Training — DeskSupportMonkey" description="AI-Assisted Development with Claude Code — Complete Course. Learn Spec-Driven Development.">
+  <div class="pt-32 pb-20">
+    <div class="mx-auto max-w-6xl px-6">
+      <!-- Header -->
+      <div class="text-center mb-14">
+        <span class="inline-block rounded-full bg-blue-100 px-4 py-1.5 text-xs font-semibold text-blue-700 uppercase tracking-wider mb-4">
+          Complete Course
+        </span>
+        <h1 class="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
+          AI-Assisted Development<br class="hidden sm:block" /> with Claude Code
+        </h1>
+        <p class="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
+          Equip development teams to adopt AI-assisted development using Spec-Driven Development.
+          Two sessions covering new and existing projects.
+        </p>
+      </div>
+
+      <!-- Course info -->
+      <div class="mx-auto max-w-3xl mb-16">
+        <div class="grid gap-4 sm:grid-cols-3">
+          <div class="rounded-xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+            <div class="text-2xl font-bold text-slate-900">15</div>
+            <div class="mt-1 text-sm text-slate-600">Modules</div>
+          </div>
+          <div class="rounded-xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+            <div class="text-2xl font-bold text-slate-900">2</div>
+            <div class="mt-1 text-sm text-slate-600">Sessions</div>
+          </div>
+          <div class="rounded-xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+            <div class="text-2xl font-bold text-slate-900">10</div>
+            <div class="mt-1 text-sm text-slate-600">AI Agents</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Session 1 -->
+      <div class="mx-auto max-w-3xl mb-16">
+        <h2 class="text-2xl font-bold text-slate-900 mb-2">Session 1: Building from Scratch</h2>
+        <p class="text-slate-600 mb-6">Start a new project end-to-end with AI — from epic to production code.</p>
+        <div class="space-y-3">
+          {session1.map((mod) => (
+            <CourseModule number={mod.number} title={mod.title} type={mod.type} />
+          ))}
+        </div>
+      </div>
+
+      <!-- Session 2 -->
+      <div class="mx-auto max-w-3xl mb-16">
+        <h2 class="text-2xl font-bold text-slate-900 mb-2">Session 2: Working with Existing Projects</h2>
+        <p class="text-slate-600 mb-6">Integrate AI into established codebases with MCP and observability tools.</p>
+        <div class="space-y-3">
+          {session2.map((mod) => (
+            <CourseModule number={mod.number} title={mod.title} type={mod.type} />
+          ))}
+        </div>
+      </div>
+
+      <!-- Key Takeaways -->
+      <div class="mx-auto max-w-3xl">
+        <div class="rounded-2xl bg-slate-900 p-8">
+          <h2 class="text-xl font-bold text-white mb-6">Key Takeaways</h2>
+          <ul class="space-y-3">
+            {[
+              'Full cycle: Epic > Validate > Slice > Design > Tasks > Implement > Review',
+              '10 custom AI agents (slash commands) for the development pipeline',
+              'MCP integrations for real-world tooling (GitHub, Notion, Atlassian, Sentry, Datadog)',
+              'Incident investigation with AI and observability MCPs',
+            ].map((item) => (
+              <li class="flex items-start gap-3">
+                <svg class="mt-0.5 h-5 w-5 shrink-0 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span class="text-sm text-slate-300">{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

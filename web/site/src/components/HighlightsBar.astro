@@ -1,0 +1,49 @@
+---
+const highlights = [
+  {
+    title: 'Service Requests',
+    description: 'Submit, track, and resolve IT issues with a full lifecycle workflow.',
+    color: 'blue',
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-3-3v6m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>`,
+  },
+  {
+    title: 'Asset Inventory',
+    description: 'Track equipment, assignments, and history across your organization.',
+    color: 'emerald',
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M3 9h2m-2 6h2m14-6h2m-2 6h2M7 7h10a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2V9a2 2 0 012-2z"/>`,
+  },
+  {
+    title: 'Reports & Dashboard',
+    description: 'Real-time metrics and exportable reports at a glance.',
+    color: 'amber',
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M3 10h4l3 8 4-16 3 8h4"/>`,
+  },
+];
+
+const colorMap: Record<string, { bg: string; text: string }> = {
+  blue: { bg: 'bg-blue-100', text: 'text-blue-600' },
+  emerald: { bg: 'bg-emerald-100', text: 'text-emerald-600' },
+  amber: { bg: 'bg-amber-100', text: 'text-amber-600' },
+};
+---
+
+<section class="py-20">
+  <div class="mx-auto max-w-6xl px-6">
+    <div class="grid gap-8 sm:grid-cols-3">
+      {highlights.map((item) => {
+        const colors = colorMap[item.color];
+        return (
+          <div class="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm hover:shadow-md transition-shadow">
+            <div class={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl ${colors.bg} ${colors.text}`}>
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <Fragment set:html={item.icon} />
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-slate-900">{item.title}</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-600">{item.description}</p>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+</section>

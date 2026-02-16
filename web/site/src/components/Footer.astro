@@ -1,0 +1,36 @@
+---
+const year = new Date().getFullYear();
+---
+
+<footer class="border-t border-slate-200 bg-white">
+  <div class="mx-auto max-w-6xl px-6 py-10">
+    <div class="grid gap-8 sm:grid-cols-3">
+      <div>
+        <div class="flex items-center gap-2 mb-3">
+          <img src="/logo.png" alt="DeskSupportMonkey" class="h-6 w-6" />
+          <span class="font-semibold text-slate-900">DeskSupportMonkey</span>
+        </div>
+        <p class="text-sm text-slate-500">Open-source IT Service Desk & Asset Management platform.</p>
+      </div>
+      <div>
+        <h4 class="text-sm font-semibold text-slate-900 mb-3">Resources</h4>
+        <ul class="space-y-2 text-sm text-slate-500">
+          <li><a href="/books" class="hover:text-slate-700 transition-colors">Books</a></li>
+          <li><a href="/training" class="hover:text-slate-700 transition-colors">AI Training</a></li>
+          <li><a href="https://github.com/darkspock/desksupportmonkey" class="hover:text-slate-700 transition-colors" target="_blank" rel="noopener">GitHub</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="text-sm font-semibold text-slate-900 mb-3">Connect</h4>
+        <ul class="space-y-2 text-sm text-slate-500">
+          <li><a href="https://x.com/juanmacias" class="hover:text-slate-700 transition-colors" target="_blank" rel="noopener">X / Twitter</a></li>
+          <li><a href="https://linkedin.com/in/juanmaciasvela" class="hover:text-slate-700 transition-colors" target="_blank" rel="noopener">LinkedIn</a></li>
+          <li><a href="/contact" class="hover:text-slate-700 transition-colors">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="mt-8 border-t border-slate-100 pt-6 text-center text-xs text-slate-400">
+      &copy; {year} DeskSupportMonkey. Built 100% with AI. All rights reserved.
+    </div>
+  </div>
+</footer>
