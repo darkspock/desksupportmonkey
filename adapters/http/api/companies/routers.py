@@ -14,7 +14,7 @@ from adapters.http.api.companies.schemas import (
 )
 from adapters.http.schemas.responses import ListResponse, PaginationMeta
 from core.database import get_db
-from core.email import SMTPEmailService
+from core.email import get_email_service
 from src.auth_bc.magic_link.infrastructure.repository import MagicLinkRepository
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
@@ -83,7 +83,7 @@ def create_company(
         company_repo=CompanyRepository(db),
         user_repo=UserRepository(db),
         magic_link_repo=MagicLinkRepository(db),
-        email_service=SMTPEmailService(),
+        email_service=get_email_service(),
     )
     try:
         company = handler.handle(

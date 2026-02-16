@@ -13,7 +13,7 @@ from adapters.http.api.auth.schemas import (
     VerifyRequest,
 )
 from core.database import get_db
-from core.email import SMTPEmailService
+from core.email import get_email_service
 from core.jwt import JWTService
 from core.password import PasswordService
 from src.auth_bc.company_lookup.infrastructure.service import CompanyLookupService
@@ -76,7 +76,7 @@ def request_magic_link(
     handler = CreateMagicLinkCommandHandler(
         magic_link_repo=MagicLinkRepository(db),
         company_lookup=CompanyLookupService(db),
-        email_service=SMTPEmailService(),
+        email_service=get_email_service(),
         user_repo=UserRepository(db),
     )
     try:

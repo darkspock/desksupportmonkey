@@ -48,13 +48,15 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
 
-    # SMTP settings (for development with Mailpit)
+    # Email settings
     SMTP_HOST: str = "localhost"
     SMTP_PORT: int = 1028
     SMTP_USERNAME: str = ""
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str = "noreply@desksupportmonkey.com"
+    SMTP_FROM_NAME: str = "DeskSupportMonkey"
     SMTP_USE_TLS: bool = False
+    BREVO_API_KEY: str = ""
 
     # Frontend
     FRONTEND_URL: str = "http://localhost:5173"

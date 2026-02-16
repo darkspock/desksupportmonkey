@@ -15,7 +15,7 @@ from adapters.http.schemas.responses import PaginationMeta
 from core.database import get_db
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
-from core.email import SMTPEmailService
+from core.email import get_email_service
 from src.auth_bc.company_lookup.infrastructure.service import CompanyLookupService
 from src.auth_bc.magic_link.application.commands.create_magic_link import (
     CompanyRestrictedError,
@@ -146,7 +146,7 @@ def invite_user(
     handler = CreateMagicLinkCommandHandler(
         magic_link_repo=MagicLinkRepository(db),
         company_lookup=CompanyLookupService(db),
-        email_service=SMTPEmailService(),
+        email_service=get_email_service(),
         user_repo=user_repo,
     )
     try:
@@ -195,7 +195,7 @@ def change_role(
     company_id = current_user.company_id
     handler = ChangeUserRoleCommandHandler(
         user_repo=UserRepository(db),
-        email_service=SMTPEmailService(),
+        email_service=get_email_service(),
     )
     try:
         user = handler.handle(

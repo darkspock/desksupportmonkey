@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+import httpx
+
 from core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -13,6 +15,41 @@ class EmailServiceInterface(ABC):
     @abstractmethod
     def send(self, to: str, subject: str, html_body: str) -> None:
         ...
+
+
+class BrevoEmailService(EmailServiceInterface):
+    """Send transactional emails via Brevo HTTP API."""
+
+    API_URL = "https://api.brevo.com/v3/smtp/email"
+
+    def send(self, to: str, subject: str, html_body: str) -> None:
+        payload = {
+            "sender": {
+                "name": settings.SMTP_FROM_NAME,
+                "email": settings.SMTP_FROM_EMAIL,
+            },
+            "to": [{"email": to}],
+            "subject": subject,
+            "htmlContent": html_body,
+        }
+        try:
+            resp = httpx.post(
+                self.API_URL,
+                json=payload,
+                headers={
+                    "api-key": settings.BREVO_API_KEY,
+                    "Content-Type": "application/json",
+                },
+                timeout=15,
+            )
+            if resp.status_code >= 400:
+                detail = resp.json() if resp.headers.get("content-type", "").startswith("application/json") else resp.text
+                logger.error("Brevo API error sending to %s: %s %s", to, resp.status_code, detail)
+                raise RuntimeError(f"Brevo API {resp.status_code}: {detail}")
+            logger.info("Email sent to %s via Brevo: %s (messageId=%s)", to, subject, resp.json().get("messageId"))
+        except httpx.HTTPError as e:
+            logger.error("Brevo HTTP error sending to %s: %s", to, str(e))
+            raise
 
 
 class SMTPEmailService(EmailServiceInterface):
@@ -44,6 +81,15 @@ class ConsoleEmailService(EmailServiceInterface):
         logger.info("To: %s", to)
         logger.info("Subject: %s", subject)
         logger.info("Body: %s", html_body)
+
+
+def get_email_service() -> EmailServiceInterface:
+    """Return the appropriate email service for the current environment."""
+    if settings.BREVO_API_KEY:
+        return BrevoEmailService()
+    if settings.ENVIRONMENT == "production":
+        return SMTPEmailService()
+    return ConsoleEmailService()
 
 
 def send_magic_link_email(email_service: EmailServiceInterface, to: str, token: str) -> None:

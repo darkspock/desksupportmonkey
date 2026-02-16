@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from adapters.http.api.registration.schemas import RegisterCompanyRequest
 from core.database import get_db
-from core.email import SMTPEmailService
+from core.email import get_email_service
 from src.auth_bc.magic_link.infrastructure.repository import MagicLinkRepository
 from src.auth_bc.user.infrastructure.repository import UserRepository
 from src.company_bc.company.application.commands.create_company import (
@@ -32,7 +32,7 @@ def register_company(
         company_repo=CompanyRepository(db),
         user_repo=UserRepository(db),
         magic_link_repo=MagicLinkRepository(db),
-        email_service=SMTPEmailService(),
+        email_service=get_email_service(),
     )
     try:
         handler.handle(
