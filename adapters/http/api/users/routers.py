@@ -137,11 +137,29 @@ def invite_user(
 
     user_repo = UserRepository(db)
     existing_user = user_repo.find_by_email(email)
-    if existing_user and existing_user.company_id == company_id and existing_user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="User with this email already exists",
+    if existing_user:
+        if existing_user.company_id != company_id:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="User with this email already exists",
+            )
+        if existing_user.role != UserRole.EMPLOYEE:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="User with this email already exists",
+            )
+        if not existing_user.is_active:
+            existing_user.activate()
+            user_repo.save(existing_user)
+    else:
+        # Create employee immediately so it appears in Users and assignable users
+        # even before invite verification.
+        invited_user = User.create(
+            email=email,
+            role=UserRole.EMPLOYEE,
+            company_id=company_id,
         )
+        user_repo.save(invited_user)
 
     handler = CreateMagicLinkCommandHandler(
         magic_link_repo=MagicLinkRepository(db),

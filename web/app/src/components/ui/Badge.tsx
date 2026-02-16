@@ -26,11 +26,16 @@ const statusColors: Record<string, string> = {
   low: 'default', medium: 'warning', high: 'danger', urgent: 'danger',
 };
 
-export function StatusBadge({ status }: { status: string }) {
+export function StatusBadge({ status }: { status?: string | null }) {
   const { t } = useI18n();
+  const normalized = typeof status === 'string' ? status.trim() : '';
+  const label = normalized
+    ? t(`enum.${normalized}`, undefined, { defaultValue: humanizeToken(normalized) })
+    : t('common.na');
+
   return (
-    <Badge variant={statusColors[status] || 'default'}>
-      {t(`enum.${status}`, undefined, { defaultValue: humanizeToken(status) })}
+    <Badge variant={statusColors[normalized] || 'default'}>
+      {label}
     </Badge>
   );
 }

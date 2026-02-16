@@ -154,8 +154,8 @@ Internal app navigation should use React Router navigation patterns and avoid fu
 - [x] Date formatting is fully standardized.
 - [x] Confirmation + mutation feedback applied to required actions.
 - [x] Empty/loading/error patterns are consistent in core pages.
-- [ ] Responsive behavior validated on desktop/tablet/mobile.
-- [ ] Basic accessibility pass completed (keyboard + focus + labels on interactive controls).
+- [x] Responsive behavior validated on desktop/tablet/mobile.
+- [x] Basic accessibility pass completed (keyboard + focus + labels on interactive controls).
 - [x] Role-based route guards prevent unauthorized page rendering.
 - [x] Realtime notification updates work via WebSocket with graceful fallback.
 - [x] Login flow restores intended route after auth/401 redirects.

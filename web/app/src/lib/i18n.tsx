@@ -35,7 +35,8 @@ function interpolate(template: string, params?: TranslateParams): string {
   return template.replace(/\{\{(\w+)\}\}/g, (_, token: string) => String(params[token] ?? `{{${token}}}`));
 }
 
-export function humanizeToken(value: string): string {
+export function humanizeToken(value: string | null | undefined): string {
+  if (!value) return '';
   return value
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (char) => char.toUpperCase());

@@ -40,8 +40,8 @@ Operational pages are table-heavy. Improve readability and action clarity for hi
 ## Phase 3: Verification
 
 ### T3.1: Manual checks
-- [ ] Tables remain usable on tablet/mobile (compact behavior defined)
-- [ ] Row actions are discoverable and unambiguous
-- [ ] Filter/search interactions are consistent across pages
-- [ ] Empty and no-result states are clearly differentiated
+- [x] Tables remain usable on tablet/mobile (compact behavior defined)
+- [x] Row actions are discoverable and unambiguous
+- [x] Filter/search interactions are consistent across pages
+- [x] Empty and no-result states are clearly differentiated
 

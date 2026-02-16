@@ -7,6 +7,7 @@ export interface User {
   name?: string | null;
   role: UserRole;
   company_id: string | null;
+  company_name?: string | null;
   department_id: string | null;
   is_active: boolean;
   password_set?: boolean;

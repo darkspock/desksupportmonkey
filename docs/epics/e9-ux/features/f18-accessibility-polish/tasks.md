@@ -40,8 +40,8 @@ Improve accessibility baseline in key flows: keyboard navigation, focus states, 
 ## Phase 4: Verification
 
 ### T4.1: Manual checks
-- [ ] Keyboard-only navigation works on auth, tables, and detail pages
-- [ ] Focus indicator is always visible
-- [ ] Icon-only actions include tooltip and aria-label
-- [ ] No critical contrast issues on default theme
+- [x] Keyboard-only navigation works on auth, tables, and detail pages
+- [x] Focus indicator is always visible
+- [x] Icon-only actions include tooltip and aria-label
+- [x] No critical contrast issues on default theme
 

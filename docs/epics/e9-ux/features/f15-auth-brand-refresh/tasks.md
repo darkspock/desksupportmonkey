@@ -43,9 +43,9 @@ Mandatory requirement: use the same image source referenced by root README (`web
 ## Phase 3: Verification
 
 ### T3.1: Manual checks
-- [ ] Auth pages render correctly on desktop/tablet/mobile
-- [ ] Login displays branded image from README source (`web/site/logo.png`)
-- [ ] Magic link and password flows still work
-- [ ] Register and password setup flows remain functional
-- [ ] No auth route regression (`/auth/*`)
+- [x] Auth pages render correctly on desktop/tablet/mobile
+- [x] Login displays branded image from README source (`web/site/logo.png`)
+- [x] Magic link and password flows still work
+- [x] Register and password setup flows remain functional
+- [x] No auth route regression (`/auth/*`)
 

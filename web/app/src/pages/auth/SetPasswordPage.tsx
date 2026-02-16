@@ -47,9 +47,9 @@ export default function SetPasswordPage() {
   };
 
   return (
-    <AuthShell title={t('auth.set_password.title')} subtitle={t('auth.set_password.subtitle')}>
+    <AuthShell title={t('auth.set_password.title')} subtitle={t('auth.set_password.subtitle')} showBackToLogin={false}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {error && <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+        {error && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
         <div>
           <label htmlFor="new-password" className="mb-1 block text-sm font-medium text-slate-700">{t('auth.set_password.new_password')}</label>
@@ -60,7 +60,7 @@ export default function SetPasswordPage() {
             onChange={(e) => setPassword(e.target.value)}
             placeholder={t('auth.set_password.placeholder_min_8')}
             required
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            className="h-11 w-full rounded-xl border border-slate-300 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
           />
         </div>
 
@@ -73,14 +73,14 @@ export default function SetPasswordPage() {
             onChange={(e) => setConfirm(e.target.value)}
             placeholder={t('auth.set_password.placeholder_repeat')}
             required
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            className="h-11 w-full rounded-xl border border-slate-300 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          className="h-11 w-full rounded-xl bg-blue-600 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
         >
           {loading ? t('auth.set_password.saving') : t('auth.set_password.submit')}
         </button>

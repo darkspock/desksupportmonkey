@@ -14,6 +14,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
   const { language, setLanguage, t } = useI18n();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const companyName = user?.company_name?.trim();
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -38,6 +39,14 @@ export function Header({ onMenuToggle }: HeaderProps) {
           </svg>
         </button>
         <p className="text-sm font-semibold text-gray-700 md:hidden">DeskSupportMonkey</p>
+        {companyName && (
+          <div className="hidden max-w-[280px] items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 md:flex">
+            <svg className="h-4 w-4 shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21h18M5 21V7a2 2 0 012-2h10a2 2 0 012 2v14M9 9h1m4 0h1M9 13h1m4 0h1M9 17h1m4 0h1" />
+            </svg>
+            <p className="truncate text-xs font-semibold text-gray-700" title={companyName}>{companyName}</p>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-4">
@@ -76,6 +85,9 @@ export function Header({ onMenuToggle }: HeaderProps) {
           </button>
           {open && (
             <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg py-1 z-50">
+              {companyName && (
+                <div className="truncate border-b px-3 py-2 text-sm text-gray-700">{companyName}</div>
+              )}
               <div className="px-3 py-2 text-xs text-gray-400 border-b">{t(`enum.${user?.role ?? ''}`)}</div>
               <button onClick={logout} className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-gray-50">
                 {t('header.sign_out')}

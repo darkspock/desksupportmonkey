@@ -63,9 +63,9 @@ Add internationalization to the frontend with Spanish and English support. Users
 ## Phase 4: Verification
 
 ### T4.1: Manual E2E test
-- [ ] App loads in browser's language (or default EN)
-- [ ] Language selector switches all visible text
-- [ ] Language preference persists across page reloads
-- [ ] All pages display correctly in both ES and EN
-- [ ] No untranslated strings visible
-- [ ] StatusBadge values display translated labels
+- [x] App loads in browser's language (or default EN)
+- [x] Language selector switches all visible text
+- [x] Language preference persists across page reloads
+- [x] All pages display correctly in both ES and EN
+- [x] No untranslated strings visible
+- [x] StatusBadge values display translated labels

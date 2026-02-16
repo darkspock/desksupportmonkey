@@ -37,8 +37,8 @@ Current app shell blocks unauthenticated users but does not enforce role access 
 ## Phase 3: Verification
 
 ### T3.1: Manual checks
-- [ ] Employee cannot open admin/super-admin URLs directly
-- [ ] Technician cannot open super-admin URLs directly
-- [ ] Admin cannot open super-admin URLs directly
-- [ ] Authorized roles access expected routes without regression
+- [x] Employee cannot open admin/super-admin URLs directly
+- [x] Technician cannot open super-admin URLs directly
+- [x] Admin cannot open super-admin URLs directly
+- [x] Authorized roles access expected routes without regression
 

@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -49,19 +50,21 @@ from src.auth_bc.user.application.commands.set_password import (
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
 from src.auth_bc.user.infrastructure.repository import UserRepository
+from src.company_bc.company.infrastructure.repository import CompanyRepository
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
-def _user_response(user: User) -> dict:
+def _user_response(user: User, company_name: Optional[str] = None) -> dict:
     return UserResponse(
         id=user.id,
         email=user.email,
         name=user.name,
         role=user.role.value,
         company_id=user.company_id,
+        company_name=company_name,
         is_active=user.is_active,
         password_set=user.has_password,
     ).model_dump()
@@ -210,6 +213,14 @@ def set_password(
 
 
 @router.get("/me")
-def get_me(current_user: User = Depends(get_current_user)):
+def get_me(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Get current authenticated user profile."""
-    return {"data": _user_response(current_user)}
+    company_name: Optional[str] = None
+    if current_user.company_id:
+        company = CompanyRepository(db).find_by_id(current_user.company_id)
+        company_name = company.name if company else None
+
+    return {"data": _user_response(current_user, company_name=company_name)}

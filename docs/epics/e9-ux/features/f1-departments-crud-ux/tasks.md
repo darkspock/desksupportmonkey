@@ -25,9 +25,9 @@ The Departments page (`/departments`) currently supports Create and Delete but i
 ## Phase 2: Verification
 
 ### T2.1: Manual E2E test
-- [ ] Admin clicks "Edit" on a department
-- [ ] Name field becomes editable
-- [ ] Admin changes name and submits
-- [ ] Department name updates in the list
-- [ ] Duplicate name shows error message
-- [ ] Cancel reverts without changes
+- [x] Admin clicks "Edit" on a department
+- [x] Name field becomes editable
+- [x] Admin changes name and submits
+- [x] Department name updates in the list
+- [x] Duplicate name shows error message
+- [x] Cancel reverts without changes

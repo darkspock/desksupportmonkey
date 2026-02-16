@@ -38,8 +38,8 @@ State handling is currently inconsistent across pages. Define and apply shared p
 ## Phase 3: Verification
 
 ### T3.1: Manual checks
-- [ ] Loading state appears on every async screen
-- [ ] Empty state includes clear message and CTA where relevant
-- [ ] Errors are visible and actionable
-- [ ] Mutation outcomes are never silent
+- [x] Loading state appears on every async screen
+- [x] Empty state includes clear message and CTA where relevant
+- [x] Errors are visible and actionable
+- [x] Mutation outcomes are never silent
 

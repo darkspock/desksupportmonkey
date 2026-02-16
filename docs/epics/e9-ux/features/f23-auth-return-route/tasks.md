@@ -36,7 +36,7 @@ When users are redirected to login due to missing/expired session, app should re
 ## Phase 3: Verification
 
 ### T3.1: Manual checks
-- [ ] Logged-out user opening protected route returns there after login
-- [ ] 401 during active session sends user to login and then back to intended route
-- [ ] Invalid/unsafe return routes are rejected safely (fallback used)
+- [x] Logged-out user opening protected route returns there after login
+- [x] 401 during active session sends user to login and then back to intended route
+- [x] Invalid/unsafe return routes are rejected safely (fallback used)
 

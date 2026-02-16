@@ -59,15 +59,19 @@ export default function LoginPage() {
   };
 
   return (
-    <AuthShell title={t('auth.login.title')} subtitle={t('auth.login.subtitle')}>
-      <div className="mb-5 flex rounded-lg border border-slate-200 overflow-hidden">
+    <AuthShell title={t('auth.login.title')} subtitle={t('auth.login.subtitle')} showBackToLogin={false}>
+      <div className="mb-6 grid grid-cols-2 rounded-xl border border-slate-200 bg-slate-100 p-1">
         <button
           type="button"
           onClick={() => {
             setMode('magic-link');
             setError('');
           }}
-          className={`flex-1 py-2 text-sm font-medium ${mode === 'magic-link' ? 'bg-blue-600 text-white' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
+          className={`rounded-[10px] py-2.5 text-sm font-semibold transition-colors ${
+            mode === 'magic-link'
+              ? 'bg-white text-slate-900 shadow-sm'
+              : 'text-slate-500 hover:text-slate-700'
+          }`}
         >
           {t('auth.login.magic_link')}
         </button>
@@ -77,14 +81,18 @@ export default function LoginPage() {
             setMode('password');
             setError('');
           }}
-          className={`flex-1 py-2 text-sm font-medium ${mode === 'password' ? 'bg-blue-600 text-white' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
+          className={`rounded-[10px] py-2.5 text-sm font-semibold transition-colors ${
+            mode === 'password'
+              ? 'bg-white text-slate-900 shadow-sm'
+              : 'text-slate-500 hover:text-slate-700'
+          }`}
         >
           {t('auth.login.password')}
         </button>
       </div>
 
       {mode === 'magic-link' && sent ? (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-center">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center">
           <p className="text-sm font-medium text-emerald-800">{t('auth.login.magic_sent')}</p>
           <p className="mt-1 text-sm text-emerald-700">{t('auth.login.magic_sent_desc')}</p>
           <button type="button" onClick={() => setSent(false)} className="mt-3 text-sm text-blue-700 hover:underline">
@@ -93,7 +101,7 @@ export default function LoginPage() {
         </div>
       ) : mode === 'magic-link' ? (
         <form onSubmit={handleMagicLink} className="space-y-4">
-          {error && <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          {error && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
           <div>
             <label htmlFor="email" className="mb-1 block text-sm font-medium text-slate-700">{t('auth.login.work_email')}</label>
             <input
@@ -103,20 +111,20 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder={t('common.placeholder_work_email')}
               required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              className="h-11 w-full rounded-xl border border-slate-300 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="h-11 w-full rounded-xl bg-blue-600 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
           >
             {loading ? t('auth.login.sending') : t('auth.login.send_magic_link')}
           </button>
         </form>
       ) : (
         <form onSubmit={handlePasswordLogin} className="space-y-4">
-          {error && <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          {error && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
           <div>
             <label htmlFor="email-password" className="mb-1 block text-sm font-medium text-slate-700">{t('auth.login.email')}</label>
             <input
@@ -126,7 +134,7 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder={t('common.placeholder_work_email')}
               required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              className="h-11 w-full rounded-xl border border-slate-300 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
             />
           </div>
           <div>
@@ -138,13 +146,13 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder={t('auth.login.password_placeholder')}
               required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              className="h-11 w-full rounded-xl border border-slate-300 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="h-11 w-full rounded-xl bg-blue-600 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
           >
             {loading ? t('auth.login.signing_in') : t('auth.login.sign_in')}
           </button>
@@ -152,7 +160,7 @@ export default function LoginPage() {
         </form>
       )}
 
-      <p className="mt-6 text-center text-sm text-slate-600">
+      <p className="mt-7 text-center text-sm text-slate-600">
         {t('auth.login.need_workspace')}{' '}
         <Link to="/auth/register" className="font-medium text-blue-700 hover:underline">{t('auth.login.register_company')}</Link>
       </p>

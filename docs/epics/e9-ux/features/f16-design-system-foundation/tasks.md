@@ -47,7 +47,7 @@ Current frontend styling is mostly page-local Tailwind classes, with minimal glo
 ## Phase 4: Verification
 
 ### T4.1: Manual checks
-- [ ] Core controls have consistent look/behavior
-- [ ] Error and focus states are visible and consistent
-- [ ] No page uses obsolete one-off control styles in critical paths
+- [x] Core controls have consistent look/behavior
+- [x] Error and focus states are visible and consistent
+- [x] No page uses obsolete one-off control styles in critical paths
 

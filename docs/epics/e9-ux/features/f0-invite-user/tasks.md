@@ -41,7 +41,7 @@ Reuses the existing `CreateMagicLinkCommandHandler` and `send_magic_link_email` 
 ## Phase 3: Verification
 
 ### T3.1: Manual E2E test
-- [ ] Admin clicks "Invite User", enters email, submits
-- [ ] Backend sends magic link email (check Mailpit)
-- [ ] Invitee clicks link, lands on verify page, gets auto-created as employee
-- [ ] New user appears in Users list
+- [x] Admin clicks "Invite User", enters email, submits
+- [x] Backend sends magic link email (check Mailpit)
+- [x] Invitee clicks link, lands on verify page, gets auto-created as employee
+- [x] New user appears in Users list

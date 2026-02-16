@@ -35,7 +35,7 @@ Multiple pages display raw user IDs (ULIDs) instead of human-readable names/emai
 ## Phase 3: Verification
 
 ### T3.1: Manual E2E test
-- [ ] Request detail shows email/name for assigned_to
-- [ ] Request detail shows email/name for created_by
-- [ ] Request queue shows email/name in assigned column
-- [ ] Internal notes show author email instead of ID
+- [x] Request detail shows email/name for assigned_to
+- [x] Request detail shows email/name for created_by
+- [x] Request queue shows email/name in assigned column
+- [x] Internal notes show author email instead of ID

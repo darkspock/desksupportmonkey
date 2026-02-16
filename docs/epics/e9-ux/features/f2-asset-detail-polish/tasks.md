@@ -27,7 +27,7 @@ The Asset Detail page (`/assets/:id`) displays event history data as raw `JSON.s
 ## Phase 2: Verification
 
 ### T2.1: Manual E2E test
-- [ ] Navigate to an asset detail page
-- [ ] Event history shows human-readable descriptions instead of raw JSON
-- [ ] All event types render correctly
-- [ ] Unknown event types show graceful fallback
+- [x] Navigate to an asset detail page
+- [x] Event history shows human-readable descriptions instead of raw JSON
+- [x] All event types render correctly
+- [x] Unknown event types show graceful fallback

@@ -34,7 +34,7 @@ Some internal flows still navigate with `window.location`, causing full-page rel
 ## Phase 3: Verification
 
 ### T3.1: Manual checks
-- [ ] Internal page transitions do not trigger full reload
-- [ ] Browser back/forward works correctly after navigation
-- [ ] No regression in deep-linkable pages
+- [x] Internal page transitions do not trigger full reload
+- [x] Browser back/forward works correctly after navigation
+- [x] No regression in deep-linkable pages
 

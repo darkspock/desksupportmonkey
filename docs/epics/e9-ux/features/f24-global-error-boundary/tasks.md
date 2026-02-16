@@ -34,7 +34,7 @@ Unexpected runtime/render errors currently risk breaking the whole UI experience
 ## Phase 3: Verification
 
 ### T3.1: Manual checks
-- [ ] Forced render error shows fallback instead of blank/crash
-- [ ] User can recover via retry or navigation action
-- [ ] Boundary does not break auth/session behavior
+- [x] Forced render error shows fallback instead of blank/crash
+- [x] User can recover via retry or navigation action
+- [x] Boundary does not break auth/session behavior
 

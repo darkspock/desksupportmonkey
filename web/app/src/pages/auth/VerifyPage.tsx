@@ -41,16 +41,16 @@ export default function VerifyPage() {
   if (user && !redirect) return <Navigate to={returnTo ?? getDefaultRouteForRole(user.role)} replace />;
 
   return (
-    <AuthShell title={t('auth.verify.title')} subtitle={t('auth.verify.subtitle')}>
+    <AuthShell title={t('auth.verify.title')} subtitle={t('auth.verify.subtitle')} showBackToLogin={false}>
       {error || !token ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-center">
           <p className="text-sm text-red-700">{error || t('auth.verify.missing_token')}</p>
           <Link to="/auth/login" className="mt-3 inline-block text-sm font-medium text-blue-700 hover:underline">
             {t('auth.back_to_login')}
           </Link>
         </div>
       ) : (
-        <div className="flex flex-col items-center gap-3 py-4">
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 py-8">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
           <p className="text-sm text-slate-600">{t('auth.verify.verifying')}</p>
         </div>

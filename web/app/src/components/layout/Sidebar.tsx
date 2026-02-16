@@ -31,7 +31,10 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const { user } = useAuth();
   const { t } = useI18n();
   const role = user?.role;
-  const visible = nav.filter((item) => !item.roles || (role && item.roles.includes(role)));
+  const companyName = user?.company_name?.trim() || user?.email || 'DeskSupportMonkey';
+  const visible = role === 'super_admin'
+    ? nav.filter((item) => item.to === '/companies')
+    : nav.filter((item) => !item.roles || (role && item.roles.includes(role)));
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -56,8 +59,8 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         <div className="p-4 border-b border-gray-700 flex items-center gap-3">
           <img src="/logo.png" alt="DeskSupportMonkey" className="w-9 h-9 rounded" />
           <div>
-            <h1 className="text-lg font-bold tracking-tight leading-tight">DSM</h1>
-            <p className="text-xs text-gray-400">DeskSupportMonkey</p>
+            <h1 className="text-lg font-bold tracking-tight leading-tight">DS Monkey</h1>
+            <p className="max-w-[150px] truncate text-xs text-gray-400" title={companyName}>{companyName}</p>
           </div>
         </div>
         <nav className="flex-1 p-2 space-y-0.5">
@@ -86,8 +89,8 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
               <div className="flex items-center gap-3">
                 <img src="/logo.png" alt="DeskSupportMonkey" className="w-9 h-9 rounded" />
                 <div>
-                  <h1 className="text-lg font-bold tracking-tight leading-tight">DSM</h1>
-                  <p className="text-xs text-gray-400">DeskSupportMonkey</p>
+                  <h1 className="text-lg font-bold tracking-tight leading-tight">DS Monkey</h1>
+                  <p className="max-w-[170px] truncate text-xs text-gray-400" title={companyName}>{companyName}</p>
                 </div>
               </div>
               <button type="button" onClick={onClose} className="rounded-md p-1 text-gray-300 hover:bg-gray-800" aria-label={t('header.close_navigation')} title={t('header.close_navigation')}>

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
+import { useAuth } from '../../contexts/AuthContext';
 import { Loading } from '../../components/ui/Loading';
 import { ErrorState } from '../../components/ui/StateBlock';
 import { StatusBadge } from '../../components/ui/Badge';
@@ -109,8 +110,12 @@ export default function AssetDetailPage() {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { t } = useI18n();
+  const { isRole } = useAuth();
+  const canInviteUsers = isRole('admin', 'super_admin');
 
   const [assignUserId, setAssignUserId] = useState('');
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [statusValue, setStatusValue] = useState<AssetStatus | null>(null);
   const [editForm, setEditForm] = useState({
@@ -139,12 +144,18 @@ export default function AssetDetailPage() {
     enabled: Boolean(id),
   });
 
-  const { data: assignableUsers } = useQuery({
+  const {
+    data: assignableUsers,
+    refetch: refetchAssignableUsers,
+  } = useQuery({
     queryKey: ['asset-assignable-users'],
     queryFn: async () => {
       const { data } = await api.get('/assets/assignable-users');
       return data.data as AssignableUser[];
     },
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchInterval: 15000,
   });
 
   const userEmailById = useMemo(
@@ -214,6 +225,44 @@ export default function AssetDetailPage() {
     onError: (err: unknown) => {
       const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('page.asset_detail.error_unassign');
       showToast({ title: t('page.asset_detail.error_unassign_failed'), description: detail, variant: 'error' });
+    },
+  });
+
+  const inviteAssignableUser = useMutation({
+    mutationFn: (email: string) => api.post('/users/invite', { email }),
+    onSuccess: async (_res, email) => {
+      const normalized = email.trim().toLowerCase();
+      setInviteModalOpen(false);
+      setInviteEmail('');
+      showToast({
+        title: t('page.users.toast_invitation_sent'),
+        description: t('page.users.toast_invitation_desc'),
+        variant: 'success',
+      });
+
+      const refreshed = await refetchAssignableUsers();
+      const invitedUser = (refreshed.data ?? []).find(
+        (user) => user.email.toLowerCase() === normalized,
+      );
+
+      if (invitedUser) {
+        setAssignUserId(invitedUser.id);
+        showToast({
+          title: t('page.asset_detail.toast_invited_selected'),
+          description: invitedUser.email,
+          variant: 'info',
+        });
+        return;
+      }
+
+      showToast({
+        title: t('page.asset_detail.toast_invited_refresh_needed'),
+        variant: 'info',
+      });
+    },
+    onError: (err: unknown) => {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('page.users.error_invite');
+      showToast({ title: t('page.users.error_invite_title'), description: detail, variant: 'error' });
     },
   });
 
@@ -321,7 +370,7 @@ export default function AssetDetailPage() {
             </button>
           </div>
         ) : (
-          <div className="flex flex-wrap items-end gap-2">
+          <div className="flex flex-col items-start gap-2">
             <div>
               <label className="mb-1 block text-xs text-gray-500">{t('page.asset_detail.assign_to_user')}</label>
               <select
@@ -334,12 +383,21 @@ export default function AssetDetailPage() {
                   <option key={u.id} value={u.id}>{u.email}{u.name ? ` (${u.name})` : ''}</option>
                 ))}
               </select>
+              {canInviteUsers && (
+                <button
+                  type="button"
+                  onClick={() => setInviteModalOpen(true)}
+                  className="mt-2 block text-left text-xs text-blue-600 hover:underline"
+                >
+                  {t('page.asset_detail.invite_user')}
+                </button>
+              )}
             </div>
             <button
               type="button"
               onClick={() => assignAsset.mutate(assignUserId)}
               disabled={!assignUserId || assignAsset.isPending}
-              className="rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
             >
               {assignAsset.isPending ? t('page.asset_detail.assigning') : t('page.asset_detail.assign')}
             </button>
@@ -457,6 +515,63 @@ export default function AssetDetailPage() {
           </Table>
         )}
       </Card>
+
+      {inviteModalOpen && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/40"
+            onClick={() => {
+              if (!inviteAssignableUser.isPending) setInviteModalOpen(false);
+            }}
+            aria-label={t('errors.close_confirmation_dialog')}
+          />
+          <div className="relative z-[91] w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-lg">
+            <h3 className="text-lg font-semibold text-gray-900">{t('page.asset_detail.invite_user')}</h3>
+            <p className="mt-2 text-sm text-gray-600">{t('page.asset_detail.invite_modal_desc')}</p>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!inviteEmail.trim()) return;
+                inviteAssignableUser.mutate(inviteEmail.trim());
+              }}
+              className="mt-4 space-y-4"
+            >
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">{t('table.email')}</label>
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder={t('common.placeholder_user_email')}
+                  required
+                  autoFocus
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setInviteModalOpen(false)}
+                  disabled={inviteAssignableUser.isPending}
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  type="submit"
+                  disabled={inviteAssignableUser.isPending || !inviteEmail.trim()}
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {inviteAssignableUser.isPending ? t('auth.login.sending') : t('page.asset_detail.invite_and_select')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

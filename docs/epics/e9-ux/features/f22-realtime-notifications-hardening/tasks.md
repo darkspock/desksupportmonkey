@@ -33,8 +33,8 @@ Notification unread count currently relies on periodic polling. Integrate existi
 ## Phase 3: Verification
 
 ### T3.1: Manual checks
-- [ ] New notification updates unread badge without 30s wait
-- [ ] Notifications page reflects new item shortly after event
-- [ ] Socket reconnect does not duplicate or lose count
-- [ ] Fallback polling still works when WebSocket unavailable
+- [x] New notification updates unread badge without 30s wait
+- [x] Notifications page reflects new item shortly after event
+- [x] Socket reconnect does not duplicate or lose count
+- [x] Fallback polling still works when WebSocket unavailable
 

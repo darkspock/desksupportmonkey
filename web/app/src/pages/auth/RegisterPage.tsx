@@ -51,9 +51,9 @@ export default function RegisterPage() {
   };
 
   return (
-    <AuthShell title={t('auth.register.title')} subtitle={t('auth.register.subtitle')}>
+    <AuthShell title={t('auth.register.title')} subtitle={t('auth.register.subtitle')} showBackToLogin={false}>
       {sent ? (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-center">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center">
           <p className="text-sm font-medium text-emerald-800">{t('auth.register.success_title')}</p>
           <p className="mt-1 text-sm text-emerald-700">{t('auth.register.success_desc')}</p>
           <Link to="/auth/login" className="mt-4 inline-block text-sm font-medium text-blue-700 hover:underline">
@@ -62,7 +62,7 @@ export default function RegisterPage() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          {error && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
           <div>
             <label htmlFor="company-name" className="mb-1 block text-sm font-medium text-slate-700">{t('auth.register.company_name')}</label>
@@ -73,7 +73,7 @@ export default function RegisterPage() {
               onChange={(e) => setName(e.target.value)}
               placeholder={t('common.placeholder_company_name')}
               required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              className="h-11 w-full rounded-xl border border-slate-300 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
             />
           </div>
 
@@ -86,7 +86,7 @@ export default function RegisterPage() {
               onChange={(e) => setAdminEmail(e.target.value)}
               placeholder={t('common.placeholder_admin_email')}
               required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              className="h-11 w-full rounded-xl border border-slate-300 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
             />
           </div>
 
@@ -99,7 +99,7 @@ export default function RegisterPage() {
               onChange={(e) => setEmailDomains(e.target.value)}
               placeholder={t('common.placeholder_domains')}
               required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              className="h-11 w-full rounded-xl border border-slate-300 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
             />
             <p className="mt-1 text-xs text-slate-500">{t('auth.register.allowed_domains_help')}</p>
           </div>
@@ -107,7 +107,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="h-11 w-full rounded-xl bg-blue-600 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
           >
             {loading ? t('auth.register.registering') : t('auth.register.register_company')}
           </button>

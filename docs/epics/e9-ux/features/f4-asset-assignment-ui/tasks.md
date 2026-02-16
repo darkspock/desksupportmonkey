@@ -26,9 +26,9 @@ There is no way to assign/unassign an asset to a user from the frontend. The bac
 ## Phase 2: Verification
 
 ### T2.1: Manual E2E test
-- [ ] Technician opens asset detail page
-- [ ] Unassigned asset shows user selector + Assign button
-- [ ] Selecting a user and clicking Assign works
-- [ ] Assigned asset shows user info + Unassign button
-- [ ] Clicking Unassign works
-- [ ] Event history updates after assign/unassign
+- [x] Technician opens asset detail page
+- [x] Unassigned asset shows user selector + Assign button
+- [x] Selecting a user and clicking Assign works
+- [x] Assigned asset shows user info + Unassign button
+- [x] Clicking Unassign works
+- [x] Event history updates after assign/unassign

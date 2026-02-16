@@ -37,8 +37,8 @@ Current app shell works on desktop but needs stronger behavior for tablet/mobile
 ## Phase 3: Verification
 
 ### T3.1: Manual responsive checks
-- [ ] No layout breaks at common widths (320, 768, 1024, 1440)
-- [ ] Navigation can be operated with one hand on mobile
-- [ ] Main content remains readable without horizontal scroll in normal flows
-- [ ] Role-based nav visibility remains correct
+- [x] No layout breaks at common widths (320, 768, 1024, 1440)
+- [x] Navigation can be operated with one hand on mobile
+- [x] Main content remains readable without horizontal scroll in normal flows
+- [x] Role-based nav visibility remains correct
 
