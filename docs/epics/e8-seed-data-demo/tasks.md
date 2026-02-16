@@ -11,7 +11,7 @@
 
 ## F0: Seed Script
 
-### T1: Create `scripts/seed_demo_data.py`
+### T1: Create `scripts/seed_demo_data.py` ✅
 
 **File:** `scripts/seed_demo_data.py`
 **Complexity:** High
@@ -47,7 +47,7 @@ Create a standalone Python script that populates the database with realistic dem
 
 ## F1: Makefile Targets
 
-### T2: Add `make seed` and `make demo-reset`
+### T2: Add `make seed` and `make demo-reset` ✅
 
 **File:** `Makefile`
 **Complexity:** Low
@@ -64,7 +64,7 @@ Create a standalone Python script that populates the database with realistic dem
 
 ## F2: Demo Walkthrough
 
-### T3: Create demo walkthrough documentation
+### T3: Create demo walkthrough documentation ✅
 
 **File:** `docs/demo-walkthrough.md`
 **Complexity:** Low

@@ -8,7 +8,7 @@
 
 ## Phase 1: Event Factory
 
-### T1.1: Create RequestEventFactory
+### T1.1: Create RequestEventFactory ✅
 - **File:** `src/notification_bc/notification/application/services/event_factory.py` (NEW)
 - 6 static methods, one per event type
 - Each builds DomainEvent with correct event_type, company_id, actor_id, payload, title, body
@@ -19,13 +19,13 @@
 
 ## Phase 2: EventBus Initialization
 
-### T2.1: Create get_event_bus dependency
+### T2.1: Create get_event_bus dependency ✅
 - **File:** `adapters/http/api/dependencies.py` (NEW or add to existing)
 - Module-level EventBus singleton
 - `get_event_bus()` function returning the singleton
 - Register NotificationSubscriber on the EventBus
 
-### T2.2: Register subscriber in EventBus
+### T2.2: Register subscriber in EventBus ✅
 - The NotificationSubscriber is a callable that receives (event, db)
 - It internally creates TargetResolver (with UserRepository(db)) and NotificationRepository(db)
 - Register once at module import time
@@ -34,31 +34,31 @@
 
 ## Phase 3: Router Integration
 
-### T3.1: Emit event in create_request endpoint
+### T3.1: Emit event in create_request endpoint ✅
 - **File:** `adapters/http/api/requests/routers.py` (MODIFY)
 - Add EventBus dependency to create_request endpoint
 - After handler.handle() succeeds, build event via RequestEventFactory.request_created()
 - Call event_bus.publish(event, db)
 
-### T3.2: Emit event in change_status endpoint
+### T3.2: Emit event in change_status endpoint ✅
 - Same file
 - Capture old_status before command, new_status after
 - Build event via RequestEventFactory.status_changed()
 
-### T3.3: Emit event in change_priority endpoint
+### T3.3: Emit event in change_priority endpoint ✅
 - Same file
 - Capture old_priority before, new_priority after
 - Build event via RequestEventFactory.priority_changed()
 
-### T3.4: Emit event in assign_request endpoint
+### T3.4: Emit event in assign_request endpoint ✅
 - Same file
 - Build event via RequestEventFactory.request_assigned()
 
-### T3.5: Emit event in add_comment endpoint
+### T3.5: Emit event in add_comment endpoint ✅
 - Same file
 - Build event via RequestEventFactory.comment_added()
 
-### T3.6: Emit event in add_note endpoint
+### T3.6: Emit event in add_note endpoint ✅
 - Same file
 - Build event via RequestEventFactory.note_added()
 
@@ -66,13 +66,13 @@
 
 ## Phase 4: Tests
 
-### T4.1: Unit tests - RequestEventFactory
+### T4.1: Unit tests - RequestEventFactory ✅
 - **File:** `tests/unit/notification_bc/notification/application/services/test_event_factory.py` (NEW)
 - Each factory method returns correct event_type
 - Payload contains required fields
 - Title and body match expected format
 
-### T4.2: Integration tests - Event emission
+### T4.2: Integration tests - Event emission ✅
 - **File:** `tests/unit/notification_bc/notification/application/services/test_event_emission.py` (NEW)
 - Mock EventBus, verify publish() called after each command
 - Verify event has correct structure
@@ -82,8 +82,8 @@
 
 ## Phase 5: Verification
 
-### T5.1: Run all tests
-### T5.2: Manual verification
+### T5.1: Run all tests ✅
+### T5.2: Manual verification ✅
 1. Create request → verify notification created for technicians
 2. Change status → verify notification for request creator
 3. Add comment → verify notification for request creator + assigned tech

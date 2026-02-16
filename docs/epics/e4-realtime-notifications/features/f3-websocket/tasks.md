@@ -8,7 +8,7 @@
 
 ## Phase 1: Infrastructure
 
-### T1.1: Create ConnectionManager
+### T1.1: Create ConnectionManager ✅
 - **File:** `src/notification_bc/notification/infrastructure/connection_manager.py` (NEW)
 - In-memory dict: user_id → list[WebSocket]
 - Methods: connect, disconnect, send_to_user, send_to_users
@@ -19,7 +19,7 @@
 
 ## Phase 2: WebSocket Endpoint
 
-### T2.1: Create WebSocket route
+### T2.1: Create WebSocket route ✅
 - **File:** `adapters/http/ws/websocket.py` (NEW)
 - `@router.websocket("/ws")` endpoint
 - Extract JWT from query param `?token=`
@@ -28,10 +28,10 @@
 - On failure: close with code 4001
 - On disconnect: remove from ConnectionManager
 
-### T2.2: Create __init__.py
+### T2.2: Create __init__.py ✅
 - `adapters/http/ws/__init__.py`
 
-### T2.3: Mount WebSocket router in app.py
+### T2.3: Mount WebSocket router in app.py ✅
 - **File:** `app.py` (MODIFY)
 - Import and include ws router
 
@@ -39,7 +39,7 @@
 
 ## Phase 3: WebSocket Subscriber
 
-### T3.1: Create WebSocketSubscriber
+### T3.1: Create WebSocketSubscriber ✅
 - **File:** `src/notification_bc/notification/application/services/websocket_subscriber.py` (NEW)
 - Callable receiving (event, db)
 - Uses TargetResolver to get target user_ids
@@ -47,7 +47,7 @@
 - Also pushes unread_count (queries NotificationRepository.count_unread)
 - Handles async/sync bridge (use asyncio to run coroutines from sync context)
 
-### T3.2: Register WebSocketSubscriber on EventBus
+### T3.2: Register WebSocketSubscriber on EventBus ✅
 - **File:** `adapters/http/api/dependencies.py` (MODIFY)
 - Add WebSocketSubscriber alongside NotificationSubscriber
 
@@ -55,7 +55,7 @@
 
 ## Phase 4: Tests
 
-### T4.1: Unit tests - ConnectionManager
+### T4.1: Unit tests - ConnectionManager ✅
 - **File:** `tests/unit/notification_bc/notification/infrastructure/test_connection_manager.py` (NEW)
 - Connect adds user
 - Disconnect removes user
@@ -63,13 +63,13 @@
 - send_to_user delivers to all connections
 - Broken connection removed silently
 
-### T4.2: Unit tests - WebSocketSubscriber
+### T4.2: Unit tests - WebSocketSubscriber ✅
 - **File:** `tests/unit/notification_bc/notification/application/services/test_websocket_subscriber.py` (NEW)
 - Pushes to connected targets
 - No-op for disconnected targets
 - Correct message format
 
-### T4.3: Integration test - WebSocket endpoint
+### T4.3: Integration test - WebSocket endpoint ✅
 - **File:** `tests/integration/test_websocket.py` (NEW)
 - Connect with valid JWT → accepted
 - Connect with invalid JWT → rejected with 4001
@@ -80,8 +80,8 @@
 
 ## Phase 5: Verification
 
-### T5.1: Run all tests
-### T5.2: Manual verification
+### T5.1: Run all tests ✅
+### T5.2: Manual verification ✅
 1. Start server
 2. Connect via WebSocket client (wscat or similar) with valid JWT
 3. Create a request via API

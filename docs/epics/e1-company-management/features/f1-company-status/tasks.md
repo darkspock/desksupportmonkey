@@ -8,12 +8,12 @@
 
 ## Phase 1: Domain Layer
 
-### T1.1: Add valid transitions to CompanyStatus enum
+### T1.1: Add valid transitions to CompanyStatus enum ✅
 - **File:** `src/company_bc/company/domain/enums.py` (MODIFY)
 - Add `VALID_TRANSITIONS` dict mapping each status to its allowed target statuses
 - DEACTIVATED maps to empty list (terminal state)
 
-### T1.2: Add change_status() to Company entity
+### T1.2: Add change_status() to Company entity ✅
 - **File:** `src/company_bc/company/domain/entities.py` (MODIFY)
 - Add `change_status(new_status: CompanyStatus)` method
 - Validates: same status → raise `InvalidStatusTransitionError("Company is already {status}")`
@@ -25,7 +25,7 @@
 
 ## Phase 2: Application Layer
 
-### T2.1: Create UpdateCompanyStatusCommand + Handler
+### T2.1: Create UpdateCompanyStatusCommand + Handler ✅
 - **File:** `src/company_bc/company/application/commands/update_company_status.py` (NEW)
 - Command: `company_id: str`, `new_status: str`
 - Handler:
@@ -40,27 +40,27 @@
 
 ## Phase 3: Auth Integration
 
-### T3.1: Extend CompanyLookupService with status-aware lookup
+### T3.1: Extend CompanyLookupService with status-aware lookup ✅
 - **File:** `src/auth_bc/company_lookup/domain/service.py` (MODIFY)
 - Add abstract method: `find_company_by_email_domain(email) -> Optional[tuple[str, bool]]` (company_id, is_active)
 - **File:** `src/auth_bc/company_lookup/infrastructure/service.py` (MODIFY)
 - Implement: query CompanyEmailDomainModel + join CompanyModel, return (company_id, is_active) or None
 
-### T3.2: Update CreateMagicLinkCommand for company status
+### T3.2: Update CreateMagicLinkCommand for company status ✅
 - **File:** `src/auth_bc/magic_link/application/commands/create_magic_link.py` (MODIFY)
 - Use new `find_company_by_email_domain()` method
 - If None → raise `InvalidEmailDomainError` (domain not found)
 - If found but `is_active == False` → raise new `CompanyRestrictedError`
 - Define `CompanyRestrictedError` in this file
 
-### T3.3: Update VerifyMagicLinkCommand for company status
+### T3.3: Update VerifyMagicLinkCommand for company status ✅
 - **File:** `src/auth_bc/magic_link/application/commands/verify_magic_link.py` (MODIFY)
 - Use new `find_company_by_email_domain()` method
 - If None → raise `InvalidTokenError` (domain somehow not found — shouldn't happen if magic link was created)
 - If found but `is_active == False` → raise `CompanyRestrictedError`
 - Define or import `CompanyRestrictedError`
 
-### T3.4: Update get_current_user dependency for company status
+### T3.4: Update get_current_user dependency for company status ✅
 - **File:** `adapters/http/api/auth/dependencies.py` (MODIFY)
 - After user `is_active` check, before `set_tenant()`:
 - If `user.company_id` is not None:
@@ -69,7 +69,7 @@
     - Raise HTTPException(403, "Company access is currently restricted")
 - Super admins with no company_id skip this check
 
-### T3.5: Update auth router for CompanyRestrictedError
+### T3.5: Update auth router for CompanyRestrictedError ✅
 - **File:** `adapters/http/api/auth/routers.py` (MODIFY)
 - Catch `CompanyRestrictedError` in magic-link and verify endpoints
 - Return 403 "Company access is currently restricted"
@@ -78,11 +78,11 @@
 
 ## Phase 4: HTTP Layer
 
-### T4.1: Add status schemas
+### T4.1: Add status schemas ✅
 - **File:** `adapters/http/api/companies/schemas.py` (MODIFY)
 - Add `UpdateCompanyStatusRequest(BaseModel)`: `status: str` with validation against valid values
 
-### T4.2: Add status endpoint to company router
+### T4.2: Add status endpoint to company router ✅
 - **File:** `adapters/http/api/companies/routers.py` (MODIFY)
 - `PATCH /api/v1/companies/{company_id}/status`
 - Depends: `require_role(UserRole.SUPER_ADMIN)`, `get_db`
@@ -96,7 +96,7 @@
 
 ## Phase 5: Tests
 
-### T5.1: Unit tests - Company status transitions
+### T5.1: Unit tests - Company status transitions ✅
 - **File:** `tests/unit/company_bc/company/domain/test_status_transitions.py` (NEW)
 - Test active → suspended → OK
 - Test active → deactivated → OK
@@ -107,21 +107,21 @@
 - Test same status → InvalidStatusTransitionError
 - Test is_active syncs correctly
 
-### T5.2: Unit tests - UpdateCompanyStatusCommand
+### T5.2: Unit tests - UpdateCompanyStatusCommand ✅
 - **File:** `tests/unit/company_bc/company/application/commands/test_update_company_status.py` (NEW)
 - Test successful status change
 - Test company not found → CompanyNotFoundError
 - Test invalid transition → InvalidStatusTransitionError
 - Test invalid status string → ValueError
 
-### T5.3: Unit tests - Auth integration
+### T5.3: Unit tests - Auth integration ✅
 - **File:** `tests/unit/auth_bc/test_company_status_auth.py` (NEW)
 - Test magic link request with suspended company → CompanyRestrictedError
 - Test magic link request with deactivated company → CompanyRestrictedError
 - Test magic link verify with suspended company → CompanyRestrictedError
 - Test get_current_user with suspended company → 403
 
-### T5.4: Regression tests
+### T5.4: Regression tests ✅
 - Run all existing auth tests to ensure no regressions
 - Especially: magic link creation, verification, /me endpoint
 
@@ -129,10 +129,10 @@
 
 ## Phase 6: Verification
 
-### T6.1: Run all tests
+### T6.1: Run all tests ✅
 - `make test` — all tests pass
 
-### T6.2: Manual verification
+### T6.2: Manual verification ✅
 1. Create a company (via F0 endpoint)
 2. Login with a user from that company (magic link flow)
 3. Verify `/me` works

@@ -8,11 +8,11 @@
 
 ## Phase 1: EventType + TargetResolver Updates
 
-### Task 1.1: Add REPORT_READY to EventType enum
+### Task 1.1: Add REPORT_READY to EventType enum ✅
 **File:** `src/notification_bc/notification/domain/enums.py`
 - Add `REPORT_READY = "report.ready"`
 
-### Task 1.2: Add report.ready targeting to TargetResolver
+### Task 1.2: Add report.ready targeting to TargetResolver ✅
 **File:** `src/notification_bc/notification/application/services/target_resolver.py`
 - Add `_resolve_report_ready` method
 - Returns `[payload["requested_by"]]` — only the requester
@@ -22,7 +22,7 @@
 
 ## Phase 2: Notification in Celery Task
 
-### Task 2.1: Add notification creation to generate_report task
+### Task 2.1: Add notification creation to generate_report task ✅
 **File:** `core/tasks/reports.py`
 - After successful completion (status: completed):
   - Create Notification entity with event_type=REPORT_READY
@@ -36,7 +36,7 @@
 
 ## Phase 3: Download Endpoint
 
-### Task 3.1: Add download endpoint to reports router
+### Task 3.1: Add download endpoint to reports router ✅
 **File:** `adapters/http/api/reports/routers.py`
 - `GET /api/v1/reports/{id}/download`
 - Load report by id + company_id
@@ -45,7 +45,7 @@
 - Generate signed URL via S3StorageService.get_signed_url()
 - Return {"data": {"download_url": url}}
 
-### Task 3.2: Add DownloadResponse schema
+### Task 3.2: Add DownloadResponse schema ✅
 **File:** `adapters/http/api/reports/schemas.py`
 - DownloadResponse with download_url field
 
@@ -53,13 +53,13 @@
 
 ## Phase 4: Tests
 
-### Task 4.1: Unit tests for notification creation
+### Task 4.1: Unit tests for notification creation ✅
 **File:** `tests/unit/core/tasks/test_reports.py` (APPEND)
 - Test notification created on successful report generation
 - Test notification has correct event_type, title, body
 - Test notification targets requested_by user
 
-### Task 4.2: Unit tests for download endpoint
+### Task 4.2: Unit tests for download endpoint ✅
 **File:** `tests/unit/report_bc/test_endpoints.py` (APPEND)
 - Test download returns signed URL for completed report
 - Test download returns 404 for not found
@@ -67,7 +67,7 @@
 - Test download returns 409 for failed report
 - Test requires admin role
 
-### Task 4.3: Unit tests for TargetResolver update
+### Task 4.3: Unit tests for TargetResolver update ✅
 **File:** `tests/unit/notification_bc/notification/application/services/test_target_resolver.py` (APPEND)
 - Test report.ready targets only requested_by user
 

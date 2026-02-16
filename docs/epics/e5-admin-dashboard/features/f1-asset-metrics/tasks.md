@@ -8,7 +8,7 @@
 
 ## Phase 1: Repository Aggregate Methods
 
-### Task 1.1: Add aggregate methods to AssetRepositoryInterface
+### Task 1.1: Add aggregate methods to AssetRepositoryInterface ✅
 **File:** `src/asset_bc/asset/domain/repository.py`
 - Add abstract methods:
   - `count_by_status(company_id: str) -> dict[str, int]`
@@ -16,7 +16,7 @@
   - `find_expiring_warranties(company_id: str, days: int) -> list[dict]`
   - `find_aging_assets(company_id: str, years: int) -> list[dict]`
 
-### Task 1.2: Implement aggregate methods in AssetRepository
+### Task 1.2: Implement aggregate methods in AssetRepository ✅
 **File:** `src/asset_bc/asset/infrastructure/repository.py`
 - `count_by_status`: GROUP BY status, return dict with all 4 AssetStatus values defaulting to 0
 - `count_by_type`: GROUP BY type, return dict with all 7 AssetType values defaulting to 0
@@ -27,7 +27,7 @@
 
 ## Phase 2: Dashboard Endpoints
 
-### Task 2.1: Add asset and alert endpoints to dashboard router
+### Task 2.1: Add asset and alert endpoints to dashboard router ✅
 **File:** `adapters/http/api/dashboard/routers.py`
 
 **Endpoint 1: GET /assets/summary**
@@ -50,7 +50,7 @@
 
 ## Phase 3: Tests
 
-### Task 3.1: Unit tests for asset aggregate methods
+### Task 3.1: Unit tests for asset aggregate methods ✅
 **File:** `tests/unit/asset_bc/asset/infrastructure/test_dashboard_queries.py` (NEW)
 - Test count_by_status returns all statuses with defaults
 - Test count_by_type returns all types with defaults
@@ -60,7 +60,7 @@
 - Test find_aging_assets excludes decommissioned
 - Mock DB session
 
-### Task 3.2: Unit tests for dashboard asset/alert endpoints
+### Task 3.2: Unit tests for dashboard asset/alert endpoints ✅
 **File:** `tests/unit/adapters/http/api/dashboard/test_asset_endpoints.py` (NEW)
 - Test GET /assets/summary returns correct shape
 - Test GET /alerts/warranty returns list with correct fields

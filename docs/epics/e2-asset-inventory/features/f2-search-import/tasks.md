@@ -8,21 +8,21 @@
 
 ## Phase 1: Extended Search/Filter/Sort
 
-### T1.1: Extend AssetRepositoryInterface
+### T1.1: Extend AssetRepositoryInterface ✅
 - **File:** `src/asset_bc/asset/domain/repository.py` (MODIFY)
 - Update find_all signature with: search, type, status, department_id, assigned_to, sort_by, sort_order
 
-### T1.2: Implement extended find_all in AssetRepository
+### T1.2: Implement extended find_all in AssetRepository ✅
 - **File:** `src/asset_bc/asset/infrastructure/repository.py` (MODIFY)
 - Add search (OR across serial_number, brand, model with ILIKE)
 - Add filters (type, status, department_id, assigned_to including "none")
 - Add sorting with validation (only allowed columns)
 
-### T1.3: Extend ListAssetsQuery
+### T1.3: Extend ListAssetsQuery ✅
 - **File:** `src/asset_bc/asset/application/queries/list_assets.py` (MODIFY)
 - Add all filter/search/sort params to query dataclass and handler
 
-### T1.4: Extend asset router list endpoint
+### T1.4: Extend asset router list endpoint ✅
 - **File:** `adapters/http/api/assets/routers.py` (MODIFY)
 - Add query parameters: search, type, status, department_id, assigned_to, sort_by, sort_order
 
@@ -30,7 +30,7 @@
 
 ## Phase 2: CSV Import
 
-### T2.1: Create ImportAssetsCommand + Handler
+### T2.1: Create ImportAssetsCommand + Handler ✅
 - **File:** `src/asset_bc/asset/application/commands/import_assets.py` (NEW)
 - Parse CSV, validate headers
 - Validate each row, collect errors
@@ -39,11 +39,11 @@
 - Return ImportResult(total, successful, failed)
 - Define ImportResult, ImportRowError dataclasses
 
-### T2.2: Add import schemas
+### T2.2: Add import schemas ✅
 - **File:** `adapters/http/api/assets/schemas.py` (MODIFY)
 - Add ImportRowErrorResponse, ImportResponse
 
-### T2.3: Add import endpoint
+### T2.3: Add import endpoint ✅
 - **File:** `adapters/http/api/assets/routers.py` (MODIFY)
 - POST /api/v1/assets/import — accepts UploadFile, reads content, calls handler
 
@@ -51,13 +51,13 @@
 
 ## Phase 3: Tests
 
-### T3.1: Unit tests - Extended list query
+### T3.1: Unit tests - Extended list query ✅
 - **File:** `tests/unit/asset_bc/asset/application/queries/test_queries.py` (MODIFY)
 - Test list with search param
 - Test list with type filter
 - Test list with sort_by and sort_order
 
-### T3.2: Unit tests - Import command
+### T3.2: Unit tests - Import command ✅
 - **File:** `tests/unit/asset_bc/asset/application/commands/test_import.py` (NEW)
 - Success: all rows valid
 - Partial: some rows fail validation
@@ -71,8 +71,8 @@
 
 ## Phase 4: Verification
 
-### T4.1: Run all tests
-### T4.2: Manual verification
+### T4.1: Run all tests ✅
+### T4.2: Manual verification ✅
 1. List with search param -> partial match works
 2. List with type filter -> only matching type
 3. List with status filter -> only matching status
