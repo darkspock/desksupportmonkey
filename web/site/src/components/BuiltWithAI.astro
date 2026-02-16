@@ -1,18 +1,3 @@
----
-const boundedContexts = [
-  { name: 'auth_bc', desc: 'Authentication, magic links, users, roles', color: 'bg-blue-500' },
-  { name: 'company_bc', desc: 'Multi-tenant company management, departments', color: 'bg-indigo-500' },
-  { name: 'asset_bc', desc: 'IT asset inventory, categories, assignments', color: 'bg-emerald-500' },
-  { name: 'request_bc', desc: 'Service requests, lifecycle, assignment', color: 'bg-amber-500' },
-  { name: 'notification_bc', desc: 'Real-time notifications via WebSocket', color: 'bg-purple-500' },
-  { name: 'report_bc', desc: 'Async report generation (Celery + S3)', color: 'bg-rose-500' },
-];
-
-const backendTech = ['Python 3.13', 'FastAPI', 'SQLAlchemy', 'Alembic', 'Celery', 'Redis'];
-const frontendTech = ['React 19', 'TypeScript', 'Vite', 'Tailwind CSS', 'TanStack React Query'];
-const infraTech = ['PostgreSQL', 'Redis', 'MinIO (S3)'];
----
-
 <section class="bg-slate-900 py-20">
   <div class="mx-auto max-w-6xl px-6">
     <div class="grid items-center gap-12 lg:grid-cols-2">
@@ -84,49 +69,6 @@ const infraTech = ['PostgreSQL', 'Redis', 'MinIO (S3)'];
               </div>
             </div>
           ))}
-        </div>
-      </div>
-    </div>
-
-    <!-- Architecture: Bounded Contexts + Tech Stack -->
-    <div class="mt-16">
-      <h3 class="text-center text-sm font-semibold text-slate-400 uppercase tracking-wider mb-8">6 Bounded Contexts</h3>
-      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-12">
-        {boundedContexts.map((bc) => (
-          <div class="rounded-xl border border-slate-700 bg-slate-800/50 p-5">
-            <div class="flex items-center gap-3 mb-2">
-              <span class={`h-3 w-3 rounded-full ${bc.color}`}></span>
-              <code class="text-sm font-semibold text-white">{bc.name}</code>
-            </div>
-            <p class="text-sm text-slate-400">{bc.desc}</p>
-          </div>
-        ))}
-      </div>
-
-      <div class="grid gap-8 sm:grid-cols-3">
-        <div>
-          <h4 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Backend</h4>
-          <div class="flex flex-wrap gap-2">
-            {backendTech.map((tech) => (
-              <span class="rounded-full bg-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200">{tech}</span>
-            ))}
-          </div>
-        </div>
-        <div>
-          <h4 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Frontend</h4>
-          <div class="flex flex-wrap gap-2">
-            {frontendTech.map((tech) => (
-              <span class="rounded-full bg-blue-600/30 px-3 py-1.5 text-xs font-medium text-blue-300">{tech}</span>
-            ))}
-          </div>
-        </div>
-        <div>
-          <h4 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Infrastructure</h4>
-          <div class="flex flex-wrap gap-2">
-            {infraTech.map((tech) => (
-              <span class="rounded-full bg-emerald-600/30 px-3 py-1.5 text-xs font-medium text-emerald-300">{tech}</span>
-            ))}
-          </div>
         </div>
       </div>
     </div>
