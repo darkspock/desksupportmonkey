@@ -30,8 +30,12 @@ const year = new Date().getFullYear();
         </ul>
       </div>
     </div>
-    <div class="mt-8 border-t border-slate-100 pt-6 text-center text-xs text-slate-400">
-      &copy; {year} Desk Support Monkey. Built 100% with AI. All rights reserved.
+    <div class="mt-8 border-t border-slate-100 pt-6 flex flex-col items-center gap-2 text-xs text-slate-400">
+      <div class="flex gap-4">
+        <a href="/terms" class="hover:text-slate-600 transition-colors">Terms of Service</a>
+        <a href="/privacy" class="hover:text-slate-600 transition-colors">Privacy Policy</a>
+      </div>
+      <p>&copy; {year} Desk Support Monkey. Built 100% with AI. All rights reserved.</p>
     </div>
   </div>
 </footer>
