@@ -15,6 +15,30 @@
 | E8 | Seed Data & Demo | Demo data, demo script, Docker Compose polish | Low | Done |
 | E9 | UX Improvements | Invite users, departments edit, frontend quality uplift, and reliability hardening | Medium | Done |
 | E10 | Asset QR & Barcodes | QR codes and barcodes on asset detail page with print functionality for physical labels | Medium | Done |
+| E11 | Department Equipment Profiles | Department managers, role-based equipment profiles (e.g., Tech → Linux 32GB, Design → MacBook Pro, Heads → MacBook Air), and automatic asset assignment by department and role | High | Pending |
+| E12 | Request Typification & Approval | Structured request categories (repair, new equipment, configuration, etc.), sub-types for new equipment (computer, mobile, etc.), priority scoring based on department and role, and approval workflow for new equipment requests | High | Pending |
+| E13 | AI Request Classification | AI-powered automatic classification of service requests — infers category, sub-type, and priority from user description, overriding user-submitted values when the AI assessment is more accurate | Medium | Pending |
+| E14 | Procurement & Budget | Purchase order management, goods receipt tracking, department budget allocation, and expense control per department with spending reports | High | Pending |
+| E15 | Appointment Scheduling | Schedule and manage support appointments between technicians and employees — calendar view, time slot availability, booking, reminders, and rescheduling | Medium | Pending |
+| E16 | Shipping & Logistics | Ship equipment to employee home, other offices, or vendor for repair — shipment tracking, delivery addresses, carrier integration, return management, and shipment status notifications | Medium | Pending |
+| E17 | Scheduled Maintenance | Recurring and one-off maintenance plans for assets — maintenance templates, calendar integration, technician assignment, completion tracking, and overdue alerts | Medium | Pending |
+| E18 | Knowledge Base & Self-Service | Built-in wiki with TipTap WYSIWYG editor — articles, FAQs, categorized solutions, version history, native links to assets/tickets/users, full-text search (PostgreSQL tsvector), AI-suggested articles on ticket creation for deflection, and self-service portal for employees | High | Pending |
+| E19 | SLA Management | Configurable SLA policies per priority and category — response/resolution time targets, automatic escalation rules, breach notifications to managers, and SLA compliance reports | High | Pending |
+| E20 | Asset Lifecycle & Warranties | Asset depreciation tracking, end-of-life planning, renewal/refresh cycles, lease vs purchase tracking, warranty management with vendor contacts, and warranty claim workflow | Medium | Pending |
+| E21 | Software License Management | Track software licenses per user and department — seat compliance (used vs purchased), renewal alerts, cost allocation per department, and license audit reports | Medium | Pending |
+| E22 | Employee Onboarding/Offboarding | Automated workflows for new hires (equipment pack based on department + role from E11) and departures (return checklist, account deactivation, asset recovery tracking) | High | Pending |
+| E23 | Multi-channel Intake | Email-to-ticket conversion, Slack/Teams integration for creating and tracking requests, and chatbot for guided ticket creation without entering the app | Medium | Pending |
+| E24 | SSO & Directory Sync | SAML/OIDC single sign-on for corporate login, LDAP/Active Directory synchronization of users, departments, and roles with automatic provisioning | High | Pending |
+| E25 | Vendor Management | Vendor directory with contacts and contracts, vendor SLA tracking, incident history per vendor, warranty claim routing, and vendor performance reports | Medium | Pending |
+| E26 | Observability with SigNoz | OpenTelemetry instrumentation for FastAPI, SQLAlchemy, Celery, and Redis — self-hosted SigNoz for distributed tracing, metrics, logs, error tracking, and performance dashboards | Medium | Pending |
+| E27 | Surveys & Feedback | CSAT surveys after ticket resolution (star rating + comment), decision polls for purchase planning (connects with E14), onboarding feedback after equipment delivery (connects with E22), and satisfaction metrics per technician, department, and category | Medium | Pending |
+| E28 | Mobile / PWA | Progressive Web App for technicians and employees — QR scanning with camera, ticket updates from the field, push notifications, offline support, and responsive mobile-first UI | High | Pending |
+| E29 | Audit Trail & Compliance | Complete audit log of all user actions (who did what, when), GDPR data export and deletion requests, compliance reports, and data retention policies per company | High | Pending |
+| E30 | Custom Fields | Admin-defined custom fields for assets, tickets, and companies — text, number, date, dropdown, and multi-select types with validation rules and visibility per role | High | Pending |
+| E31 | Workflow Automations | Rule engine for if-then automations — auto-assign tickets by category, auto-escalate after SLA threshold, notify manager on critical priority, auto-close resolved tickets after X days, and trigger actions on asset status changes | High | Pending |
+| E32 | Asset Discovery | Automatic network device discovery — agent-based and agentless scanning, sync discovered devices with asset inventory, detect new/removed devices, and scheduled discovery scans | Medium | Pending |
+| E33 | Change Management (ITIL) | Change request workflow — request, risk assessment, CAB approval board, scheduled implementation, rollback plan, post-implementation review, and change calendar integration | Medium | Pending |
+| E34 | Feature Voting & Roadmap | In-app feature request board — users submit and upvote ideas, admin reviews and prioritizes, public roadmap view with status (planned, in progress, shipped), and vote-based priority scoring for product decisions | Low | Pending |
 
 ---
 

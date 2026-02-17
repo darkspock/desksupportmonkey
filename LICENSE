@@ -1,0 +1,46 @@
+Business Source License 1.1
+
+Licensor:  Plan Zeta Tech SL
+Software:  Desk Support Monkey
+
+Use Limitation:
+You may use, copy, modify, and distribute this software for internal
+business purposes within your own organization. You may NOT use this
+software to provide a hosted or managed service to third parties, or
+offer it as a Software-as-a-Service (SaaS), Platform-as-a-Service (PaaS),
+or any commercially hosted product where the functionality of this
+software is made available to third parties.
+
+Permitted Uses:
+- Internal use within your organization (self-hosted)
+- Development, testing, and evaluation
+- Educational and research purposes
+- Contributing improvements back to this project
+
+Prohibited Uses:
+- Offering this software as a hosted service to third parties
+- Selling access to a running instance of this software
+- Repackaging and distributing as a commercial product
+- Using this software as the basis for a competing SaaS offering
+
+Change Date:  February 17, 2030
+
+Change License:  Apache License, Version 2.0
+
+On the Change Date, this software will be made available under the
+Change License. Until the Change Date, the Use Limitation above applies.
+
+For licensing inquiries or commercial SaaS licensing, contact:
+jmacias@qashops.com
+
+---
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+Copyright (c) 2026 Plan Zeta Tech SL. All rights reserved.
