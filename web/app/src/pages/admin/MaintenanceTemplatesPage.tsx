@@ -29,7 +29,7 @@ export default function MaintenanceTemplatesPage() {
   const [checklistRaw, setChecklistRaw] = useState('');
 
   const [applyTemplateId, setApplyTemplateId] = useState('');
-  const [assetIdsRaw, setAssetIdsRaw] = useState('');
+  const [applyAssetIds, setApplyAssetIds] = useState<string[]>([]);
   const [pendingTemplateDelete, setPendingTemplateDelete] = useState<MaintenanceTemplate | null>(null);
   const [pendingPlanDeactivate, setPendingPlanDeactivate] = useState<MaintenancePlan | null>(null);
 
@@ -60,6 +60,11 @@ export default function MaintenanceTemplatesPage() {
   const assetLabelById = useMemo(
     () => new Map((assets?.data ?? []).map((a) => [a.id, `${a.brand} ${a.model} (${a.serial_number})`])),
     [assets],
+  );
+
+  const templateNameById = useMemo(
+    () => new Map((templates?.data ?? []).map((tpl) => [tpl.id, tpl.name])),
+    [templates],
   );
 
   const invalidate = () => {
@@ -97,12 +102,12 @@ export default function MaintenanceTemplatesPage() {
 
   const apply = useMutation({
     mutationFn: () => api.post(`/maintenance-templates/${applyTemplateId}/apply`, {
-      asset_ids: assetIdsRaw.split(',').map((v) => v.trim()).filter(Boolean),
+      asset_ids: applyAssetIds,
     }),
     onSuccess: () => {
       invalidate();
       showToast({ title: t('page.maintenance_templates.toast_applied'), variant: 'success' });
-      setAssetIdsRaw('');
+      setApplyAssetIds([]);
     },
     onError: (err: unknown) => {
       const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('page.maintenance_templates.error_action');
@@ -116,6 +121,14 @@ export default function MaintenanceTemplatesPage() {
     onError: () => showToast({ title: t('page.maintenance_templates.error_action'), variant: 'error' }),
   });
 
+  /* Format interval + frequency for display, e.g. "Every 3 months" */
+  const formatRecurrence = (tpl: MaintenanceTemplate) => {
+    if (!tpl.recurrence_frequency) return '—';
+    const freq = t(`enum.recurrence.${tpl.recurrence_frequency.toLowerCase()}`);
+    if (tpl.recurrence_interval <= 1) return freq;
+    return `${t('page.maintenance_templates.every')} ${tpl.recurrence_interval} ${freq.toLowerCase()}`;
+  };
+
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
@@ -128,16 +141,34 @@ export default function MaintenanceTemplatesPage() {
       <Card>
         <h3 className="mb-3 text-sm font-medium text-foreground">{t('page.maintenance_templates.new')}</h3>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('table.name')} />
-          <select value={priority} onChange={(e) => setPriority(e.target.value)}>
-            {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((p) => <option key={p} value={p}>{t(`enum.maintenance_priority.${p.toLowerCase()}`)}</option>)}
-          </select>
-          <select value={frequency} onChange={(e) => setFrequency(e.target.value)}>
-            {['DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY'].map((f) => <option key={f} value={f}>{t(`enum.recurrence.${f.toLowerCase()}`)}</option>)}
-          </select>
-          <input type="number" min={1} value={interval} onChange={(e) => setInterval(Number(e.target.value || 1))} />
-          <input value={assetTypeFilter} onChange={(e) => setAssetTypeFilter(e.target.value)} placeholder={t('page.maintenance_templates.asset_type_filter')} className="md:col-span-2" />
-          <textarea value={checklistRaw} onChange={(e) => setChecklistRaw(e.target.value)} rows={4} placeholder={t('page.maintenance_templates.checklist_help')} className="md:col-span-2" />
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-muted-foreground">{t('table.name')}</label>
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('table.name')} />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-muted-foreground">{t('table.priority')}</label>
+            <select value={priority} onChange={(e) => setPriority(e.target.value)}>
+              {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((p) => <option key={p} value={p}>{t(`enum.maintenance_priority.${p.toLowerCase()}`)}</option>)}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-muted-foreground">{t('page.maintenance_templates.frequency')}</label>
+            <select value={frequency} onChange={(e) => setFrequency(e.target.value)}>
+              {['DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY'].map((f) => <option key={f} value={f}>{t(`enum.recurrence.${f.toLowerCase()}`)}</option>)}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-muted-foreground">{t('page.maintenance_templates.interval')}</label>
+            <input type="number" min={1} value={interval} onChange={(e) => setInterval(Number(e.target.value || 1))} placeholder="1" />
+          </div>
+          <div className="flex flex-col gap-1 md:col-span-2">
+            <label className="text-xs font-medium text-muted-foreground">{t('page.maintenance_templates.asset_type_filter')}</label>
+            <input value={assetTypeFilter} onChange={(e) => setAssetTypeFilter(e.target.value)} placeholder={t('page.maintenance_templates.asset_type_filter')} />
+          </div>
+          <div className="flex flex-col gap-1 md:col-span-2">
+            <label className="text-xs font-medium text-muted-foreground">{t('page.maintenance_templates.checklist_label')}</label>
+            <textarea value={checklistRaw} onChange={(e) => setChecklistRaw(e.target.value)} rows={4} placeholder={t('page.maintenance_templates.checklist_help')} />
+          </div>
         </div>
         <button
           onClick={() => {
@@ -158,11 +189,26 @@ export default function MaintenanceTemplatesPage() {
       <Card>
         <h3 className="mb-3 text-sm font-medium text-foreground">{t('page.maintenance_templates.apply')}</h3>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <select value={applyTemplateId} onChange={(e) => setApplyTemplateId(e.target.value)}>
-            <option value="">{t('page.maintenance_templates.select_template')}</option>
-            {(templates?.data ?? []).map((tpl) => <option key={tpl.id} value={tpl.id}>{tpl.name}</option>)}
-          </select>
-          <input value={assetIdsRaw} onChange={(e) => setAssetIdsRaw(e.target.value)} placeholder={t('page.maintenance_templates.asset_ids_help')} />
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-muted-foreground">{t('page.maintenance_templates.template')}</label>
+            <select value={applyTemplateId} onChange={(e) => setApplyTemplateId(e.target.value)}>
+              <option value="">{t('page.maintenance_templates.select_template')}</option>
+              {(templates?.data ?? []).map((tpl) => <option key={tpl.id} value={tpl.id}>{tpl.name}</option>)}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-muted-foreground">{t('page.maintenance_templates.select_assets')}</label>
+            <select
+              multiple
+              value={applyAssetIds}
+              onChange={(e) => setApplyAssetIds(Array.from(e.target.selectedOptions, (o) => o.value))}
+              className="min-h-[80px]"
+            >
+              {(assets?.data ?? []).map((a) => (
+                <option key={a.id} value={a.id}>{a.brand} {a.model} ({a.serial_number})</option>
+              ))}
+            </select>
+          </div>
         </div>
         <button
           onClick={() => {
@@ -202,7 +248,7 @@ export default function MaintenanceTemplatesPage() {
                 <tr className="hover:bg-transparent">
                   <Th className="pl-4">{t('table.name')}</Th>
                   <Th>{t('table.priority')}</Th>
-                  <Th>{t('table.type')}</Th>
+                  <Th>{t('page.maintenance_templates.recurrence')}</Th>
                   <Th>{t('table.status')}</Th>
                   <Th className="pr-4"><span className="sr-only">{t('table.actions')}</span></Th>
                 </tr>
@@ -210,9 +256,9 @@ export default function MaintenanceTemplatesPage() {
               <tbody>
                 {templates.data.map((tpl) => (
                   <Tr key={tpl.id}>
-                    <Td className="pl-4">{tpl.name}</Td>
+                    <Td className="pl-4 font-medium">{tpl.name}</Td>
                     <Td>{t(`enum.maintenance_priority.${tpl.default_priority.toLowerCase()}`)}</Td>
-                    <Td>{tpl.recurrence_frequency ? t(`enum.recurrence.${tpl.recurrence_frequency.toLowerCase()}`) : '—'}</Td>
+                    <Td>{formatRecurrence(tpl)}</Td>
                     <Td><Badge variant={tpl.is_active ? 'success' : 'default'}>{tpl.is_active ? t('enum.active') : t('enum.deactivated')}</Badge></Td>
                     <td className="px-4 py-3 text-sm">
                       <div className="flex items-center justify-end">
@@ -253,17 +299,17 @@ export default function MaintenanceTemplatesPage() {
               <thead>
                 <tr className="hover:bg-transparent">
                   <Th className="pl-4">{t('table.asset')}</Th>
-                  <Th>{t('table.type')}</Th>
+                  <Th>{t('page.maintenance_templates.template')}</Th>
                   <Th>{t('table.status')}</Th>
-                  <Th>{t('table.date')}</Th>
+                  <Th>{t('page.maintenance_templates.next_due')}</Th>
                   <Th className="pr-4"><span className="sr-only">{t('table.actions')}</span></Th>
                 </tr>
               </thead>
               <tbody>
                 {plans.data.map((plan) => (
                   <Tr key={plan.id}>
-                    <Td className="pl-4">{assetLabelById.get(plan.asset_id) || plan.asset_id}</Td>
-                    <Td><span className="font-mono text-xs">{plan.template_id.slice(0, 8)}</span></Td>
+                    <Td className="pl-4">{assetLabelById.get(plan.asset_id) || plan.asset_id.slice(0, 8)}</Td>
+                    <Td>{templateNameById.get(plan.template_id) || plan.template_id.slice(0, 8)}</Td>
                     <Td><Badge variant={plan.is_active ? 'success' : 'default'}>{plan.is_active ? t('enum.active') : t('enum.deactivated')}</Badge></Td>
                     <Td>{formatDateTime(plan.next_due_at)}</Td>
                     <td className="px-4 py-3 text-sm">

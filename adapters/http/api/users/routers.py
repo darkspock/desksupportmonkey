@@ -132,16 +132,17 @@ def _validate_invite_email(email: str, company_id: str, company_repo: CompanyRep
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Email domain is not allowed for this company")
 
 
-def _ensure_user_for_invite(email: str, company_id: str, user_repo: UserRepository) -> None:
+def _ensure_user_for_invite(email: str, company_id: str, user_repo: UserRepository, role: UserRole = UserRole.EMPLOYEE) -> None:
     existing_user = user_repo.find_by_email(email)
     if existing_user:
-        if existing_user.company_id != company_id or existing_user.role != UserRole.EMPLOYEE:
+        if existing_user.company_id != company_id:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User with this email already exists")
         if not existing_user.is_active:
             existing_user.activate()
-            user_repo.save(existing_user)
+        existing_user.role = role
+        user_repo.save(existing_user)
     else:
-        user_repo.save(User.create(email=email, role=UserRole.EMPLOYEE, company_id=company_id))
+        user_repo.save(User.create(email=email, role=role, company_id=company_id))
 
 
 def _send_invite_link(
@@ -173,8 +174,16 @@ def invite_user(
     if not company_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid company context")
     email = body.email.lower().strip()
+    invite_role = UserRole.EMPLOYEE
+    if body.role:
+        try:
+            invite_role = UserRole(body.role)
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid role: {body.role}")
+        if invite_role == UserRole.SUPER_ADMIN:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot invite super admins")
     _validate_invite_email(email, company_id, company_repo)
-    _ensure_user_for_invite(email, company_id, user_repo)
+    _ensure_user_for_invite(email, company_id, user_repo, role=invite_role)
     _send_invite_link(email, magic_link_repo, company_repo, user_repo)
     return {"data": {"message": "Invitation sent"}}
 

@@ -37,6 +37,7 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState('');
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState('employee');
   const [inviteError, setInviteError] = useState('');
   const [editModal, setEditModal] = useState<EditModalState | null>(null);
   const [editError, setEditError] = useState('');
@@ -68,9 +69,10 @@ export default function UsersPage() {
   );
 
   const inviteUser = useMutation({
-    mutationFn: (email: string) => api.post('/users/invite', { email }),
+    mutationFn: ({ email, role }: { email: string; role: string }) => api.post('/users/invite', { email, role }),
     onSuccess: () => {
       setInviteEmail('');
+      setInviteRole('employee');
       setInviteError('');
       setShowInviteModal(false);
       queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -138,6 +140,7 @@ export default function UsersPage() {
       if (showInviteModal && !inviteUser.isPending) {
         setShowInviteModal(false);
         setInviteEmail('');
+        setInviteRole('employee');
         setInviteError('');
       }
     };
@@ -163,6 +166,7 @@ export default function UsersPage() {
           type="button"
           onClick={() => {
             setInviteEmail('');
+            setInviteRole('employee');
             setInviteError('');
             setShowInviteModal(true);
           }}
@@ -215,6 +219,7 @@ export default function UsersPage() {
               type="button"
               onClick={() => {
                 setInviteEmail('');
+                setInviteRole('employee');
                 setInviteError('');
                 setShowInviteModal(true);
               }}
@@ -330,6 +335,7 @@ export default function UsersPage() {
               if (inviteUser.isPending) return;
               setShowInviteModal(false);
               setInviteEmail('');
+              setInviteRole('employee');
               setInviteError('');
             }}
             aria-label={t('errors.close_confirmation_dialog')}
@@ -345,7 +351,7 @@ export default function UsersPage() {
                   return;
                 }
                 setInviteError('');
-                inviteUser.mutate(email);
+                inviteUser.mutate({ email, role: inviteRole });
               }}
               className="mt-4 space-y-4"
             >
@@ -362,6 +368,12 @@ export default function UsersPage() {
                   className="w-full bg-card"
                 />
               </div>
+              <div>
+                <label className="mb-1.5 block text-muted-foreground">{t('table.role')}</label>
+                <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value)} className="w-full bg-card">
+                  {['employee', 'technician', 'admin'].map((r) => <option key={r} value={r}>{t(`enum.${r}`)}</option>)}
+                </select>
+              </div>
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
@@ -369,6 +381,7 @@ export default function UsersPage() {
                     if (inviteUser.isPending) return;
                     setShowInviteModal(false);
                     setInviteEmail('');
+                    setInviteRole('employee');
                     setInviteError('');
                   }}
                   className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50"

@@ -26,7 +26,8 @@ export default function RegisterPage() {
       const domains = emailDomains
         .split(',')
         .map((d) => d.trim())
-        .filter(Boolean);
+        .filter(Boolean)
+        .map((d) => (d.includes('@') ? d.split('@')[1] : d));
 
       if (domains.length === 0) {
         setError(t('auth.register.error_domains_required'));

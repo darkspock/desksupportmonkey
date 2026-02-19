@@ -14,6 +14,7 @@ class AssignDepartmentRequest(BaseModel):
 
 class InviteUserRequest(BaseModel):
     email: EmailStr
+    role: Optional[str] = None
 
 
 class UserDetailResponse(BaseModel):

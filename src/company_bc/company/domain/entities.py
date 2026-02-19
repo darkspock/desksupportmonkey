@@ -11,6 +11,16 @@ class InvalidStatusTransitionError(Exception):
     pass
 
 
+def _normalize_domain(raw: str) -> str:
+    """Normalize a domain entry: extract domain from email if needed, validate format."""
+    d = raw.lower().strip()
+    if "@" in d:
+        d = d.split("@", 1)[1]
+    if not d or "." not in d:
+        raise ValueError(f"Invalid domain: '{raw}'")
+    return d
+
+
 @dataclass
 class Company:
     id: str
@@ -31,7 +41,7 @@ class Company:
             id=id or str(ulid.new()),
             name=name.strip(),
             status=CompanyStatus.ACTIVE,
-            email_domains=[d.lower().strip() for d in email_domains],
+            email_domains=[_normalize_domain(d) for d in email_domains],
             is_active=True,
         )
 
@@ -47,7 +57,7 @@ class Company:
         if email_domains is not None:
             if not email_domains:
                 raise ValueError("At least one email domain is required")
-            self.email_domains = [d.lower().strip() for d in email_domains]
+            self.email_domains = [_normalize_domain(d) for d in email_domains]
 
     def change_status(self, new_status: CompanyStatus) -> None:
         if new_status == self.status:
