@@ -50,4 +50,6 @@ def register_company(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except UserAlreadyExistsError:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User with this email already exists")
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     return {"data": {"message": "Company registered. Check your email for the magic link."}}

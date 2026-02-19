@@ -11,13 +11,24 @@ class InvalidStatusTransitionError(Exception):
     pass
 
 
+BLOCKED_DOMAINS = frozenset({
+    "gmail.com", "googlemail.com", "yahoo.com", "yahoo.es", "hotmail.com",
+    "hotmail.es", "outlook.com", "outlook.es", "live.com", "aol.com",
+    "icloud.com", "me.com", "mac.com", "protonmail.com", "proton.me",
+    "zoho.com", "yandex.com", "mail.com", "gmx.com", "gmx.es",
+    "mailinator.com", "guerrillamail.com", "tempmail.com",
+})
+
+
 def _normalize_domain(raw: str) -> str:
-    """Normalize a domain entry: extract domain from email if needed, validate format."""
+    """Validate and normalize a domain entry."""
     d = raw.lower().strip()
     if "@" in d:
-        d = d.split("@", 1)[1]
+        raise ValueError(f"'{raw}' looks like an email address, not a domain. Use the part after @, e.g. 'example.com'")
     if not d or "." not in d:
         raise ValueError(f"Invalid domain: '{raw}'")
+    if d in BLOCKED_DOMAINS:
+        raise ValueError(f"Public email providers like '{d}' are not allowed. Use your company domain.")
     return d
 
 

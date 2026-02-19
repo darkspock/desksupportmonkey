@@ -102,6 +102,8 @@ const en: Record<string, string> = {
   'auth.register.register_company': 'Register Company',
   'auth.register.already_have_account': 'Already have an account?',
   'auth.register.error_domains_required': 'At least one email domain is required',
+  'auth.register.error_invalid_domain': '"{{domain}}" is not a valid domain. Enter just the domain (e.g. example.com), not a full email address.',
+  'auth.register.error_blocked_domain': 'Public email providers like "{{domain}}" are not allowed. Use your company domain.',
   'auth.register.error_registration_failed': 'Registration failed',
 
   'auth.verify.title': 'Verify login link',

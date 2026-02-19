@@ -26,11 +26,25 @@ export default function RegisterPage() {
       const domains = emailDomains
         .split(',')
         .map((d) => d.trim())
-        .filter(Boolean)
-        .map((d) => (d.includes('@') ? d.split('@')[1] : d));
+        .filter(Boolean);
 
       if (domains.length === 0) {
         setError(t('auth.register.error_domains_required'));
+        setLoading(false);
+        return;
+      }
+
+      const invalid = domains.find((d) => d.includes('@') || !d.includes('.'));
+      if (invalid) {
+        setError(t('auth.register.error_invalid_domain', { domain: invalid }));
+        setLoading(false);
+        return;
+      }
+
+      const BLOCKED = ['gmail.com','googlemail.com','yahoo.com','yahoo.es','hotmail.com','hotmail.es','outlook.com','outlook.es','live.com','aol.com','icloud.com','protonmail.com','proton.me','mailinator.com'];
+      const blocked = domains.find((d) => BLOCKED.includes(d.toLowerCase()));
+      if (blocked) {
+        setError(t('auth.register.error_blocked_domain', { domain: blocked }));
         setLoading(false);
         return;
       }
