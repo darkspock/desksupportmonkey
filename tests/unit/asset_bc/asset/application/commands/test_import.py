@@ -3,8 +3,8 @@ from unittest.mock import MagicMock, call
 import pytest
 
 from src.asset_bc.asset.application.commands.import_assets import (
-    ImportAssetsCommand,
-    ImportAssetsCommandHandler,
+    ImportAssetsRequest,
+    ImportAssetsService,
     InvalidCSVError,
 )
 from src.asset_bc.asset.domain.entities import Asset
@@ -16,7 +16,7 @@ def _make_handler(repo=None):
         repo = MagicMock()
         repo.find_by_serial_number.return_value = None
         repo.save.side_effect = lambda a: a
-    return ImportAssetsCommandHandler(asset_repo=repo), repo
+    return ImportAssetsService(asset_repo=repo), repo
 
 
 def _csv(rows: list[str]) -> str:
@@ -24,7 +24,7 @@ def _csv(rows: list[str]) -> str:
     return "\n".join([header] + rows)
 
 
-class TestImportAssetsCommand:
+class TestImportAssetsService:
     def test_success_all_valid(self):
         handler, repo = _make_handler()
         csv_content = _csv([
@@ -33,7 +33,7 @@ class TestImportAssetsCommand:
         ])
 
         result = handler.handle(
-            ImportAssetsCommand(company_id="comp1", performed_by="user1", csv_content=csv_content)
+            ImportAssetsRequest(company_id="comp1", performed_by="user1", csv_content=csv_content)
         )
 
         assert result.total == 2
@@ -51,7 +51,7 @@ class TestImportAssetsCommand:
         ])
 
         result = handler.handle(
-            ImportAssetsCommand(company_id="comp1", performed_by="user1", csv_content=csv_content)
+            ImportAssetsRequest(company_id="comp1", performed_by="user1", csv_content=csv_content)
         )
 
         assert result.total == 3
@@ -68,7 +68,7 @@ class TestImportAssetsCommand:
         ])
 
         result = handler.handle(
-            ImportAssetsCommand(company_id="comp1", performed_by="user1", csv_content=csv_content)
+            ImportAssetsRequest(company_id="comp1", performed_by="user1", csv_content=csv_content)
         )
 
         assert result.successful == 1
@@ -81,7 +81,7 @@ class TestImportAssetsCommand:
             MagicMock() if sn == "SN001" else None
         )
         repo.save.side_effect = lambda a: a
-        handler = ImportAssetsCommandHandler(asset_repo=repo)
+        handler = ImportAssetsService(asset_repo=repo)
 
         csv_content = _csv([
             "laptop,Dell,Latitude,SN001,,,",
@@ -89,7 +89,7 @@ class TestImportAssetsCommand:
         ])
 
         result = handler.handle(
-            ImportAssetsCommand(company_id="comp1", performed_by="user1", csv_content=csv_content)
+            ImportAssetsRequest(company_id="comp1", performed_by="user1", csv_content=csv_content)
         )
 
         assert result.successful == 1
@@ -105,7 +105,7 @@ class TestImportAssetsCommand:
         ])
 
         result = handler.handle(
-            ImportAssetsCommand(company_id="comp1", performed_by="user1", csv_content=csv_content)
+            ImportAssetsRequest(company_id="comp1", performed_by="user1", csv_content=csv_content)
         )
 
         assert result.total == 3
@@ -120,7 +120,7 @@ class TestImportAssetsCommand:
         csv_content = _csv(["printer,HP,LaserJet,SN001,,,"])
 
         result = handler.handle(
-            ImportAssetsCommand(company_id="comp1", performed_by="user1", csv_content=csv_content)
+            ImportAssetsRequest(company_id="comp1", performed_by="user1", csv_content=csv_content)
         )
 
         assert result.successful == 0
@@ -132,7 +132,7 @@ class TestImportAssetsCommand:
         csv_content = _csv(["laptop,Dell,Latitude,SN001,not-a-date,,"])
 
         result = handler.handle(
-            ImportAssetsCommand(company_id="comp1", performed_by="user1", csv_content=csv_content)
+            ImportAssetsRequest(company_id="comp1", performed_by="user1", csv_content=csv_content)
         )
 
         assert result.successful == 0
@@ -144,7 +144,7 @@ class TestImportAssetsCommand:
 
         with pytest.raises(InvalidCSVError, match="empty"):
             handler.handle(
-                ImportAssetsCommand(company_id="comp1", performed_by="user1", csv_content="")
+                ImportAssetsRequest(company_id="comp1", performed_by="user1", csv_content="")
             )
 
     def test_missing_required_columns_raises(self):
@@ -153,7 +153,7 @@ class TestImportAssetsCommand:
 
         with pytest.raises(InvalidCSVError, match="Missing required columns"):
             handler.handle(
-                ImportAssetsCommand(company_id="comp1", performed_by="user1", csv_content=csv_content)
+                ImportAssetsRequest(company_id="comp1", performed_by="user1", csv_content=csv_content)
             )
 
     def test_created_event_has_csv_import_source(self):
@@ -161,7 +161,7 @@ class TestImportAssetsCommand:
         csv_content = _csv(["laptop,Dell,Latitude,SN001,,,"])
 
         handler.handle(
-            ImportAssetsCommand(company_id="comp1", performed_by="user1", csv_content=csv_content)
+            ImportAssetsRequest(company_id="comp1", performed_by="user1", csv_content=csv_content)
         )
 
         event = repo.save_event.call_args[0][0]

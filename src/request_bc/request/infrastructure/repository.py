@@ -40,6 +40,7 @@ class RequestRepository(RequestRepositoryInterface):
                 created_by=request.created_by,
                 assigned_to=request.assigned_to,
                 type=request.type.value,
+                subtype=request.subtype,
                 title=request.title,
                 description=request.description,
                 status=request.status.value,
@@ -92,6 +93,7 @@ class RequestRepository(RequestRepositoryInterface):
         type: Optional[str] = None,
         priority: Optional[str] = None,
         assigned_to: Optional[str] = None,
+        subtype: Optional[str] = None,
     ) -> tuple[list[ServiceRequest], int]:
         stmt = select(ServiceRequestModel).where(
             ServiceRequestModel.company_id == company_id
@@ -116,6 +118,8 @@ class RequestRepository(RequestRepositoryInterface):
                 stmt = stmt.where(ServiceRequestModel.assigned_to.is_(None))
             else:
                 stmt = stmt.where(ServiceRequestModel.assigned_to == assigned_to)
+        if subtype is not None:
+            stmt = stmt.where(ServiceRequestModel.subtype == subtype)
 
         total = self.session.execute(
             select(func.count()).select_from(stmt.subquery())
@@ -134,7 +138,7 @@ class RequestRepository(RequestRepositoryInterface):
         models = self.session.execute(
             stmt.offset(offset).limit(page_size)
         ).scalars().all()
-        return [self._to_entity(m) for m in models], total
+        return [self._to_entity(m) for m in models], total or 0
 
     def find_by_created_by(
         self,
@@ -143,6 +147,7 @@ class RequestRepository(RequestRepositoryInterface):
         page: int = 1,
         page_size: int = 20,
         status: Optional[str] = None,
+        subtype: Optional[str] = None,
     ) -> tuple[list[ServiceRequest], int]:
         stmt = select(ServiceRequestModel).where(
             ServiceRequestModel.company_id == company_id,
@@ -150,6 +155,8 @@ class RequestRepository(RequestRepositoryInterface):
         )
         if status is not None:
             stmt = stmt.where(ServiceRequestModel.status == status)
+        if subtype is not None:
+            stmt = stmt.where(ServiceRequestModel.subtype == subtype)
 
         total = self.session.execute(
             select(func.count()).select_from(stmt.subquery())
@@ -160,7 +167,7 @@ class RequestRepository(RequestRepositoryInterface):
         models = self.session.execute(
             stmt.offset(offset).limit(page_size)
         ).scalars().all()
-        return [self._to_entity(m) for m in models], total
+        return [self._to_entity(m) for m in models], total or 0
 
     def save_comment(self, comment: RequestComment) -> RequestComment:
         model = RequestCommentModel(
@@ -360,6 +367,7 @@ class RequestRepository(RequestRepositoryInterface):
             status=RequestStatus(model.status),
             priority=RequestPriority(model.priority),
             assigned_to=model.assigned_to,
+            subtype=model.subtype,
             data=model.data,
             resolved_at=model.resolved_at,
             created_at=model.created_at,

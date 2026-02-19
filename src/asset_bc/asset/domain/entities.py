@@ -30,6 +30,7 @@ class Asset:
     purchase_date: Optional[date] = None
     warranty_expiration: Optional[date] = None
     notes: Optional[str] = None
+    purchase_cost_cents: Optional[int] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -44,6 +45,7 @@ class Asset:
         purchase_date: Optional[date] = None,
         warranty_expiration: Optional[date] = None,
         notes: Optional[str] = None,
+        id: Optional[str] = None,
     ) -> "Asset":
         if not brand or not brand.strip():
             raise ValueError("Brand is required")
@@ -52,7 +54,7 @@ class Asset:
         if not serial_number or not serial_number.strip():
             raise ValueError("Serial number is required")
         return cls(
-            id=str(ulid.new()),
+            id=id or str(ulid.new()),
             company_id=company_id,
             type=type,
             brand=brand.strip(),
@@ -88,20 +90,20 @@ class Asset:
             if old != self.model:
                 changes["model"] = {"old": old, "new": self.model}
         if notes is not None:
-            old = self.notes
+            old_notes = self.notes
             self.notes = notes.strip() if notes else None
-            if old != self.notes:
-                changes["notes"] = {"old": old, "new": self.notes}
+            if old_notes != self.notes:
+                changes["notes"] = {"old": old_notes or "", "new": self.notes or ""}
         if purchase_date is not None:
-            old = self.purchase_date
+            old_purchase = self.purchase_date
             self.purchase_date = purchase_date
-            if old != self.purchase_date:
-                changes["purchase_date"] = {"old": str(old) if old else None, "new": str(self.purchase_date)}
+            if old_purchase != self.purchase_date:
+                changes["purchase_date"] = {"old": str(old_purchase) if old_purchase else "", "new": str(self.purchase_date)}
         if warranty_expiration is not None:
-            old = self.warranty_expiration
+            old_warranty = self.warranty_expiration
             self.warranty_expiration = warranty_expiration
-            if old != self.warranty_expiration:
-                changes["warranty_expiration"] = {"old": str(old) if old else None, "new": str(self.warranty_expiration)}
+            if old_warranty != self.warranty_expiration:
+                changes["warranty_expiration"] = {"old": str(old_warranty) if old_warranty else "", "new": str(self.warranty_expiration)}
         return changes
 
     def assign(self, user_id: str, department_id: Optional[str] = None) -> None:

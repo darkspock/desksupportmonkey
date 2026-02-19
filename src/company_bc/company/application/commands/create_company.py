@@ -4,12 +4,12 @@ from typing import Optional
 
 from core.email import EmailServiceInterface, send_magic_link_email
 from src.auth_bc.magic_link.domain.entities import MagicLink
-from src.auth_bc.magic_link.domain.repository import MagicLinkRepositoryInterface
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
-from src.auth_bc.user.domain.repository import UserRepositoryInterface
+from src.company_bc.company.application.ports import MagicLinkWriter, UserWriter
 from src.company_bc.company.domain.entities import Company
 from src.company_bc.company.domain.repository import CompanyRepositoryInterface
+from src.framework.application.command_bus import Command, CommandHandler
 
 logger = logging.getLogger(__name__)
 
@@ -29,18 +29,19 @@ class UserAlreadyExistsError(Exception):
 
 
 @dataclass
-class CreateCompanyCommand:
+class CreateCompanyCommand(Command):
     name: str
     email_domains: list[str]
     admin_email: Optional[str] = None
+    id: Optional[str] = None
 
 
-class CreateCompanyCommandHandler:
+class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
     def __init__(
         self,
         company_repo: CompanyRepositoryInterface,
-        user_repo: UserRepositoryInterface,
-        magic_link_repo: MagicLinkRepositoryInterface,
+        user_repo: UserWriter,
+        magic_link_repo: MagicLinkWriter,
         email_service: EmailServiceInterface,
     ):
         self.company_repo = company_repo
@@ -48,7 +49,7 @@ class CreateCompanyCommandHandler:
         self.magic_link_repo = magic_link_repo
         self.email_service = email_service
 
-    def handle(self, command: CreateCompanyCommand) -> Company:
+    def handle(self, command: CreateCompanyCommand) -> None:
         # Check name uniqueness
         existing = self.company_repo.find_by_name(command.name)
         if existing:
@@ -61,7 +62,9 @@ class CreateCompanyCommandHandler:
                 raise DomainAlreadyTakenError(domain)
 
         # Create company
-        company = Company.create(name=command.name, email_domains=command.email_domains)
+        company = Company.create(
+            name=command.name, email_domains=command.email_domains, id=command.id,
+        )
         self.company_repo.save(company)
         self.company_repo.save_domains(company.id, company.email_domains)
 
@@ -85,4 +88,3 @@ class CreateCompanyCommandHandler:
             logger.info("Initial admin %s created for company %s", email, company.name)
 
         logger.info("Company created: %s (id=%s)", company.name, company.id)
-        return company

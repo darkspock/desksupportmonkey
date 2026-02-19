@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import Any, Optional
 
-from sqlalchemy import Date, DateTime, ForeignKey, JSON, String, Text, UniqueConstraint, func
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, JSON, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.base import Base
@@ -22,6 +22,9 @@ class AssetModel(ULIDMixin, TimestampMixin, Base):
     purchase_date: Mapped[Optional[date]] = mapped_column(Date)
     warranty_expiration: Mapped[Optional[date]] = mapped_column(Date)
     notes: Mapped[Optional[str]] = mapped_column(Text)
+    purchase_cost_cents: Mapped[Optional[int]] = mapped_column(
+        Integer, nullable=True,
+    )
 
     __table_args__ = (
         UniqueConstraint("company_id", "serial_number", name="uq_asset_company_serial"),

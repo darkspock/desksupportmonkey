@@ -1,18 +1,26 @@
 import { useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { Loading } from '../../components/ui/Loading';
 import { ErrorState } from '../../components/ui/StateBlock';
-import { StatusBadge } from '../../components/ui/Badge';
+import { Badge, StatusBadge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
 import { Table, Th, Td } from '../../components/ui/Table';
 import { formatDate, formatDateTime } from '../../lib/date';
 import { useToast } from '../../hooks/useToast';
 import { useI18n } from '../../lib/i18n';
 import { AssetLabel } from '../../components/AssetLabel';
-import type { Asset, AssetEvent, AssignableUser, AssetStatus } from '../../types';
+import type {
+  Asset,
+  AssetEvent,
+  AssignableUser,
+  AssetStatus,
+  MaintenanceRecord,
+  PaginatedResponse,
+  Shipment,
+} from '../../types';
 
 const STATUS_OPTIONS: AssetStatus[] = ['in_stock', 'assigned', 'in_repair', 'decommissioned'];
 
@@ -112,6 +120,7 @@ export default function AssetDetailPage() {
   const { showToast } = useToast();
   const { t } = useI18n();
   const { isRole } = useAuth();
+  const navigate = useNavigate();
   const canInviteUsers = isRole('admin', 'super_admin');
 
   const [assignUserId, setAssignUserId] = useState('');
@@ -141,6 +150,26 @@ export default function AssetDetailPage() {
     queryFn: async () => {
       const { data } = await api.get(`/assets/${id}/history`);
       return data.data as AssetEvent[];
+    },
+    enabled: Boolean(id),
+  });
+
+  const { data: shipments } = useQuery({
+    queryKey: ['asset-shipments', id],
+    queryFn: async () => {
+      const { data } = await api.get(`/shipments/by-asset/${id}`);
+      return data.data as Shipment[];
+    },
+    enabled: Boolean(id),
+  });
+
+  const { data: maintenanceHistory } = useQuery({
+    queryKey: ['asset-maintenance', id],
+    queryFn: async () => {
+      const { data } = await api.get('/maintenance', {
+        params: { asset_id: id, page: 1, page_size: 20 },
+      });
+      return data as PaginatedResponse<MaintenanceRecord>;
     },
     enabled: Boolean(id),
   });
@@ -284,12 +313,12 @@ export default function AssetDetailPage() {
   const selectedStatus = statusValue ?? asset.status;
 
   return (
-    <div className="max-w-5xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <Card>
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">{asset.brand} {asset.model}</h2>
-            <p className="mt-1 text-xs text-gray-500">Serial: {asset.serial_number}</p>
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground">{asset.brand} {asset.model}</h2>
+            <p className="mt-1 text-xs text-muted-foreground">Serial: {asset.serial_number}</p>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -308,7 +337,7 @@ export default function AssetDetailPage() {
                 });
                 setIsEditing(true);
               }}
-              className="rounded border px-3 py-1.5 text-sm hover:bg-gray-50"
+              className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50"
             >
               {isEditing ? t('common.cancel') : t('page.asset_detail.edit_asset')}
             </button>
@@ -316,18 +345,18 @@ export default function AssetDetailPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
-          <div><span className="text-gray-500">{t('table.type')}:</span> {t(`enum.${asset.type}`)}</div>
+          <div><span className="text-muted-foreground">{t('table.type')}:</span> {t(`enum.${asset.type}`)}</div>
           <div className="flex items-center gap-2">
-            <span className="text-gray-500">{t('table.status')}:</span>
+            <span className="text-muted-foreground">{t('table.status')}:</span>
             <StatusBadge status={asset.status} />
           </div>
-          <div><span className="text-gray-500">{t('table.assigned_to')}:</span> {assignedLabel || '-'}</div>
-          <div><span className="text-gray-500">{t('table.purchase_date')}:</span> {formatDate(asset.purchase_date)}</div>
-          <div><span className="text-gray-500">{t('table.warranty')}:</span> {formatDate(asset.warranty_expiration)}</div>
-          <div><span className="text-gray-500">{t('table.updated')}:</span> {formatDateTime(asset.updated_at)}</div>
+          <div><span className="text-muted-foreground">{t('table.assigned_to')}:</span> {assignedLabel || '-'}</div>
+          <div><span className="text-muted-foreground">{t('table.purchase_date')}:</span> {formatDate(asset.purchase_date)}</div>
+          <div><span className="text-muted-foreground">{t('table.warranty')}:</span> {formatDate(asset.warranty_expiration)}</div>
+          <div><span className="text-muted-foreground">{t('table.updated')}:</span> {formatDateTime(asset.updated_at)}</div>
         </div>
 
-        {asset.notes && <p className="mt-4 rounded bg-gray-50 p-3 text-sm text-gray-600">{asset.notes}</p>}
+        {asset.notes && <p className="mt-4 rounded bg-secondary p-3 text-sm text-muted-foreground">{asset.notes}</p>}
       </Card>
 
       <AssetLabel
@@ -338,14 +367,14 @@ export default function AssetDetailPage() {
       />
 
       <Card>
-        <h3 className="mb-3 text-sm font-semibold text-gray-900">{t('table.status')}</h3>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">{t('table.status')}</h3>
         <div className="flex flex-wrap items-end gap-2">
           <div>
-            <label className="mb-1 block text-xs text-gray-500">{t('page.asset_detail.change_status')}</label>
+            <label className="block mb-1.5 text-muted-foreground">{t('page.asset_detail.change_status')}</label>
             <select
               value={selectedStatus}
               onChange={(e) => setStatusValue(e.target.value as AssetStatus)}
-              className="rounded border px-3 py-2 text-sm"
+              className="text-sm"
             >
               {STATUS_OPTIONS.map((status) => (
                 <option key={status} value={status}>{t(`enum.${status}`)}</option>
@@ -356,7 +385,7 @@ export default function AssetDetailPage() {
             type="button"
             onClick={() => changeStatus.mutate(selectedStatus)}
             disabled={changeStatus.isPending || selectedStatus === asset.status}
-            className="rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
           >
             {changeStatus.isPending ? t('auth.set_password.saving') : t('page.asset_detail.update_status')}
           </button>
@@ -364,15 +393,15 @@ export default function AssetDetailPage() {
       </Card>
 
       <Card>
-        <h3 className="mb-3 text-sm font-semibold text-gray-900">{t('page.asset_detail.assignment')}</h3>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">{t('page.asset_detail.assignment')}</h3>
         {asset.assigned_to ? (
           <div className="flex flex-wrap items-end gap-3">
-            <p className="text-sm text-gray-700">{t('table.assigned_to')} <span className="font-medium">{assignedLabel || asset.assigned_to}</span></p>
+            <p className="text-sm text-foreground">{t('table.assigned_to')} <span className="font-medium">{assignedLabel || asset.assigned_to}</span></p>
             <button
               type="button"
               onClick={() => unassignAsset.mutate()}
               disabled={unassignAsset.isPending}
-              className="rounded border border-red-200 px-3 py-2 text-sm text-red-700 hover:bg-red-50 disabled:opacity-50"
+              className="rounded-md h-9 px-4 text-sm font-medium bg-destructive text-white shadow-xs hover:bg-destructive/90 disabled:opacity-50"
             >
               {unassignAsset.isPending ? t('page.asset_detail.unassigning') : t('page.asset_detail.unassign')}
             </button>
@@ -380,11 +409,11 @@ export default function AssetDetailPage() {
         ) : (
           <div className="flex flex-col items-start gap-2">
             <div>
-              <label className="mb-1 block text-xs text-gray-500">{t('page.asset_detail.assign_to_user')}</label>
+              <label className="block mb-1.5 text-muted-foreground">{t('page.asset_detail.assign_to_user')}</label>
               <select
                 value={assignUserId}
                 onChange={(e) => setAssignUserId(e.target.value)}
-                className="min-w-64 rounded border px-3 py-2 text-sm"
+                className="min-w-64 text-sm"
               >
                 <option value="">{t('page.asset_detail.select_user')}</option>
                 {(assignableUsers ?? []).map((u) => (
@@ -395,7 +424,7 @@ export default function AssetDetailPage() {
                 <button
                   type="button"
                   onClick={() => setInviteModalOpen(true)}
-                  className="mt-2 block text-left text-xs text-blue-600 hover:underline"
+                  className="mt-2 block text-left text-xs text-primary hover:underline"
                 >
                   {t('page.asset_detail.invite_user')}
                 </button>
@@ -405,7 +434,7 @@ export default function AssetDetailPage() {
               type="button"
               onClick={() => assignAsset.mutate(assignUserId)}
               disabled={!assignUserId || assignAsset.isPending}
-              className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
             >
               {assignAsset.isPending ? t('page.asset_detail.assigning') : t('page.asset_detail.assign')}
             </button>
@@ -415,7 +444,7 @@ export default function AssetDetailPage() {
 
       {isEditing && (
         <Card>
-          <h3 className="mb-3 text-sm font-semibold text-gray-900">{t('page.asset_detail.edit_asset')}</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">{t('page.asset_detail.edit_asset')}</h3>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -425,63 +454,63 @@ export default function AssetDetailPage() {
           >
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-xs text-gray-500">{t('table.brand')}</label>
+                <label className="block mb-1.5 text-muted-foreground">{t('table.brand')}</label>
                 <input
                   value={editForm.brand}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, brand: e.target.value }))}
                   required
-                  className="w-full rounded border px-3 py-2 text-sm"
+                  className="w-full"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-500">{t('table.model')}</label>
+                <label className="block mb-1.5 text-muted-foreground">{t('table.model')}</label>
                 <input
                   value={editForm.model}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, model: e.target.value }))}
                   required
-                  className="w-full rounded border px-3 py-2 text-sm"
+                  className="w-full"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-500">{t('table.purchase_date')}</label>
+                <label className="block mb-1.5 text-muted-foreground">{t('table.purchase_date')}</label>
                 <input
                   type="date"
                   value={editForm.purchase_date}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, purchase_date: e.target.value }))}
-                  className="w-full rounded border px-3 py-2 text-sm"
+                  className="w-full"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-500">{t('table.warranty_expiration')}</label>
+                <label className="block mb-1.5 text-muted-foreground">{t('table.warranty_expiration')}</label>
                 <input
                   type="date"
                   value={editForm.warranty_expiration}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, warranty_expiration: e.target.value }))}
-                  className="w-full rounded border px-3 py-2 text-sm"
+                  className="w-full"
                 />
               </div>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-gray-500">{t('table.notes')}</label>
+              <label className="block mb-1.5 text-muted-foreground">{t('table.notes')}</label>
               <textarea
                 rows={3}
                 value={editForm.notes}
                 onChange={(e) => setEditForm((prev) => ({ ...prev, notes: e.target.value }))}
-                className="w-full rounded border px-3 py-2 text-sm"
+                className="w-full"
               />
             </div>
             <div className="flex gap-2">
               <button
                 type="submit"
                 disabled={updateAsset.isPending || !editForm.brand.trim() || !editForm.model.trim()}
-                className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
               >
                 {updateAsset.isPending ? t('auth.set_password.saving') : t('page.asset_detail.save_changes')}
               </button>
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                className="rounded border px-4 py-2 text-sm hover:bg-gray-50"
+                className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50"
               >
                 {t('common.cancel')}
               </button>
@@ -491,9 +520,9 @@ export default function AssetDetailPage() {
       )}
 
       <Card>
-        <h3 className="mb-3 text-sm font-semibold text-gray-900">{t('page.asset_detail.event_history')}</h3>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">{t('page.asset_detail.event_history')}</h3>
         {!events?.length ? (
-          <p className="text-sm text-gray-400">{t('page.asset_detail.no_events')}</p>
+          <p className="text-sm text-muted-foreground">{t('page.asset_detail.no_events')}</p>
         ) : (
           <Table>
             <thead>
@@ -504,7 +533,7 @@ export default function AssetDetailPage() {
                 <Th>{t('table.details')}</Th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody>
               {events.map((event) => {
                 const actor = event.performed_by_email || userEmailById.get(event.performed_by) || event.performed_by;
                 const userLabelById = (userId: string) => userEmailById.get(userId) || userId;
@@ -514,11 +543,71 @@ export default function AssetDetailPage() {
                     <Td>{actor}</Td>
                     <Td>{formatDateTime(event.created_at)}</Td>
                     <Td>
-                      <div className="max-w-xl whitespace-normal text-xs text-gray-600">{eventDetails(event, userLabelById, t)}</div>
+                      <div className="max-w-xl whitespace-normal text-xs text-muted-foreground">{eventDetails(event, userLabelById, t)}</div>
                     </Td>
                   </tr>
                 );
               })}
+            </tbody>
+          </Table>
+        )}
+      </Card>
+
+      <Card>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">{t('page.asset_detail.shipment_history')}</h3>
+        {!shipments?.length ? (
+          <p className="text-sm text-muted-foreground">{t('page.asset_detail.no_shipments')}</p>
+        ) : (
+          <Table>
+            <thead>
+              <tr>
+                <Th>{t('table.direction')}</Th>
+                <Th>{t('table.destination')}</Th>
+                <Th>{t('table.carrier')}</Th>
+                <Th>{t('table.status')}</Th>
+                <Th>{t('table.dispatched')}</Th>
+                <Th>{t('table.delivered')}</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {shipments.map((s) => (
+                <tr key={s.id} className="cursor-pointer hover:bg-secondary" onClick={() => navigate(`/shipments/${s.id}`)}>
+                  <Td><Badge variant={s.direction === 'outbound' ? 'info' : 'warning'}>{t(`enum.shipment_direction.${s.direction}`)}</Badge></Td>
+                  <Td>{t(`enum.destination_type.${s.destination_type}`)}</Td>
+                  <Td>{s.carrier || '—'}</Td>
+                  <Td><StatusBadge status={s.status} /></Td>
+                  <Td>{s.dispatched_at ? formatDateTime(s.dispatched_at) : '—'}</Td>
+                  <Td>{s.delivered_at ? formatDateTime(s.delivered_at) : '—'}</Td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
+      </Card>
+
+      <Card>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">{t('page.asset_detail.maintenance_history')}</h3>
+        {!maintenanceHistory?.data.length ? (
+          <p className="text-sm text-muted-foreground">{t('page.asset_detail.no_maintenance')}</p>
+        ) : (
+          <Table>
+            <thead>
+              <tr>
+                <Th>{t('table.status')}</Th>
+                <Th>{t('table.priority')}</Th>
+                <Th>{t('table.title')}</Th>
+                <Th>{t('table.date')}</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {maintenanceHistory.data.map((m) => (
+                <tr key={m.id} className="cursor-pointer hover:bg-secondary" onClick={() => navigate(`/maintenance/${m.id}`)}>
+                  <Td><Badge variant="default">{t(`enum.maintenance_status.${m.status.toLowerCase()}`)}</Badge></Td>
+                  <Td>{t(`enum.maintenance_priority.${m.priority.toLowerCase()}`)}</Td>
+                  <Td>{m.title}</Td>
+                  <Td>{m.scheduled_at ? formatDateTime(m.scheduled_at) : '—'}</Td>
+                </tr>
+              ))}
             </tbody>
           </Table>
         )}
@@ -534,9 +623,9 @@ export default function AssetDetailPage() {
             }}
             aria-label={t('errors.close_confirmation_dialog')}
           />
-          <div className="relative z-[91] w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-lg">
-            <h3 className="text-lg font-semibold text-gray-900">{t('page.asset_detail.invite_user')}</h3>
-            <p className="mt-2 text-sm text-gray-600">{t('page.asset_detail.invite_modal_desc')}</p>
+          <div className="relative z-[91] w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lg">
+            <h3 className="text-lg font-semibold text-foreground">{t('page.asset_detail.invite_user')}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{t('page.asset_detail.invite_modal_desc')}</p>
 
             <form
               onSubmit={(e) => {
@@ -547,7 +636,7 @@ export default function AssetDetailPage() {
               className="mt-4 space-y-4"
             >
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">{t('table.email')}</label>
+                <label className="block mb-1.5 text-muted-foreground">{t('table.email')}</label>
                 <input
                   type="email"
                   value={inviteEmail}
@@ -555,7 +644,7 @@ export default function AssetDetailPage() {
                   placeholder={t('common.placeholder_user_email')}
                   required
                   autoFocus
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                  className="w-full"
                 />
               </div>
 
@@ -564,14 +653,14 @@ export default function AssetDetailPage() {
                   type="button"
                   onClick={() => setInviteModalOpen(false)}
                   disabled={inviteAssignableUser.isPending}
-                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50"
                 >
                   {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={inviteAssignableUser.isPending || !inviteEmail.trim()}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
                 >
                   {inviteAssignableUser.isPending ? t('auth.login.sending') : t('page.asset_detail.invite_and_select')}
                 </button>

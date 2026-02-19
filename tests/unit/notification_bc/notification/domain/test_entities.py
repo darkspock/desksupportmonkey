@@ -94,6 +94,8 @@ class TestEventType:
         assert EventType.REQUEST_PRIORITY_CHANGED == "request.priority_changed"
         assert EventType.REQUEST_COMMENT_ADDED == "request.comment_added"
         assert EventType.REQUEST_NOTE_ADDED == "request.note_added"
+        assert EventType.REQUEST_APPROVAL_NEEDED == "request.approval_needed"
+        assert EventType.REQUEST_APPROVED == "request.approved"
 
     def test_count(self):
-        assert len(EventType) == 7
+        assert len(EventType) == 30

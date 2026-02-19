@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import NamedTuple
 
+from src.framework.application.query_bus import Query, QueryHandler
 from src.request_bc.request.domain.entities import ServiceRequest
 from src.request_bc.request.domain.repository import RequestRepositoryInterface
 
@@ -15,12 +16,12 @@ class RequestDetail(NamedTuple):
 
 
 @dataclass
-class GetRequestQuery:
+class GetRequestQuery(Query):
     request_id: str
     company_id: str
 
 
-class GetRequestQueryHandler:
+class GetRequestQueryHandler(QueryHandler[GetRequestQuery, RequestDetail]):
     def __init__(self, request_repo: RequestRepositoryInterface):
         self.request_repo = request_repo
 

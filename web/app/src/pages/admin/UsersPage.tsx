@@ -1,27 +1,46 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
 import { Loading } from '../../components/ui/Loading';
 import { Badge } from '../../components/ui/Badge';
-import { Table, Th, Td } from '../../components/ui/Table';
-import { Card } from '../../components/ui/Card';
+import { Table, Th, Td, Tr } from '../../components/ui/Table';
 import { Pagination } from '../../components/ui/Pagination';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { EmptyState, ErrorState } from '../../components/ui/StateBlock';
+import { Tooltip } from '../../components/ui/Tooltip';
 import { useToast } from '../../hooks/useToast';
 import { useI18n } from '../../lib/i18n';
-import type { User, Department, PaginatedResponse } from '../../types';
+import type { User, UserRole, Department, PaginatedResponse } from '../../types';
+
+interface EditModalState {
+  userId: string;
+  email: string;
+  role: UserRole;
+  departmentId: string;
+}
+
+interface StatusConfirmState {
+  userId: string;
+  email: string;
+  active: boolean;
+}
+
+const ROLE_OPTIONS: UserRole[] = ['employee', 'technician', 'admin'];
 
 export default function UsersPage() {
   const { t } = useI18n();
+  const queryClient = useQueryClient();
+  const { showToast } = useToast();
+
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
-  const [showInvite, setShowInvite] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [pendingDeactivate, setPendingDeactivate] = useState<{ id: string; email: string } | null>(null);
-  const queryClient = useQueryClient();
-  const { showToast } = useToast();
+  const [inviteError, setInviteError] = useState('');
+  const [editModal, setEditModal] = useState<EditModalState | null>(null);
+  const [editError, setEditError] = useState('');
+  const [pendingStatusChange, setPendingStatusChange] = useState<StatusConfirmState | null>(null);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['users', page, search, roleFilter],
@@ -43,49 +62,43 @@ export default function UsersPage() {
   });
 
   const departmentOptions = useMemo(() => departments ?? [], [departments]);
-
-  const [roleError, setRoleError] = useState('');
+  const departmentNameById = useMemo(
+    () => new Map((departmentOptions ?? []).map((d) => [d.id, d.name])),
+    [departmentOptions],
+  );
 
   const inviteUser = useMutation({
-    mutationFn: () => api.post('/users/invite', { email: inviteEmail }),
+    mutationFn: (email: string) => api.post('/users/invite', { email }),
     onSuccess: () => {
       setInviteEmail('');
-      setShowInvite(false);
+      setInviteError('');
+      setShowInviteModal(false);
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['asset-assignable-users'] });
       showToast({ title: t('page.users.toast_invitation_sent'), description: t('page.users.toast_invitation_desc'), variant: 'success' });
     },
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('page.users.error_invite');
+      setInviteError(msg);
       showToast({ title: t('page.users.error_invite_title'), description: msg, variant: 'error' });
     },
   });
 
-  const changeRole = useMutation({
-    mutationFn: ({ userId, role }: { userId: string; role: string }) =>
-      api.patch(`/users/${userId}/role`, { role }),
+  const saveEdit = useMutation({
+    mutationFn: async (payload: EditModalState) => {
+      await api.patch(`/users/${payload.userId}/role`, { role: payload.role });
+      await api.patch(`/users/${payload.userId}/department`, { department_id: payload.departmentId || null });
+    },
     onSuccess: () => {
-      setRoleError('');
+      setEditError('');
+      setEditModal(null);
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      showToast({ title: t('page.users.toast_role_updated'), variant: 'success' });
+      showToast({ title: t('page.users.toast_updated'), variant: 'success' });
     },
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('page.users.error_role');
-      setRoleError(msg);
-      showToast({ title: t('page.users.error_role_title'), description: msg, variant: 'error' });
-    },
-  });
-
-  const assignDepartment = useMutation({
-    mutationFn: ({ userId, departmentId }: { userId: string; departmentId: string | null }) =>
-      api.patch(`/users/${userId}/department`, { department_id: departmentId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      showToast({ title: t('page.users.toast_department_updated'), variant: 'success' });
-    },
-    onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('page.users.error_update');
-      showToast({ title: t('page.users.error_department_title'), description: msg, variant: 'error' });
+      setEditError(msg);
+      showToast({ title: t('page.users.error_update_title'), description: msg, variant: 'error' });
     },
   });
 
@@ -94,6 +107,7 @@ export default function UsersPage() {
       api.patch(`/users/${userId}/${active ? 'activate' : 'deactivate'}`),
     onSuccess: (_res, vars) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      setPendingStatusChange(null);
       showToast({
         title: vars.active ? t('page.users.toast_user_activated') : t('page.users.toast_user_deactivated'),
         variant: 'success',
@@ -109,139 +123,348 @@ export default function UsersPage() {
     },
   });
 
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (pendingStatusChange && !toggleActive.isPending) {
+        setPendingStatusChange(null);
+        return;
+      }
+      if (editModal && !saveEdit.isPending) {
+        setEditModal(null);
+        setEditError('');
+        return;
+      }
+      if (showInviteModal && !inviteUser.isPending) {
+        setShowInviteModal(false);
+        setInviteEmail('');
+        setInviteError('');
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [
+    editModal,
+    saveEdit.isPending,
+    inviteUser.isPending,
+    pendingStatusChange,
+    showInviteModal,
+    toggleActive.isPending,
+  ]);
+
   return (
-    <div>
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-xl font-bold text-gray-900">{t('page.users.title')}</h2>
-        <button onClick={() => setShowInvite((v) => !v)} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-          {showInvite ? t('common.cancel') : t('page.users.invite_user')}
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">{t('page.users.title')}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t('page.users.subtitle')}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setInviteEmail('');
+            setInviteError('');
+            setShowInviteModal(true);
+          }}
+          className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+        >
+          {t('page.users.invite_user')}
         </button>
       </div>
 
-      {showInvite && (
-        <Card className="mb-4">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              inviteUser.mutate();
-            }}
-            className="flex items-end gap-3"
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <svg
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
           >
-            <div className="flex-1">
-              <label className="mb-1 block text-sm font-medium text-gray-700">{t('table.email')}</label>
-              <input
-                type="email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder={t('common.placeholder_user_email')}
-                required
-                className="w-full rounded-lg border px-3 py-2 text-sm"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={inviteUser.isPending || !inviteEmail.trim()}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-            >
-              {inviteUser.isPending ? t('auth.login.sending') : t('page.users.send_invite')}
-            </button>
-          </form>
-        </Card>
-      )}
-
-      <Card>
-        <div className="mb-4 flex gap-3">
-          <input placeholder={t('common.search')} value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="w-48 rounded-lg border px-3 py-1.5 text-sm" />
-          <select value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }} className="rounded-lg border px-3 py-1.5 text-sm">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+          <input
+            type="search"
+            placeholder={t('page.users.search_placeholder')}
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            className="w-full bg-card pl-9"
+          />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <select value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }} className="w-[150px] bg-card">
             <option value="">{t('page.users.all_roles')}</option>
-            {['employee', 'technician', 'admin'].map((r) => <option key={r} value={r}>{t(`enum.${r}`)}</option>)}
+            {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{t(`enum.${r}`)}</option>)}
           </select>
         </div>
+      </div>
 
-        {roleError && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            {roleError}
-          </div>
-        )}
-
-        {isLoading ? <Loading /> : isError ? (
-          <ErrorState
-            message={(error as { response?: { data?: { detail?: string } } })?.response?.data?.detail}
-            onRetry={() => {
-              void refetch();
-            }}
-          />
-        ) : !data?.data.length ? (
-          <EmptyState message={t('page.users.empty')} />
-        ) : (
-          <>
-            <Table>
-              <thead><tr><Th>{t('table.email')}</Th><Th>{t('table.role')}</Th><Th>{t('table.department')}</Th><Th>{t('table.status')}</Th><Th>{t('table.actions')}</Th></tr></thead>
-              <tbody className="divide-y divide-gray-100">
-                {data.data.map((u) => (
-                  <tr key={u.id}>
-                    <Td>{u.email}</Td>
-                    <Td>
-                      <select
-                        value={u.role}
-                        onChange={(e) => changeRole.mutate({ userId: u.id, role: e.target.value })}
-                        className="rounded border px-2 py-1 text-xs"
-                      >
-                        {['employee', 'technician', 'admin'].map((r) => <option key={r} value={r}>{t(`enum.${r}`)}</option>)}
-                      </select>
-                    </Td>
-                    <Td>
-                      <select
-                        value={u.department_id ?? ''}
-                        onChange={(e) => assignDepartment.mutate({ userId: u.id, departmentId: e.target.value || null })}
-                        className="max-w-40 rounded border px-2 py-1 text-xs"
-                      >
-                        <option value="">{t('common.unassigned')}</option>
-                        {departmentOptions.map((d) => (
-                          <option key={d.id} value={d.id}>{d.name}</option>
-                        ))}
-                      </select>
-                    </Td>
-                    <Td>{u.is_active ? <Badge variant="success">{t('page.users.active')}</Badge> : <Badge variant="danger">{t('page.users.inactive')}</Badge>}</Td>
-                    <Td>
-                      <button
-                        onClick={() => {
-                          if (u.is_active) {
-                            setPendingDeactivate({ id: u.id, email: u.email });
-                          } else {
-                            toggleActive.mutate({ userId: u.id, active: true });
-                          }
-                        }}
-                        className="text-xs text-blue-600 hover:underline"
-                      >
-                        {u.is_active ? t('page.users.deactivate') : t('page.users.activate')}
-                      </button>
-                    </Td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-            <Pagination page={page} pageSize={20} total={data.meta.total} onChange={setPage} />
-          </>
-        )}
-      </Card>
+      {isLoading ? <Loading /> : isError ? (
+        <ErrorState
+          message={(error as { response?: { data?: { detail?: string } } })?.response?.data?.detail}
+          onRetry={() => {
+            void refetch();
+          }}
+        />
+      ) : !data?.data.length ? (
+        <EmptyState
+          message={t('page.users.empty')}
+          action={(
+            <button
+              type="button"
+              onClick={() => {
+                setInviteEmail('');
+                setInviteError('');
+                setShowInviteModal(true);
+              }}
+              className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90"
+            >
+              {t('page.users.invite_user')}
+            </button>
+          )}
+        />
+      ) : (
+        <>
+          <Table>
+            <thead>
+              <tr className="hover:bg-transparent">
+                <Th className="pl-4">{t('table.email')}</Th>
+                <Th>{t('table.role')}</Th>
+                <Th className="hidden md:table-cell">{t('table.department')}</Th>
+                <Th>{t('table.status')}</Th>
+                <Th className="pr-4 text-right">{t('table.actions')}</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.data.map((u) => (
+                <Tr key={u.id}>
+                  <Td className="pl-4">
+                    <span className="text-sm font-medium text-foreground">{u.email}</span>
+                  </Td>
+                  <Td>{t(`enum.${u.role}`)}</Td>
+                  <Td className="hidden md:table-cell">{u.department_id ? (departmentNameById.get(u.department_id) ?? t('common.unassigned')) : t('common.unassigned')}</Td>
+                  <Td>{u.is_active ? <Badge variant="success">{t('page.users.active')}</Badge> : <Badge variant="danger">{t('page.users.inactive')}</Badge>}</Td>
+                  <Td className="pr-4">
+                    <div className="flex items-center justify-end gap-2">
+                      <Tooltip content={t('common.edit')}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditError('');
+                            setEditModal({
+                              userId: u.id,
+                              email: u.email,
+                              role: u.role,
+                              departmentId: u.department_id ?? '',
+                            });
+                          }}
+                          aria-label={t('common.edit')}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                        >
+                          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M15.2 5.2 18.8 8.8" />
+                            <path d="M4 20h3.4l10-10a2.5 2.5 0 0 0-3.5-3.5L4 16.5V20z" />
+                          </svg>
+                        </button>
+                      </Tooltip>
+                      <Tooltip content={u.is_active ? t('page.users.deactivate') : t('page.users.activate')}>
+                        <button
+                          type="button"
+                          onClick={() => setPendingStatusChange({ userId: u.id, email: u.email, active: !u.is_active })}
+                          aria-label={u.is_active ? t('page.users.deactivate') : t('page.users.activate')}
+                          className={u.is_active
+                            ? 'inline-flex h-8 w-8 items-center justify-center rounded-md border border-destructive/40 text-destructive hover:bg-destructive/10 transition-colors'
+                            : 'inline-flex h-8 w-8 items-center justify-center rounded-md border border-input text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors'}
+                        >
+                          {u.is_active ? (
+                            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="12" cy="12" r="10" />
+                              <path d="m4.9 4.9 14.2 14.2" />
+                            </svg>
+                          ) : (
+                            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                              <path d="m9 11 3 3L22 4" />
+                            </svg>
+                          )}
+                        </button>
+                      </Tooltip>
+                    </div>
+                  </Td>
+                </Tr>
+              ))}
+            </tbody>
+          </Table>
+          <Pagination page={page} pageSize={20} total={data.meta.total} onChange={setPage} />
+        </>
+      )}
 
       <ConfirmDialog
-        open={Boolean(pendingDeactivate)}
-        title={t('page.users.deactivate_user')}
-        description={pendingDeactivate ? t('page.users.deactivate_desc', { email: pendingDeactivate.email }) : ''}
-        confirmLabel={t('page.users.deactivate')}
-        tone="danger"
+        open={Boolean(pendingStatusChange)}
+        title={pendingStatusChange?.active ? t('page.users.activate_user') : t('page.users.deactivate_user')}
+        description={pendingStatusChange
+          ? (
+            pendingStatusChange.active
+              ? t('page.users.activate_desc', { email: pendingStatusChange.email })
+              : t('page.users.deactivate_desc', { email: pendingStatusChange.email })
+          )
+          : ''}
+        confirmLabel={pendingStatusChange?.active ? t('page.users.activate') : t('page.users.deactivate')}
+        tone={pendingStatusChange?.active ? 'default' : 'danger'}
         busy={toggleActive.isPending}
-        onCancel={() => setPendingDeactivate(null)}
+        onCancel={() => setPendingStatusChange(null)}
         onConfirm={() => {
-          if (pendingDeactivate) {
-            toggleActive.mutate({ userId: pendingDeactivate.id, active: false }, {
-              onSettled: () => setPendingDeactivate(null),
-            });
+          if (pendingStatusChange) {
+            toggleActive.mutate({ userId: pendingStatusChange.userId, active: pendingStatusChange.active });
           }
         }}
       />
+
+      {showInviteModal && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/40"
+            onClick={() => {
+              if (inviteUser.isPending) return;
+              setShowInviteModal(false);
+              setInviteEmail('');
+              setInviteError('');
+            }}
+            aria-label={t('errors.close_confirmation_dialog')}
+          />
+          <div className="relative z-[91] w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lg">
+            <h3 className="text-lg font-semibold text-foreground">{t('page.users.invite_user')}</h3>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const email = inviteEmail.trim();
+                if (!email) {
+                  setInviteError(t('page.users.error_email_required'));
+                  return;
+                }
+                setInviteError('');
+                inviteUser.mutate(email);
+              }}
+              className="mt-4 space-y-4"
+            >
+              <div>
+                {inviteError && <p className="mb-2 text-sm text-destructive">{inviteError}</p>}
+                <label className="mb-1.5 block text-muted-foreground">{t('table.email')}</label>
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder={t('common.placeholder_user_email')}
+                  required
+                  autoFocus
+                  className="w-full bg-card"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (inviteUser.isPending) return;
+                    setShowInviteModal(false);
+                    setInviteEmail('');
+                    setInviteError('');
+                  }}
+                  className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  type="submit"
+                  disabled={inviteUser.isPending}
+                  className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+                >
+                  {inviteUser.isPending ? t('auth.login.sending') : t('page.users.send_invite')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {editModal && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/40"
+            onClick={() => {
+              if (!saveEdit.isPending) {
+                setEditModal(null);
+                setEditError('');
+              }
+            }}
+            aria-label={t('errors.close_confirmation_dialog')}
+          />
+          <div className="relative z-[91] w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lg">
+            <h3 className="text-lg font-semibold text-foreground">{t('common.edit')}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{editModal.email}</p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!editModal.role) {
+                  setEditError(t('page.users.error_role_required'));
+                  return;
+                }
+                setEditError('');
+                saveEdit.mutate(editModal);
+              }}
+              className="mt-4 space-y-4"
+            >
+              <div>
+                {editError && <p className="mb-2 text-sm text-destructive">{editError}</p>}
+                <label className="mb-1.5 block text-muted-foreground">{t('table.role')}</label>
+                <select
+                  value={editModal.role}
+                  onChange={(e) => setEditModal({ ...editModal, role: e.target.value as UserRole })}
+                  className="w-full bg-card"
+                >
+                  {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{t(`enum.${r}`)}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-muted-foreground">{t('table.department')}</label>
+                <select
+                  value={editModal.departmentId}
+                  onChange={(e) => setEditModal({ ...editModal, departmentId: e.target.value })}
+                  className="w-full bg-card"
+                >
+                  <option value="">{t('common.unassigned')}</option>
+                  {departmentOptions.map((d) => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!saveEdit.isPending) {
+                      setEditModal(null);
+                      setEditError('');
+                    }
+                  }}
+                  className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  type="submit"
+                  disabled={saveEdit.isPending}
+                  className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+                >
+                  {saveEdit.isPending ? t('common.working') : t('common.save')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

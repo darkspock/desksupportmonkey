@@ -65,12 +65,15 @@ class TestMyCompanySettingsEndpoint:
         assert payload["name"] == "Acme Corp"
         assert payload["email_domains"] == ["company.com", "company.org"]
 
+    @patch("adapters.http.api.my.routers.GetCompanyQueryHandler")
     @patch("adapters.http.api.my.routers.UpdateCompanyCommandHandler")
-    def test_update_company_settings_domains(self, MockUpdateCompanyCommandHandler, admin_client):
-        MockUpdateCompanyCommandHandler.return_value.handle.return_value = SimpleNamespace(
-            id="comp1",
-            name="Acme Corp",
-            email_domains=["company.com", "new.company.com"],
+    def test_update_company_settings_domains(self, MockUpdateCompanyCommandHandler, MockGetCompanyQueryHandler, admin_client):
+        MockGetCompanyQueryHandler.return_value.handle.return_value = SimpleNamespace(
+            company=SimpleNamespace(
+                id="comp1",
+                name="Acme Corp",
+                email_domains=["company.com", "new.company.com"],
+            )
         )
 
         response = admin_client.put(

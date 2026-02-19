@@ -1,7 +1,8 @@
+import ulid
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
 
 from adapters.http.api.auth.dependencies import require_role
+from adapters.http.api.reports.dependencies import get_report_repo
 from adapters.http.api.reports.schemas import (
     CreateReportRequest,
     DownloadResponse,
@@ -10,7 +11,6 @@ from adapters.http.api.reports.schemas import (
 )
 from adapters.http.schemas.responses import PaginationMeta
 from core.config import settings
-from core.database import get_db
 from core.storage import S3StorageService
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
@@ -35,20 +35,33 @@ router = APIRouter(prefix="/api/v1/reports", tags=["Reports"])
 admin_dep = require_role(UserRole.ADMIN)
 
 
+def _to_report_response(report: object) -> ReportResponse:
+    return ReportResponse(
+        id=report.id,
+        type=report.type.value,
+        status=report.status.value,
+        parameters=report.parameters,
+        created_at=report.created_at,
+        completed_at=report.completed_at,
+    )
+
+
 @router.post("", status_code=status.HTTP_202_ACCEPTED)
 def create_report(
     body: CreateReportRequest,
     current_user: User = Depends(admin_dep),
-    db: Session = Depends(get_db),
+    report_repo: ReportRepository = Depends(get_report_repo),
 ):
-    handler = RequestReportCommandHandler(report_repo=ReportRepository(db))
+    report_id = str(ulid.new())
+    handler = RequestReportCommandHandler(report_repo=report_repo)
     try:
-        report = handler.handle(
+        handler.handle(
             RequestReportCommand(
                 company_id=current_user.company_id,
                 requested_by=current_user.id,
                 type=body.type,
                 parameters=body.parameters,
+                id=report_id,
             )
         )
     except ValueError as e:
@@ -56,16 +69,11 @@ def create_report(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
         )
 
-    return {
-        "data": ReportResponse(
-            id=report.id,
-            type=report.type.value,
-            status=report.status.value,
-            parameters=report.parameters,
-            created_at=report.created_at,
-            completed_at=report.completed_at,
-        ).model_dump(mode="json")
-    }
+    query_handler = GetReportQueryHandler(report_repo=report_repo)
+    report = query_handler.handle(
+        GetReportQuery(report_id=report_id, company_id=current_user.company_id)
+    )
+    return {"data": _to_report_response(report).model_dump(mode="json")}
 
 
 @router.get("")
@@ -73,9 +81,9 @@ def list_reports(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     current_user: User = Depends(admin_dep),
-    db: Session = Depends(get_db),
+    report_repo: ReportRepository = Depends(get_report_repo),
 ):
-    handler = ListReportsQueryHandler(report_repo=ReportRepository(db))
+    handler = ListReportsQueryHandler(report_repo=report_repo)
     reports, total = handler.handle(
         ListReportsQuery(
             company_id=current_user.company_id,
@@ -102,9 +110,9 @@ def list_reports(
 def get_report(
     report_id: str,
     current_user: User = Depends(admin_dep),
-    db: Session = Depends(get_db),
+    report_repo: ReportRepository = Depends(get_report_repo),
 ):
-    handler = GetReportQueryHandler(report_repo=ReportRepository(db))
+    handler = GetReportQueryHandler(report_repo=report_repo)
     try:
         report = handler.handle(
             GetReportQuery(report_id=report_id, company_id=current_user.company_id)
@@ -131,10 +139,9 @@ def get_report(
 def download_report(
     report_id: str,
     current_user: User = Depends(admin_dep),
-    db: Session = Depends(get_db),
+    report_repo: ReportRepository = Depends(get_report_repo),
 ):
-    repo = ReportRepository(db)
-    report = repo.find_by_id(report_id, current_user.company_id)
+    report = report_repo.find_by_id(report_id, current_user.company_id)
     if not report:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Report not found"

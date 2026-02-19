@@ -1,26 +1,26 @@
 ---
 const metrics = [
-  { label: 'Production code', value: '~16,800 lines' },
-  { label: 'Backend (Python)', value: '~9,900 lines, 221 files' },
-  { label: 'Frontend (React/TS)', value: '~5,900 lines, 56 files' },
-  { label: 'Marketing site (Astro)', value: '~1,000 lines, 18 files' },
-  { label: 'Tests', value: '~6,400 lines, 118 files' },
-  { label: 'Bounded Contexts', value: '6' },
-  { label: 'Database Migrations', value: '9' },
-  { label: 'AI Documentation', value: '~26,700 lines' },
+  { label: 'Production code', value: '~57,400 lines' },
+  { label: 'Backend (Python)', value: '~38,100 lines, 563 files' },
+  { label: 'Frontend (React/TS)', value: '~17,700 lines, 81 files' },
+  { label: 'Marketing site (Astro)', value: '~1,600 lines, 22 files' },
+  { label: 'Tests', value: '~26,600 lines, 288 files' },
+  { label: 'Bounded Contexts', value: '11' },
+  { label: 'Database Migrations', value: '32' },
+  { label: 'AI Documentation', value: '~41,100 lines' },
 ];
 
-// ~24,200 total lines (production + tests + site)
-// Dev: 100 lines/day, Tech Lead: 100 lines/day → 200 lines/day combined
-// 24,200 / 200 = 121 working days / 22 days per month ≈ 6 months timeline
+// ~84,000 total lines (production + tests)
+// Dev: 100 lines/day, Tech Lead: 100 lines/day -> 200 lines/day combined
+// 84,000 / 200 = 420 working days / 22 days per month ~= 19 months timeline
 const teamBreakdown = [
-  { role: 'Developer', allocation: '100%', months: '6', detail: 'Full-stack implementation, ~100 lines/day' },
-  { role: 'Tech Lead', allocation: '100%', months: '6', detail: 'Architecture, code review, ~100 lines/day' },
-  { role: 'Product Manager', allocation: '30%', months: '1.8', detail: 'Requirements, discovery, prioritization' },
-  { role: 'UX Designer', allocation: '25%', months: '1.5', detail: 'User flows, design, usability' },
-  { role: 'Marketing', allocation: '15%', months: '0.9', detail: 'Marketing site, content, positioning' },
+  { role: 'Developer', allocation: '100%', months: '19', detail: 'Full-stack implementation, ~100 lines/day' },
+  { role: 'Tech Lead', allocation: '100%', months: '19', detail: 'Architecture, code review, ~100 lines/day' },
+  { role: 'Product Manager', allocation: '30%', months: '5.7', detail: 'Requirements, discovery, prioritization' },
+  { role: 'UX Designer', allocation: '25%', months: '4.75', detail: 'User flows, design, usability' },
+  { role: 'Marketing', allocation: '15%', months: '2.85', detail: 'Marketing site, content, positioning' },
 ];
-// Total: 6 + 6 + 1.8 + 1.5 + 0.9 = ~16 person-months
+// Total: 19 + 19 + 5.7 + 4.75 + 2.85 = ~51.3 person-months
 ---
 
 <section class="py-20">
@@ -55,7 +55,7 @@ const teamBreakdown = [
               aria-label="View team breakdown"
             >i</button>
           </span>
-          <span class="text-sm font-semibold text-slate-900">~6 months, 5-person team</span>
+          <span class="text-sm font-semibold text-slate-900">~19 months, 5-person team</span>
         </div>
       </div>
     </div>
@@ -69,7 +69,7 @@ const teamBreakdown = [
     <div class="flex items-start justify-between mb-5">
       <div>
         <h3 class="text-lg font-bold text-slate-900">Human Team Estimation</h3>
-        <p class="mt-1 text-xs text-slate-500">~24,200 lines &middot; 2 coders at 100 lines/day &middot; ~6 month timeline</p>
+        <p class="mt-1 text-xs text-slate-500">~84,000 lines &middot; 2 coders at 100 lines/day &middot; ~19 month timeline</p>
       </div>
       <button id="estimate-modal-close" type="button" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors" aria-label="Close">
         <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -97,8 +97,15 @@ const teamBreakdown = [
       <div class="grid grid-cols-[1fr_auto_auto] gap-x-4 px-4 py-3 border-t-2 border-slate-200 bg-slate-50">
         <span class="text-sm font-bold text-slate-900">Total</span>
         <span></span>
-        <span class="text-sm font-bold text-slate-900 text-right">~16 person-months</span>
+        <span class="text-sm font-bold text-slate-900 text-right">~51.3 person-months</span>
       </div>
+    </div>
+
+    <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+      <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Detalle por día</p>
+      <p class="mt-2 text-sm text-slate-700"><strong>Day 1:</strong> ~24,200 total lines, 6 BCs, 9 migrations, base build in 24 hours.</p>
+      <p class="mt-1 text-sm text-slate-700"><strong>Day 2:</strong> ~79,700 total lines, 11 BCs, 32 migrations, expanded scope on top of Day 1.</p>
+      <p class="mt-1 text-sm text-slate-700"><strong>Day 3 (today):</strong> ~84,000 total lines, 11 BCs, 32 migrations, v0 UI redesign + marketing site refresh.</p>
     </div>
 
     <p class="mt-4 text-xs text-slate-400 text-center">
@@ -108,9 +115,9 @@ const teamBreakdown = [
     <div class="mt-3 rounded-lg bg-slate-50 border border-slate-200 px-4 py-3">
       <p class="text-[11px] text-slate-500 leading-relaxed">
         <strong class="text-slate-600">Disclaimer:</strong> This estimate reflects a typical large enterprise
-        following Scrum with all its ceremonies — standups, sprint planning, retros, cross-team alignment,
+        following Scrum with all its ceremonies - standups, sprint planning, retros, cross-team alignment,
         code reviews, QA cycles, and deployment pipelines. A top-tier senior engineer working solo could
-        realistically deliver the same scope in about 2 weeks.
+        realistically deliver the same scope in about 4-6 months.
       </p>
     </div>
   </div>

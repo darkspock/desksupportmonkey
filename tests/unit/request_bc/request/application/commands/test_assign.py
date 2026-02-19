@@ -54,7 +54,7 @@ class TestAssignRequestCommand:
         user = _make_user()
         handler, request_repo, user_repo = _make_handler(request, user)
 
-        result = handler.handle(
+        handler.handle(
             AssignRequestCommand(
                 request_id=request.id,
                 company_id="comp1",
@@ -63,7 +63,6 @@ class TestAssignRequestCommand:
             )
         )
 
-        assert result.assigned_to == "tech1"
         assert request_repo.save.call_count == 1
         assert request_repo.save_event.call_count == 1
         event = request_repo.save_event.call_args[0][0]
@@ -121,7 +120,7 @@ class TestAssignRequestCommand:
         user = _make_user(user_id="new_tech")
         handler, request_repo, _ = _make_handler(request, user)
 
-        result = handler.handle(
+        handler.handle(
             AssignRequestCommand(
                 request_id=request.id,
                 company_id="comp1",
@@ -130,4 +129,4 @@ class TestAssignRequestCommand:
             )
         )
 
-        assert result.assigned_to == "new_tech"
+        assert request_repo.save.call_count == 1

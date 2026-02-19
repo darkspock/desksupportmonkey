@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from src.company_bc.department.domain.entities import Department
 from src.company_bc.department.domain.repository import DepartmentRepositoryInterface
+from src.framework.application.query_bus import Query, QueryHandler
 
 
 class DepartmentNotFoundError(Exception):
@@ -15,12 +16,12 @@ class DepartmentDetail:
 
 
 @dataclass
-class GetDepartmentQuery:
+class GetDepartmentQuery(Query):
     department_id: str
     company_id: str
 
 
-class GetDepartmentQueryHandler:
+class GetDepartmentQueryHandler(QueryHandler[GetDepartmentQuery, DepartmentDetail]):
     def __init__(self, department_repo: DepartmentRepositoryInterface):
         self.department_repo = department_repo
 

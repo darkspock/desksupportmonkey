@@ -56,6 +56,10 @@ export interface Department {
   name: string;
   company_id: string;
   is_active: boolean;
+  manager_user_id?: string | null;
+  manager_email?: string | null;
+  manager_name?: string | null;
+  priority_weight?: number;
   user_count?: number;
   created_at: string;
 }
@@ -99,9 +103,23 @@ export interface AssignableUser {
 }
 
 // Request
-export type RequestType = 'incident' | 'new_equipment' | 'onboarding';
-export type RequestStatus = 'submitted' | 'in_review' | 'in_progress' | 'resolved' | 'rejected';
+export type RequestType = 'incident' | 'new_equipment' | 'onboarding' | 'repair' | 'configuration' | 'access_request';
+export type RequestStatus = 'pending_approval' | 'submitted' | 'in_review' | 'in_progress' | 'resolved' | 'rejected';
 export type RequestPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type RequestSubtype =
+  | 'hardware' | 'software' | 'network' | 'security' | 'other'
+  | 'computer' | 'mobile' | 'peripheral' | 'monitor' | 'software_license'
+  | 'software_install' | 'account_setup' | 'permissions'
+  | 'system_access' | 'physical_access' | 'vpn';
+
+export const VALID_SUBTYPES: Record<RequestType, RequestSubtype[]> = {
+  incident: [],
+  new_equipment: ['computer', 'mobile', 'peripheral', 'monitor', 'software_license'],
+  onboarding: [],
+  repair: ['hardware', 'software', 'network', 'security', 'other'],
+  configuration: ['software_install', 'account_setup', 'permissions'],
+  access_request: ['system_access', 'physical_access', 'vpn'],
+};
 
 export interface ServiceRequest {
   id: string;
@@ -111,6 +129,7 @@ export interface ServiceRequest {
   assigned_to: string | null;
   assigned_to_email?: string | null;
   type: RequestType;
+  subtype?: string | null;
   title: string;
   description: string;
   status: RequestStatus;
@@ -211,8 +230,157 @@ export interface SlaAlert {
   breached: boolean;
 }
 
+// API Key
+export interface ApiKey {
+  id: string;
+  name: string;
+  created_at: string;
+  last_used_at: string | null;
+  is_active: boolean;
+}
+
+export interface CreatedApiKey {
+  id: string;
+  name: string;
+  raw_key: string;
+  created_at: string;
+  is_active: boolean;
+}
+
+// Equipment Profile
+export interface EquipmentProfileItem {
+  id: string;
+  asset_type: AssetType;
+  quantity: number;
+  preferred_brand?: string | null;
+  preferred_model?: string | null;
+  min_ram_gb?: number | null;
+  min_storage_gb?: number | null;
+}
+
+export interface EquipmentProfile {
+  id: string;
+  company_id: string;
+  department_id: string;
+  role: string;
+  is_active: boolean;
+  items: EquipmentProfileItem[];
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+// Assignment AI Config
+export type AIProvider = 'openai' | 'groq';
+
+export interface CompanyAIConfig {
+  id: string;
+  company_id: string;
+  provider: string;
+  prompt_template: string;
+  model?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+// Classification Config
+export interface CompanyClassificationConfig {
+  id: string;
+  company_id: string;
+  is_enabled: boolean;
+  provider: string;
+  model?: string | null;
+  confidence_threshold: number;
+  prompt_template?: string | null;
+  timeout_seconds: number;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface AIClassificationData {
+  ai_used: boolean;
+  provider?: string;
+  model?: string;
+  confidence?: number;
+  suggested_type?: string;
+  suggested_subtype?: string | null;
+  priority_hint?: number;
+  override_applied?: boolean;
+  user_original?: { type: string; subtype?: string | null };
+  latency_ms?: number;
+}
+
+// Vendor
+export interface Vendor {
+  id: string;
+  company_id: string;
+  name: string;
+  contact_email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  notes?: string | null;
+  is_active: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+// Procurement Config
+export type EnforcementMode = 'warn' | 'strict';
+
+export interface CompanyProcurementConfig {
+  id?: string | null;
+  company_id: string;
+  enforcement_mode: EnforcementMode;
+  approval_threshold_cents: number;
+  po_number_prefix: string;
+  fiscal_year_start_month: number;
+  currency: string;
+  auto_create_assets: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+// Purchase Order
+export type PurchaseOrderStatus =
+  | 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'ORDERED'
+  | 'PARTIALLY_RECEIVED' | 'RECEIVED' | 'CLOSED' | 'CANCELLED';
+
+export interface PurchaseOrderItem {
+  id: string;
+  description: string;
+  asset_type?: string | null;
+  quantity: number;
+  unit_cost_cents: number;
+  total_cost_cents: number;
+  received_quantity: number;
+  received_at?: string | null;
+  linked_asset_id?: string | null;
+  notes?: string | null;
+}
+
+export interface PurchaseOrder {
+  id: string;
+  company_id: string;
+  po_number: string;
+  vendor_id?: string | null;
+  vendor_name: string;
+  department_id: string;
+  status: PurchaseOrderStatus;
+  total_amount_cents: number;
+  currency: string;
+  notes?: string | null;
+  approved_by?: string | null;
+  approved_at?: string | null;
+  ordered_at?: string | null;
+  cancellation_reason?: string | null;
+  created_by: string;
+  items: PurchaseOrderItem[];
+  request_ids: string[];
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
 // Report
-export type ReportType = 'asset_inventory' | 'request_summary' | 'technician_performance';
+export type ReportType = 'asset_inventory' | 'request_summary' | 'technician_performance' | 'department_spending';
 export type ReportStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 export interface Report {
@@ -223,4 +391,227 @@ export interface Report {
   created_at: string;
   completed_at: string | null;
   error_message?: string | null;
+}
+
+// Dashboard — Budget Health
+export interface AtRiskDepartment {
+  department_id: string;
+  department_name: string;
+  utilization_pct: number;
+  remaining_cents: number;
+}
+
+export interface BudgetHealth {
+  total_allocated_cents: number;
+  total_spent_cents: number;
+  departments_at_risk: AtRiskDepartment[];
+}
+
+// Appointment
+export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+
+export interface Appointment {
+  id: string;
+  company_id: string;
+  request_id: string;
+  technician_id: string;
+  employee_id: string;
+  status: AppointmentStatus;
+  scheduled_start: string;
+  scheduled_end: string;
+  duration_minutes: number;
+  location?: string | null;
+  notes?: string | null;
+  cancellation_reason?: string | null;
+  cancelled_by?: string | null;
+  rescheduled_from_id?: string | null;
+  completed_at?: string | null;
+  created_by: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+  technician_email?: string | null;
+  employee_email?: string | null;
+}
+
+export interface AvailabilityWindow {
+  id: string;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+}
+
+export interface AvailabilityOverrideItem {
+  id: string;
+  date: string;
+  is_available: boolean;
+  start_time?: string | null;
+  end_time?: string | null;
+  reason?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface TimeSlot {
+  start: string;
+  end: string;
+}
+
+// Dashboard — Recent POs
+export interface RecentPO {
+  id: string;
+  po_number: string;
+  vendor_name: string;
+  status: string;
+  total_amount_cents: number;
+  created_at?: string | null;
+}
+
+// Shipment
+export type ShipmentStatus = 'draft' | 'dispatched' | 'in_transit' | 'delivered' | 'failed' | 'cancelled';
+export type ShipmentDirection = 'outbound' | 'inbound';
+export type DestinationType = 'employee_home' | 'office' | 'vendor';
+
+export interface ShipmentItem {
+  id: string;
+  shipment_id: string;
+  asset_id: string;
+  notes?: string | null;
+}
+
+export interface Shipment {
+  id: string;
+  company_id: string;
+  direction: ShipmentDirection;
+  destination_type: DestinationType;
+  status: ShipmentStatus;
+  origin_address_id?: string | null;
+  destination_address_id?: string | null;
+  carrier?: string | null;
+  tracking_number?: string | null;
+  tracking_url?: string | null;
+  recipient_name?: string | null;
+  recipient_user_id?: string | null;
+  request_id?: string | null;
+  po_id?: string | null;
+  return_for_shipment_id?: string | null;
+  notes?: string | null;
+  failure_reason?: string | null;
+  cancellation_reason?: string | null;
+  items: ShipmentItem[];
+  item_count: number;
+  dispatched_at?: string | null;
+  delivered_at?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+// Shipping Address
+export interface ShippingAddress {
+  id: string;
+  company_id: string;
+  label: string;
+  street_line_1: string;
+  street_line_2?: string | null;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+  recipient_name?: string | null;
+  phone?: string | null;
+  user_id?: string | null;
+  is_office: boolean;
+  is_active: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+// Dashboard — Shipments
+export interface ShipmentDashboard {
+  active_by_status: Record<string, number>;
+  recent_deliveries: number;
+  failed_count: number;
+}
+
+// Maintenance
+export type MaintenanceStatus =
+  | 'SCHEDULED'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'CANCELLED'
+  | 'SKIPPED';
+export type MaintenancePriority =
+  | 'LOW'
+  | 'MEDIUM'
+  | 'HIGH'
+  | 'CRITICAL';
+export type RecurrenceFrequency =
+  | 'DAILY'
+  | 'WEEKLY'
+  | 'MONTHLY'
+  | 'QUARTERLY'
+  | 'YEARLY';
+
+export interface MaintenanceRecord {
+  id: string;
+  company_id: string;
+  asset_id: string;
+  status: MaintenanceStatus;
+  priority: MaintenancePriority;
+  title: string;
+  description?: string | null;
+  technician_id?: string | null;
+  template_id?: string | null;
+  plan_id?: string | null;
+  checklist_items: string[];
+  scheduled_at?: string | null;
+  started_at?: string | null;
+  completed_at?: string | null;
+  completion_notes?: string | null;
+  actual_findings?: string | null;
+  cancellation_reason?: string | null;
+  skip_reason?: string | null;
+  reminder_48h_sent: boolean;
+  overdue_alert_sent: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface MaintenanceChecklistItem {
+  title: string;
+  description?: string | null;
+  is_required: boolean;
+}
+
+export interface MaintenanceTemplate {
+  id: string;
+  company_id: string;
+  name: string;
+  default_priority: MaintenancePriority;
+  description?: string | null;
+  recurrence_frequency?: RecurrenceFrequency | null;
+  recurrence_interval: number;
+  asset_type_filter?: string | null;
+  checklist_items: MaintenanceChecklistItem[];
+  is_active: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface MaintenancePlan {
+  id: string;
+  company_id: string;
+  template_id: string;
+  asset_id: string;
+  is_active: boolean;
+  next_due_at: string;
+  last_generated_at?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface MaintenanceDashboard {
+  scheduled: number;
+  overdue: number;
+  in_progress: number;
+  completed_30d: number;
 }

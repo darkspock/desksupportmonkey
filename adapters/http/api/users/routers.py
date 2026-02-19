@@ -2,9 +2,14 @@ import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
 
 from adapters.http.api.auth.dependencies import require_role
+from adapters.http.api.users.dependencies import (
+    get_company_repo,
+    get_department_repo,
+    get_magic_link_repo,
+    get_user_repo,
+)
 from adapters.http.api.users.schemas import (
     AssignDepartmentRequest,
     ChangeRoleRequest,
@@ -12,7 +17,6 @@ from adapters.http.api.users.schemas import (
     UserDetailResponse,
 )
 from adapters.http.schemas.responses import PaginationMeta
-from core.database import get_db
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
 from core.email import get_email_service
@@ -83,6 +87,12 @@ def _to_response(user: User) -> UserDetailResponse:
     )
 
 
+def _get_user_response(user_repo: UserRepository, user_id: str, company_id: str) -> dict:
+    query_handler = GetUserDetailQueryHandler(user_repo=user_repo)
+    user = query_handler.handle(GetUserDetailQuery(user_id=user_id, company_id=company_id))
+    return {"data": _to_response(user).model_dump(mode="json")}
+
+
 @router.get("")
 def list_users(
     page: int = Query(1, ge=1),
@@ -92,10 +102,10 @@ def list_users(
     department_id: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
     current_user: User = Depends(require_role(UserRole.ADMIN)),
-    db: Session = Depends(get_db),
+    user_repo: UserRepository = Depends(get_user_repo),
 ):
     company_id = current_user.company_id
-    handler = ListUsersQueryHandler(user_repo=UserRepository(db))
+    handler = ListUsersQueryHandler(user_repo=user_repo)
     users, total = handler.handle(
         ListUsersQuery(
             company_id=company_id,
@@ -113,78 +123,59 @@ def list_users(
     }
 
 
-@router.post("/invite", status_code=status.HTTP_201_CREATED)
-def invite_user(
-    body: InviteUserRequest,
-    current_user: User = Depends(require_role(UserRole.ADMIN)),
-    db: Session = Depends(get_db),
-):
-    company_id = current_user.company_id
-    email = body.email.lower().strip()
-    if not company_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid company context")
-
-    company = CompanyRepository(db).find_by_id(company_id)
+def _validate_invite_email(email: str, company_id: str, company_repo: CompanyRepository) -> None:
+    company = company_repo.find_by_id(company_id)
     if not company:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
-
     domain = email.split("@", 1)[-1]
     if domain not in [d.lower() for d in company.email_domains]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Email domain is not allowed for this company",
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Email domain is not allowed for this company")
 
-    user_repo = UserRepository(db)
+
+def _ensure_user_for_invite(email: str, company_id: str, user_repo: UserRepository) -> None:
     existing_user = user_repo.find_by_email(email)
     if existing_user:
-        if existing_user.company_id != company_id:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="User with this email already exists",
-            )
-        if existing_user.role != UserRole.EMPLOYEE:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="User with this email already exists",
-            )
+        if existing_user.company_id != company_id or existing_user.role != UserRole.EMPLOYEE:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User with this email already exists")
         if not existing_user.is_active:
             existing_user.activate()
             user_repo.save(existing_user)
     else:
-        # Create employee immediately so it appears in Users and assignable users
-        # even before invite verification.
-        invited_user = User.create(
-            email=email,
-            role=UserRole.EMPLOYEE,
-            company_id=company_id,
-        )
-        user_repo.save(invited_user)
+        user_repo.save(User.create(email=email, role=UserRole.EMPLOYEE, company_id=company_id))
 
+
+def _send_invite_link(
+    email: str, magic_link_repo: MagicLinkRepository, company_repo: CompanyRepository, user_repo: UserRepository,
+) -> None:
     handler = CreateMagicLinkCommandHandler(
-        magic_link_repo=MagicLinkRepository(db),
-        company_lookup=CompanyLookupService(db),
-        email_service=get_email_service(),
-        user_repo=user_repo,
+        magic_link_repo=magic_link_repo, company_lookup=CompanyLookupService(company_repo.session),
+        email_service=get_email_service(), user_repo=user_repo,
     )
     try:
         handler.handle(CreateMagicLinkCommand(email=email))
     except InvalidEmailDomainError:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Email domain is not allowed for this company",
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Email domain is not allowed for this company")
     except CompanyRestrictedError:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Company access is currently restricted",
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Company access is currently restricted")
     except RateLimitExceededError:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Too many requests. Please wait before requesting another invite.",
-        )
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many requests. Please wait before requesting another invite.")
 
+
+@router.post("/invite", status_code=status.HTTP_201_CREATED)
+def invite_user(
+    body: InviteUserRequest,
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
+    user_repo: UserRepository = Depends(get_user_repo),
+    company_repo: CompanyRepository = Depends(get_company_repo),
+    magic_link_repo: MagicLinkRepository = Depends(get_magic_link_repo),
+):
+    company_id = current_user.company_id
+    if not company_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid company context")
+    email = body.email.lower().strip()
+    _validate_invite_email(email, company_id, company_repo)
+    _ensure_user_for_invite(email, company_id, user_repo)
+    _send_invite_link(email, magic_link_repo, company_repo, user_repo)
     return {"data": {"message": "Invitation sent"}}
 
 
@@ -192,10 +183,10 @@ def invite_user(
 def get_user(
     user_id: str,
     current_user: User = Depends(require_role(UserRole.ADMIN)),
-    db: Session = Depends(get_db),
+    user_repo: UserRepository = Depends(get_user_repo),
 ):
     company_id = current_user.company_id
-    handler = GetUserDetailQueryHandler(user_repo=UserRepository(db))
+    handler = GetUserDetailQueryHandler(user_repo=user_repo)
     try:
         user = handler.handle(GetUserDetailQuery(user_id=user_id, company_id=company_id))
     except GetUserNotFoundError:
@@ -203,60 +194,47 @@ def get_user(
     return {"data": _to_response(user).model_dump(mode="json")}
 
 
+def _handle_change_role_errors(func):  # type: ignore[no-untyped-def]
+    """Map change-role domain errors to HTTP exceptions."""
+    try:
+        func()
+    except RoleUserNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    except CannotChangeSelfError:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Cannot change your own role")
+    except CannotAssignSuperAdminError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot assign super_admin role")
+    except LastAdminError:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="At least one admin must remain in the company")
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid role value")
+
+
 @router.patch("/{user_id}/role")
 def change_role(
     user_id: str,
     body: ChangeRoleRequest,
     current_user: User = Depends(require_role(UserRole.ADMIN)),
-    db: Session = Depends(get_db),
+    user_repo: UserRepository = Depends(get_user_repo),
 ):
     company_id = current_user.company_id
-    handler = ChangeUserRoleCommandHandler(
-        user_repo=UserRepository(db),
-        email_service=get_email_service(),
-    )
-    try:
-        user = handler.handle(
-            ChangeUserRoleCommand(
-                user_id=user_id,
-                company_id=company_id,
-                current_user_id=current_user.id,
-                new_role=body.role,
-            )
-        )
-    except RoleUserNotFoundError:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    except CannotChangeSelfError:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="Cannot change your own role"
-        )
-    except CannotAssignSuperAdminError:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Cannot assign super_admin role"
-        )
-    except LastAdminError:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="At least one admin must remain in the company",
-        )
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Invalid role value",
-        )
-    return {"data": _to_response(user).model_dump(mode="json")}
+    handler = ChangeUserRoleCommandHandler(user_repo=user_repo, email_service=get_email_service())
+    _handle_change_role_errors(lambda: handler.handle(
+        ChangeUserRoleCommand(user_id=user_id, company_id=company_id, current_user_id=current_user.id, new_role=body.role)
+    ))
+    return _get_user_response(user_repo, user_id, company_id)
 
 
 @router.patch("/{user_id}/deactivate")
 def deactivate_user(
     user_id: str,
     current_user: User = Depends(require_role(UserRole.ADMIN)),
-    db: Session = Depends(get_db),
+    user_repo: UserRepository = Depends(get_user_repo),
 ):
     company_id = current_user.company_id
-    handler = DeactivateUserCommandHandler(user_repo=UserRepository(db))
+    handler = DeactivateUserCommandHandler(user_repo=user_repo)
     try:
-        user = handler.handle(
+        handler.handle(
             DeactivateUserCommand(
                 user_id=user_id,
                 company_id=company_id,
@@ -269,24 +247,24 @@ def deactivate_user(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Cannot deactivate your own account"
         )
-    return {"data": _to_response(user).model_dump(mode="json")}
+    return _get_user_response(user_repo, user_id, company_id)
 
 
 @router.patch("/{user_id}/activate")
 def activate_user(
     user_id: str,
     current_user: User = Depends(require_role(UserRole.ADMIN)),
-    db: Session = Depends(get_db),
+    user_repo: UserRepository = Depends(get_user_repo),
 ):
     company_id = current_user.company_id
-    handler = ActivateUserCommandHandler(user_repo=UserRepository(db))
+    handler = ActivateUserCommandHandler(user_repo=user_repo)
     try:
-        user = handler.handle(
+        handler.handle(
             ActivateUserCommand(user_id=user_id, company_id=company_id)
         )
     except ActivateUserNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return {"data": _to_response(user).model_dump(mode="json")}
+    return _get_user_response(user_repo, user_id, company_id)
 
 
 @router.patch("/{user_id}/department")
@@ -294,30 +272,17 @@ def assign_department(
     user_id: str,
     body: AssignDepartmentRequest,
     current_user: User = Depends(require_role(UserRole.ADMIN)),
-    db: Session = Depends(get_db),
+    user_repo: UserRepository = Depends(get_user_repo),
+    department_repo: DepartmentRepository = Depends(get_department_repo),
 ):
     company_id = current_user.company_id
-    handler = AssignDepartmentCommandHandler(
-        user_repo=UserRepository(db),
-        department_repo=DepartmentRepository(db),
-    )
+    handler = AssignDepartmentCommandHandler(user_repo=user_repo, department_repo=department_repo)
     try:
-        user = handler.handle(
-            AssignDepartmentCommand(
-                user_id=user_id,
-                company_id=company_id,
-                department_id=body.department_id,
-            )
-        )
+        handler.handle(AssignDepartmentCommand(user_id=user_id, company_id=company_id, department_id=body.department_id))
     except AssignUserNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     except DepartmentNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Department not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Department not found")
     except DepartmentInactiveError:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Cannot assign user to inactive department",
-        )
-    return {"data": _to_response(user).model_dump(mode="json")}
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Cannot assign user to inactive department")
+    return _get_user_response(user_repo, user_id, company_id)

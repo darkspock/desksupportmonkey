@@ -56,7 +56,7 @@ class S3StorageService(StorageServiceInterface):
 
     def download(self, key: str) -> bytes:
         response = self.client.get_object(Bucket=self.bucket, Key=key)
-        return response["Body"].read()
+        return bytes(response["Body"].read())
 
     def get_signed_url(self, key: str, expiration: int = 3600) -> str:
         url = self.client.generate_presigned_url(
@@ -64,7 +64,7 @@ class S3StorageService(StorageServiceInterface):
             Params={"Bucket": self.bucket, "Key": key},
             ExpiresIn=expiration,
         )
-        return url
+        return str(url)
 
     def ensure_bucket(self, bucket_name: str) -> bool:
         try:

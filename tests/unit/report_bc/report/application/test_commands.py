@@ -16,7 +16,6 @@ from src.report_bc.report.application.queries.list_reports import (
     ListReportsQueryHandler,
 )
 from src.report_bc.report.domain.entities import Report
-from src.report_bc.report.domain.enums import ReportStatus, ReportType
 
 
 def _make_report(**overrides):
@@ -37,7 +36,7 @@ class TestRequestReportCommand:
         repo.save.return_value = report
 
         handler = RequestReportCommandHandler(report_repo=repo)
-        result = handler.handle(
+        handler.handle(
             RequestReportCommand(
                 company_id="comp1",
                 requested_by="user1",
@@ -45,10 +44,26 @@ class TestRequestReportCommand:
             )
         )
 
-        assert result.type == ReportType.ASSET_INVENTORY
-        assert result.status == ReportStatus.PENDING
         repo.save.assert_called_once()
-        mock_task.delay.assert_called_once_with(report.id)
+        mock_task.delay.assert_called_once()
+
+    @patch("core.tasks.reports.generate_report")
+    def test_department_spending_type_accepted(self, mock_task):
+        repo = MagicMock()
+        report = _make_report(type="department_spending")
+        repo.save.return_value = report
+
+        handler = RequestReportCommandHandler(report_repo=repo)
+        handler.handle(
+            RequestReportCommand(
+                company_id="comp1",
+                requested_by="user1",
+                type="department_spending",
+            )
+        )
+
+        repo.save.assert_called_once()
+        mock_task.delay.assert_called_once()
 
     @patch("core.tasks.reports.generate_report")
     def test_invalid_type_raises_error(self, mock_task):

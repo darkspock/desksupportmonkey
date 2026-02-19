@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from src.framework.application.command_bus import Command, CommandHandler
 from src.request_bc.request.domain.entities import RequestEvent, ServiceRequest
 from src.request_bc.request.domain.enums import RequestStatus
 from src.request_bc.request.domain.repository import RequestRepositoryInterface
@@ -10,18 +11,18 @@ class RequestNotFoundError(Exception):
 
 
 @dataclass
-class ChangeRequestStatusCommand:
+class ChangeRequestStatusCommand(Command):
     request_id: str
     company_id: str
     new_status: str
     performed_by: str
 
 
-class ChangeRequestStatusCommandHandler:
+class ChangeRequestStatusCommandHandler(CommandHandler[ChangeRequestStatusCommand]):
     def __init__(self, request_repo: RequestRepositoryInterface):
         self.request_repo = request_repo
 
-    def handle(self, command: ChangeRequestStatusCommand) -> ServiceRequest:
+    def handle(self, command: ChangeRequestStatusCommand) -> None:
         request = self.request_repo.find_by_id(command.request_id, command.company_id)
         if not request:
             raise RequestNotFoundError(f"Request '{command.request_id}' not found")
@@ -38,7 +39,7 @@ class ChangeRequestStatusCommandHandler:
             request.assign(command.performed_by)
             auto_assigned = True
 
-        request = self.request_repo.save(request)
+        self.request_repo.save(request)
 
         event = RequestEvent.create(
             request_id=request.id,
@@ -56,5 +57,3 @@ class ChangeRequestStatusCommandHandler:
                 performed_by=command.performed_by,
             )
             self.request_repo.save_event(assign_event)
-
-        return request

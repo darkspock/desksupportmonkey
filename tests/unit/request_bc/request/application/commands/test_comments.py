@@ -29,7 +29,7 @@ class TestAddCommentCommand:
         repo.save_comment.side_effect = lambda c: c
         handler = AddCommentCommandHandler(request_repo=repo)
 
-        result = handler.handle(
+        handler.handle(
             AddCommentCommand(
                 request_id=request.id,
                 company_id="comp1",
@@ -38,9 +38,6 @@ class TestAddCommentCommand:
             )
         )
 
-        assert result.body == "This is a comment"
-        assert result.author_id == "user1"
-        assert result.request_id == request.id
         assert repo.save_comment.call_count == 1
         assert repo.save_event.call_count == 1
         event = repo.save_event.call_args[0][0]

@@ -29,25 +29,25 @@ export default function AssetImportPage() {
   });
 
   return (
-    <div className="max-w-xl">
-      <h2 className="text-xl font-bold text-gray-900 mb-4">{t('page.asset_import.title')}</h2>
+    <div className="mx-auto max-w-xl">
+      <h2 className="text-2xl font-semibold tracking-tight text-foreground mb-4">{t('page.asset_import.title')}</h2>
       <Card>
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-muted-foreground mb-4">
           {t('page.asset_import.help')}
         </p>
 
         {result ? (
           <div>
-            <p className="text-sm text-green-600 mb-2">{t('page.asset_import.success', { count: result.created })}</p>
+            <p className="text-sm text-success mb-2">{t('page.asset_import.success', { count: result.created })}</p>
             {result.errors?.length > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded p-3 mb-4">
-                <p className="text-sm text-red-600 font-medium mb-1">{t('page.asset_import.errors', { count: result.errors.length })}</p>
-                <ul className="text-xs text-red-500 list-disc pl-4">
+              <div className="bg-destructive/10 border border-destructive/20 rounded p-3 mb-4">
+                <p className="text-sm text-destructive font-medium mb-1">{t('page.asset_import.errors', { count: result.errors.length })}</p>
+                <ul className="text-xs text-destructive list-disc pl-4">
                   {result.errors.map((e, i) => <li key={i}>{e}</li>)}
                 </ul>
               </div>
             )}
-            <button onClick={() => navigate('/assets')} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">
+            <button onClick={() => navigate('/assets')} className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50">
               {t('page.asset_import.back_to_assets')}
             </button>
           </div>
@@ -57,13 +57,13 @@ export default function AssetImportPage() {
               type="file"
               accept=".csv"
               onChange={(e) => setFile(e.target.files?.[0] || null)}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-primary/10 file:text-primary hover:file:bg-primary/10"
             />
             <div className="flex gap-3">
-              <button type="submit" disabled={!file || mutation.isPending} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm disabled:opacity-50">
+              <button type="submit" disabled={!file || mutation.isPending} className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50">
                 {mutation.isPending ? t('page.asset_import.importing') : t('page.asset_import.import')}
               </button>
-              <button type="button" onClick={() => navigate(-1)} className="px-4 py-2 rounded-lg text-sm border hover:bg-gray-50">{t('common.cancel')}</button>
+              <button type="button" onClick={() => navigate(-1)} className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50">{t('common.cancel')}</button>
             </div>
           </form>
         )}

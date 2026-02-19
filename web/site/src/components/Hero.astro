@@ -11,11 +11,18 @@ const { appUrl } = Astro.props;
   <div class="relative mx-auto max-w-6xl px-6 text-center">
     <img src="/logo.png" alt="DeskSupportMonkey" class="mx-auto h-24 w-24 sm:h-32 sm:w-32 mb-8 drop-shadow-lg" />
     <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-6xl">
-      IT support,<br class="hidden sm:block" /> simplified.
+      IT equipment ops,<br class="hidden sm:block" /> simplified.
     </h1>
-    <p class="mx-auto mt-5 max-w-xl text-lg text-slate-300">
-      An open-source IT Service Desk & Asset Management platform — built 100% with AI.
+    <p class="mx-auto mt-5 max-w-2xl text-lg text-slate-300">
+      Manage laptops, desktops, phones, and all company hardware in one place — from service requests
+      and inventory tracking to procurement, maintenance, and shipping. Built for IT teams, not generic helpdesks.
     </p>
+    <div class="mt-6 flex flex-wrap justify-center gap-3 text-sm text-slate-400">
+      <span class="rounded-full border border-slate-700 px-3 py-1">Laptops & Desktops</span>
+      <span class="rounded-full border border-slate-700 px-3 py-1">Monitors & Peripherals</span>
+      <span class="rounded-full border border-slate-700 px-3 py-1">Phones & Tablets</span>
+      <span class="rounded-full border border-slate-700 px-3 py-1">Printers & More</span>
+    </div>
     <div class="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
       <a
         href={`${appUrl}/auth/register`}

@@ -67,7 +67,7 @@ class NotificationRepository(NotificationRepositoryInterface):
             stmt.offset(offset).limit(page_size)
         ).scalars().all()
 
-        return [self._to_entity(m) for m in models], total
+        return [self._to_entity(m) for m in models], total or 0
 
     def count_unread(self, user_id: str) -> int:
         result = self.session.execute(

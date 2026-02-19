@@ -1,5 +1,7 @@
 from dataclasses import dataclass
+from typing import Optional
 
+from src.framework.application.command_bus import Command, CommandHandler
 from src.request_bc.request.domain.entities import RequestComment, RequestEvent
 from src.request_bc.request.domain.repository import RequestRepositoryInterface
 
@@ -9,18 +11,19 @@ class RequestNotFoundError(Exception):
 
 
 @dataclass
-class AddCommentCommand:
+class AddCommentCommand(Command):
     request_id: str
     company_id: str
     author_id: str
     body: str
+    id: Optional[str] = None
 
 
-class AddCommentCommandHandler:
+class AddCommentCommandHandler(CommandHandler[AddCommentCommand]):
     def __init__(self, request_repo: RequestRepositoryInterface):
         self.request_repo = request_repo
 
-    def handle(self, command: AddCommentCommand) -> RequestComment:
+    def handle(self, command: AddCommentCommand) -> None:
         request = self.request_repo.find_by_id(command.request_id, command.company_id)
         if not request:
             raise RequestNotFoundError(f"Request '{command.request_id}' not found")
@@ -29,9 +32,10 @@ class AddCommentCommandHandler:
             request_id=command.request_id,
             author_id=command.author_id,
             body=command.body,
+            id=command.id,
         )
 
-        comment = self.request_repo.save_comment(comment)
+        self.request_repo.save_comment(comment)
 
         event = RequestEvent.create(
             request_id=command.request_id,
@@ -40,5 +44,3 @@ class AddCommentCommandHandler:
             performed_by=command.author_id,
         )
         self.request_repo.save_event(event)
-
-        return comment

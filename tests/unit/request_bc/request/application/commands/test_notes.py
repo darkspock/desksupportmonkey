@@ -29,7 +29,7 @@ class TestAddNoteCommand:
         repo.save_note.side_effect = lambda n: n
         handler = AddNoteCommandHandler(request_repo=repo)
 
-        result = handler.handle(
+        handler.handle(
             AddNoteCommand(
                 request_id=request.id,
                 company_id="comp1",
@@ -38,8 +38,6 @@ class TestAddNoteCommand:
             )
         )
 
-        assert result.body == "Internal note"
-        assert result.author_id == "tech1"
         assert repo.save_note.call_count == 1
         assert repo.save_event.call_count == 1
         event = repo.save_event.call_args[0][0]

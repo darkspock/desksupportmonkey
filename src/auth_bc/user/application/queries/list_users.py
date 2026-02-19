@@ -3,10 +3,11 @@ from typing import Optional
 
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.repository import UserRepositoryInterface
+from src.framework.application.query_bus import Query, QueryHandler
 
 
 @dataclass
-class ListUsersQuery:
+class ListUsersQuery(Query):
     company_id: str
     page: int = 1
     page_size: int = 20
@@ -16,7 +17,7 @@ class ListUsersQuery:
     search: Optional[str] = None
 
 
-class ListUsersQueryHandler:
+class ListUsersQueryHandler(QueryHandler[ListUsersQuery, tuple[list[User], int]]):
     def __init__(self, user_repo: UserRepositoryInterface):
         self.user_repo = user_repo
 

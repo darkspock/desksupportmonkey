@@ -7,8 +7,8 @@ from src.auth_bc.user.domain.enums import UserRole
 from src.auth_bc.user.application.commands.password_login import (
     AccountInactiveError,
     InvalidCredentialsError,
-    PasswordLoginCommand,
-    PasswordLoginCommandHandler,
+    PasswordLoginRequest,
+    PasswordLoginService,
 )
 
 
@@ -29,7 +29,7 @@ def _make_handler(user_repo, company_lookup=None, jwt_service=None, password_ser
     if password_service is None:
         password_service = MagicMock()
         password_service.verify_password.return_value = True
-    return PasswordLoginCommandHandler(
+    return PasswordLoginService(
         user_repo=user_repo,
         company_lookup=company_lookup,
         jwt_service=jwt_service,
@@ -37,14 +37,14 @@ def _make_handler(user_repo, company_lookup=None, jwt_service=None, password_ser
     )
 
 
-class TestPasswordLoginCommand:
+class TestPasswordLoginService:
     def test_success(self):
         user = _make_admin()
         repo = MagicMock()
         repo.find_by_email.return_value = user
         handler = _make_handler(repo)
 
-        token = handler.handle(PasswordLoginCommand(email="admin@example.com", password="password"))
+        token = handler.handle(PasswordLoginRequest(email="admin@example.com", password="password"))
 
         assert token == "jwt_token"
 
@@ -54,7 +54,7 @@ class TestPasswordLoginCommand:
         handler = _make_handler(repo)
 
         with pytest.raises(InvalidCredentialsError):
-            handler.handle(PasswordLoginCommand(email="nobody@example.com", password="password"))
+            handler.handle(PasswordLoginRequest(email="nobody@example.com", password="password"))
 
     def test_non_admin_raises_invalid_credentials(self):
         user = User.create(email="emp@example.com", role=UserRole.EMPLOYEE, company_id="comp1")
@@ -65,7 +65,7 @@ class TestPasswordLoginCommand:
         handler = _make_handler(repo)
 
         with pytest.raises(InvalidCredentialsError):
-            handler.handle(PasswordLoginCommand(email="emp@example.com", password="password"))
+            handler.handle(PasswordLoginRequest(email="emp@example.com", password="password"))
 
     def test_no_password_set_raises_invalid_credentials(self):
         user = User.create(email="admin@example.com", role=UserRole.ADMIN, company_id="comp1")
@@ -76,7 +76,7 @@ class TestPasswordLoginCommand:
         handler = _make_handler(repo)
 
         with pytest.raises(InvalidCredentialsError):
-            handler.handle(PasswordLoginCommand(email="admin@example.com", password="password"))
+            handler.handle(PasswordLoginRequest(email="admin@example.com", password="password"))
 
     def test_wrong_password_raises_invalid_credentials(self):
         user = _make_admin()
@@ -87,7 +87,7 @@ class TestPasswordLoginCommand:
         handler = _make_handler(repo, password_service=pw_svc)
 
         with pytest.raises(InvalidCredentialsError):
-            handler.handle(PasswordLoginCommand(email="admin@example.com", password="wrong"))
+            handler.handle(PasswordLoginRequest(email="admin@example.com", password="wrong"))
 
     def test_inactive_user_raises_account_inactive(self):
         user = _make_admin()
@@ -97,7 +97,7 @@ class TestPasswordLoginCommand:
         handler = _make_handler(repo)
 
         with pytest.raises(AccountInactiveError):
-            handler.handle(PasswordLoginCommand(email="admin@example.com", password="password"))
+            handler.handle(PasswordLoginRequest(email="admin@example.com", password="password"))
 
     def test_inactive_company_raises_account_inactive(self):
         user = _make_admin()
@@ -108,4 +108,4 @@ class TestPasswordLoginCommand:
         handler = _make_handler(repo, company_lookup=company_lookup)
 
         with pytest.raises(AccountInactiveError):
-            handler.handle(PasswordLoginCommand(email="admin@example.com", password="password"))
+            handler.handle(PasswordLoginRequest(email="admin@example.com", password="password"))

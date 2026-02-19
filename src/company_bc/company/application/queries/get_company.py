@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from src.company_bc.company.domain.entities import Company
 from src.company_bc.company.domain.repository import CompanyRepositoryInterface
+from src.framework.application.query_bus import Query, QueryHandler
 
 
 class CompanyNotFoundError(Exception):
@@ -9,7 +10,7 @@ class CompanyNotFoundError(Exception):
 
 
 @dataclass
-class GetCompanyQuery:
+class GetCompanyQuery(Query):
     company_id: str
 
 
@@ -20,7 +21,7 @@ class CompanyDetail:
     department_count: int
 
 
-class GetCompanyQueryHandler:
+class GetCompanyQueryHandler(QueryHandler[GetCompanyQuery, CompanyDetail]):
     def __init__(self, company_repo: CompanyRepositoryInterface):
         self.company_repo = company_repo
 

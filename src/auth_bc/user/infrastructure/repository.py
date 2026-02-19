@@ -94,7 +94,7 @@ class UserRepository(UserRepositoryInterface):
             .offset((page - 1) * page_size)
             .limit(page_size)
         ).scalars().all()
-        return [self._to_entity(m) for m in models], total
+        return [self._to_entity(m) for m in models], total or 0
 
     def find_by_id_and_company(self, user_id: str, company_id: str) -> Optional[User]:
         model = self.session.execute(
@@ -136,6 +136,16 @@ class UserRepository(UserRepositoryInterface):
             )
         ).scalars().all()
         return [self._to_entity(m) for m in models]
+
+    def find_admin_ids_by_company(self, company_id: str) -> list[str]:
+        result = self.session.execute(
+            select(UserModel.id).where(
+                UserModel.company_id == company_id,
+                UserModel.role == UserRole.ADMIN.value,
+                UserModel.is_active == True,  # noqa: E712
+            )
+        ).scalars().all()
+        return list(result)
 
     def count_admins_by_company(self, company_id: str) -> int:
         return (

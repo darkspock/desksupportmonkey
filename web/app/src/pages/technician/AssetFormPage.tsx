@@ -36,43 +36,70 @@ export default function AssetFormPage() {
   const set = (k: string, v: string) => setForm({ ...form, [k]: v });
 
   return (
-    <div className="max-w-xl">
-      <h2 className="text-xl font-bold text-gray-900 mb-4">{t('page.asset_form.title')}</h2>
-      <Card>
-        <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }} className="space-y-4">
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('table.type')}</label>
-            <select value={form.type} onChange={(e) => set('type', e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm">
-              {['laptop', 'desktop', 'phone', 'tablet', 'monitor', 'printer', 'other'].map((assetType) => (
-                <option key={assetType} value={assetType}>{t(`enum.${assetType}`)}</option>
-              ))}
-            </select>
+    <div className="mx-auto max-w-4xl">
+      <div className="mb-5">
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground">{t('page.asset_form.title')}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t('page.asset_form.subtitle')}</p>
+      </div>
+
+      <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }} className="space-y-5">
+        <Card className="overflow-hidden p-0">
+          <div className="border-b border-border px-5 py-3.5">
+            <h3 className="text-sm font-medium text-foreground">{t('page.asset_form.asset_info')}</h3>
           </div>
-          {['brand', 'model', 'serial_number'].map((field) => (
-            <div key={field}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t(`table.${field}`)}</label>
-              <input value={form[field as keyof typeof form]} onChange={(e) => set(field, e.target.value)} required className="w-full border rounded-lg px-3 py-2 text-sm" />
+          <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-2">
+            {error && (
+              <div className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive md:col-span-2">
+                {error}
+              </div>
+            )}
+
+            <div className="md:col-span-2">
+              <label className="mb-1.5 block text-sm text-muted-foreground">{t('table.type')}</label>
+              <select value={form.type} onChange={(e) => set('type', e.target.value)} className="w-full bg-card">
+                {['laptop', 'desktop', 'phone', 'tablet', 'monitor', 'printer', 'other'].map((assetType) => (
+                  <option key={assetType} value={assetType}>{t(`enum.${assetType}`)}</option>
+                ))}
+              </select>
             </div>
-          ))}
-          {['purchase_date', 'warranty_expiration'].map((field) => (
-            <div key={field}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t(`table.${field}`)}</label>
-              <input type="date" value={form[field as keyof typeof form]} onChange={(e) => set(field, e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm" />
+
+            {['brand', 'model', 'serial_number'].map((field) => (
+              <div key={field}>
+                <label className="mb-1.5 block text-sm text-muted-foreground">{t(`table.${field}`)}</label>
+                <input value={form[field as keyof typeof form]} onChange={(e) => set(field, e.target.value)} required className="w-full bg-card" />
+              </div>
+            ))}
+
+            <div>
+              <label className="mb-1.5 block text-sm text-muted-foreground">{t('table.purchase_date')}</label>
+              <input type="date" value={form.purchase_date} onChange={(e) => set('purchase_date', e.target.value)} className="w-full bg-card" />
             </div>
-          ))}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('table.notes')}</label>
-            <textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} rows={3} className="w-full border rounded-lg px-3 py-2 text-sm" />
+            <div>
+              <label className="mb-1.5 block text-sm text-muted-foreground">{t('table.warranty_expiration')}</label>
+              <input type="date" value={form.warranty_expiration} onChange={(e) => set('warranty_expiration', e.target.value)} className="w-full bg-card" />
+            </div>
           </div>
-          <div className="flex gap-3">
-            <button type="submit" disabled={mutation.isPending} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
-              {mutation.isPending ? t('page.asset_form.creating') : t('page.asset_form.create')}
-            </button>
-            <button type="button" onClick={() => navigate(-1)} className="px-4 py-2 rounded-lg text-sm border hover:bg-gray-50">{t('common.cancel')}</button>
+        </Card>
+
+        <Card className="overflow-hidden p-0">
+          <div className="border-b border-border px-5 py-3.5">
+            <h3 className="text-sm font-medium text-foreground">{t('page.asset_form.additional_info')}</h3>
           </div>
-        </form>
-      </Card>
+          <div className="p-5">
+            <label className="mb-1.5 block text-sm text-muted-foreground">{t('table.notes')}</label>
+            <textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} rows={4} className="w-full resize-none bg-card" />
+          </div>
+        </Card>
+
+        <div className="flex items-center justify-end gap-3">
+          <button type="button" onClick={() => navigate(-1)} className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50">
+            {t('common.cancel')}
+          </button>
+          <button type="submit" disabled={mutation.isPending} className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50">
+            {mutation.isPending ? t('page.asset_form.creating') : t('page.asset_form.create')}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

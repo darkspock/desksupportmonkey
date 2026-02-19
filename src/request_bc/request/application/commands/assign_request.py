@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 
+from src.framework.application.command_bus import Command, CommandHandler
+from src.request_bc.request.application.ports import UserLookup
 from src.request_bc.request.domain.entities import RequestEvent, ServiceRequest
 from src.request_bc.request.domain.repository import RequestRepositoryInterface
-from src.auth_bc.user.domain.repository import UserRepositoryInterface
 
 
 class RequestNotFoundError(Exception):
@@ -18,23 +19,23 @@ class UserInactiveError(Exception):
 
 
 @dataclass
-class AssignRequestCommand:
+class AssignRequestCommand(Command):
     request_id: str
     company_id: str
     user_id: str
     performed_by: str
 
 
-class AssignRequestCommandHandler:
+class AssignRequestCommandHandler(CommandHandler[AssignRequestCommand]):
     def __init__(
         self,
         request_repo: RequestRepositoryInterface,
-        user_repo: UserRepositoryInterface,
+        user_repo: UserLookup,
     ):
         self.request_repo = request_repo
         self.user_repo = user_repo
 
-    def handle(self, command: AssignRequestCommand) -> ServiceRequest:
+    def handle(self, command: AssignRequestCommand) -> None:
         request = self.request_repo.find_by_id(command.request_id, command.company_id)
         if not request:
             raise RequestNotFoundError(f"Request '{command.request_id}' not found")
@@ -47,7 +48,7 @@ class AssignRequestCommandHandler:
             raise UserInactiveError(f"User '{command.user_id}' is inactive")
 
         request.assign(command.user_id)
-        request = self.request_repo.save(request)
+        self.request_repo.save(request)
 
         event = RequestEvent.create(
             request_id=request.id,
@@ -59,5 +60,3 @@ class AssignRequestCommandHandler:
             performed_by=command.performed_by,
         )
         self.request_repo.save_event(event)
-
-        return request

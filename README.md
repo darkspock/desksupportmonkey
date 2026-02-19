@@ -335,6 +335,7 @@ make demo-reset           # Wipe database and reseed
 # Quality
 make test                 # Run test suite (433 tests)
 make lint                 # Run mypy + flake8
+make scan                 # OWASP ZAP API security scan (Docker + backend required)
 
 # Utilities
 make seed                 # Load demo data

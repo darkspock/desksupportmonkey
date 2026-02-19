@@ -5,6 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from adapters.http.api.reports import routers as report_routers
+from adapters.http.api.reports.dependencies import get_report_repo
 from app import app
 from core.database import get_db
 from src.auth_bc.user.domain.entities import User
@@ -32,10 +33,16 @@ def _make_report(**overrides):
 
 
 @pytest.fixture
-def admin_client():
+def mock_report_repo():
+    return MagicMock()
+
+
+@pytest.fixture
+def admin_client(mock_report_repo):
     admin = _admin_user()
     app.dependency_overrides[report_routers.admin_dep] = lambda: admin
     app.dependency_overrides[get_db] = lambda: MagicMock()
+    app.dependency_overrides[get_report_repo] = lambda: mock_report_repo
     client = TestClient(app)
     yield client
     app.dependency_overrides.clear()
@@ -56,11 +63,10 @@ def employee_client():
 
 
 class TestCreateReport:
-    @patch("adapters.http.api.reports.routers.ReportRepository")
     @patch("core.tasks.reports.generate_report")
-    def test_returns_202(self, mock_task, MockRepo, admin_client):
+    def test_returns_202(self, mock_task, admin_client, mock_report_repo):
         report = _make_report()
-        MockRepo.return_value.save.return_value = report
+        mock_report_repo.find_by_id.return_value = report
 
         response = admin_client.post(
             "/api/v1/reports",
@@ -71,8 +77,7 @@ class TestCreateReport:
         assert data["type"] == "asset_inventory"
         assert data["status"] == "pending"
 
-    @patch("adapters.http.api.reports.routers.ReportRepository")
-    def test_invalid_type_returns_422(self, MockRepo, admin_client):
+    def test_invalid_type_returns_422(self, admin_client, mock_report_repo):
         response = admin_client.post(
             "/api/v1/reports",
             json={"type": "invalid"},
@@ -88,10 +93,9 @@ class TestCreateReport:
 
 
 class TestListReports:
-    @patch("adapters.http.api.reports.routers.ReportRepository")
-    def test_returns_list(self, MockRepo, admin_client):
+    def test_returns_list(self, admin_client, mock_report_repo):
         reports = [_make_report() for _ in range(2)]
-        MockRepo.return_value.find_all.return_value = (reports, 2)
+        mock_report_repo.find_all.return_value = (reports, 2)
 
         response = admin_client.get("/api/v1/reports")
         assert response.status_code == 200
@@ -100,18 +104,16 @@ class TestListReports:
 
 
 class TestGetReport:
-    @patch("adapters.http.api.reports.routers.ReportRepository")
-    def test_returns_detail(self, MockRepo, admin_client):
+    def test_returns_detail(self, admin_client, mock_report_repo):
         report = _make_report()
-        MockRepo.return_value.find_by_id.return_value = report
+        mock_report_repo.find_by_id.return_value = report
 
         response = admin_client.get(f"/api/v1/reports/{report.id}")
         assert response.status_code == 200
         assert response.json()["data"]["id"] == report.id
 
-    @patch("adapters.http.api.reports.routers.ReportRepository")
-    def test_not_found(self, MockRepo, admin_client):
-        MockRepo.return_value.find_by_id.return_value = None
+    def test_not_found(self, admin_client, mock_report_repo):
+        mock_report_repo.find_by_id.return_value = None
 
         response = admin_client.get("/api/v1/reports/nonexistent")
         assert response.status_code == 404
@@ -119,38 +121,34 @@ class TestGetReport:
 
 class TestDownloadReport:
     @patch("adapters.http.api.reports.routers.S3StorageService")
-    @patch("adapters.http.api.reports.routers.ReportRepository")
-    def test_returns_signed_url(self, MockRepo, MockS3, admin_client):
+    def test_returns_signed_url(self, MockS3, admin_client, mock_report_repo):
         report = _make_report()
         report.status = ReportStatus.COMPLETED
         report.storage_key = f"reports/comp1/{report.id}.pdf"
-        MockRepo.return_value.find_by_id.return_value = report
+        mock_report_repo.find_by_id.return_value = report
         MockS3.return_value.get_signed_url.return_value = "https://s3.example.com/signed"
 
         response = admin_client.get(f"/api/v1/reports/{report.id}/download")
         assert response.status_code == 200
         assert response.json()["data"]["download_url"] == "https://s3.example.com/signed"
 
-    @patch("adapters.http.api.reports.routers.ReportRepository")
-    def test_not_found(self, MockRepo, admin_client):
-        MockRepo.return_value.find_by_id.return_value = None
+    def test_not_found(self, admin_client, mock_report_repo):
+        mock_report_repo.find_by_id.return_value = None
 
         response = admin_client.get("/api/v1/reports/nonexistent/download")
         assert response.status_code == 404
 
-    @patch("adapters.http.api.reports.routers.ReportRepository")
-    def test_pending_returns_409(self, MockRepo, admin_client):
+    def test_pending_returns_409(self, admin_client, mock_report_repo):
         report = _make_report()
-        MockRepo.return_value.find_by_id.return_value = report
+        mock_report_repo.find_by_id.return_value = report
 
         response = admin_client.get(f"/api/v1/reports/{report.id}/download")
         assert response.status_code == 409
 
-    @patch("adapters.http.api.reports.routers.ReportRepository")
-    def test_failed_returns_409(self, MockRepo, admin_client):
+    def test_failed_returns_409(self, admin_client, mock_report_repo):
         report = _make_report()
         report.status = ReportStatus.FAILED
-        MockRepo.return_value.find_by_id.return_value = report
+        mock_report_repo.find_by_id.return_value = report
 
         response = admin_client.get(f"/api/v1/reports/{report.id}/download")
         assert response.status_code == 409

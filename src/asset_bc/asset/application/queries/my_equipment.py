@@ -2,15 +2,16 @@ from dataclasses import dataclass
 
 from src.asset_bc.asset.domain.entities import Asset
 from src.asset_bc.asset.domain.repository import AssetRepositoryInterface
+from src.framework.application.query_bus import Query, QueryHandler
 
 
 @dataclass
-class MyEquipmentQuery:
+class MyEquipmentQuery(Query):
     user_id: str
     company_id: str
 
 
-class MyEquipmentQueryHandler:
+class MyEquipmentQueryHandler(QueryHandler[MyEquipmentQuery, list[Asset]]):
     def __init__(self, asset_repo: AssetRepositoryInterface):
         self.asset_repo = asset_repo
 

@@ -1,0 +1,78 @@
+{% extends "reports/base.html" %}
+
+{% block content %}
+<div class="section">
+    <h2>Purchase Order: {{ po_number }}</h2>
+    <div class="cards">
+        <div class="card">
+            <div class="value">{{ status }}</div>
+            <div class="label">Status</div>
+        </div>
+        <div class="card">
+            <div class="value">{{ total_amount }}</div>
+            <div class="label">Total Amount</div>
+        </div>
+    </div>
+
+    <table>
+        <tbody>
+            <tr><td><strong>PO Number</strong></td><td>{{ po_number }}</td></tr>
+            <tr><td><strong>Date Created</strong></td><td>{{ created_at }}</td></tr>
+            {% if approved_at %}
+            <tr><td><strong>Date Approved</strong></td><td>{{ approved_at }}</td></tr>
+            {% endif %}
+            {% if ordered_at %}
+            <tr><td><strong>Date Ordered</strong></td><td>{{ ordered_at }}</td></tr>
+            {% endif %}
+            <tr><td><strong>Currency</strong></td><td>{{ currency }}</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="section">
+    <h2>Vendor</h2>
+    <table>
+        <tbody>
+            <tr><td><strong>Name</strong></td><td>{{ vendor_name }}</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="section">
+    <h2>Items</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Description</th>
+                <th>Asset Type</th>
+                <th>Qty</th>
+                <th>Unit Cost</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ item.description }}</td>
+                <td>{{ item.asset_type or "—" }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.unit_cost }}</td>
+                <td>{{ item.total_cost }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div style="text-align: right; margin-top: 8px; font-weight: 600;">
+        Total: {{ total_amount }}
+    </div>
+</div>
+
+{% if notes %}
+<div class="section">
+    <h2>Notes</h2>
+    <p style="white-space: pre-wrap;">{{ notes }}</p>
+</div>
+{% endif %}
+{% endblock %}

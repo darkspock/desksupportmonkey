@@ -1,4 +1,4 @@
-.PHONY: start stop start-docker start-backend start-frontend start-frontend-bg queue start-queue-bg install install-frontend logs db-migrate db-upgrade test lint clean seed demo-reset
+.PHONY: start stop start-docker start-backend start-frontend start-frontend-bg queue start-queue-bg install install-frontend logs db-migrate db-upgrade test test-integration test-all lint scan clean seed demo-reset
 
 # Colors for terminal output
 GREEN := \033[0;32m
@@ -50,12 +50,12 @@ start-backend:
 ## Start Celery worker for background tasks (reports queue)
 queue:
 	@echo "$(GREEN)Starting Celery worker for reports queue...$(NC)"
-	@PYTHONPATH=. uv run celery -A core.celery worker -Q reports -l INFO
+	@DYLD_FALLBACK_LIBRARY_PATH="$$(brew --prefix 2>/dev/null)/lib" PYTHONPATH=. uv run celery -A core.celery worker -Q reports -l INFO
 
 ## Start Celery worker in background
 start-queue-bg:
 	@echo "$(GREEN)Starting Celery worker in background...$(NC)"
-	@PYTHONPATH=. uv run celery -A core.celery worker -Q reports -l INFO > /tmp/celery-dsm.log 2>&1 &
+	@DYLD_FALLBACK_LIBRARY_PATH="$$(brew --prefix 2>/dev/null)/lib" PYTHONPATH=. uv run celery -A core.celery worker -Q reports -l INFO > /tmp/celery-dsm.log 2>&1 &
 	@echo "  - Celery queues: reports"
 	@echo "  - Celery logs: /tmp/celery-dsm.log"
 
@@ -105,9 +105,19 @@ db-downgrade:
 # Testing
 # =============================================================================
 
-## Run tests
+## Run unit tests
 test:
-	@echo "$(GREEN)Running tests...$(NC)"
+	@echo "$(GREEN)Running unit tests...$(NC)"
+	@PYTHONPATH=src uv run pytest tests/unit/ -v
+
+## Run integration tests (requires Docker PostgreSQL running)
+test-integration:
+	@echo "$(GREEN)Running integration tests...$(NC)"
+	@PYTHONPATH=src uv run pytest tests/integration/ -v
+
+## Run all tests
+test-all:
+	@echo "$(GREEN)Running all tests...$(NC)"
 	@PYTHONPATH=src uv run pytest tests/ -v
 
 # =============================================================================
@@ -119,6 +129,21 @@ lint:
 	@echo "$(GREEN)Running linters...$(NC)"
 	@PYTHONPATH=src uv run mypy src/
 	@uv run flake8 src/
+
+## Run OWASP ZAP API scan (requires backend running on port 8000)
+scan:
+	@echo "$(GREEN)Running OWASP ZAP API scan against http://localhost:8000...$(NC)"
+	@echo "$(YELLOW)Make sure the backend is running (make start-backend)$(NC)"
+	@docker run --rm -t \
+		--add-host=host.docker.internal:host-gateway \
+		-v /tmp:/zap/wrk \
+		ghcr.io/zaproxy/zaproxy:stable \
+		zap-api-scan.py \
+		-t http://host.docker.internal:8000/openapi.json \
+		-f openapi \
+		-J report.json 2>&1 | tee /tmp/zap-report-dsm.txt
+	@echo "$(GREEN)Scan complete. Console output saved to /tmp/zap-report-dsm.txt$(NC)"
+	@echo "$(GREEN)JSON report saved to /tmp/report.json$(NC)"
 
 # =============================================================================
 # Utilities
@@ -169,8 +194,11 @@ help:
 	@echo "  $(GREEN)make db-upgrade$(NC)     - Apply database migrations"
 	@echo "  $(GREEN)make db-migrate$(NC)     - Create new migration (msg=description)"
 	@echo ""
-	@echo "  $(GREEN)make test$(NC)           - Run tests"
+	@echo "  $(GREEN)make test$(NC)           - Run unit tests"
+	@echo "  $(GREEN)make test-integration$(NC) - Run integration tests (requires Docker)"
+	@echo "  $(GREEN)make test-all$(NC)       - Run all tests"
 	@echo "  $(GREEN)make lint$(NC)           - Run linters"
+	@echo "  $(GREEN)make scan$(NC)           - Run OWASP ZAP API security scan"
 	@echo "  $(GREEN)make seed$(NC)           - Seed database with demo data"
 	@echo "  $(GREEN)make demo-reset$(NC)     - Reset DB and seed fresh demo data"
 	@echo "  $(GREEN)make logs$(NC)           - Show Docker logs"

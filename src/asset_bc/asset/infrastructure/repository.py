@@ -121,7 +121,7 @@ class AssetRepository(AssetRepositoryInterface):
             .offset((page - 1) * page_size)
             .limit(page_size)
         ).scalars().all()
-        return [self._to_entity(m) for m in models], total
+        return [self._to_entity(m) for m in models], total or 0
 
     def find_by_assigned_to(self, user_id: str, company_id: str) -> list[Asset]:
         models = self.session.execute(
@@ -243,6 +243,18 @@ class AssetRepository(AssetRepositoryInterface):
             }
             for row in rows
         ]
+
+    def find_in_stock_by_type(
+        self, company_id: str, asset_type: str,
+    ) -> list[Asset]:
+        models = self.session.execute(
+            select(AssetModel).where(
+                AssetModel.company_id == company_id,
+                AssetModel.type == asset_type,
+                AssetModel.status == AssetStatus.IN_STOCK.value,
+            ).order_by(AssetModel.purchase_date.asc().nullslast())
+        ).scalars().all()
+        return [self._to_entity(m) for m in models]
 
     def find_all_by_company(self, company_id: str) -> list[Asset]:
         models = self.session.execute(

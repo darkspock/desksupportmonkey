@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from core.password import PasswordService
 from src.auth_bc.user.domain.enums import UserRole
 from src.auth_bc.user.domain.repository import UserRepositoryInterface
+from src.framework.application.command_bus import Command, CommandHandler
 
 logger = logging.getLogger(__name__)
 
@@ -21,12 +22,12 @@ class WeakPasswordError(Exception):
 
 
 @dataclass
-class SetPasswordCommand:
+class SetPasswordCommand(Command):
     user_id: str
     password: str
 
 
-class SetPasswordCommandHandler:
+class SetPasswordCommandHandler(CommandHandler[SetPasswordCommand]):
     def __init__(
         self,
         user_repo: UserRepositoryInterface,

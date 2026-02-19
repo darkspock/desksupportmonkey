@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from src.asset_bc.asset.domain.entities import Asset, AssetEvent
 from src.asset_bc.asset.domain.enums import AssetStatus
 from src.asset_bc.asset.domain.repository import AssetRepositoryInterface
+from src.framework.application.command_bus import Command, CommandHandler
 
 
 class AssetNotFoundError(Exception):
@@ -10,18 +11,18 @@ class AssetNotFoundError(Exception):
 
 
 @dataclass
-class ChangeAssetStatusCommand:
+class ChangeAssetStatusCommand(Command):
     asset_id: str
     company_id: str
     new_status: str
     performed_by: str
 
 
-class ChangeAssetStatusCommandHandler:
+class ChangeAssetStatusCommandHandler(CommandHandler[ChangeAssetStatusCommand]):
     def __init__(self, asset_repo: AssetRepositoryInterface):
         self.asset_repo = asset_repo
 
-    def handle(self, command: ChangeAssetStatusCommand) -> Asset:
+    def handle(self, command: ChangeAssetStatusCommand) -> None:
         asset = self.asset_repo.find_by_id(command.asset_id, command.company_id)
         if not asset:
             raise AssetNotFoundError(f"Asset '{command.asset_id}' not found")
@@ -31,7 +32,7 @@ class ChangeAssetStatusCommandHandler:
         was_assigned = asset.assigned_to is not None
 
         asset.change_status(new_status)
-        asset = self.asset_repo.save(asset)
+        self.asset_repo.save(asset)
 
         event = AssetEvent.create(
             asset_id=asset.id,
@@ -49,5 +50,3 @@ class ChangeAssetStatusCommandHandler:
                 performed_by=command.performed_by,
             )
             self.asset_repo.save_event(unassign_event)
-
-        return asset

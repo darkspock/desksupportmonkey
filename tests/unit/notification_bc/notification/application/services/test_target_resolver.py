@@ -192,3 +192,122 @@ class TestTargetResolver:
         targets = resolver.resolve(event)
 
         assert targets == []
+
+    def test_approval_needed_targets_department_manager(self):
+        repo = MagicMock()
+        resolver = TargetResolver(user_repo=repo)
+
+        event = DomainEvent(
+            event_type=EventType.REQUEST_APPROVAL_NEEDED,
+            company_id="comp1",
+            actor_id="employee1",
+            payload={"request_id": "req1", "created_by": "employee1", "department_manager_id": "manager1"},
+            title="Approval required",
+            body="New equipment request",
+        )
+        targets = resolver.resolve(event)
+
+        assert targets == ["manager1"]
+
+    def test_approval_needed_excludes_actor_if_same_as_manager(self):
+        repo = MagicMock()
+        resolver = TargetResolver(user_repo=repo)
+
+        event = DomainEvent(
+            event_type=EventType.REQUEST_APPROVAL_NEEDED,
+            company_id="comp1",
+            actor_id="manager1",
+            payload={"request_id": "req1", "created_by": "manager1", "department_manager_id": "manager1"},
+            title="Approval required",
+            body="New equipment request",
+        )
+        targets = resolver.resolve(event)
+
+        assert targets == []
+
+    def test_approval_needed_no_manager_returns_empty(self):
+        repo = MagicMock()
+        resolver = TargetResolver(user_repo=repo)
+
+        event = DomainEvent(
+            event_type=EventType.REQUEST_APPROVAL_NEEDED,
+            company_id="comp1",
+            actor_id="employee1",
+            payload={"request_id": "req1", "created_by": "employee1", "department_manager_id": None},
+            title="Approval required",
+            body="New equipment request",
+        )
+        targets = resolver.resolve(event)
+
+        assert targets == []
+
+    def test_request_approved_targets_creator(self):
+        repo = MagicMock()
+        resolver = TargetResolver(user_repo=repo)
+
+        event = DomainEvent(
+            event_type=EventType.REQUEST_APPROVED,
+            company_id="comp1",
+            actor_id="manager1",
+            payload={"request_id": "req1", "created_by": "employee1", "approved_by": "manager1"},
+            title="Request approved",
+            body="Your request was approved",
+        )
+        targets = resolver.resolve(event)
+
+        assert targets == ["employee1"]
+
+    def test_request_approved_no_creator_returns_empty(self):
+        repo = MagicMock()
+        resolver = TargetResolver(user_repo=repo)
+
+        event = DomainEvent(
+            event_type=EventType.REQUEST_APPROVED,
+            company_id="comp1",
+            actor_id="manager1",
+            payload={"request_id": "req1"},
+            title="Request approved",
+            body="Approved",
+        )
+        targets = resolver.resolve(event)
+
+        assert targets == []
+
+    def test_maintenance_scheduled_targets_technician(self):
+        repo = MagicMock()
+        resolver = TargetResolver(user_repo=repo)
+        event = DomainEvent(
+            event_type=EventType.MAINTENANCE_SCHEDULED,
+            company_id="comp1",
+            actor_id="actor1",
+            payload={"technician_id": "tech1"},
+            title="Scheduled",
+            body="Maintenance scheduled",
+        )
+        assert resolver.resolve(event) == ["tech1"]
+
+    def test_maintenance_due_excludes_actor(self):
+        repo = MagicMock()
+        resolver = TargetResolver(user_repo=repo)
+        event = DomainEvent(
+            event_type=EventType.MAINTENANCE_DUE,
+            company_id="comp1",
+            actor_id="tech1",
+            payload={"technician_id": "tech1"},
+            title="Due",
+            body="Due soon",
+        )
+        assert resolver.resolve(event) == []
+
+    def test_maintenance_completed_targets_created_by(self):
+        repo = MagicMock()
+        resolver = TargetResolver(user_repo=repo)
+        event = DomainEvent(
+            event_type=EventType.MAINTENANCE_COMPLETED,
+            company_id="comp1",
+            actor_id="tech1",
+            payload={"technician_id": "tech1", "created_by": "admin1"},
+            title="Completed",
+            body="Done",
+        )
+        assert resolver.resolve(event) == ["admin1"]

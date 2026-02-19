@@ -10,8 +10,8 @@ from src.auth_bc.magic_link.application.commands.create_magic_link import (
 )
 from src.auth_bc.magic_link.application.commands.verify_magic_link import (
     CompanyRestrictedError as VerifyCompanyRestrictedError,
-    VerifyMagicLinkCommand,
-    VerifyMagicLinkCommandHandler,
+    VerifyMagicLinkRequest,
+    VerifyMagicLinkService,
 )
 from src.auth_bc.magic_link.domain.entities import MagicLink
 
@@ -44,7 +44,7 @@ class TestCreateMagicLinkCompanyStatus:
 class TestVerifyMagicLinkCompanyStatus:
     def test_suspended_company_raises(self):
         magic_link = MagicLink.create(email="user@suspended.com")
-        handler = VerifyMagicLinkCommandHandler(
+        handler = VerifyMagicLinkService(
             magic_link_repo=MagicMock(),
             user_repo=MagicMock(),
             company_lookup=MagicMock(),
@@ -54,7 +54,7 @@ class TestVerifyMagicLinkCompanyStatus:
         handler.company_lookup.find_company_by_email_domain.return_value = ("company-123", False)
 
         with pytest.raises(VerifyCompanyRestrictedError):
-            handler.handle(VerifyMagicLinkCommand(token=magic_link.token))
+            handler.handle(VerifyMagicLinkRequest(token=magic_link.token))
 
     def test_active_company_succeeds(self):
         magic_link = MagicLink.create(email="user@active.com")
@@ -64,7 +64,7 @@ class TestVerifyMagicLinkCompanyStatus:
         user_mock.company_id = "company-123"
         user_mock.role.value = "employee"
 
-        handler = VerifyMagicLinkCommandHandler(
+        handler = VerifyMagicLinkService(
             magic_link_repo=MagicMock(),
             user_repo=MagicMock(),
             company_lookup=MagicMock(),
@@ -75,5 +75,5 @@ class TestVerifyMagicLinkCompanyStatus:
         handler.user_repo.find_by_email.return_value = user_mock
         handler.jwt_service.create_token.return_value = "jwt-token"
 
-        result = handler.handle(VerifyMagicLinkCommand(token=magic_link.token))
+        result = handler.handle(VerifyMagicLinkRequest(token=magic_link.token))
         assert result == "jwt-token"

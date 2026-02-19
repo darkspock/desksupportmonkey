@@ -1,11 +1,11 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
 
 from adapters.http.api.dashboard import routers as dashboard_routers
+from adapters.http.api.dashboard.dependencies import get_asset_repo
 from app import app
-from core.database import get_db
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
 
@@ -19,23 +19,26 @@ def _admin_user():
 
 
 @pytest.fixture
-def admin_client():
+def mock_asset_repo():
+    return MagicMock()
+
+
+@pytest.fixture
+def admin_client(mock_asset_repo):
     admin = _admin_user()
     app.dependency_overrides[dashboard_routers.admin_dep] = lambda: admin
-    app.dependency_overrides[get_db] = lambda: MagicMock()
+    app.dependency_overrides[get_asset_repo] = lambda: mock_asset_repo
     client = TestClient(app)
     yield client
     app.dependency_overrides.clear()
 
 
 class TestAssetSummary:
-    @patch("adapters.http.api.dashboard.routers.AssetRepository")
-    def test_returns_summary(self, MockRepo, admin_client):
-        repo = MockRepo.return_value
-        repo.count_by_status.return_value = {
+    def test_returns_summary(self, admin_client, mock_asset_repo):
+        mock_asset_repo.count_by_status.return_value = {
             "in_stock": 10, "assigned": 15, "in_repair": 2, "decommissioned": 3,
         }
-        repo.count_by_type.return_value = {
+        mock_asset_repo.count_by_type.return_value = {
             "laptop": 12, "monitor": 8, "keyboard": 5, "mouse": 3,
             "headset": 1, "docking_station": 0, "other": 1,
         }
@@ -49,10 +52,8 @@ class TestAssetSummary:
 
 
 class TestWarrantyAlerts:
-    @patch("adapters.http.api.dashboard.routers.AssetRepository")
-    def test_returns_warranty_alerts(self, MockRepo, admin_client):
-        repo = MockRepo.return_value
-        repo.find_expiring_warranties.return_value = [
+    def test_returns_warranty_alerts(self, admin_client, mock_asset_repo):
+        mock_asset_repo.find_expiring_warranties.return_value = [
             {
                 "id": "asset1", "brand": "Dell", "model": "Latitude",
                 "serial_number": "SN001", "warranty_expiration": "2026-03-01",
@@ -67,19 +68,15 @@ class TestWarrantyAlerts:
         assert data[0]["brand"] == "Dell"
         assert data[0]["days_remaining"] == 13
 
-    @patch("adapters.http.api.dashboard.routers.AssetRepository")
-    def test_custom_days_param(self, MockRepo, admin_client):
-        repo = MockRepo.return_value
-        repo.find_expiring_warranties.return_value = []
+    def test_custom_days_param(self, admin_client, mock_asset_repo):
+        mock_asset_repo.find_expiring_warranties.return_value = []
 
         response = admin_client.get("/api/v1/dashboard/alerts/warranty?days=90")
         assert response.status_code == 200
-        repo.find_expiring_warranties.assert_called_once_with("comp1", 90)
+        mock_asset_repo.find_expiring_warranties.assert_called_once_with("comp1", 90)
 
-    @patch("adapters.http.api.dashboard.routers.AssetRepository")
-    def test_empty_list(self, MockRepo, admin_client):
-        repo = MockRepo.return_value
-        repo.find_expiring_warranties.return_value = []
+    def test_empty_list(self, admin_client, mock_asset_repo):
+        mock_asset_repo.find_expiring_warranties.return_value = []
 
         response = admin_client.get("/api/v1/dashboard/alerts/warranty")
         assert response.status_code == 200
@@ -87,10 +84,8 @@ class TestWarrantyAlerts:
 
 
 class TestAgingAlerts:
-    @patch("adapters.http.api.dashboard.routers.AssetRepository")
-    def test_returns_aging_alerts(self, MockRepo, admin_client):
-        repo = MockRepo.return_value
-        repo.find_aging_assets.return_value = [
+    def test_returns_aging_alerts(self, admin_client, mock_asset_repo):
+        mock_asset_repo.find_aging_assets.return_value = [
             {
                 "id": "asset1", "brand": "Dell", "model": "Latitude",
                 "serial_number": "SN001", "purchase_date": "2021-01-15",
@@ -104,11 +99,9 @@ class TestAgingAlerts:
         assert len(data) == 1
         assert data[0]["age_years"] == 5.1
 
-    @patch("adapters.http.api.dashboard.routers.AssetRepository")
-    def test_custom_years_param(self, MockRepo, admin_client):
-        repo = MockRepo.return_value
-        repo.find_aging_assets.return_value = []
+    def test_custom_years_param(self, admin_client, mock_asset_repo):
+        mock_asset_repo.find_aging_assets.return_value = []
 
         response = admin_client.get("/api/v1/dashboard/alerts/aging?years=5")
         assert response.status_code == 200
-        repo.find_aging_assets.assert_called_once_with("comp1", 5)
+        mock_asset_repo.find_aging_assets.assert_called_once_with("comp1", 5)

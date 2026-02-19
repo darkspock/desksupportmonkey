@@ -27,6 +27,28 @@ const UsersPage = lazy(() => import('./pages/admin/UsersPage'));
 const DepartmentsPage = lazy(() => import('./pages/admin/DepartmentsPage'));
 const ReportsPage = lazy(() => import('./pages/admin/ReportsPage'));
 const CompanySettingsPage = lazy(() => import('./pages/admin/CompanySettingsPage'));
+const ApiKeysPage = lazy(() => import('./pages/admin/ApiKeysPage'));
+const EquipmentProfilesPage = lazy(() => import('./pages/admin/EquipmentProfilesPage'));
+const AssignmentAISettingsPage = lazy(() => import('./pages/admin/AssignmentAISettingsPage'));
+const ClassificationSettingsPage = lazy(() => import('./pages/admin/ClassificationSettingsPage'));
+const ProcurementSettingsPage = lazy(() => import('./pages/admin/ProcurementSettingsPage'));
+const VendorListPage = lazy(() => import('./pages/admin/VendorListPage'));
+const PurchaseOrderListPage = lazy(() => import('./pages/admin/PurchaseOrderListPage'));
+const PurchaseOrderDetailPage = lazy(() => import('./pages/admin/PurchaseOrderDetailPage'));
+const PurchaseOrderFormPage = lazy(() => import('./pages/admin/PurchaseOrderFormPage'));
+const CalendarPage = lazy(() => import('./pages/technician/CalendarPage'));
+const AvailabilitySettingsPage = lazy(() => import('./pages/technician/AvailabilitySettingsPage'));
+const MyAppointmentsPage = lazy(() => import('./pages/employee/MyAppointmentsPage'));
+const MyShipmentsPage = lazy(() => import('./pages/employee/MyShipmentsPage'));
+const ShipmentsPage = lazy(() => import('./pages/technician/ShipmentsPage'));
+const ShipmentDetailPage = lazy(() => import('./pages/technician/ShipmentDetailPage'));
+const ShipmentCreatePage = lazy(() => import('./pages/technician/ShipmentCreatePage'));
+const AddressesPage = lazy(() => import('./pages/technician/AddressesPage'));
+const MaintenancePage = lazy(() => import('./pages/technician/MaintenancePage'));
+const MaintenanceDetailPage = lazy(() => import('./pages/technician/MaintenanceDetailPage'));
+const MaintenanceFormPage = lazy(() => import('./pages/technician/MaintenanceFormPage'));
+const MyMaintenancePage = lazy(() => import('./pages/technician/MyMaintenancePage'));
+const MaintenanceTemplatesPage = lazy(() => import('./pages/admin/MaintenanceTemplatesPage'));
 const CompaniesPage = lazy(() => import('./pages/superadmin/CompaniesPage'));
 
 function S({ children }: { children: React.ReactNode }) {
@@ -54,12 +76,78 @@ export const router = createBrowserRouter([
       { path: 'my/requests', element: <S><MyRequestsPage /></S> },
       { path: 'my/requests/new', element: <S><NewRequestPage /></S> },
       { path: 'my/notifications', element: <S><NotificationsPage /></S> },
+      { path: 'my/appointments', element: <S><MyAppointmentsPage /></S> },
+      { path: 'my/shipments', element: <S><MyShipmentsPage /></S> },
+      {
+        path: 'my/maintenance',
+        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><MyMaintenancePage /></S></RequireRole>,
+      },
       // Shared detail route (ownership validated by backend)
       { path: 'requests/:id', element: <S><RequestDetailPage /></S> },
       // Technician+
       {
         path: 'requests',
         element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><RequestQueuePage /></S></RequireRole>,
+      },
+      {
+        path: 'vendors',
+        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><VendorListPage /></S></RequireRole>,
+      },
+      {
+        path: 'purchase-orders',
+        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><PurchaseOrderListPage /></S></RequireRole>,
+      },
+      {
+        path: 'purchase-orders/new',
+        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><PurchaseOrderFormPage /></S></RequireRole>,
+      },
+      {
+        path: 'purchase-orders/:id',
+        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><PurchaseOrderDetailPage /></S></RequireRole>,
+      },
+      {
+        path: 'purchase-orders/:id/edit',
+        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><PurchaseOrderFormPage /></S></RequireRole>,
+      },
+      {
+        path: 'calendar',
+        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><CalendarPage /></S></RequireRole>,
+      },
+      {
+        path: 'settings/availability',
+        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><AvailabilitySettingsPage /></S></RequireRole>,
+      },
+      {
+        path: 'shipments',
+        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><ShipmentsPage /></S></RequireRole>,
+      },
+      {
+        path: 'shipments/new',
+        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><ShipmentCreatePage /></S></RequireRole>,
+      },
+      {
+        path: 'shipments/:id',
+        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><ShipmentDetailPage /></S></RequireRole>,
+      },
+      {
+        path: 'addresses',
+        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><AddressesPage /></S></RequireRole>,
+      },
+      {
+        path: 'maintenance',
+        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><MaintenancePage /></S></RequireRole>,
+      },
+      {
+        path: 'maintenance/new',
+        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><MaintenanceFormPage /></S></RequireRole>,
+      },
+      {
+        path: 'maintenance/:id',
+        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><MaintenanceDetailPage /></S></RequireRole>,
+      },
+      {
+        path: 'maintenance/:id/edit',
+        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><MaintenanceFormPage /></S></RequireRole>,
       },
       {
         path: 'assets',
@@ -97,6 +185,30 @@ export const router = createBrowserRouter([
       {
         path: 'settings/company',
         element: <RequireRole roles={['admin']}><S><CompanySettingsPage /></S></RequireRole>,
+      },
+      {
+        path: 'settings/api-keys',
+        element: <RequireRole roles={['admin', 'super_admin']}><S><ApiKeysPage /></S></RequireRole>,
+      },
+      {
+        path: 'settings/equipment-profiles',
+        element: <RequireRole roles={['admin', 'super_admin']}><S><EquipmentProfilesPage /></S></RequireRole>,
+      },
+      {
+        path: 'settings/assignment-ai',
+        element: <RequireRole roles={['admin']}><S><AssignmentAISettingsPage /></S></RequireRole>,
+      },
+      {
+        path: 'settings/request-classification',
+        element: <RequireRole roles={['admin']}><S><ClassificationSettingsPage /></S></RequireRole>,
+      },
+      {
+        path: 'settings/procurement',
+        element: <RequireRole roles={['admin']}><S><ProcurementSettingsPage /></S></RequireRole>,
+      },
+      {
+        path: 'maintenance-templates',
+        element: <RequireRole roles={['admin', 'super_admin']}><S><MaintenanceTemplatesPage /></S></RequireRole>,
       },
       // Super Admin
       {

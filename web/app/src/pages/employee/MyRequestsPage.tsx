@@ -5,7 +5,7 @@ import api from '../../lib/api';
 import { Loading } from '../../components/ui/Loading';
 import { EmptyState, ErrorState } from '../../components/ui/StateBlock';
 import { StatusBadge } from '../../components/ui/Badge';
-import { Table, Th, Td } from '../../components/ui/Table';
+import { Table, Th, Td, Tr } from '../../components/ui/Table';
 import { Card } from '../../components/ui/Card';
 import { Pagination } from '../../components/ui/Pagination';
 import { formatDate } from '../../lib/date';
@@ -25,54 +25,71 @@ export default function MyRequestsPage() {
   });
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-gray-900">{t('page.my_requests.title')}</h2>
-        <Link to="/my/requests/new" className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
+    <div className="flex flex-col gap-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">{t('page.my_requests.title')}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t('page.my_requests.subtitle')}</p>
+        </div>
+        <Link
+          to="/my/requests/new"
+          className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+        >
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M5 12h14M12 5v14" />
+          </svg>
           {t('page.my_requests.new')}
         </Link>
       </div>
-      <Card>
+
+      {/* Table */}
+      <Card className="overflow-hidden p-0">
         {isLoading ? (
-          <Loading />
+          <div className="p-5"><Loading /></div>
         ) : isError ? (
-          <ErrorState
-            message={(error as { response?: { data?: { detail?: string } } })?.response?.data?.detail}
-            onRetry={() => {
-              void refetch();
-            }}
-          />
+          <div className="p-5">
+            <ErrorState
+              message={(error as { response?: { data?: { detail?: string } } })?.response?.data?.detail}
+              onRetry={() => { void refetch(); }}
+            />
+          </div>
         ) : !data?.data.length ? (
-          <EmptyState message={t('page.my_requests.empty')} />
+          <div className="p-5"><EmptyState message={t('page.my_requests.empty')} /></div>
         ) : (
           <>
             <Table>
               <thead>
-                <tr>
-                  <Th>{t('table.title')}</Th>
+                <tr className="hover:bg-transparent">
+                  <Th className="pl-4">{t('table.title')}</Th>
                   <Th>{t('table.type')}</Th>
                   <Th>{t('table.priority')}</Th>
                   <Th>{t('table.status')}</Th>
                   <Th>{t('table.created')}</Th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody>
                 {data.data.map((r) => (
-                  <tr key={r.id} className="hover:bg-gray-50">
-                    <Td>
-                      <Link to={`/requests/${r.id}`} className="text-blue-600 hover:underline">
+                  <Tr key={r.id}>
+                    <Td className="pl-4">
+                      <Link to={`/requests/${r.id}`} className="text-primary hover:underline">
                         {r.title}
                       </Link>
                     </Td>
-                    <Td>{t(`enum.${r.type}`)}</Td>
+                    <Td>
+                      <span>{t(`enum.${r.type}`)}</span>
+                      {r.subtype && <span className="ml-1 text-xs text-muted-foreground">({t(`enum.${r.subtype}`)})</span>}
+                    </Td>
                     <Td><StatusBadge status={r.priority} /></Td>
                     <Td><StatusBadge status={r.status} /></Td>
                     <Td>{formatDate(r.created_at)}</Td>
-                  </tr>
+                  </Tr>
                 ))}
               </tbody>
             </Table>
-            <Pagination page={page} pageSize={20} total={data.meta.total} onChange={setPage} />
+            <div className="p-4">
+              <Pagination page={page} pageSize={20} total={data.meta.total} onChange={setPage} />
+            </div>
           </>
         )}
       </Card>

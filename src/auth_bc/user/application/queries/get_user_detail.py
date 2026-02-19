@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.repository import UserRepositoryInterface
+from src.framework.application.query_bus import Query, QueryHandler
 
 
 class UserNotFoundError(Exception):
@@ -9,12 +10,12 @@ class UserNotFoundError(Exception):
 
 
 @dataclass
-class GetUserDetailQuery:
+class GetUserDetailQuery(Query):
     user_id: str
     company_id: str
 
 
-class GetUserDetailQueryHandler:
+class GetUserDetailQueryHandler(QueryHandler[GetUserDetailQuery, User]):
     def __init__(self, user_repo: UserRepositoryInterface):
         self.user_repo = user_repo
 

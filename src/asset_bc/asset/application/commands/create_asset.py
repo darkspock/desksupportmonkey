@@ -5,6 +5,7 @@ from typing import Optional
 from src.asset_bc.asset.domain.entities import Asset, AssetEvent
 from src.asset_bc.asset.domain.enums import AssetType
 from src.asset_bc.asset.domain.repository import AssetRepositoryInterface
+from src.framework.application.command_bus import Command, CommandHandler
 
 
 class SerialNumberExistsError(Exception):
@@ -12,7 +13,7 @@ class SerialNumberExistsError(Exception):
 
 
 @dataclass
-class CreateAssetCommand:
+class CreateAssetCommand(Command):
     company_id: str
     type: str
     brand: str
@@ -22,13 +23,14 @@ class CreateAssetCommand:
     purchase_date: Optional[date] = None
     warranty_expiration: Optional[date] = None
     notes: Optional[str] = None
+    id: Optional[str] = None
 
 
-class CreateAssetCommandHandler:
+class CreateAssetCommandHandler(CommandHandler[CreateAssetCommand]):
     def __init__(self, asset_repo: AssetRepositoryInterface):
         self.asset_repo = asset_repo
 
-    def handle(self, command: CreateAssetCommand) -> Asset:
+    def handle(self, command: CreateAssetCommand) -> None:
         existing = self.asset_repo.find_by_serial_number(command.serial_number, command.company_id)
         if existing:
             raise SerialNumberExistsError(
@@ -46,9 +48,10 @@ class CreateAssetCommandHandler:
             purchase_date=command.purchase_date,
             warranty_expiration=command.warranty_expiration,
             notes=command.notes,
+            id=command.id,
         )
 
-        asset = self.asset_repo.save(asset)
+        self.asset_repo.save(asset)
 
         event = AssetEvent.create(
             asset_id=asset.id,
@@ -63,5 +66,3 @@ class CreateAssetCommandHandler:
             performed_by=command.performed_by,
         )
         self.asset_repo.save_event(event)
-
-        return asset

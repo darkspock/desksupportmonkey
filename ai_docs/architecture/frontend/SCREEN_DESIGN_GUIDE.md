@@ -101,6 +101,7 @@ Rules:
 - Do not auto-save critical settings
 - Do not leave users guessing where “save” happens
 - Do not provide multiple edit entry points for the same setting
+- Never use inline editing. Use a modal or navigate to a dedicated edit page depending on screen complexity.
 
 ---
 

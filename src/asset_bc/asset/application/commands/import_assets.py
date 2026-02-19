@@ -34,17 +34,18 @@ class ImportResult:
 
 
 @dataclass
-class ImportAssetsCommand:
+class ImportAssetsRequest:
     company_id: str
     performed_by: str
     csv_content: str
 
 
-class ImportAssetsCommandHandler:
+# Application service: returns ImportResult, not a CQRS command handler
+class ImportAssetsService:
     def __init__(self, asset_repo: AssetRepositoryInterface):
         self.asset_repo = asset_repo
 
-    def handle(self, command: ImportAssetsCommand) -> ImportResult:
+    def handle(self, command: ImportAssetsRequest) -> ImportResult:
         reader = csv.DictReader(io.StringIO(command.csv_content))
 
         if not reader.fieldnames:

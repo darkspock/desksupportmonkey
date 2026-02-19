@@ -7,6 +7,7 @@ from src.auth_bc.company_lookup.domain.service import CompanyLookupInterface
 from src.auth_bc.magic_link.domain.entities import MagicLink
 from src.auth_bc.magic_link.domain.repository import MagicLinkRepositoryInterface
 from src.auth_bc.user.domain.repository import UserRepositoryInterface
+from src.framework.application.command_bus import Command, CommandHandler
 
 logger = logging.getLogger(__name__)
 
@@ -24,11 +25,11 @@ class CompanyRestrictedError(Exception):
 
 
 @dataclass
-class CreateMagicLinkCommand:
+class CreateMagicLinkCommand(Command):
     email: str
 
 
-class CreateMagicLinkCommandHandler:
+class CreateMagicLinkCommandHandler(CommandHandler[CreateMagicLinkCommand]):
     MAX_LINKS_PER_HOUR = 5
 
     def __init__(
@@ -54,7 +55,7 @@ class CreateMagicLinkCommandHandler:
             if self.user_repo:
                 existing_user = self.user_repo.find_by_email(email)
                 if existing_user and existing_user.is_active:
-                    result = (existing_user.company_id, True)
+                    result = (existing_user.company_id or "", True)
             if result is None:
                 raise InvalidEmailDomainError("Only corporate email addresses are allowed")
 

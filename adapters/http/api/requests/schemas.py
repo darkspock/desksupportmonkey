@@ -8,6 +8,7 @@ class CreateRequestRequest(BaseModel):
     type: str
     title: str = Field(min_length=1, max_length=255)
     description: str = Field(min_length=1)
+    subtype: Optional[str] = None
     data: Optional[dict] = None
 
 
@@ -26,6 +27,7 @@ class AssignRequestRequest(BaseModel):
 class RequestListItemResponse(BaseModel):
     id: str
     type: str
+    subtype: Optional[str] = None
     title: str
     status: str
     priority: str
@@ -35,6 +37,10 @@ class RequestListItemResponse(BaseModel):
     created_by_email: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+
+class RejectRequestRequest(BaseModel):
+    reason: str = Field(min_length=1)
 
 
 class AddCommentRequest(BaseModel):
@@ -67,6 +73,7 @@ class RequestResponse(BaseModel):
     assigned_to: Optional[str] = None
     assigned_to_email: Optional[str] = None
     type: str
+    subtype: Optional[str] = None
     title: str
     description: str
     status: str

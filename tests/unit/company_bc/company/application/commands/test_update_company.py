@@ -27,25 +27,24 @@ class TestUpdateCompanyCommand:
         handler.company_repo.find_by_id.return_value = existing_company
         handler.company_repo.find_by_name.return_value = None
 
-        result = handler.handle(
+        handler.handle(
             UpdateCompanyCommand(company_id=existing_company.id, name="New Acme")
         )
 
-        assert result.name == "New Acme"
         handler.company_repo.save.assert_called_once()
 
     def test_update_domains_only(self, handler, existing_company):
         handler.company_repo.find_by_id.return_value = existing_company
         handler.company_repo.find_domain.return_value = None
 
-        result = handler.handle(
+        handler.handle(
             UpdateCompanyCommand(
                 company_id=existing_company.id,
                 email_domains=["new.com", "new.co.uk"],
             )
         )
 
-        assert result.email_domains == ["new.com", "new.co.uk"]
+        handler.company_repo.save.assert_called_once()
         handler.company_repo.save_domains.assert_called_once()
 
     def test_company_not_found_raises(self, handler):
@@ -79,7 +78,7 @@ class TestUpdateCompanyCommand:
         handler.company_repo.find_by_id.return_value = existing_company
         handler.company_repo.find_by_name.return_value = existing_company
 
-        result = handler.handle(
+        handler.handle(
             UpdateCompanyCommand(company_id=existing_company.id, name="Acme Corp")
         )
-        assert result.name == "Acme Corp"
+        handler.company_repo.save.assert_called_once()

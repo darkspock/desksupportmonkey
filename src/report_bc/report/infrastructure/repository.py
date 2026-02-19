@@ -61,7 +61,7 @@ class ReportRepository(ReportRepositoryInterface):
             .limit(page_size)
         ).scalars().all()
 
-        return [self._to_entity(m) for m in models], total
+        return [self._to_entity(m) for m in models], total or 0
 
     def update_status(
         self,

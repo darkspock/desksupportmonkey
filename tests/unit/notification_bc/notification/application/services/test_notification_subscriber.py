@@ -19,22 +19,26 @@ def _make_event(event_type=EventType.REQUEST_STATUS_CHANGED, actor_id="actor1"):
 
 
 class TestNotificationSubscriber:
-    @patch("src.notification_bc.notification.application.services.notification_subscriber.NotificationRepository")
-    @patch("src.notification_bc.notification.application.services.notification_subscriber.UserRepository")
     @patch("src.notification_bc.notification.application.services.notification_subscriber.TargetResolver")
-    def test_creates_notifications_for_targets(self, MockResolver, MockUserRepo, MockNotifRepo):
+    def test_creates_notifications_for_targets(self, MockResolver):
         mock_resolver_instance = MockResolver.return_value
         mock_resolver_instance.resolve.return_value = ["creator1", "tech1"]
-        mock_repo_instance = MockNotifRepo.return_value
 
-        subscriber = NotificationSubscriber()
+        mock_user_repo_factory = MagicMock()
+        mock_notif_repo = MagicMock()
+        mock_notif_repo_factory = MagicMock(return_value=mock_notif_repo)
+
+        subscriber = NotificationSubscriber(
+            user_repo_factory=mock_user_repo_factory,
+            notification_repo_factory=mock_notif_repo_factory,
+        )
         event = _make_event()
         db = MagicMock()
 
         subscriber(event, db)
 
-        mock_repo_instance.save_batch.assert_called_once()
-        notifications = mock_repo_instance.save_batch.call_args[0][0]
+        mock_notif_repo.save_batch.assert_called_once()
+        notifications = mock_notif_repo.save_batch.call_args[0][0]
         assert len(notifications) == 2
         user_ids = {n.user_id for n in notifications}
         assert user_ids == {"creator1", "tech1"}
@@ -43,18 +47,22 @@ class TestNotificationSubscriber:
             assert n.title == "Request updated"
             assert n.company_id == "comp1"
 
-    @patch("src.notification_bc.notification.application.services.notification_subscriber.NotificationRepository")
-    @patch("src.notification_bc.notification.application.services.notification_subscriber.UserRepository")
     @patch("src.notification_bc.notification.application.services.notification_subscriber.TargetResolver")
-    def test_noop_when_no_targets(self, MockResolver, MockUserRepo, MockNotifRepo):
+    def test_noop_when_no_targets(self, MockResolver):
         mock_resolver_instance = MockResolver.return_value
         mock_resolver_instance.resolve.return_value = []
-        mock_repo_instance = MockNotifRepo.return_value
 
-        subscriber = NotificationSubscriber()
+        mock_user_repo_factory = MagicMock()
+        mock_notif_repo = MagicMock()
+        mock_notif_repo_factory = MagicMock(return_value=mock_notif_repo)
+
+        subscriber = NotificationSubscriber(
+            user_repo_factory=mock_user_repo_factory,
+            notification_repo_factory=mock_notif_repo_factory,
+        )
         event = _make_event(actor_id="tech1")
         db = MagicMock()
 
         subscriber(event, db)
 
-        mock_repo_instance.save_batch.assert_not_called()
+        mock_notif_repo.save_batch.assert_not_called()

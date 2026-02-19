@@ -20,12 +20,16 @@ class DepartmentRepository(DepartmentRepositoryInterface):
         if existing:
             existing.name = department.name
             existing.is_active = department.is_active
+            existing.manager_user_id = department.manager_user_id
+            existing.priority_weight = department.priority_weight
         else:
             model = DepartmentModel(
                 id=department.id,
                 company_id=department.company_id,
                 name=department.name,
                 is_active=department.is_active,
+                manager_user_id=department.manager_user_id,
+                priority_weight=department.priority_weight,
             )
             self.session.add(model)
         self.session.flush()
@@ -65,7 +69,20 @@ class DepartmentRepository(DepartmentRepositoryInterface):
             .offset((page - 1) * page_size)
             .limit(page_size)
         ).scalars().all()
-        return [self._to_entity(m) for m in models], total
+        return [self._to_entity(m) for m in models], total or 0
+
+    def find_manager_info(
+        self, manager_user_id: str,
+    ) -> Optional[tuple[str, Optional[str]]]:
+        """Return (email, name) for a manager user ID."""
+        model = self.session.execute(
+            select(
+                UserModel.email, UserModel.name,
+            ).where(UserModel.id == manager_user_id)
+        ).one_or_none()
+        if model:
+            return (model[0], model[1])
+        return None
 
     def count_users(self, department_id: str) -> int:
         return (
@@ -82,6 +99,8 @@ class DepartmentRepository(DepartmentRepositoryInterface):
             company_id=model.company_id,
             name=model.name,
             is_active=model.is_active,
+            manager_user_id=model.manager_user_id,
+            priority_weight=model.priority_weight if model.priority_weight is not None else 0,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )

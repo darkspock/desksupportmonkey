@@ -150,7 +150,7 @@ class BaseRepository(RepositoryInterface[T]):
 
     def get_all(self) -> List[T]:
         session = self.database.get_session()
-        return session.execute(select(self.model)).scalars().all()
+        return list(session.execute(select(self.model)).scalars().all())
 
     def update(self, entity_id: str, entity_data: dict[str, Any]) -> Optional[T]:
         session = self.database.get_session()

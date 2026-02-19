@@ -28,10 +28,11 @@ class Report:
         requested_by: str,
         type: str,
         parameters: Optional[dict[str, Any]] = None,
+        id: Optional[str] = None,
     ) -> "Report":
         report_type = ReportType(type)
         return cls(
-            id=str(ulid.new()),
+            id=id or str(ulid.new()),
             company_id=company_id,
             requested_by=requested_by,
             type=report_type,

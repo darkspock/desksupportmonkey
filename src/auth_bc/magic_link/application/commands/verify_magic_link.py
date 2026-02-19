@@ -3,7 +3,6 @@ from dataclasses import dataclass
 
 from core.jwt import JWTService
 from src.auth_bc.magic_link.domain.repository import MagicLinkRepositoryInterface
-from src.auth_bc.magic_link.infrastructure.repository import MagicLinkRepository
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
 from src.auth_bc.user.domain.repository import UserRepositoryInterface
@@ -29,14 +28,15 @@ class CompanyRestrictedError(Exception):
 
 
 @dataclass
-class VerifyMagicLinkCommand:
+class VerifyMagicLinkRequest:
     token: str
 
 
-class VerifyMagicLinkCommandHandler:
+# Application service: returns str (JWT), not a CQRS command handler
+class VerifyMagicLinkService:
     def __init__(
         self,
-        magic_link_repo: MagicLinkRepository,
+        magic_link_repo: MagicLinkRepositoryInterface,
         user_repo: UserRepositoryInterface,
         company_lookup: CompanyLookupInterface,
         jwt_service: JWTService,
@@ -46,7 +46,7 @@ class VerifyMagicLinkCommandHandler:
         self.company_lookup = company_lookup
         self.jwt_service = jwt_service
 
-    def handle(self, command: VerifyMagicLinkCommand) -> str:
+    def handle(self, command: VerifyMagicLinkRequest) -> str:
         """Verify magic link and return JWT token."""
         magic_link = self.magic_link_repo.find_by_token(command.token)
         if magic_link is None:
@@ -60,7 +60,7 @@ class VerifyMagicLinkCommandHandler:
 
         # Mark as used
         magic_link.mark_used()
-        self.magic_link_repo.update_used_at(magic_link.id, magic_link.used_at)
+        self.magic_link_repo.update_used_at(magic_link.id, magic_link.used_at)  # type: ignore[arg-type]
 
         # Find existing user or create via company lookup
         user = self.user_repo.find_by_email(magic_link.email)

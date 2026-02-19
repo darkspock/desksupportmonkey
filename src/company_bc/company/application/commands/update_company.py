@@ -4,6 +4,7 @@ from typing import Optional
 
 from src.company_bc.company.domain.entities import Company
 from src.company_bc.company.domain.repository import CompanyRepositoryInterface
+from src.framework.application.command_bus import Command, CommandHandler
 
 logger = logging.getLogger(__name__)
 
@@ -23,17 +24,17 @@ class DomainAlreadyTakenError(Exception):
 
 
 @dataclass
-class UpdateCompanyCommand:
+class UpdateCompanyCommand(Command):
     company_id: str
     name: Optional[str] = None
     email_domains: Optional[list[str]] = None
 
 
-class UpdateCompanyCommandHandler:
+class UpdateCompanyCommandHandler(CommandHandler[UpdateCompanyCommand]):
     def __init__(self, company_repo: CompanyRepositoryInterface):
         self.company_repo = company_repo
 
-    def handle(self, command: UpdateCompanyCommand) -> Company:
+    def handle(self, command: UpdateCompanyCommand) -> None:
         company = self.company_repo.find_by_id(command.company_id)
         if not company:
             raise CompanyNotFoundError("Company not found")
@@ -59,4 +60,3 @@ class UpdateCompanyCommandHandler:
             self.company_repo.save_domains(company.id, company.email_domains)
 
         logger.info("Company updated: %s (id=%s)", company.name, company.id)
-        return company

@@ -6,6 +6,7 @@ from core.email import EmailServiceInterface, send_admin_promotion_email
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
 from src.auth_bc.user.domain.repository import UserRepositoryInterface
+from src.framework.application.command_bus import Command, CommandHandler
 
 logger = logging.getLogger(__name__)
 
@@ -27,14 +28,14 @@ class LastAdminError(Exception):
 
 
 @dataclass
-class ChangeUserRoleCommand:
+class ChangeUserRoleCommand(Command):
     user_id: str
     company_id: str
     current_user_id: str
     new_role: str
 
 
-class ChangeUserRoleCommandHandler:
+class ChangeUserRoleCommandHandler(CommandHandler[ChangeUserRoleCommand]):
     def __init__(
         self,
         user_repo: UserRepositoryInterface,
@@ -43,7 +44,7 @@ class ChangeUserRoleCommandHandler:
         self.user_repo = user_repo
         self.email_service = email_service
 
-    def handle(self, command: ChangeUserRoleCommand) -> User:
+    def handle(self, command: ChangeUserRoleCommand) -> None:
         user = self.user_repo.find_by_id_and_company(command.user_id, command.company_id)
         if not user:
             raise UserNotFoundError("User not found")
@@ -78,5 +79,3 @@ class ChangeUserRoleCommandHandler:
                         )
             except Exception:
                 logger.exception("Failed to send admin promotion notification emails")
-
-        return user

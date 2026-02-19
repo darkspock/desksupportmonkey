@@ -1,10 +1,12 @@
 import logging
 from typing import Optional
 
+import ulid
+
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, status
-from sqlalchemy.orm import Session
 
 from adapters.http.api.auth.dependencies import require_role
+from adapters.http.api.assets.dependencies import get_asset_repo, get_user_repo
 from adapters.http.api.assets.schemas import (
     AssignableUserResponse,
     AssetEventResponse,
@@ -17,7 +19,6 @@ from adapters.http.api.assets.schemas import (
     UpdateAssetRequest,
 )
 from adapters.http.schemas.responses import PaginationMeta
-from core.database import get_db
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
 from src.asset_bc.asset.application.commands.create_asset import (
@@ -62,8 +63,8 @@ from src.asset_bc.asset.application.commands.unassign_asset import (
     UnassignAssetCommandHandler,
 )
 from src.asset_bc.asset.application.commands.import_assets import (
-    ImportAssetsCommand,
-    ImportAssetsCommandHandler,
+    ImportAssetsRequest,
+    ImportAssetsService,
     InvalidCSVError,
 )
 from src.asset_bc.asset.domain.entities import Asset, AssetEvent, InvalidAssignmentError
@@ -108,15 +109,56 @@ def _event_to_response(event: AssetEvent, performed_by_email: str | None = None)
     )
 
 
+def _fetch_asset_response(
+    asset_repo: AssetRepository,
+    user_repo: UserRepository,
+    asset_id: str,
+    company_id: str,
+) -> dict:
+    """Fetch an asset by ID and resolve assigned_to_email, returning a JSON-ready dict."""
+    query_handler = GetAssetQueryHandler(asset_repo=asset_repo)
+    asset = query_handler.handle(GetAssetQuery(asset_id=asset_id, company_id=company_id))
+    assigned_to_email = None
+    if asset.assigned_to:
+        assigned_user = user_repo.find_by_id(asset.assigned_to)
+        assigned_to_email = assigned_user.email if assigned_user else None
+    return {"data": _to_response(asset, assigned_to_email=assigned_to_email).model_dump(mode="json")}
+
+
+def _resolve_assigned_emails(
+    user_repo: UserRepository,
+    assets: list[Asset],
+) -> dict[str, str | None]:
+    """Build a map of user_id -> email for all assigned users in a list of assets."""
+    assigned_ids = [a.assigned_to for a in assets if a.assigned_to]
+    user_map = user_repo.find_by_ids(assigned_ids)
+    return {
+        uid: user_map[uid].email if uid in user_map else None
+        for uid in assigned_ids
+    }
+
+
+def _parse_csv_upload(content: bytes) -> str:
+    """Decode uploaded file bytes to UTF-8 CSV string, raising HTTP errors on failure."""
+    try:
+        return content.decode("utf-8")
+    except UnicodeDecodeError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="File must be UTF-8 encoded",
+        )
+
+
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_asset(
     body: CreateAssetRequest,
     current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
-    db: Session = Depends(get_db),
+    asset_repo: AssetRepository = Depends(get_asset_repo),
 ):
-    handler = CreateAssetCommandHandler(asset_repo=AssetRepository(db))
+    asset_id = str(ulid.new())
+    handler = CreateAssetCommandHandler(asset_repo=asset_repo)
     try:
-        asset = handler.handle(
+        handler.handle(
             CreateAssetCommand(
                 company_id=current_user.company_id,
                 type=body.type,
@@ -127,15 +169,16 @@ def create_asset(
                 warranty_expiration=body.warranty_expiration,
                 notes=body.notes,
                 performed_by=current_user.id,
+                id=asset_id,
             )
         )
     except SerialNumberExistsError:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Asset with this serial number already exists",
-        )
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Asset with this serial number already exists")
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+    asset = GetAssetQueryHandler(asset_repo=asset_repo).handle(
+        GetAssetQuery(asset_id=asset_id, company_id=current_user.company_id)
+    )
     return {"data": _to_response(asset).model_dump(mode="json")}
 
 
@@ -151,32 +194,22 @@ def list_assets(
     sort_by: str = Query("created_at"),
     sort_order: str = Query("desc"),
     current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
-    db: Session = Depends(get_db),
+    asset_repo: AssetRepository = Depends(get_asset_repo),
+    user_repo: UserRepository = Depends(get_user_repo),
 ):
-    handler = ListAssetsQueryHandler(asset_repo=AssetRepository(db))
+    handler = ListAssetsQueryHandler(asset_repo=asset_repo)
     assets, total = handler.handle(
         ListAssetsQuery(
             company_id=current_user.company_id,
-            page=page,
-            page_size=page_size,
-            search=search,
-            type=type,
-            status=status,
-            department_id=department_id,
-            assigned_to=assigned_to,
-            sort_by=sort_by,
-            sort_order=sort_order,
+            page=page, page_size=page_size, search=search,
+            type=type, status=status, department_id=department_id,
+            assigned_to=assigned_to, sort_by=sort_by, sort_order=sort_order,
         )
     )
-    user_repo = UserRepository(db)
-    assigned_ids = [a.assigned_to for a in assets if a.assigned_to]
-    user_map = user_repo.find_by_ids(assigned_ids)
+    email_map = _resolve_assigned_emails(user_repo, assets)
     return {
         "data": [
-            _to_response(
-                a,
-                assigned_to_email=user_map[a.assigned_to].email if a.assigned_to and a.assigned_to in user_map else None,
-            ).model_dump(mode="json")
+            _to_response(a, assigned_to_email=email_map.get(a.assigned_to)).model_dump(mode="json")
             for a in assets
         ],
         "meta": PaginationMeta(page=page, page_size=page_size, total=total).model_dump(),
@@ -187,43 +220,25 @@ def list_assets(
 async def import_assets(
     file: UploadFile,
     current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
-    db: Session = Depends(get_db),
+    asset_repo: AssetRepository = Depends(get_asset_repo),
 ):
     if file.size and file.size > 1_048_576:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="File size exceeds 1MB limit",
-        )
-    content = await file.read()
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="File size exceeds 1MB limit")
+    csv_content = _parse_csv_upload(await file.read())
     try:
-        csv_content = content.decode("utf-8")
-    except UnicodeDecodeError:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="File must be UTF-8 encoded",
-        )
-    handler = ImportAssetsCommandHandler(asset_repo=AssetRepository(db))
-    try:
-        result = handler.handle(
-            ImportAssetsCommand(
+        result = ImportAssetsService(asset_repo=asset_repo).handle(
+            ImportAssetsRequest(
                 company_id=current_user.company_id,
                 performed_by=current_user.id,
                 csv_content=csv_content,
             )
         )
     except InvalidCSVError as e:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e),
-        )
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     return {
         "data": ImportResponse(
-            total=result.total,
-            successful=result.successful,
-            failed=[
-                ImportRowErrorResponse(row=e.row, error=e.error)
-                for e in result.failed
-            ],
+            total=result.total, successful=result.successful,
+            failed=[ImportRowErrorResponse(row=e.row, error=e.error) for e in result.failed],
         ).model_dump()
     }
 
@@ -231,9 +246,9 @@ async def import_assets(
 @router.get("/assignable-users")
 def list_assignable_users(
     current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
-    db: Session = Depends(get_db),
+    user_repo: UserRepository = Depends(get_user_repo),
 ):
-    users, _ = UserRepository(db).find_all_by_company(
+    users, _ = user_repo.find_all_by_company(
         company_id=current_user.company_id,
         page=1,
         page_size=500,
@@ -251,9 +266,10 @@ def list_assignable_users(
 def get_asset(
     asset_id: str,
     current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
-    db: Session = Depends(get_db),
+    asset_repo: AssetRepository = Depends(get_asset_repo),
+    user_repo: UserRepository = Depends(get_user_repo),
 ):
-    handler = GetAssetQueryHandler(asset_repo=AssetRepository(db))
+    handler = GetAssetQueryHandler(asset_repo=asset_repo)
     try:
         asset = handler.handle(
             GetAssetQuery(asset_id=asset_id, company_id=current_user.company_id)
@@ -262,7 +278,7 @@ def get_asset(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
     assigned_to_email = None
     if asset.assigned_to:
-        assigned_user = UserRepository(db).find_by_id(asset.assigned_to)
+        assigned_user = user_repo.find_by_id(asset.assigned_to)
         assigned_to_email = assigned_user.email if assigned_user else None
     return {"data": _to_response(asset, assigned_to_email=assigned_to_email).model_dump(mode="json")}
 
@@ -272,11 +288,12 @@ def update_asset(
     asset_id: str,
     body: UpdateAssetRequest,
     current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
-    db: Session = Depends(get_db),
+    asset_repo: AssetRepository = Depends(get_asset_repo),
+    user_repo: UserRepository = Depends(get_user_repo),
 ):
-    handler = UpdateAssetCommandHandler(asset_repo=AssetRepository(db))
+    handler = UpdateAssetCommandHandler(asset_repo=asset_repo)
     try:
-        asset = handler.handle(
+        handler.handle(
             UpdateAssetCommand(
                 asset_id=asset_id,
                 company_id=current_user.company_id,
@@ -292,11 +309,7 @@ def update_asset(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
-    assigned_to_email = None
-    if asset.assigned_to:
-        assigned_user = UserRepository(db).find_by_id(asset.assigned_to)
-        assigned_to_email = assigned_user.email if assigned_user else None
-    return {"data": _to_response(asset, assigned_to_email=assigned_to_email).model_dump(mode="json")}
+    return _fetch_asset_response(asset_repo, user_repo, asset_id, current_user.company_id)
 
 
 @router.patch("/{asset_id}/status")
@@ -304,11 +317,12 @@ def change_asset_status(
     asset_id: str,
     body: ChangeStatusRequest,
     current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
-    db: Session = Depends(get_db),
+    asset_repo: AssetRepository = Depends(get_asset_repo),
+    user_repo: UserRepository = Depends(get_user_repo),
 ):
-    handler = ChangeAssetStatusCommandHandler(asset_repo=AssetRepository(db))
+    handler = ChangeAssetStatusCommandHandler(asset_repo=asset_repo)
     try:
-        asset = handler.handle(
+        handler.handle(
             ChangeAssetStatusCommand(
                 asset_id=asset_id,
                 company_id=current_user.company_id,
@@ -322,27 +336,24 @@ def change_asset_status(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
-    assigned_to_email = None
-    if asset.assigned_to:
-        assigned_user = UserRepository(db).find_by_id(asset.assigned_to)
-        assigned_to_email = assigned_user.email if assigned_user else None
-    return {"data": _to_response(asset, assigned_to_email=assigned_to_email).model_dump(mode="json")}
+    return _fetch_asset_response(asset_repo, user_repo, asset_id, current_user.company_id)
 
 
 @router.get("/{asset_id}/history")
 def get_asset_history(
     asset_id: str,
     current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
-    db: Session = Depends(get_db),
+    asset_repo: AssetRepository = Depends(get_asset_repo),
+    user_repo: UserRepository = Depends(get_user_repo),
 ):
-    handler = GetAssetHistoryQueryHandler(asset_repo=AssetRepository(db))
+    handler = GetAssetHistoryQueryHandler(asset_repo=asset_repo)
     try:
         events = handler.handle(
             GetAssetHistoryQuery(asset_id=asset_id, company_id=current_user.company_id)
         )
     except HistoryAssetNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
-    user_map = UserRepository(db).find_by_ids([e.performed_by for e in events])
+    user_map = user_repo.find_by_ids([e.performed_by for e in events])
     return {
         "data": [
             _event_to_response(
@@ -359,14 +370,12 @@ def assign_asset(
     asset_id: str,
     body: AssignAssetRequest,
     current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
-    db: Session = Depends(get_db),
+    asset_repo: AssetRepository = Depends(get_asset_repo),
+    user_repo: UserRepository = Depends(get_user_repo),
 ):
-    handler = AssignAssetCommandHandler(
-        asset_repo=AssetRepository(db),
-        user_repo=UserRepository(db),
-    )
+    handler = AssignAssetCommandHandler(asset_repo=asset_repo, user_repo=user_repo)
     try:
-        asset = handler.handle(
+        handler.handle(
             AssignAssetCommand(
                 asset_id=asset_id,
                 company_id=current_user.company_id,
@@ -382,22 +391,18 @@ def assign_asset(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User is inactive")
     except InvalidAssignmentError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
-    assigned_to_email = None
-    if asset.assigned_to:
-        assigned_user = UserRepository(db).find_by_id(asset.assigned_to)
-        assigned_to_email = assigned_user.email if assigned_user else None
-    return {"data": _to_response(asset, assigned_to_email=assigned_to_email).model_dump(mode="json")}
+    return _fetch_asset_response(asset_repo, user_repo, asset_id, current_user.company_id)
 
 
 @router.patch("/{asset_id}/unassign")
 def unassign_asset(
     asset_id: str,
     current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
-    db: Session = Depends(get_db),
+    asset_repo: AssetRepository = Depends(get_asset_repo),
 ):
-    handler = UnassignAssetCommandHandler(asset_repo=AssetRepository(db))
+    handler = UnassignAssetCommandHandler(asset_repo=asset_repo)
     try:
-        asset = handler.handle(
+        handler.handle(
             UnassignAssetCommand(
                 asset_id=asset_id,
                 company_id=current_user.company_id,
@@ -408,4 +413,6 @@ def unassign_asset(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
     except InvalidAssignmentError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    query_handler = GetAssetQueryHandler(asset_repo=asset_repo)
+    asset = query_handler.handle(GetAssetQuery(asset_id=asset_id, company_id=current_user.company_id))
     return {"data": _to_response(asset, assigned_to_email=None).model_dump(mode="json")}

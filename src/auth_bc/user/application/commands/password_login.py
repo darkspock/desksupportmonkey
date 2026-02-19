@@ -19,12 +19,13 @@ class AccountInactiveError(Exception):
 
 
 @dataclass
-class PasswordLoginCommand:
+class PasswordLoginRequest:
     email: str
     password: str
 
 
-class PasswordLoginCommandHandler:
+# Application service: returns str (JWT), not a CQRS command handler
+class PasswordLoginService:
     def __init__(
         self,
         user_repo: UserRepositoryInterface,
@@ -37,7 +38,7 @@ class PasswordLoginCommandHandler:
         self.jwt_service = jwt_service
         self.password_service = password_service
 
-    def handle(self, command: PasswordLoginCommand) -> str:
+    def handle(self, command: PasswordLoginRequest) -> str:
         user = self.user_repo.find_by_email(command.email)
         if user is None:
             raise InvalidCredentialsError("Invalid credentials")

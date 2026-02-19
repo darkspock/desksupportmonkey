@@ -25,7 +25,7 @@ class TestCreateNotificationCommand:
         repo.save.side_effect = lambda n: n
         handler = CreateNotificationCommandHandler(notification_repo=repo)
 
-        result = handler.handle(
+        handler.handle(
             CreateNotificationCommand(
                 user_id="user1",
                 company_id="comp1",
@@ -36,9 +36,6 @@ class TestCreateNotificationCommand:
             )
         )
 
-        assert result.user_id == "user1"
-        assert result.event_type == EventType.REQUEST_CREATED
-        assert result.is_read is False
         repo.save.assert_called_once()
 
 
@@ -67,9 +64,8 @@ class TestMarkAllReadCommand:
         repo.mark_all_read.return_value = 5
         handler = MarkAllReadCommandHandler(notification_repo=repo)
 
-        count = handler.handle(MarkAllReadCommand(user_id="user1"))
+        handler.handle(MarkAllReadCommand(user_id="user1"))
 
-        assert count == 5
         repo.mark_all_read.assert_called_once_with("user1")
 
     def test_zero_unread(self):
@@ -77,6 +73,6 @@ class TestMarkAllReadCommand:
         repo.mark_all_read.return_value = 0
         handler = MarkAllReadCommandHandler(notification_repo=repo)
 
-        count = handler.handle(MarkAllReadCommand(user_id="user1"))
+        handler.handle(MarkAllReadCommand(user_id="user1"))
 
-        assert count == 0
+        repo.mark_all_read.assert_called_once_with("user1")

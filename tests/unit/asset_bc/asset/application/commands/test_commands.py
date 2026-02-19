@@ -41,7 +41,7 @@ class TestCreateAssetCommand:
         repo.save.side_effect = lambda a: a
         handler = CreateAssetCommandHandler(asset_repo=repo)
 
-        asset = handler.handle(
+        handler.handle(
             CreateAssetCommand(
                 company_id="comp1",
                 type="laptop",
@@ -52,9 +52,6 @@ class TestCreateAssetCommand:
             )
         )
 
-        assert asset.brand == "Dell"
-        assert asset.type == AssetType.LAPTOP
-        assert asset.status == AssetStatus.IN_STOCK
         repo.save.assert_called_once()
         repo.save_event.assert_called_once()
 
@@ -81,14 +78,13 @@ class TestUpdateAssetCommand:
         repo.save.side_effect = lambda a: a
         handler = UpdateAssetCommandHandler(asset_repo=repo)
 
-        result = handler.handle(
+        handler.handle(
             UpdateAssetCommand(
                 asset_id=asset.id, company_id="comp1",
                 performed_by="user1", brand="HP",
             )
         )
 
-        assert result.brand == "HP"
         repo.save.assert_called_once()
         repo.save_event.assert_called_once()
 
@@ -150,14 +146,14 @@ class TestChangeAssetStatusCommand:
         repo.save.side_effect = lambda a: a
         handler = ChangeAssetStatusCommandHandler(asset_repo=repo)
 
-        result = handler.handle(
+        handler.handle(
             ChangeAssetStatusCommand(
                 asset_id=asset.id, company_id="comp1",
                 new_status="in_repair", performed_by="user1",
             )
         )
 
-        assert result.status == AssetStatus.IN_REPAIR
+        repo.save.assert_called_once()
         repo.save_event.assert_called_once()
 
     def test_not_found_raises(self):
@@ -197,15 +193,14 @@ class TestChangeAssetStatusCommand:
         repo.save.side_effect = lambda a: a
         handler = ChangeAssetStatusCommandHandler(asset_repo=repo)
 
-        result = handler.handle(
+        handler.handle(
             ChangeAssetStatusCommand(
                 asset_id=asset.id, company_id="comp1",
                 new_status="decommissioned", performed_by="user1",
             )
         )
 
-        assert result.assigned_to is None
-        assert result.status == AssetStatus.DECOMMISSIONED
+        repo.save.assert_called_once()
         assert repo.save_event.call_count == 2
         event_types = [call[0][0].event_type for call in repo.save_event.call_args_list]
         assert "status_changed" in event_types

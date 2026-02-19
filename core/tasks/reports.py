@@ -3,7 +3,6 @@ import os
 from datetime import datetime, timezone
 
 from jinja2 import Environment, FileSystemLoader
-from weasyprint import HTML
 
 from core.celery import celery_app
 from core.config import settings
@@ -16,9 +15,30 @@ TEMPLATE_MAP = {
     "asset_inventory": "reports/asset_inventory.html",
     "request_summary": "reports/request_summary.html",
     "technician_performance": "reports/technician_performance.html",
+    "department_spending": "reports/department_spending.html",
 }
 
 _jinja_env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
+HTML = None
+
+
+class ReportDependencyError(Exception):
+    """Raised when report system dependencies (WeasyPrint libs) are unavailable."""
+
+
+def _get_html_class():
+    global HTML
+    if HTML is not None:
+        return HTML
+    try:
+        from weasyprint import HTML as WeasyHTML
+    except (ImportError, OSError) as exc:
+        raise ReportDependencyError(
+            "Report generation unavailable: missing WeasyPrint system libraries "
+            "(e.g. libgobject/pango/cairo)."
+        ) from exc
+    HTML = WeasyHTML
+    return HTML
 
 
 @celery_app.task(
@@ -32,6 +52,7 @@ def generate_report(self, report_id: str):
     from core.storage import S3StorageService
     from core.tasks.report_data import (
         collect_asset_inventory,
+        collect_department_spending,
         collect_request_summary,
         collect_technician_performance,
     )
@@ -42,9 +63,11 @@ def generate_report(self, report_id: str):
         "asset_inventory": collect_asset_inventory,
         "request_summary": collect_request_summary,
         "technician_performance": collect_technician_performance,
+        "department_spending": collect_department_spending,
     }
 
     session = SessionLocal()
+    repo = None
     try:
         repo = ReportRepository(session)
         report = repo.find_by_id_any_company(report_id)
@@ -70,7 +93,8 @@ def generate_report(self, report_id: str):
         )
 
         # 4. Convert to PDF
-        pdf_bytes = HTML(string=html_content).write_pdf()
+        html_cls = _get_html_class()
+        pdf_bytes = html_cls(string=html_content).write_pdf()
 
         # 5. Upload to S3
         storage_key = f"reports/{report.company_id}/{report.id}.pdf"
@@ -99,15 +123,108 @@ def generate_report(self, report_id: str):
         session.commit()
         logger.info("Report %s completed: %s", report_id, storage_key)
 
+    except ReportDependencyError as exc:
+        session.rollback()
+        if repo is not None:
+            try:
+                repo.update_status(report_id, ReportStatus.FAILED, error_message=str(exc))
+                session.commit()
+            except Exception:
+                session.rollback()
+                logger.exception("Failed to update report status for %s", report_id)
+        logger.error("Report generation dependency missing for %s: %s", report_id, exc)
+        return
     except Exception as exc:
         session.rollback()
-        try:
-            repo.update_status(report_id, ReportStatus.FAILED, error_message=str(exc))
-            session.commit()
-        except Exception:
-            session.rollback()
-            logger.exception("Failed to update report status for %s", report_id)
+        if repo is not None:
+            try:
+                repo.update_status(report_id, ReportStatus.FAILED, error_message=str(exc))
+                session.commit()
+            except Exception:
+                session.rollback()
+                logger.exception("Failed to update report status for %s", report_id)
         logger.exception("Report generation failed for %s", report_id)
+        raise self.retry(exc=exc)
+    finally:
+        session.close()
+
+
+def _format_cents(cents: int, currency: str = "USD") -> str:
+    return f"{currency} {cents / 100:,.2f}"
+
+
+@celery_app.task(
+    name="core.tasks.reports.generate_po_pdf",
+    bind=True,
+    max_retries=2,
+)
+def generate_po_pdf(self, po_id: str, company_id: str) -> str | None:
+    """Generate a PDF for a purchase order and upload to MinIO."""
+    from core.database import SessionLocal
+    from core.storage import S3StorageService
+    from src.company_bc.company.infrastructure.repository import CompanyRepository
+    from src.procurement_bc.purchase_order.infrastructure.repository import (
+        PurchaseOrderRepository,
+    )
+
+    session = SessionLocal()
+    try:
+        po_repo = PurchaseOrderRepository(session)
+        company_repo = CompanyRepository(session)
+
+        po = po_repo.find_by_id(po_id, company_id)
+        if not po:
+            logger.error("PO not found for PDF generation: %s", po_id)
+            return None
+
+        company = company_repo.find_by_id(company_id)
+        company_name = company.name if company else "Unknown"
+        currency = po.currency
+
+        template_data = {
+            "title": f"Purchase Order — {po.po_number}",
+            "company_name": company_name,
+            "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+            "po_number": po.po_number,
+            "status": po.status.value.replace("_", " ").title(),
+            "vendor_name": po.vendor_name,
+            "total_amount": _format_cents(po.total_amount_cents, currency),
+            "currency": currency,
+            "created_at": po.created_at.strftime("%Y-%m-%d") if po.created_at else "—",
+            "approved_at": po.approved_at.strftime("%Y-%m-%d") if po.approved_at else None,
+            "ordered_at": po.ordered_at.strftime("%Y-%m-%d") if po.ordered_at else None,
+            "notes": po.notes,
+            "items": [
+                {
+                    "description": item.description,
+                    "asset_type": (item.asset_type or "").replace("_", " ").title() if item.asset_type else None,
+                    "quantity": item.quantity,
+                    "unit_cost": _format_cents(item.unit_cost_cents, currency),
+                    "total_cost": _format_cents(item.total_cost_cents, currency),
+                }
+                for item in po.items
+            ],
+        }
+
+        template = _jinja_env.get_template("reports/purchase_order.html")
+        html_content = template.render(**template_data)
+
+        html_cls = _get_html_class()
+        pdf_bytes = html_cls(string=html_content).write_pdf()
+
+        storage_key = f"po-pdfs/{company_id}/{po_id}.pdf"
+        storage = S3StorageService()
+        storage.upload(storage_key, pdf_bytes)
+
+        session.commit()
+        logger.info("PO PDF generated: %s → %s", po.po_number, storage_key)
+        return storage_key
+
+    except ReportDependencyError as exc:
+        logger.error("PO PDF dependency missing for %s: %s", po_id, exc)
+        return None
+    except Exception as exc:
+        logger.exception("PO PDF generation failed for %s", po_id)
         raise self.retry(exc=exc)
     finally:
         session.close()

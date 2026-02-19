@@ -4,7 +4,12 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from adapters.http.api.auth.dependencies import get_current_user
+from adapters.http.api.auth.dependencies import (
+    get_company_repo,
+    get_current_user,
+    get_magic_link_repo,
+    get_user_repo,
+)
 from adapters.http.api.auth.schemas import (
     MagicLinkRequest,
     PasswordLoginRequest,
@@ -30,15 +35,15 @@ from src.auth_bc.magic_link.application.commands.verify_magic_link import (
     ExpiredTokenError,
     InvalidTokenError,
     UsedTokenError,
-    VerifyMagicLinkCommand,
-    VerifyMagicLinkCommandHandler,
+    VerifyMagicLinkRequest,
+    VerifyMagicLinkService,
 )
 from src.auth_bc.magic_link.infrastructure.repository import MagicLinkRepository
 from src.auth_bc.user.application.commands.password_login import (
     AccountInactiveError,
     InvalidCredentialsError,
-    PasswordLoginCommand,
-    PasswordLoginCommandHandler,
+    PasswordLoginRequest as PasswordLoginInput,
+    PasswordLoginService,
 )
 from src.auth_bc.user.application.commands.set_password import (
     NotAdminError,
@@ -48,7 +53,6 @@ from src.auth_bc.user.application.commands.set_password import (
     WeakPasswordError,
 )
 from src.auth_bc.user.domain.entities import User
-from src.auth_bc.user.domain.enums import UserRole
 from src.auth_bc.user.infrastructure.repository import UserRepository
 from src.company_bc.company.infrastructure.repository import CompanyRepository
 
@@ -74,13 +78,15 @@ def _user_response(user: User, company_name: Optional[str] = None) -> dict:
 def request_magic_link(
     body: MagicLinkRequest,
     db: Session = Depends(get_db),
+    magic_link_repo: MagicLinkRepository = Depends(get_magic_link_repo),
+    user_repo: UserRepository = Depends(get_user_repo),
 ):
     """Request a magic link for passwordless authentication."""
     handler = CreateMagicLinkCommandHandler(
-        magic_link_repo=MagicLinkRepository(db),
+        magic_link_repo=magic_link_repo,
         company_lookup=CompanyLookupService(db),
         email_service=get_email_service(),
-        user_repo=UserRepository(db),
+        user_repo=user_repo,
     )
     try:
         handler.handle(CreateMagicLinkCommand(email=body.email))
@@ -106,67 +112,49 @@ def request_magic_link(
 def verify_magic_link(
     body: VerifyRequest,
     db: Session = Depends(get_db),
+    magic_link_repo: MagicLinkRepository = Depends(get_magic_link_repo),
+    user_repo: UserRepository = Depends(get_user_repo),
 ):
     """Verify magic link token and return JWT."""
-    user_repo = UserRepository(db)
-    handler = VerifyMagicLinkCommandHandler(
-        magic_link_repo=MagicLinkRepository(db),
+    handler = VerifyMagicLinkService(
+        magic_link_repo=magic_link_repo,
         user_repo=user_repo,
         company_lookup=CompanyLookupService(db),
         jwt_service=JWTService(),
     )
     try:
-        access_token = handler.handle(VerifyMagicLinkCommand(token=body.token))
+        access_token = handler.handle(VerifyMagicLinkRequest(token=body.token))
     except InvalidTokenError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid link",
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid link")
     except ExpiredTokenError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Link expired",
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Link expired")
     except UsedTokenError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Link already used",
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Link already used")
     except VerifyCompanyRestrictedError:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Company access is currently restricted",
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Company access is currently restricted")
 
-    # Decode token to get user_id, then fetch user for password_set flag
-    jwt_service = JWTService()
-    payload = jwt_service.decode_token(access_token)
+    payload = JWTService().decode_token(access_token)
     user = user_repo.find_by_id(payload["sub"])
     password_set = user.has_password if user else False
-
-    return {
-        "data": {
-            **TokenResponse(access_token=access_token).model_dump(),
-            "password_set": password_set,
-        }
-    }
+    return {"data": {**TokenResponse(access_token=access_token).model_dump(), "password_set": password_set}}
 
 
 @router.post("/login", response_model=None)
 def password_login(
     body: PasswordLoginRequest,
     db: Session = Depends(get_db),
+    user_repo: UserRepository = Depends(get_user_repo),
 ):
     """Login with email and password (admin accounts only)."""
-    handler = PasswordLoginCommandHandler(
-        user_repo=UserRepository(db),
+    handler = PasswordLoginService(
+        user_repo=user_repo,
         company_lookup=CompanyLookupService(db),
         jwt_service=JWTService(),
         password_service=PasswordService(),
     )
     try:
         access_token = handler.handle(
-            PasswordLoginCommand(email=body.email, password=body.password)
+            PasswordLoginInput(email=body.email, password=body.password)
         )
     except InvalidCredentialsError:
         raise HTTPException(
@@ -185,11 +173,11 @@ def password_login(
 def set_password(
     body: SetPasswordRequest,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    user_repo: UserRepository = Depends(get_user_repo),
 ):
     """Set password for the current admin user."""
     handler = SetPasswordCommandHandler(
-        user_repo=UserRepository(db),
+        user_repo=user_repo,
         password_service=PasswordService(),
     )
     try:
@@ -215,12 +203,12 @@ def set_password(
 @router.get("/me")
 def get_me(
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    company_repo: CompanyRepository = Depends(get_company_repo),
 ):
     """Get current authenticated user profile."""
     company_name: Optional[str] = None
     if current_user.company_id:
-        company = CompanyRepository(db).find_by_id(current_user.company_id)
+        company = company_repo.find_by_id(current_user.company_id)
         company_name = company.name if company else None
 
     return {"data": _user_response(current_user, company_name=company_name)}

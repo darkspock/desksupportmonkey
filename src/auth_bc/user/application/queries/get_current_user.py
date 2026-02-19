@@ -4,16 +4,17 @@ from typing import Optional
 
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.repository import UserRepositoryInterface
+from src.framework.application.query_bus import Query, QueryHandler
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class GetCurrentUserQuery:
+class GetCurrentUserQuery(Query):
     user_id: str
 
 
-class GetCurrentUserQueryHandler:
+class GetCurrentUserQueryHandler(QueryHandler[GetCurrentUserQuery, Optional[User]]):
     def __init__(self, user_repo: UserRepositoryInterface):
         self.user_repo = user_repo
 

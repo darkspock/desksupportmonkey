@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from src.framework.application.query_bus import Query, QueryHandler
 from src.report_bc.report.domain.entities import Report
 from src.report_bc.report.domain.repository import ReportRepositoryInterface
 
@@ -9,12 +10,12 @@ class ReportNotFoundError(Exception):
 
 
 @dataclass
-class GetReportQuery:
+class GetReportQuery(Query):
     report_id: str
     company_id: str
 
 
-class GetReportQueryHandler:
+class GetReportQueryHandler(QueryHandler[GetReportQuery, Report]):
     def __init__(self, report_repo: ReportRepositoryInterface):
         self.report_repo = report_repo
 

@@ -15,13 +15,13 @@
 | E8 | Seed Data & Demo | Demo data, demo script, Docker Compose polish | Low | Done |
 | E9 | UX Improvements | Invite users, departments edit, frontend quality uplift, and reliability hardening | Medium | Done |
 | E10 | Asset QR & Barcodes | QR codes and barcodes on asset detail page with print functionality for physical labels | Medium | Done |
-| E11 | Department Equipment Profiles | Department managers, role-based equipment profiles (e.g., Tech → Linux 32GB, Design → MacBook Pro, Heads → MacBook Air), and automatic asset assignment by department and role | High | Pending |
-| E12 | Request Typification & Approval | Structured request categories (repair, new equipment, configuration, etc.), sub-types for new equipment (computer, mobile, etc.), priority scoring based on department and role, and approval workflow for new equipment requests | High | Pending |
-| E13 | AI Request Classification | AI-powered automatic classification of service requests — infers category, sub-type, and priority from user description, overriding user-submitted values when the AI assessment is more accurate | Medium | Pending |
-| E14 | Procurement & Budget | Purchase order management, goods receipt tracking, department budget allocation, and expense control per department with spending reports | High | Pending |
-| E15 | Appointment Scheduling | Schedule and manage support appointments between technicians and employees — calendar view, time slot availability, booking, reminders, and rescheduling | Medium | Pending |
-| E16 | Shipping & Logistics | Ship equipment to employee home, other offices, or vendor for repair — shipment tracking, delivery addresses, carrier integration, return management, and shipment status notifications | Medium | Pending |
-| E17 | Scheduled Maintenance | Recurring and one-off maintenance plans for assets — maintenance templates, calendar integration, technician assignment, completion tracking, and overdue alerts | Medium | Pending |
+| E11 | Department Equipment Profiles | Department managers, role-based equipment profiles (e.g., Tech → Linux 32GB, Design → MacBook Pro, Heads → MacBook Air), and automatic asset assignment by department and role | High | Done |
+| E12 | Request Typification & Approval | Structured request categories (repair, new equipment, configuration, etc.), sub-types for new equipment (computer, mobile, etc.), priority scoring based on department and role, and approval workflow for new equipment requests | High | Done |
+| E13 | AI Request Classification | AI-powered automatic classification of service requests — infers category, sub-type, and priority from user description, overriding user-submitted values when the AI assessment is more accurate | Medium | Done |
+| E14 | Procurement & Budget | Purchase order management, goods receipt tracking, department budget allocation, and expense control per department with spending reports | High | Done |
+| E15 | Appointment Scheduling | Schedule and manage support appointments between technicians and employees — calendar view, time slot availability, booking, reminders, and rescheduling | Medium | Done |
+| E16 | Shipping & Logistics | Ship equipment to employee home, other offices, or vendor for repair — shipment tracking, delivery addresses, carrier integration, return management, and shipment status notifications | Medium | Done |
+| E17 | Scheduled Maintenance | Recurring and one-off maintenance plans for assets — maintenance templates, calendar integration, technician assignment, completion tracking, and overdue alerts | Medium | Done |
 | E18 | Knowledge Base & Self-Service | Built-in wiki with TipTap WYSIWYG editor — articles, FAQs, categorized solutions, version history, native links to assets/tickets/users, full-text search (PostgreSQL tsvector), AI-suggested articles on ticket creation for deflection, and self-service portal for employees | High | Pending |
 | E19 | SLA Management | Configurable SLA policies per priority and category — response/resolution time targets, automatic escalation rules, breach notifications to managers, and SLA compliance reports | High | Pending |
 | E20 | Asset Lifecycle & Warranties | Asset depreciation tracking, end-of-life planning, renewal/refresh cycles, lease vs purchase tracking, warranty management with vendor contacts, and warranty claim workflow | Medium | Pending |
@@ -29,16 +29,22 @@
 | E22 | Employee Onboarding/Offboarding | Automated workflows for new hires (equipment pack based on department + role from E11) and departures (return checklist, account deactivation, asset recovery tracking) | High | Pending |
 | E23 | Multi-channel Intake | Email-to-ticket conversion, Slack/Teams integration for creating and tracking requests, and chatbot for guided ticket creation without entering the app | Medium | Pending |
 | E24 | SSO & Directory Sync | SAML/OIDC single sign-on for corporate login, LDAP/Active Directory synchronization of users, departments, and roles with automatic provisioning | High | Pending |
-| E25 | Vendor Management | Vendor directory with contacts and contracts, vendor SLA tracking, incident history per vendor, warranty claim routing, and vendor performance reports | Medium | Pending |
+| E25 | Vendor & Supply Chain Risk | Vendor directory with contacts and contracts, vendor SLA tracking, incident history per vendor, warranty claim routing, vendor performance reports, third-party risk assessment questionnaires (NIS2/DORA Article 28), supply chain security scoring, and critical ICT provider dependency mapping | Medium | Pending |
 | E26 | Observability with SigNoz | OpenTelemetry instrumentation for FastAPI, SQLAlchemy, Celery, and Redis — self-hosted SigNoz for distributed tracing, metrics, logs, error tracking, and performance dashboards | Medium | Pending |
 | E27 | Surveys & Feedback | CSAT surveys after ticket resolution (star rating + comment), decision polls for purchase planning (connects with E14), onboarding feedback after equipment delivery (connects with E22), and satisfaction metrics per technician, department, and category | Medium | Pending |
 | E28 | Mobile / PWA | Progressive Web App for technicians and employees — QR scanning with camera, ticket updates from the field, push notifications, offline support, and responsive mobile-first UI | High | Pending |
-| E29 | Audit Trail & Compliance | Complete audit log of all user actions (who did what, when), GDPR data export and deletion requests, compliance reports, and data retention policies per company | High | Pending |
+| E29 | Audit Trail & Compliance Evidence | Complete audit log of all user actions (who did what, when), immutable append-only log storage, GDPR data export and deletion requests, compliance evidence tagging (link audit entries to NIS2/DORA/ISO 27001 controls), regulatory data retention policies per company, and audit-ready evidence export for external auditors | High | Pending |
 | E30 | Custom Fields | Admin-defined custom fields for assets, tickets, and companies — text, number, date, dropdown, and multi-select types with validation rules and visibility per role | High | Pending |
 | E31 | Workflow Automations | Rule engine for if-then automations — auto-assign tickets by category, auto-escalate after SLA threshold, notify manager on critical priority, auto-close resolved tickets after X days, and trigger actions on asset status changes | High | Pending |
 | E32 | Asset Discovery | Automatic network device discovery — agent-based and agentless scanning, sync discovered devices with asset inventory, detect new/removed devices, and scheduled discovery scans | Medium | Pending |
 | E33 | Change Management (ITIL) | Change request workflow — request, risk assessment, CAB approval board, scheduled implementation, rollback plan, post-implementation review, and change calendar integration | Medium | Pending |
 | E34 | Feature Voting & Roadmap | In-app feature request board — users submit and upvote ideas, admin reviews and prioritizes, public roadmap view with status (planned, in progress, shipped), and vote-based priority scoring for product decisions | Low | Pending |
+| E35 | MCP Server | Expose DSM as an MCP server so AI assistants can manage assets, requests, users, reports, and dashboard data via tool calls — multi-tenant auth, role-based tool visibility, and streaming support | High | Done |
+| E36 | Security Incident Management | Security incident lifecycle distinct from service requests — severity classification (P1-P4), mandatory fields (attack vector, affected systems, data breach scope), NIS2 24h/72h regulatory reporting timeline enforcement, auto-generated CSIRT notification reports, and incident post-mortem with root cause analysis | High | Pending |
+| E37 | Risk Register | Organizational risk management — risk entries linked to assets, departments, and vendors, likelihood-impact scoring matrix, mitigation plan tracking with owner assignment, periodic review cadence enforcement, and risk dashboard with heat map visualization | High | Pending |
+| E38 | Asset Criticality & CMDB | Asset criticality classification (Critical/High/Medium/Low), Configuration Item (CI) relationship mapping (asset-to-service, asset-to-asset dependencies), business impact analysis per asset, criticality-based SLA escalation rules, and dependency graph visualization | Medium | Pending |
+| E39 | Compliance Dashboard | Compliance posture management — control mapping to NIS2, DORA, and ISO 27001 articles, compliance status per control (compliant/partial/non-compliant), evidence collection linking controls to audit logs, incidents, and change records, compliance gap analysis reports, and audit-ready PDF export per framework | High | Pending |
+| E40 | Vulnerability Management | Track known vulnerabilities per asset — CVE tracking linked to asset brand/model/OS, severity scoring (CVSS), remediation ticket auto-creation from vulnerabilities, patch status tracking, vulnerability scan result import (CSV/API), and vulnerability-to-asset exposure dashboard | Medium | Pending |
 
 ---
 
@@ -179,6 +185,114 @@ E10: Asset QR & Barcodes (depends on E2 + E7)
 - Print button: opens clean print view with QR, barcode, brand, model, serial number
 - Auth redirect flow: unauthenticated QR scans redirect to login, then back to asset
 - i18n support for all labels (English and Spanish)
+
+### E25: Vendor & Supply Chain Risk
+- Vendor directory with contacts, contracts, and renewal dates
+- Vendor SLA tracking and performance reports
+- Incident history per vendor (linked to service requests and security incidents)
+- Warranty claim routing to appropriate vendor
+- **NIS2/DORA enhancements:**
+  - Third-party risk assessment questionnaires (based on DORA Article 28)
+  - Supply chain security scoring (risk level per vendor: Low/Medium/High/Critical)
+  - Critical ICT provider dependency mapping (which vendors support essential services)
+  - Vendor contract compliance tracking (data processing, security clauses)
+  - Concentration risk alerts (over-reliance on single vendor)
+
+### E29: Audit Trail & Compliance Evidence
+- Complete audit log of all user actions (who did what, when, from where)
+- Immutable append-only log storage (tamper-evident)
+- GDPR data export and deletion requests with automated workflows
+- **NIS2/DORA enhancements:**
+  - Evidence tagging: link audit entries to specific NIS2/DORA/ISO 27001 controls
+  - Regulatory data retention policies per company (configurable retention periods)
+  - Audit-ready evidence export: filtered PDF/CSV bundles for external auditors
+  - Access review logs: periodic access certification records
+  - Log integrity verification (hash chain for tamper detection)
+
+### E35: MCP Server
+- MCP server using the Python MCP SDK (`mcp` package) exposing DeskSupportMonkey's API as AI-callable tools
+- **Asset tools** (10): create, list, get, update, change status, assign, unassign, history, import, assignable users
+- **Request tools** (10): create, list, get, change status, change priority, assign, add comment, list comments, add note, list notes
+- **User tools** (7): list, invite, get, change role, activate, deactivate, assign department
+- **Company tools** (5): create, list, get, update, change status (super admin only)
+- **Department tools** (5): create, list, get, update, delete
+- **Report tools** (4): request, list, get, download
+- **Dashboard tools** (7): request summary, resolution time, trend, asset summary, warranty alerts, aging alerts, SLA alerts
+- **My tools** (7): my equipment, my requests, notifications, mark read, mark all read, company settings get/update
+- **Auth tools** (2): get current user, set password
+- Auth: API key or JWT per-connection, tenant context derived from authenticated user
+- Role-based tool filtering: each tool declares its minimum role, tools invisible to lower roles
+- Multi-tenant isolation: all tool calls scoped to the user's company
+- Streaming: SSE transport for long-running operations (report generation)
+
+### E36: Security Incident Management
+- Security incident lifecycle separate from service requests (new bounded context: `incident_bc`)
+- Incident severity classification: P1-Critical, P2-High, P3-Medium, P4-Low
+- Mandatory fields on creation: incident type (malware, data breach, DDoS, unauthorized access, phishing, other), attack vector, affected systems (linked to assets), estimated data breach scope
+- Incident state machine: detected → triaged → contained → eradicated → recovered → closed
+- **NIS2 regulatory reporting timeline enforcement:**
+  - 24-hour early warning (auto-generated notification to national CSIRT)
+  - 72-hour detailed incident report (structured template with impact assessment)
+  - 30-day final report (root cause analysis, remediation measures taken)
+  - Deadline countdown timers with escalation alerts to admin/management
+- Auto-generated regulatory notification reports (PDF, pre-filled with incident data)
+- Incident post-mortem: root cause analysis, lessons learned, linked corrective actions
+- Incident dashboard: active incidents, mean time to contain (MTTC), incidents by type/severity
+- Cross-reference with assets (which assets were affected) and vendors (if third-party involved)
+- Notification events: incident created, severity escalated, regulatory deadline approaching, incident closed
+
+### E37: Risk Register
+- Risk entry CRUD: title, description, risk category (operational, cyber, compliance, third-party)
+- Link risks to assets, departments, vendors, and services
+- Likelihood × Impact scoring matrix (5×5 grid): Very Low to Very High
+- Risk level auto-calculation: Low / Medium / High / Critical
+- Mitigation plans: description, owner (user assignment), target date, status (open/in-progress/mitigated/accepted)
+- Risk treatment options: mitigate, accept, transfer, avoid
+- Periodic review cadence: configurable review frequency per risk (monthly/quarterly/annually)
+- Review reminders and overdue alerts to risk owners
+- Risk dashboard: heat map visualization, risk trend over time, open vs mitigated counts
+- Risk history: audit trail of all risk score changes and review decisions
+- Export: risk register PDF/CSV for board reporting
+
+### E38: Asset Criticality & CMDB
+- Asset criticality classification field: Critical / High / Medium / Low
+- Criticality assignment rules: auto-suggest based on asset type, department, and linked services
+- Configuration Item (CI) relationship types: runs-on, depends-on, connected-to, part-of, backs-up
+- CI relationship CRUD: link assets to other assets and to services/applications
+- Business impact analysis (BIA) per asset: impact score if unavailable, recovery time objective (RTO), recovery point objective (RPO)
+- Dependency graph visualization: interactive diagram showing upstream/downstream dependencies
+- Impact propagation: when a critical asset has an incident, highlight all dependent assets/services
+- Criticality-based SLA escalation: auto-escalate incidents affecting critical assets
+- CMDB dashboard: total CIs by criticality, orphan assets (no relationships), dependency depth
+- Enhances E2 (Asset Inventory) — adds fields and relationships to existing asset model
+
+### E39: Compliance Dashboard
+- Compliance framework management: admin selects applicable frameworks (NIS2, DORA, ISO 27001)
+- Control catalog per framework: pre-loaded control lists with article/clause references
+  - NIS2: Article 21 measures (risk analysis, incident handling, business continuity, supply chain, etc.)
+  - DORA: Chapter II (ICT risk management), Chapter III (incident reporting), Chapter IV (testing), Chapter V (third-party risk)
+  - ISO 27001: Annex A controls (93 controls across 4 themes)
+- Control status tracking: compliant / partially compliant / non-compliant / not applicable
+- Evidence collection: link each control to supporting evidence (audit log entries, incident reports, change records, risk assessments, policy documents)
+- Evidence upload: attach policy PDFs, screenshots, or external documents to controls
+- Gap analysis report: list of non-compliant/partial controls with recommendations
+- Compliance score: percentage compliance per framework, trend over time
+- Compliance dashboard: framework overview cards, control status breakdown, upcoming review deadlines
+- Audit-ready export: PDF report per framework with control status, evidence references, and gap list
+- Review workflow: periodic control reviews with due dates and reviewer assignment
+
+### E40: Vulnerability Management
+- Vulnerability entry CRUD: CVE ID, title, description, CVSS score, severity (Critical/High/Medium/Low)
+- Link vulnerabilities to affected assets (many-to-many: one CVE can affect multiple assets)
+- Asset matching: auto-suggest affected assets based on brand/model/OS version
+- Vulnerability sources: manual entry, CSV import, API import (future: integration with vulnerability scanners)
+- Remediation workflow: auto-create service request or change request from vulnerability
+- Patch status tracking per asset: unpatched / patch scheduled / patched / not applicable
+- Remediation SLA: configurable timelines by severity (e.g., Critical = 48h, High = 7 days)
+- Overdue remediation alerts to asset owners and admins
+- Vulnerability dashboard: open vulnerabilities by severity, assets at risk, mean time to remediate (MTTR)
+- Exposure score per asset: aggregate of unpatched vulnerability severities
+- Export: vulnerability report PDF/CSV for compliance evidence
 
 ---
 

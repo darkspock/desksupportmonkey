@@ -51,10 +51,10 @@ export default function ChangePasswordPage() {
   return (
     <AuthShell title={t('auth.change_password.title')} subtitle={t('auth.change_password.subtitle')} showBackToLogin={false}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {error && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+        {error && <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
 
         <div>
-          <label htmlFor="change-new-password" className="mb-1 block text-sm font-medium text-slate-700">{t('auth.change_password.new_password')}</label>
+          <label htmlFor="change-new-password" className="block mb-1.5 text-muted-foreground">{t('auth.change_password.new_password')}</label>
           <input
             id="change-new-password"
             type="password"
@@ -62,12 +62,12 @@ export default function ChangePasswordPage() {
             onChange={(e) => setPassword(e.target.value)}
             placeholder={t('auth.change_password.placeholder_min_8')}
             required
-            className="h-11 w-full rounded-xl border border-slate-300 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            className="w-full"
           />
         </div>
 
         <div>
-          <label htmlFor="change-confirm-password" className="mb-1 block text-sm font-medium text-slate-700">{t('auth.change_password.confirm_password')}</label>
+          <label htmlFor="change-confirm-password" className="block mb-1.5 text-muted-foreground">{t('auth.change_password.confirm_password')}</label>
           <input
             id="change-confirm-password"
             type="password"
@@ -75,14 +75,14 @@ export default function ChangePasswordPage() {
             onChange={(e) => setConfirm(e.target.value)}
             placeholder={t('auth.change_password.placeholder_repeat')}
             required
-            className="h-11 w-full rounded-xl border border-slate-300 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            className="w-full"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="h-11 w-full rounded-xl bg-blue-600 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+          className="h-9 w-full rounded-md bg-primary text-sm font-medium text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
         >
           {loading ? t('auth.change_password.saving') : t('auth.change_password.submit')}
         </button>

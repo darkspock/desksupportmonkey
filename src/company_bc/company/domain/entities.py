@@ -22,13 +22,13 @@ class Company:
     updated_at: Optional[datetime] = None
 
     @classmethod
-    def create(cls, name: str, email_domains: list[str]) -> "Company":
+    def create(cls, name: str, email_domains: list[str], id: Optional[str] = None) -> "Company":
         if not name or not name.strip():
             raise ValueError("Company name is required")
         if not email_domains:
             raise ValueError("At least one email domain is required")
         return cls(
-            id=str(ulid.new()),
+            id=id or str(ulid.new()),
             name=name.strip(),
             status=CompanyStatus.ACTIVE,
             email_domains=[d.lower().strip() for d in email_domains],

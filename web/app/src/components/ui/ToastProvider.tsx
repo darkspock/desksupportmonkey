@@ -7,9 +7,9 @@ interface ToastItem extends Required<Pick<ToastInput, 'title' | 'variant' | 'dur
 }
 
 const variantClass: Record<ToastVariant, string> = {
-  success: 'border-emerald-200 bg-emerald-50 text-emerald-900',
-  error: 'border-red-200 bg-red-50 text-red-900',
-  info: 'border-slate-200 bg-white text-slate-900',
+  success: 'border-success/30 bg-success/10 text-foreground',
+  error: 'border-destructive/30 bg-destructive/10 text-foreground',
+  info: 'border-border bg-card text-foreground',
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -46,7 +46,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             aria-live="polite"
           >
             <p className="text-sm font-semibold">{toast.title}</p>
-            {toast.description && <p className="mt-1 text-xs opacity-90">{toast.description}</p>}
+            {toast.description && <p className="mt-1 text-xs text-muted-foreground">{toast.description}</p>}
           </div>
         ))}
       </div>

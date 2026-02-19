@@ -46,14 +46,13 @@ class TestChangeUserRoleCommand:
         repo.find_by_id_and_company.return_value = user
         handler = ChangeUserRoleCommandHandler(user_repo=repo)
 
-        result = handler.handle(
+        handler.handle(
             ChangeUserRoleCommand(
                 user_id="user1", company_id="comp1",
                 current_user_id="admin1", new_role="technician",
             )
         )
 
-        assert result.role == UserRole.TECHNICIAN
         repo.save.assert_called_once()
 
     def test_not_found_raises(self):
@@ -119,14 +118,14 @@ class TestChangeUserRoleCommand:
         repo.count_admins_by_company.return_value = 2
         handler = ChangeUserRoleCommandHandler(user_repo=repo)
 
-        result = handler.handle(
+        handler.handle(
             ChangeUserRoleCommand(
                 user_id="user1", company_id="comp1",
                 current_user_id="admin2", new_role="employee",
             )
         )
 
-        assert result.role == UserRole.EMPLOYEE
+        repo.save.assert_called_once()
 
     def test_promote_to_admin_sends_notification(self):
         user = _make_user()
@@ -155,7 +154,7 @@ class TestChangeUserRoleCommand:
         email_service = MagicMock()
         handler = ChangeUserRoleCommandHandler(user_repo=repo, email_service=email_service)
 
-        result = handler.handle(
+        handler.handle(
             ChangeUserRoleCommand(
                 user_id="user1", company_id="comp1",
                 current_user_id="admin1", new_role="admin",
@@ -163,7 +162,6 @@ class TestChangeUserRoleCommand:
         )
 
         # Role change should still succeed despite email failure
-        assert result.role == UserRole.ADMIN
         repo.save.assert_called_once()
 
 
@@ -174,11 +172,10 @@ class TestDeactivateUserCommand:
         repo.find_by_id_and_company.return_value = user
         handler = DeactivateUserCommandHandler(user_repo=repo)
 
-        result = handler.handle(
+        handler.handle(
             DeactivateUserCommand(user_id="user1", company_id="comp1", current_user_id="admin1")
         )
 
-        assert result.is_active is False
         repo.save.assert_called_once()
 
     def test_not_found_raises(self):
@@ -213,9 +210,8 @@ class TestActivateUserCommand:
         repo.find_by_id_and_company.return_value = user
         handler = ActivateUserCommandHandler(user_repo=repo)
 
-        result = handler.handle(ActivateUserCommand(user_id="user1", company_id="comp1"))
+        handler.handle(ActivateUserCommand(user_id="user1", company_id="comp1"))
 
-        assert result.is_active is True
         repo.save.assert_called_once()
 
     def test_not_found_raises(self):
@@ -237,13 +233,12 @@ class TestAssignDepartmentCommand:
         dept_repo.find_by_id.return_value = dept
         handler = AssignDepartmentCommandHandler(user_repo=user_repo, department_repo=dept_repo)
 
-        result = handler.handle(
+        handler.handle(
             AssignDepartmentCommand(
                 user_id="user1", company_id="comp1", department_id=dept.id
             )
         )
 
-        assert result.department_id == dept.id
         user_repo.save.assert_called_once()
 
     def test_unassign(self):
@@ -254,11 +249,10 @@ class TestAssignDepartmentCommand:
         dept_repo = MagicMock()
         handler = AssignDepartmentCommandHandler(user_repo=user_repo, department_repo=dept_repo)
 
-        result = handler.handle(
+        handler.handle(
             AssignDepartmentCommand(user_id="user1", company_id="comp1", department_id=None)
         )
 
-        assert result.department_id is None
         user_repo.save.assert_called_once()
 
     def test_user_not_found_raises(self):

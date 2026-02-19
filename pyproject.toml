@@ -34,8 +34,10 @@ dependencies = [
     "bcrypt>=4.0.0",
     # Email
     "httpx>=0.28.1",
+    "python-dateutil>=2.9.0",
     # Monitoring
     "sentry-sdk[fastapi]>=2.0.0",
+    "mcp>=1.26.0,<2.0.0",
 ]
 
 [project.optional-dependencies]

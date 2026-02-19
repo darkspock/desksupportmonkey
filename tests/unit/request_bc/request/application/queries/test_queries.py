@@ -57,7 +57,7 @@ class TestListRequestsQuery:
         repo.find_all.assert_called_once_with(
             company_id="comp1", page=1, page_size=20,
             search=None, status=None, type=None,
-            priority=None, assigned_to=None,
+            priority=None, assigned_to=None, subtype=None,
         )
 
     def test_passes_filter_params(self):
@@ -187,7 +187,7 @@ class TestMyRequestsQuery:
         assert total == 2
         repo.find_by_created_by.assert_called_once_with(
             user_id="user1", company_id="comp1",
-            page=1, page_size=20, status=None,
+            page=1, page_size=20, status=None, subtype=None,
         )
 
     def test_passes_status_filter(self):

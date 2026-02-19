@@ -8,9 +8,11 @@ from sqlalchemy.orm import Session
 from core.database import get_db
 from core.jwt import JWTService, InvalidTokenError, ExpiredTokenError
 from core.tenant import set_tenant
+from src.auth_bc.magic_link.infrastructure.repository import MagicLinkRepository
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
 from src.auth_bc.user.infrastructure.repository import UserRepository
+from src.company_bc.company.infrastructure.repository import CompanyRepository
 
 security = HTTPBearer()
 jwt_service = JWTService()
@@ -71,3 +73,15 @@ def require_role(minimum_role: UserRole) -> Callable:
         return current_user
 
     return role_checker
+
+
+def get_user_repo(db: Session = Depends(get_db)) -> UserRepository:
+    return UserRepository(db)
+
+
+def get_magic_link_repo(db: Session = Depends(get_db)) -> MagicLinkRepository:
+    return MagicLinkRepository(db)
+
+
+def get_company_repo(db: Session = Depends(get_db)) -> CompanyRepository:
+    return CompanyRepository(db)

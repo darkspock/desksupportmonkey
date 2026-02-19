@@ -1,12 +1,12 @@
 from datetime import datetime, timezone
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
 
 from adapters.http.api.dashboard import routers as dashboard_routers
+from adapters.http.api.dashboard.dependencies import get_request_repo
 from app import app
-from core.database import get_db
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
 
@@ -20,20 +20,23 @@ def _admin_user():
 
 
 @pytest.fixture
-def admin_client():
+def mock_request_repo():
+    return MagicMock()
+
+
+@pytest.fixture
+def admin_client(mock_request_repo):
     admin = _admin_user()
     app.dependency_overrides[dashboard_routers.admin_dep] = lambda: admin
-    app.dependency_overrides[get_db] = lambda: MagicMock()
+    app.dependency_overrides[get_request_repo] = lambda: mock_request_repo
     client = TestClient(app)
     yield client
     app.dependency_overrides.clear()
 
 
 class TestSlaAlerts:
-    @patch("adapters.http.api.dashboard.routers.RequestRepository")
-    def test_returns_sla_alerts(self, MockRepo, admin_client):
-        repo = MockRepo.return_value
-        repo.find_open_requests_with_age.return_value = [
+    def test_returns_sla_alerts(self, admin_client, mock_request_repo):
+        mock_request_repo.find_open_requests_with_age.return_value = [
             {
                 "id": "req1", "title": "Broken laptop", "type": "incident",
                 "priority": "urgent", "status": "submitted",
@@ -65,10 +68,8 @@ class TestSlaAlerts:
         assert data[1]["sla_threshold_hours"] == 168
         assert data[1]["breached"] is False
 
-    @patch("adapters.http.api.dashboard.routers.RequestRepository")
-    def test_empty_returns_empty(self, MockRepo, admin_client):
-        repo = MockRepo.return_value
-        repo.find_open_requests_with_age.return_value = []
+    def test_empty_returns_empty(self, admin_client, mock_request_repo):
+        mock_request_repo.find_open_requests_with_age.return_value = []
 
         response = admin_client.get("/api/v1/dashboard/alerts/sla")
         assert response.status_code == 200
@@ -82,10 +83,8 @@ class TestSlaAlerts:
             "low": 168,
         }
 
-    @patch("adapters.http.api.dashboard.routers.RequestRepository")
-    def test_all_priorities_have_thresholds(self, MockRepo, admin_client):
-        repo = MockRepo.return_value
-        repo.find_open_requests_with_age.return_value = [
+    def test_all_priorities_have_thresholds(self, admin_client, mock_request_repo):
+        mock_request_repo.find_open_requests_with_age.return_value = [
             {
                 "id": f"req-{p}", "title": f"Test {p}", "type": "incident",
                 "priority": p, "status": "submitted",

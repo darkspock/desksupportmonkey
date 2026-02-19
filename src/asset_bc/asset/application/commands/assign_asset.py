@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 
+from src.asset_bc.asset.application.ports import UserLookup
 from src.asset_bc.asset.domain.entities import Asset, AssetEvent, InvalidAssignmentError
 from src.asset_bc.asset.domain.repository import AssetRepositoryInterface
-from src.auth_bc.user.domain.repository import UserRepositoryInterface
+from src.framework.application.command_bus import Command, CommandHandler
 
 
 class AssetNotFoundError(Exception):
@@ -18,23 +19,23 @@ class UserInactiveError(Exception):
 
 
 @dataclass
-class AssignAssetCommand:
+class AssignAssetCommand(Command):
     asset_id: str
     company_id: str
     user_id: str
     performed_by: str
 
 
-class AssignAssetCommandHandler:
+class AssignAssetCommandHandler(CommandHandler[AssignAssetCommand]):
     def __init__(
         self,
         asset_repo: AssetRepositoryInterface,
-        user_repo: UserRepositoryInterface,
+        user_repo: UserLookup,
     ):
         self.asset_repo = asset_repo
         self.user_repo = user_repo
 
-    def handle(self, command: AssignAssetCommand) -> Asset:
+    def handle(self, command: AssignAssetCommand) -> None:
         asset = self.asset_repo.find_by_id(command.asset_id, command.company_id)
         if not asset:
             raise AssetNotFoundError(f"Asset '{command.asset_id}' not found")
@@ -47,7 +48,7 @@ class AssignAssetCommandHandler:
             raise UserInactiveError(f"User '{command.user_id}' is inactive")
 
         asset.assign(user_id=command.user_id, department_id=user.department_id)
-        asset = self.asset_repo.save(asset)
+        self.asset_repo.save(asset)
 
         event = AssetEvent.create(
             asset_id=asset.id,
@@ -60,5 +61,3 @@ class AssignAssetCommandHandler:
             performed_by=command.performed_by,
         )
         self.asset_repo.save_event(event)
-
-        return asset

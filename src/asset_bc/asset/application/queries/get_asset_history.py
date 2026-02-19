@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from src.asset_bc.asset.domain.entities import AssetEvent
 from src.asset_bc.asset.domain.repository import AssetRepositoryInterface
+from src.framework.application.query_bus import Query, QueryHandler
 
 
 class AssetNotFoundError(Exception):
@@ -9,12 +10,12 @@ class AssetNotFoundError(Exception):
 
 
 @dataclass
-class GetAssetHistoryQuery:
+class GetAssetHistoryQuery(Query):
     asset_id: str
     company_id: str
 
 
-class GetAssetHistoryQueryHandler:
+class GetAssetHistoryQueryHandler(QueryHandler[GetAssetHistoryQuery, list[AssetEvent]]):
     def __init__(self, asset_repo: AssetRepositoryInterface):
         self.asset_repo = asset_repo
 

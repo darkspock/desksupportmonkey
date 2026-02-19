@@ -2,17 +2,18 @@ from dataclasses import dataclass
 
 from src.company_bc.department.domain.entities import Department
 from src.company_bc.department.domain.repository import DepartmentRepositoryInterface
+from src.framework.application.query_bus import Query, QueryHandler
 
 
 @dataclass
-class ListDepartmentsQuery:
+class ListDepartmentsQuery(Query):
     company_id: str
     page: int = 1
     page_size: int = 20
     include_inactive: bool = False
 
 
-class ListDepartmentsQueryHandler:
+class ListDepartmentsQueryHandler(QueryHandler[ListDepartmentsQuery, tuple[list[Department], int]]):
     def __init__(self, department_repo: DepartmentRepositoryInterface):
         self.department_repo = department_repo
 

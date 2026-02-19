@@ -19,6 +19,11 @@ class MagicLinkRepositoryInterface(ABC):
         ...
 
     @abstractmethod
+    def update_used_at(self, magic_link_id: str, used_at: datetime) -> None:
+        """Mark a magic link as used by updating its used_at timestamp."""
+        ...
+
+    @abstractmethod
     def count_recent_by_email(self, email: str, since: datetime) -> int:
         """Count magic links created for email since given timestamp. Used for rate limiting."""
         ...

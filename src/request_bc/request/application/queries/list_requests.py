@@ -1,12 +1,13 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from src.framework.application.query_bus import Query, QueryHandler
 from src.request_bc.request.domain.entities import ServiceRequest
 from src.request_bc.request.domain.repository import RequestRepositoryInterface
 
 
 @dataclass
-class ListRequestsQuery:
+class ListRequestsQuery(Query):
     company_id: str
     page: int = 1
     page_size: int = 20
@@ -15,9 +16,10 @@ class ListRequestsQuery:
     type: Optional[str] = None
     priority: Optional[str] = None
     assigned_to: Optional[str] = None
+    subtype: Optional[str] = None
 
 
-class ListRequestsQueryHandler:
+class ListRequestsQueryHandler(QueryHandler[ListRequestsQuery, tuple[list[ServiceRequest], int]]):
     def __init__(self, request_repo: RequestRepositoryInterface):
         self.request_repo = request_repo
 
@@ -31,4 +33,5 @@ class ListRequestsQueryHandler:
             type=query.type,
             priority=query.priority,
             assigned_to=query.assigned_to,
+            subtype=query.subtype,
         )

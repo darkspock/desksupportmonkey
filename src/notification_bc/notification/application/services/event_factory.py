@@ -104,3 +104,39 @@ class RequestEventFactory:
             title="New internal note",
             body=f"Note on: {request.title}",
         )
+
+    @staticmethod
+    def approval_needed(
+        request: ServiceRequest,
+        actor_id: str,
+        department_manager_id: str | None,
+        department_id: str | None,
+    ) -> DomainEvent:
+        return DomainEvent(
+            event_type=EventType.REQUEST_APPROVAL_NEEDED,
+            company_id=request.company_id,
+            actor_id=actor_id,
+            payload={
+                "request_id": request.id,
+                "created_by": request.created_by,
+                "department_manager_id": department_manager_id,
+                "department_id": department_id,
+            },
+            title="Approval required",
+            body=f"New equipment request: {request.title}",
+        )
+
+    @staticmethod
+    def request_approved(request: ServiceRequest, actor_id: str) -> DomainEvent:
+        return DomainEvent(
+            event_type=EventType.REQUEST_APPROVED,
+            company_id=request.company_id,
+            actor_id=actor_id,
+            payload={
+                "request_id": request.id,
+                "created_by": request.created_by,
+                "approved_by": actor_id,
+            },
+            title="Request approved",
+            body=f"Your equipment request was approved: {request.title}",
+        )

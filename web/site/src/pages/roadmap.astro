@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 
-const completedEpics = [
+const day1Epics = [
   { id: 'E0', title: 'Foundation', description: 'Project setup, DB, auth, multi-tenancy base' },
   { id: 'E1', title: 'Company Management', description: 'Super admin: create companies, assign admins, manage domains' },
   { id: 'E2', title: 'Asset Inventory', description: 'Asset CRUD, assignment, history (event sourcing), CSV import' },
@@ -13,40 +13,48 @@ const completedEpics = [
   { id: 'E8', title: 'Seed Data & Demo', description: 'Demo data, demo script, Docker Compose polish' },
   { id: 'E9', title: 'UX Improvements', description: 'Invite users, departments edit, frontend quality uplift, reliability hardening' },
   { id: 'E10', title: 'Asset QR & Barcodes', description: 'QR codes and barcodes on asset detail page with print functionality' },
-  { id: '', title: 'Marketing Site', description: 'Astro static site — landing page, training, books, open source, roadmap, contact' },
-  { id: '', title: 'Infrastructure & DevOps', description: 'Production server setup, Nginx, systemd services, SSL, CI/CD pipeline, Docker Compose' },
+  { id: '', title: 'Marketing Site', description: 'Astro static site: landing, training, books, open source, roadmap, contact' },
+  { id: '', title: 'Infrastructure & DevOps', description: 'Production setup, Nginx, systemd, SSL, CI/CD, Docker Compose' },
 ];
 
-const upcomingEpics = [
-  { id: 'E11', title: 'Department Equipment Profiles', description: 'Role-based equipment profiles and automatic asset assignment by department and role', priority: 'High' },
-  { id: 'E12', title: 'Request Typification & Approval', description: 'Structured request categories, priority scoring, and approval workflow for new equipment', priority: 'High' },
-  { id: 'E13', title: 'AI Request Classification', description: 'AI-powered automatic classification of service requests — infers category, sub-type, and priority', priority: 'Medium' },
-  { id: 'E14', title: 'Procurement & Budget', description: 'Purchase order management, goods receipt tracking, department budget allocation', priority: 'High' },
-  { id: 'E15', title: 'Appointment Scheduling', description: 'Schedule and manage support appointments — calendar view, time slots, reminders', priority: 'Medium' },
-  { id: 'E16', title: 'Shipping & Logistics', description: 'Ship equipment to employees or vendors — tracking, carrier integration, return management', priority: 'Medium' },
-  { id: 'E17', title: 'Scheduled Maintenance', description: 'Recurring and one-off maintenance plans — templates, calendar, completion tracking', priority: 'Medium' },
-  { id: 'E18', title: 'Knowledge Base & Self-Service', description: 'Built-in wiki with WYSIWYG editor, full-text search, AI-suggested articles on ticket creation', priority: 'High' },
-  { id: 'E19', title: 'SLA Management', description: 'Configurable SLA policies — response/resolution time targets, automatic escalation, breach notifications', priority: 'High' },
-  { id: 'E20', title: 'Asset Lifecycle & Warranties', description: 'Depreciation tracking, end-of-life planning, warranty management with vendor contacts', priority: 'Medium' },
-  { id: 'E21', title: 'Software License Management', description: 'Track software licenses — seat compliance, renewal alerts, cost allocation, audit reports', priority: 'Medium' },
-  { id: 'E22', title: 'Employee Onboarding/Offboarding', description: 'Automated workflows for new hires and departures — equipment packs, return checklists', priority: 'High' },
-  { id: 'E23', title: 'Multi-channel Intake', description: 'Email-to-ticket, Slack/Teams integration, chatbot for guided ticket creation', priority: 'Medium' },
-  { id: 'E24', title: 'SSO & Directory Sync', description: 'SAML/OIDC single sign-on, LDAP/Active Directory synchronization with auto-provisioning', priority: 'High' },
-  { id: 'E25', title: 'Vendor Management', description: 'Vendor directory, contract tracking, SLA monitoring, warranty claim routing', priority: 'Medium' },
-  { id: 'E26', title: 'Observability with SigNoz', description: 'OpenTelemetry instrumentation — distributed tracing, metrics, logs, error tracking', priority: 'Medium' },
-  { id: 'E27', title: 'Surveys & Feedback', description: 'CSAT surveys after resolution, decision polls, onboarding feedback, satisfaction metrics', priority: 'Medium' },
-  { id: 'E28', title: 'Mobile / PWA', description: 'Progressive Web App — QR scanning, ticket updates from the field, push notifications, offline support', priority: 'High' },
-  { id: 'E29', title: 'Audit Trail & Compliance', description: 'Complete audit log, GDPR data export/deletion, compliance reports, data retention policies', priority: 'High' },
-  { id: 'E30', title: 'Custom Fields', description: 'Admin-defined custom fields for assets, tickets, and companies — multiple types with validation', priority: 'High' },
-  { id: 'E31', title: 'Workflow Automations', description: 'Rule engine for if-then automations — auto-assign, auto-escalate, auto-close, trigger actions', priority: 'High' },
-  { id: 'E32', title: 'Asset Discovery', description: 'Automatic network device discovery — agent-based and agentless scanning, sync with inventory', priority: 'Medium' },
-  { id: 'E33', title: 'Change Management (ITIL)', description: 'Change request workflow — risk assessment, CAB approval, rollback plan, post-implementation review', priority: 'Medium' },
-  { id: 'E34', title: 'Feature Voting & Roadmap', description: 'In-app feature request board — submit, upvote, public roadmap with status tracking', priority: 'Low' },
-  { id: 'E35', title: 'MCP Server', description: 'Expose DSM as an MCP server so AI assistants can manage assets, requests, and users via tool calls', priority: 'High' },
+const day2Epics = [
+  { id: 'E11', title: 'Department Equipment Profiles', description: 'Role-based equipment profiles and automatic assignment' },
+  { id: 'E12', title: 'Request Typification & Approval', description: 'Structured categories, scoring and approval flow' },
+  { id: 'E13', title: 'AI Request Classification', description: 'AI inference for category, subtype and priority' },
+  { id: 'E14', title: 'Procurement & Budget', description: 'Purchase orders, receiving, and budget controls' },
+  { id: 'E15', title: 'Appointment Scheduling', description: 'Slots, booking, reminders, and rescheduling' },
+  { id: 'E16', title: 'Shipping & Logistics', description: 'Outbound/return shipments with tracking and status flow' },
+  { id: 'E17', title: 'Scheduled Maintenance', description: 'Recurring maintenance plans, reminders and overdue alerts' },
+  { id: 'E35', title: 'MCP Server', description: 'DSM exposed as MCP tools for AI assistants' },
 ];
 
-const total = completedEpics.length + upcomingEpics.length;
-const completedCount = completedEpics.length;
+const pendingEpics = [
+  { id: 'E18', title: 'Knowledge Base & Self-Service', description: 'Wiki, search, and AI-suggested articles', priority: 'High' },
+  { id: 'E19', title: 'SLA Management', description: 'Targets, escalation and breach reporting', priority: 'High' },
+  { id: 'E20', title: 'Asset Lifecycle & Warranties', description: 'Depreciation, renewals and warranty workflows', priority: 'Medium' },
+  { id: 'E21', title: 'Software License Management', description: 'Seats, renewals, and compliance reports', priority: 'Medium' },
+  { id: 'E22', title: 'Employee Onboarding/Offboarding', description: 'Automated joiner/leaver equipment workflows', priority: 'High' },
+  { id: 'E23', title: 'Multi-channel Intake', description: 'Email, Slack/Teams and chatbot intake', priority: 'Medium' },
+  { id: 'E24', title: 'SSO & Directory Sync', description: 'SAML/OIDC and LDAP/AD synchronization', priority: 'High' },
+  { id: 'E25', title: 'Vendor & Supply Chain Risk', description: 'Vendor management plus third-party risk controls', priority: 'Medium' },
+  { id: 'E26', title: 'Observability with SigNoz', description: 'OpenTelemetry tracing, metrics, logs and errors', priority: 'Medium' },
+  { id: 'E27', title: 'Surveys & Feedback', description: 'CSAT and operational feedback loops', priority: 'Medium' },
+  { id: 'E28', title: 'Mobile / PWA', description: 'Field workflows, push notifications, offline support', priority: 'High' },
+  { id: 'E29', title: 'Audit Trail & Compliance', description: 'Immutable audit evidence and compliance exports', priority: 'High' },
+  { id: 'E30', title: 'Custom Fields', description: 'Admin-defined schema for assets, tickets and companies', priority: 'High' },
+  { id: 'E31', title: 'Workflow Automations', description: 'Rule engine for assignment, escalation and closure', priority: 'High' },
+  { id: 'E32', title: 'Asset Discovery', description: 'Agent and agentless discovery synchronized with inventory', priority: 'Medium' },
+  { id: 'E33', title: 'Change Management (ITIL)', description: 'CAB workflow, rollback plans and change calendar', priority: 'Medium' },
+  { id: 'E34', title: 'Feature Voting & Roadmap', description: 'In-app idea board and vote-based prioritization', priority: 'Low' },
+  { id: 'E36', title: 'Security Incident Management', description: 'Incident lifecycle with NIS2 timeline controls', priority: 'High' },
+  { id: 'E37', title: 'Risk Register', description: 'Risk scoring, mitigation tracking and heat maps', priority: 'High' },
+  { id: 'E38', title: 'Asset Criticality & CMDB', description: 'Criticality classes and CI relationship mapping', priority: 'Medium' },
+  { id: 'E39', title: 'Compliance Dashboard', description: 'Control mapping and posture dashboards', priority: 'High' },
+  { id: 'E40', title: 'Vulnerability Management', description: 'CVE exposure and remediation workflows', priority: 'Medium' },
+];
+
+const completedCount = day1Epics.length + day2Epics.length;
+const total = completedCount + pendingEpics.length;
 const progressPercent = Math.round((completedCount / total) * 100);
 
 const priorityStyles: Record<string, { bg: string; text: string }> = {
@@ -56,24 +64,17 @@ const priorityStyles: Record<string, { bg: string; text: string }> = {
 };
 ---
 
-<BaseLayout title="Product Roadmap — DeskSupportMonkey" description="See what's been built and what's coming next for DeskSupportMonkey — 36 epics covering the full IT service desk platform.">
+<BaseLayout title="Product Roadmap — DeskSupportMonkey" description="See what's done, what's done today, and what's pending.">
   <div class="pt-32 pb-20">
     <div class="mx-auto max-w-6xl px-6">
-      <!-- Header -->
       <div class="text-center mb-14">
         <span class="inline-block rounded-full bg-emerald-100 px-4 py-1.5 text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-4">
-          36 Epics
+          {total} Epics
         </span>
-        <h1 class="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
-          Product Roadmap
-        </h1>
-        <p class="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
-          A full-scope IT service desk platform built entirely with AI-assisted development.
-          Track what's shipped and what's coming next.
-        </p>
+        <h1 class="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">Product Roadmap</h1>
+        <p class="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">Estado real separado por Día 1, Día 2 (hoy) y pendiente.</p>
       </div>
 
-      <!-- Progress bar -->
       <div class="mx-auto max-w-2xl mb-16">
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div class="flex items-center justify-between mb-3">
@@ -87,7 +88,6 @@ const priorityStyles: Record<string, { bg: string; text: string }> = {
         </div>
       </div>
 
-      <!-- Completed section — First 24 Hours -->
       <div class="mb-16">
         <div class="flex items-center gap-3 mb-2">
           <div class="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100">
@@ -95,15 +95,15 @@ const priorityStyles: Record<string, { bg: string; text: string }> = {
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 class="text-2xl font-bold text-slate-900">First 24 Hours</h2>
-          <span class="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">{completedCount}</span>
+          <h2 class="text-2xl font-bold text-slate-900">Día 1</h2>
+          <span class="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">{day1Epics.length}</span>
         </div>
-        <p class="text-sm text-slate-500 mb-6 ml-11">Everything below was designed, built, tested, and deployed in the first 24 hours using AI-assisted development.</p>
+        <p class="text-sm text-slate-500 mb-6 ml-11">Base completa diseñada, implementada y desplegada en las primeras 24 horas.</p>
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {completedEpics.map((epic) => (
+          {day1Epics.map((epic) => (
             <div class="flex items-start gap-3 rounded-xl border-l-4 border-emerald-400 bg-white py-3 pl-4 pr-4 shadow-sm">
               <svg class="mt-0.5 h-5 w-5 shrink-0 text-emerald-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0" />
               </svg>
               <div class="min-w-0">
                 <div class="flex items-center gap-2">
@@ -117,7 +117,35 @@ const priorityStyles: Record<string, { bg: string; text: string }> = {
         </div>
       </div>
 
-      <!-- Upcoming section -->
+      <div class="mb-16">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="flex h-8 w-8 items-center justify-center rounded-full bg-teal-100">
+            <svg class="h-4 w-4 text-teal-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold text-slate-900">Día 2 (hoy)</h2>
+          <span class="rounded-full bg-teal-100 px-2.5 py-0.5 text-xs font-semibold text-teal-700">{day2Epics.length}</span>
+        </div>
+        <p class="text-sm text-slate-500 mb-6 ml-11">Evolución sobre el Día 1 con módulos avanzados ya cerrados.</p>
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {day2Epics.map((epic) => (
+            <div class="flex items-start gap-3 rounded-xl border-l-4 border-teal-400 bg-white py-3 pl-4 pr-4 shadow-sm">
+              <svg class="mt-0.5 h-5 w-5 shrink-0 text-teal-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0" />
+              </svg>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-mono font-semibold text-teal-600">{epic.id}</span>
+                  <span class="text-sm font-semibold text-slate-900 truncate">{epic.title}</span>
+                </div>
+                <p class="mt-0.5 text-xs text-slate-500 line-clamp-2">{epic.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div>
         <div class="flex items-center gap-3 mb-6">
           <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100">
@@ -126,11 +154,11 @@ const priorityStyles: Record<string, { bg: string; text: string }> = {
               <circle cx="12" cy="12" r="9" stroke-linecap="round" />
             </svg>
           </div>
-          <h2 class="text-2xl font-bold text-slate-900">Upcoming</h2>
-          <span class="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">{upcomingEpics.length}</span>
+          <h2 class="text-2xl font-bold text-slate-900">Pendiente</h2>
+          <span class="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">{pendingEpics.length}</span>
         </div>
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {upcomingEpics.map((epic) => (
+          {pendingEpics.map((epic) => (
             <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-mono font-semibold text-slate-400">{epic.id}</span>

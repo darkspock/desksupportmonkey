@@ -36,12 +36,14 @@ export function AppLayout() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-background">
       <Sidebar mobileOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
       <div className="min-w-0 flex-1 flex flex-col">
         <Header onMenuToggle={() => setMobileNavOpen(true)} />
         <main className="min-w-0 flex-1 p-4 md:p-6">
-          <Outlet />
+          <div className="mx-auto w-full max-w-7xl">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

@@ -62,9 +62,9 @@ export default function CompanySettingsPage() {
   };
 
   return (
-    <div className="max-w-3xl">
-      <h2 className="mb-1 text-xl font-bold text-gray-900">{t('page.company_settings.title')}</h2>
-      <p className="mb-4 text-sm text-gray-600">{t('page.company_settings.subtitle')}</p>
+    <div className="mx-auto max-w-3xl">
+      <h2 className="text-2xl font-semibold tracking-tight text-foreground">{t('page.company_settings.title')}</h2>
+      <p className="mt-1 text-sm text-muted-foreground mb-4">{t('page.company_settings.subtitle')}</p>
 
       <Card>
         {isLoading ? (
@@ -79,16 +79,16 @@ export default function CompanySettingsPage() {
         ) : (
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">{t('auth.register.company_name')}</label>
+              <label className="block mb-1.5 text-muted-foreground">{t('auth.register.company_name')}</label>
               <input
                 value={data?.name ?? ''}
                 readOnly
-                className="h-10 w-full rounded-lg border border-gray-300 bg-gray-50 px-3 text-sm text-gray-700"
+                className="w-full bg-secondary"
               />
             </div>
 
             <div>
-              <label htmlFor="company-domains" className="mb-1 block text-sm font-medium text-gray-700">{t('auth.register.allowed_domains')}</label>
+              <label htmlFor="company-domains" className="block mb-1.5 text-muted-foreground">{t('auth.register.allowed_domains')}</label>
               <input
                 id="company-domains"
                 value={currentDomainsInput}
@@ -97,15 +97,15 @@ export default function CompanySettingsPage() {
                   setIsDirty(true);
                 }}
                 placeholder={t('common.placeholder_domains')}
-                className="h-10 w-full rounded-lg border border-gray-300 px-3 text-sm"
+                className="w-full bg-card"
               />
-              <p className="mt-1 text-xs text-gray-500">{t('page.company_settings.domains_help')}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{t('page.company_settings.domains_help')}</p>
             </div>
 
             {normalizedDomains.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {normalizedDomains.map((domain) => (
-                  <span key={domain} className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-700">
+                  <span key={domain} className="rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium text-foreground">
                     {domain}
                   </span>
                 ))}
@@ -115,7 +115,7 @@ export default function CompanySettingsPage() {
             <button
               type="submit"
               disabled={saveSettings.isPending || !isDirty}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
             >
               {saveSettings.isPending ? t('page.company_settings.saving') : t('page.company_settings.save')}
             </button>

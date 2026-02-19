@@ -66,7 +66,7 @@ class CompanyRepository(CompanyRepositoryInterface):
             .offset((page - 1) * page_size)
             .limit(page_size)
         ).scalars().all()
-        return [self._to_entity(m) for m in models], total
+        return [self._to_entity(m) for m in models], total or 0
 
     def find_domain(self, domain: str) -> Optional[str]:
         result = self.session.execute(

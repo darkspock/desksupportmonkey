@@ -3,10 +3,11 @@ from typing import Optional
 
 from src.asset_bc.asset.domain.entities import Asset
 from src.asset_bc.asset.domain.repository import AssetRepositoryInterface
+from src.framework.application.query_bus import Query, QueryHandler
 
 
 @dataclass
-class ListAssetsQuery:
+class ListAssetsQuery(Query):
     company_id: str
     page: int = 1
     page_size: int = 20
@@ -19,7 +20,7 @@ class ListAssetsQuery:
     sort_order: str = "desc"
 
 
-class ListAssetsQueryHandler:
+class ListAssetsQueryHandler(QueryHandler[ListAssetsQuery, tuple[list[Asset], int]]):
     def __init__(self, asset_repo: AssetRepositoryInterface):
         self.asset_repo = asset_repo
 

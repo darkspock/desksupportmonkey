@@ -19,15 +19,19 @@ def _make_event(event_type=EventType.REQUEST_STATUS_CHANGED, actor_id="actor1"):
 
 
 class TestWebSocketSubscriber:
-    @patch("src.notification_bc.notification.application.services.websocket_subscriber.NotificationRepository")
-    @patch("src.notification_bc.notification.application.services.websocket_subscriber.UserRepository")
     @patch("src.notification_bc.notification.application.services.websocket_subscriber.TargetResolver")
     @patch("src.notification_bc.notification.application.services.websocket_subscriber.connection_manager")
-    def test_noop_when_no_targets(self, mock_cm, MockResolver, MockUserRepo, MockNotifRepo):
+    def test_noop_when_no_targets(self, mock_cm, MockResolver):
         mock_resolver_instance = MockResolver.return_value
         mock_resolver_instance.resolve.return_value = []
 
-        subscriber = WebSocketSubscriber()
+        mock_user_repo_factory = MagicMock()
+        mock_notif_repo_factory = MagicMock()
+
+        subscriber = WebSocketSubscriber(
+            user_repo_factory=mock_user_repo_factory,
+            notification_repo_factory=mock_notif_repo_factory,
+        )
         event = _make_event()
         db = MagicMock()
 
@@ -36,16 +40,20 @@ class TestWebSocketSubscriber:
         # No send attempts since no targets
         mock_cm.send_to_user.assert_not_called()
 
-    @patch("src.notification_bc.notification.application.services.websocket_subscriber.NotificationRepository")
-    @patch("src.notification_bc.notification.application.services.websocket_subscriber.UserRepository")
     @patch("src.notification_bc.notification.application.services.websocket_subscriber.TargetResolver")
     @patch("src.notification_bc.notification.application.services.websocket_subscriber.connection_manager")
-    def test_noop_when_no_connected_users(self, mock_cm, MockResolver, MockUserRepo, MockNotifRepo):
+    def test_noop_when_no_connected_users(self, mock_cm, MockResolver):
         mock_resolver_instance = MockResolver.return_value
         mock_resolver_instance.resolve.return_value = ["creator1", "tech1"]
         mock_cm.is_connected.return_value = False
 
-        subscriber = WebSocketSubscriber()
+        mock_user_repo_factory = MagicMock()
+        mock_notif_repo_factory = MagicMock()
+
+        subscriber = WebSocketSubscriber(
+            user_repo_factory=mock_user_repo_factory,
+            notification_repo_factory=mock_notif_repo_factory,
+        )
         event = _make_event()
         db = MagicMock()
 

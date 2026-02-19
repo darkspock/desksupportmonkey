@@ -1,31 +1,162 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 :root {
-  --dsm-surface: #ffffff;
-  --dsm-surface-subtle: #f8fafc;
-  --dsm-text: #0f172a;
-  --dsm-text-muted: #475569;
-  --dsm-border: #e2e8f0;
-  --dsm-accent: #2563eb;
-  --dsm-focus: #93c5fd;
-  --dsm-font-display: 'Space Grotesk', 'Avenir Next', 'Segoe UI', sans-serif;
+  --background: oklch(0.97 0.002 240);
+  --foreground: oklch(0.13 0.02 240);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.13 0.02 240);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.13 0.02 240);
+  --primary: oklch(0.45 0.17 240);
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.96 0.005 240);
+  --secondary-foreground: oklch(0.25 0.02 240);
+  --muted: oklch(0.95 0.003 240);
+  --muted-foreground: oklch(0.48 0.02 240);
+  --accent: oklch(0.93 0.01 240);
+  --accent-foreground: oklch(0.25 0.02 240);
+  --destructive: oklch(0.55 0.22 27);
+  --destructive-foreground: oklch(0.55 0.22 27);
+  --border: oklch(0.92 0.003 240);
+  --input: oklch(0.76 0.012 240);
+  --ring: oklch(0.45 0.17 240);
+  --chart-1: oklch(0.45 0.17 240);
+  --chart-2: oklch(0.6 0.15 170);
+  --chart-3: oklch(0.55 0.12 300);
+  --chart-4: oklch(0.75 0.15 80);
+  --chart-5: oklch(0.65 0.2 30);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.15 0.02 240);
+  --sidebar-foreground: oklch(0.93 0.005 240);
+  --sidebar-primary: oklch(0.55 0.18 240);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.21 0.03 240);
+  --sidebar-accent-foreground: oklch(0.93 0.005 240);
+  --sidebar-border: oklch(0.24 0.03 240);
+  --sidebar-ring: oklch(0.55 0.18 240);
+  --success: oklch(0.55 0.16 155);
+  --success-foreground: oklch(0.98 0 0);
+  --warning: oklch(0.78 0.14 80);
+  --warning-foreground: oklch(0.25 0.05 80);
 }
 
-body {
-  color: var(--dsm-text);
-  background: var(--dsm-surface-subtle);
+@theme inline {
+  --font-sans: 'Inter', 'Inter Fallback', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'JetBrains Mono Fallback', monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
 }
 
-:focus-visible {
-  outline: 2px solid var(--dsm-focus);
-  outline-offset: 2px;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  /* v0 shadcn form element base styles */
+  input:not([type]),
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  input[type="url"],
+  input[type="tel"],
+  input[type="date"],
+  input[type="datetime-local"],
+  input[type="time"] {
+    @apply h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-xs transition-[color,box-shadow,border-color] placeholder:text-muted-foreground;
+  }
+  input:focus-visible {
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px oklch(from var(--ring) l c h / 0.3);
+    outline: none;
+  }
+
+  textarea {
+    @apply w-full min-h-16 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs transition-[color,box-shadow,border-color] placeholder:text-muted-foreground;
+  }
+  textarea:focus-visible {
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px oklch(from var(--ring) l c h / 0.3);
+    outline: none;
+  }
+
+  select {
+    @apply h-9 rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-xs transition-[color,box-shadow,border-color];
+  }
+  select:focus-visible {
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px oklch(from var(--ring) l c h / 0.3);
+    outline: none;
+  }
+
+  input:disabled,
+  textarea:disabled,
+  select:disabled {
+    @apply cursor-not-allowed bg-muted text-muted-foreground;
+  }
+
+  label {
+    @apply text-sm font-medium leading-none;
+  }
+
+  /* Headings inside main content */
+  h1 {
+    @apply text-2xl font-semibold tracking-tight;
+  }
+  h2 {
+    @apply text-xl font-semibold tracking-tight;
+  }
 }
 
 .auth-shell-bg {
   background:
-    radial-gradient(circle at 15% 15%, #dbeafe 0, rgba(219, 234, 254, 0) 48%),
-    radial-gradient(circle at 85% 85%, #e2e8f0 0, rgba(226, 232, 240, 0) 52%),
-    #f1f5f9;
+    radial-gradient(circle at 15% 15%, oklch(0.88 0.05 240) 0, transparent 48%),
+    radial-gradient(circle at 85% 85%, oklch(0.92 0.003 240) 0, transparent 52%),
+    var(--background);
 }
 
 @keyframes authFadeUp {
@@ -62,4 +193,79 @@ body {
   .auth-float {
     animation: none;
   }
+}
+
+/* Global form-contrast guard:
+   keep fields readable even when pages apply bg-card/bg-transparent utilities */
+input:not([type]),
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+input[type="url"],
+input[type="tel"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"],
+textarea,
+select {
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--input);
+}
+
+input:not([type]).bg-card,
+input[type="text"].bg-card,
+input[type="email"].bg-card,
+input[type="password"].bg-card,
+input[type="number"].bg-card,
+input[type="search"].bg-card,
+input[type="url"].bg-card,
+input[type="tel"].bg-card,
+input[type="date"].bg-card,
+input[type="datetime-local"].bg-card,
+input[type="time"].bg-card,
+input:not([type]).bg-transparent,
+input[type="text"].bg-transparent,
+input[type="email"].bg-transparent,
+input[type="password"].bg-transparent,
+input[type="number"].bg-transparent,
+input[type="search"].bg-transparent,
+input[type="url"].bg-transparent,
+input[type="tel"].bg-transparent,
+input[type="date"].bg-transparent,
+input[type="datetime-local"].bg-transparent,
+input[type="time"].bg-transparent,
+textarea.bg-card,
+textarea.bg-transparent,
+select.bg-card,
+select.bg-transparent {
+  background-color: var(--background);
+  border-color: var(--input);
+  border-width: 1px;
+  border-style: solid;
+  color: var(--foreground);
+}
+
+/* Final hard override against reset rules */
+input:not([type]),
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+input[type="url"],
+input[type="tel"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"],
+select,
+textarea {
+  background-color: var(--background) !important;
+  border-color: var(--input) !important;
+  border-style: solid !important;
+  border-width: 1px !important;
+  border-radius: var(--radius-md) !important;
+  color: var(--foreground) !important;
 }

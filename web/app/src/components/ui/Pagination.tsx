@@ -14,22 +14,22 @@ export function Pagination({ page, pageSize, total, onChange }: Props) {
 
   return (
     <div className="flex items-center justify-between pt-4">
-      <span className="text-sm text-gray-500">{t('common.total', { count: total })}</span>
+      <span className="text-sm text-muted-foreground">{t('common.total', { count: total })}</span>
       <div className="flex gap-1">
         <button
           disabled={page <= 1}
           onClick={() => onChange(page - 1)}
-          className="px-3 py-1 text-sm rounded border disabled:opacity-40 hover:bg-gray-50"
+          className="inline-flex items-center justify-center rounded-md h-8 px-3 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:pointer-events-none disabled:opacity-40"
         >
           {t('common.prev')}
         </button>
-        <span className="px-3 py-1 text-sm">
+        <span className="inline-flex items-center justify-center h-8 px-3 text-sm text-muted-foreground">
           {page} / {totalPages}
         </span>
         <button
           disabled={page >= totalPages}
           onClick={() => onChange(page + 1)}
-          className="px-3 py-1 text-sm rounded border disabled:opacity-40 hover:bg-gray-50"
+          className="inline-flex items-center justify-center rounded-md h-8 px-3 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:pointer-events-none disabled:opacity-40"
         >
           {t('common.next')}
         </button>

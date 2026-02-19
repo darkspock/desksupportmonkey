@@ -34,7 +34,24 @@ This is non-negotiable. Every pull request must:
 # Run before submitting
 make test    # PYTHONPATH=src uv run pytest tests/ -v
 make lint    # mypy + flake8
+make scan    # OWASP ZAP API security scan (requires Docker + backend running)
 ```
+
+### Security scanning
+
+The project includes an OWASP ZAP API scan that checks the OpenAPI spec for security issues:
+
+```bash
+make start-backend   # Start the API on port 8000
+make scan            # Run ZAP scan (requires Docker)
+```
+
+This runs [ZAP API Scan](https://www.zaproxy.org/docs/docker/api-scan/) against the local OpenAPI definition. It works on both macOS and Linux. The scan produces:
+
+- Console output saved to `/tmp/zap-report-dsm.txt`
+- JSON report saved to `/tmp/report.json`
+
+Target: **0 FAIL, 0 WARN**. All warnings should be resolved before merging.
 
 ### Architecture
 

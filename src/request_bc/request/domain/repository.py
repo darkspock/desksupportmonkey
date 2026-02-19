@@ -35,6 +35,7 @@ class RequestRepositoryInterface(ABC):
         type: Optional[str] = None,
         priority: Optional[str] = None,
         assigned_to: Optional[str] = None,
+        subtype: Optional[str] = None,
     ) -> tuple[list[ServiceRequest], int]: ...
 
     @abstractmethod
@@ -45,6 +46,7 @@ class RequestRepositoryInterface(ABC):
         page: int = 1,
         page_size: int = 20,
         status: Optional[str] = None,
+        subtype: Optional[str] = None,
     ) -> tuple[list[ServiceRequest], int]: ...
 
     @abstractmethod

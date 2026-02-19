@@ -1,10 +1,13 @@
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 
+from adapters.http.api.registration.dependencies import (
+    get_company_repo,
+    get_magic_link_repo,
+    get_user_repo,
+)
 from adapters.http.api.registration.schemas import RegisterCompanyRequest
-from core.database import get_db
 from core.email import get_email_service
 from src.auth_bc.magic_link.infrastructure.repository import MagicLinkRepository
 from src.auth_bc.user.infrastructure.repository import UserRepository
@@ -25,36 +28,26 @@ router = APIRouter(prefix="/api/v1/register", tags=["registration"])
 @router.post("", status_code=status.HTTP_201_CREATED)
 def register_company(
     body: RegisterCompanyRequest,
-    db: Session = Depends(get_db),
+    company_repo: CompanyRepository = Depends(get_company_repo),
+    user_repo: UserRepository = Depends(get_user_repo),
+    magic_link_repo: MagicLinkRepository = Depends(get_magic_link_repo),
 ):
     """Public endpoint for self-service company registration."""
     handler = CreateCompanyCommandHandler(
-        company_repo=CompanyRepository(db),
-        user_repo=UserRepository(db),
-        magic_link_repo=MagicLinkRepository(db),
+        company_repo=company_repo,
+        user_repo=user_repo,
+        magic_link_repo=magic_link_repo,
         email_service=get_email_service(),
     )
+    cmd = CreateCompanyCommand(
+        name=body.name, email_domains=body.email_domains, admin_email=body.admin_email,
+    )
     try:
-        handler.handle(
-            CreateCompanyCommand(
-                name=body.name,
-                email_domains=body.email_domains,
-                admin_email=body.admin_email,
-            )
-        )
+        handler.handle(cmd)
     except CompanyNameExistsError:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Company with this name already exists",
-        )
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Company with this name already exists")
     except DomainAlreadyTakenError as e:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=str(e),
-        )
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except UserAlreadyExistsError:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="User with this email already exists",
-        )
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User with this email already exists")
     return {"data": {"message": "Company registered. Check your email for the magic link."}}

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from src.company_bc.company.domain.entities import Company
 from src.company_bc.company.domain.enums import CompanyStatus
 from src.company_bc.company.domain.repository import CompanyRepositoryInterface
+from src.framework.application.command_bus import Command, CommandHandler
 
 logger = logging.getLogger(__name__)
 
@@ -13,16 +14,16 @@ class CompanyNotFoundError(Exception):
 
 
 @dataclass
-class UpdateCompanyStatusCommand:
+class UpdateCompanyStatusCommand(Command):
     company_id: str
     new_status: str
 
 
-class UpdateCompanyStatusCommandHandler:
+class UpdateCompanyStatusCommandHandler(CommandHandler[UpdateCompanyStatusCommand]):
     def __init__(self, company_repo: CompanyRepositoryInterface):
         self.company_repo = company_repo
 
-    def handle(self, command: UpdateCompanyStatusCommand) -> Company:
+    def handle(self, command: UpdateCompanyStatusCommand) -> None:
         company = self.company_repo.find_by_id(command.company_id)
         if not company:
             raise CompanyNotFoundError("Company not found")
@@ -38,4 +39,3 @@ class UpdateCompanyStatusCommandHandler:
             old_status.value,
             new_status.value,
         )
-        return company

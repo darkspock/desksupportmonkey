@@ -1,19 +1,20 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from src.framework.application.query_bus import Query, QueryHandler
 from src.notification_bc.notification.domain.entities import Notification
 from src.notification_bc.notification.domain.repository import NotificationRepositoryInterface
 
 
 @dataclass
-class ListNotificationsQuery:
+class ListNotificationsQuery(Query):
     user_id: str
     page: int = 1
     page_size: int = 20
     is_read: Optional[bool] = None
 
 
-class ListNotificationsQueryHandler:
+class ListNotificationsQueryHandler(QueryHandler[ListNotificationsQuery, tuple[list[Notification], int, int]]):
     def __init__(self, notification_repo: NotificationRepositoryInterface):
         self.notification_repo = notification_repo
 

@@ -29,7 +29,7 @@ def get_tenant() -> Optional[TenantContext]:
     return TenantContext(
         company_id=_tenant_company_id.get(),
         user_id=user_id,
-        role=_tenant_role.get(),
+        role=_tenant_role.get() or "",
     )
 
 

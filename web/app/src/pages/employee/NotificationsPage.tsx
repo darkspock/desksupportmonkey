@@ -32,10 +32,7 @@ export default function NotificationsPage() {
       queryClient.invalidateQueries({ queryKey: ['notifications-unread'] });
     },
     onError: () => {
-      showToast({
-        title: t('page.notifications.error_mark_read'),
-        variant: 'error',
-      });
+      showToast({ title: t('page.notifications.error_mark_read'), variant: 'error' });
     },
   });
 
@@ -44,60 +41,62 @@ export default function NotificationsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['notifications-unread'] });
-      showToast({
-        title: t('page.notifications.success_mark_all'),
-        variant: 'success',
-      });
+      showToast({ title: t('page.notifications.success_mark_all'), variant: 'success' });
     },
     onError: () => {
-      showToast({
-        title: t('page.notifications.error_mark_all'),
-        variant: 'error',
-      });
+      showToast({ title: t('page.notifications.error_mark_all'), variant: 'error' });
     },
   });
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-gray-900">{t('page.notifications.title')}</h2>
+    <div className="flex flex-col gap-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">{t('page.notifications.title')}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t('page.notifications.subtitle')}</p>
+        </div>
         <button
           onClick={() => markAllRead.mutate()}
           disabled={markAllRead.isPending}
-          className="text-sm text-blue-600 hover:underline disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50"
         >
           {markAllRead.isPending ? t('page.notifications.marking') : t('page.notifications.mark_all')}
         </button>
       </div>
-      <Card>
+
+      <Card className="overflow-hidden p-0">
         {isLoading ? (
-          <Loading />
+          <div className="p-5"><Loading /></div>
         ) : isError ? (
-          <ErrorState
-            message={(error as { response?: { data?: { detail?: string } } })?.response?.data?.detail}
-            onRetry={() => {
-              void refetch();
-            }}
-          />
+          <div className="p-5">
+            <ErrorState
+              message={(error as { response?: { data?: { detail?: string } } })?.response?.data?.detail}
+              onRetry={() => { void refetch(); }}
+            />
+          </div>
         ) : !data?.data.length ? (
-          <EmptyState message={t('page.notifications.empty')} />
+          <div className="p-5"><EmptyState message={t('page.notifications.empty')} /></div>
         ) : (
           <>
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-border">
               {data.data.map((n) => (
                 <div
                   key={n.id}
-                  className={cn('px-4 py-3 flex items-start gap-3', !n.is_read && 'bg-blue-50')}
+                  className={cn('px-5 py-3.5 flex items-start gap-3', !n.is_read && 'bg-primary/5')}
                 >
+                  {!n.is_read && (
+                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                  )}
                   <div className="flex-1 min-w-0">
-                    <p className={cn('text-sm', !n.is_read ? 'font-semibold text-gray-900' : 'text-gray-700')}>{n.title}</p>
-                    <p className="text-sm text-gray-500 truncate">{n.body}</p>
-                    <p className="text-xs text-gray-400 mt-1">{formatDateTime(n.created_at)}</p>
+                    <p className={cn('text-sm', !n.is_read ? 'font-semibold text-foreground' : 'text-foreground')}>{n.title}</p>
+                    <p className="text-sm text-muted-foreground truncate">{n.body}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{formatDateTime(n.created_at)}</p>
                   </div>
                   {!n.is_read && (
                     <button
                       onClick={() => markRead.mutate(n.id)}
-                      className="text-xs text-blue-600 hover:underline shrink-0"
+                      className="text-xs text-primary hover:underline shrink-0"
                     >
                       {t('page.notifications.mark_read')}
                     </button>
@@ -105,7 +104,9 @@ export default function NotificationsPage() {
                 </div>
               ))}
             </div>
-            <Pagination page={page} pageSize={20} total={data.meta.total} onChange={setPage} />
+            <div className="p-4">
+              <Pagination page={page} pageSize={20} total={data.meta.total} onChange={setPage} />
+            </div>
           </>
         )}
       </Card>

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from src.framework.application.command_bus import Command, CommandHandler
 from src.notification_bc.notification.domain.repository import NotificationRepositoryInterface
 
 
@@ -10,12 +11,12 @@ class NotificationNotFoundError(Exception):
 
 
 @dataclass
-class MarkReadCommand:
+class MarkReadCommand(Command):
     notification_id: str
     user_id: str
 
 
-class MarkReadCommandHandler:
+class MarkReadCommandHandler(CommandHandler[MarkReadCommand]):
     def __init__(self, notification_repo: NotificationRepositoryInterface):
         self.notification_repo = notification_repo
 

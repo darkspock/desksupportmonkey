@@ -23,13 +23,14 @@ class TestCountByStatus:
         assert result["in_review"] == 0
         assert result["resolved"] == 0
         assert result["rejected"] == 0
+        assert result["pending_approval"] == 0
 
     def test_empty_returns_all_zeros(self):
         repo, session = _make_repo()
         session.execute.return_value.all.return_value = []
         result = repo.count_by_status("comp1")
         assert all(v == 0 for v in result.values())
-        assert len(result) == 5
+        assert len(result) == 6  # pending_approval, submitted, in_review, in_progress, resolved, rejected
 
 
 class TestCountByType:

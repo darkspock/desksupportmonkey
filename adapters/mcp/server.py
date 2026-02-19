@@ -1,0 +1,125 @@
+"""MCP server setup using the mcp Python SDK (v1.26.0).
+
+Tested with: Claude Desktop, Cursor.
+Transport: stdio (local development). SSE deferred to F6.
+"""
+import logging
+import os
+from typing import Any, Sequence
+
+from mcp.server import Server
+from mcp.server.stdio import stdio_server
+from mcp.types import TextContent, Tool
+
+from core.database import SessionLocal
+from core.tenant import get_tenant
+from src.auth_bc.user.domain.enums import UserRole
+
+from adapters.mcp.auth import authenticate_api_key, AuthenticationError
+from adapters.mcp.registry import tool_registry
+import adapters.mcp.tools  # noqa: F401 — triggers tool registration
+
+logger = logging.getLogger(__name__)
+
+
+def create_mcp_server() -> Server:
+    """Create and configure the MCP server with tool handlers."""
+    server = Server("desksupportmonkey")
+
+    @server.list_tools()
+    async def list_tools() -> list[Tool]:
+        """Return tools filtered by authenticated user's role."""
+        tenant = get_tenant()
+        if not tenant:
+            logger.warning("No tenant context found during list_tools")
+            return []
+
+        user_role = UserRole(tenant.role)
+        tools_for_user = tool_registry.list_tools(user_role)
+
+        logger.info(
+            "Returning %d tools for user_id=%s, role=%s",
+            len(tools_for_user),
+            tenant.user_id,
+            tenant.role,
+        )
+
+        return [
+            Tool(
+                name=tool.name,
+                description=tool.description,
+                inputSchema=tool.input_schema,
+            )
+            for tool in tools_for_user
+        ]
+
+    @server.call_tool()
+    async def call_tool(
+        name: str, arguments: dict[str, Any]
+    ) -> Sequence[TextContent]:
+        """Execute a tool by name with given arguments."""
+        tenant = get_tenant()
+        if not tenant:
+            raise Exception("Unauthenticated tool call")
+
+        user_role = UserRole(tenant.role)
+
+        tool = tool_registry.get_tool(name)
+        if not tool:
+            raise Exception(f"Unknown tool: {name}")
+
+        if not user_role.has_access(tool.min_role):
+            raise Exception(f"Insufficient permissions for tool: {name}")
+
+        logger.info("Calling tool '%s' for user_id=%s", name, tenant.user_id)
+
+        result: Sequence[TextContent] = await tool.handler(arguments)
+        return result
+
+    logger.info(
+        "MCP server created with %d registered tools",
+        tool_registry.tool_count(),
+    )
+
+    return server
+
+
+async def run_stdio_server() -> None:
+    """Run the MCP server with stdio transport.
+
+    Reads DSM_API_KEY from environment variable, authenticates once
+    at startup (stdio is a 1:1 session), then runs the server.
+    """
+    raw_key = os.environ.get("DSM_API_KEY")
+    if not raw_key:
+        msg = "DSM_API_KEY environment variable is required"
+        logger.error(msg)
+        raise AuthenticationError(msg)
+
+    # Authenticate API key
+    db = SessionLocal()
+    try:
+        user = authenticate_api_key(raw_key, db)
+        db.commit()
+        logger.info(
+            "MCP stdio session authenticated: user_id=%s, role=%s",
+            user.id,
+            user.role.value,
+        )
+    except AuthenticationError:
+        db.rollback()
+        raise
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+    # Create and run server
+    server = create_mcp_server()
+
+    logger.info("Starting MCP server with stdio transport")
+
+    async with stdio_server() as (read_stream, write_stream):
+        init_options = server.create_initialization_options()
+        await server.run(read_stream, write_stream, init_options)

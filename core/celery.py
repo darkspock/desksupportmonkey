@@ -42,6 +42,26 @@ celery_app.conf.update(
             "schedule": crontab(hour=0, minute=0),  # Daily at midnight
             "kwargs": {"days": 7},
         },
+        "send-appointment-reminders": {
+            "task": "core.tasks.appointments.send_appointment_reminders",
+            "schedule": crontab(minute="*/15"),  # Every 15 minutes
+        },
+        "detect-appointment-no-shows": {
+            "task": "core.tasks.appointments.detect_no_shows",
+            "schedule": crontab(minute="*/30"),  # Every 30 minutes
+        },
+        "send-maintenance-reminders": {
+            "task": "core.tasks.maintenance.send_maintenance_reminders",
+            "schedule": crontab(minute=0, hour="*/6"),  # Every 6 hours
+        },
+        "check-overdue-maintenance": {
+            "task": "core.tasks.maintenance.check_overdue_maintenance",
+            "schedule": crontab(minute=0, hour="*/6"),  # Every 6 hours
+        },
+        "generate-recurring-maintenance": {
+            "task": "core.tasks.maintenance.generate_recurring_maintenance",
+            "schedule": crontab(minute=0, hour=2),  # Daily 02:00 UTC
+        },
     },
 )
 

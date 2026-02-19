@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from src.framework.application.query_bus import Query, QueryHandler
 from src.request_bc.request.domain.entities import RequestComment
 from src.request_bc.request.domain.repository import RequestRepositoryInterface
 
@@ -9,12 +10,12 @@ class RequestNotFoundError(Exception):
 
 
 @dataclass
-class ListCommentsQuery:
+class ListCommentsQuery(Query):
     request_id: str
     company_id: str
 
 
-class ListCommentsQueryHandler:
+class ListCommentsQueryHandler(QueryHandler[ListCommentsQuery, list[RequestComment]]):
     def __init__(self, request_repo: RequestRepositoryInterface):
         self.request_repo = request_repo
 

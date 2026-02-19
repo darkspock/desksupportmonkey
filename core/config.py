@@ -36,6 +36,23 @@ class ReportSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
+class AISettings(BaseSettings):
+    OPENAI_API_KEY: str = ""
+    GROQ_API_KEY: str = ""
+
+    model_config = SettingsConfigDict(
+        env_file=".env", extra="ignore",
+    )
+
+
+class MCPSettings(BaseSettings):
+    MCP_ENABLED: bool = False
+    MCP_TRANSPORT: str = "stdio"
+    MCP_SSE_PATH: str = "/mcp"
+
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+
 class Settings(BaseSettings):
     # Database
     POSTGRES_USER: str = "postgres"
@@ -77,6 +94,12 @@ class Settings(BaseSettings):
 
     # Report settings (nested)
     report: ReportSettings = ReportSettings()
+
+    # AI settings (nested)
+    ai: AISettings = AISettings()
+
+    # MCP settings (nested)
+    mcp: MCPSettings = MCPSettings()
 
     @property
     def DATABASE_URL(self) -> str:

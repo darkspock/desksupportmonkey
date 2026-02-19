@@ -16,6 +16,7 @@ class MyEquipmentResponse(BaseModel):
 class MyRequestResponse(BaseModel):
     id: str
     type: str
+    subtype: Optional[str] = None
     title: str
     status: str
     priority: str
@@ -50,3 +51,14 @@ class MyCompanySettingsResponse(BaseModel):
 
 class UpdateMyCompanySettingsRequest(BaseModel):
     email_domains: list[str] = Field(min_length=1)
+
+
+class MyMaintenanceResponse(BaseModel):
+    id: str
+    asset_id: str
+    status: str
+    priority: str
+    title: str
+    scheduled_at: Optional[datetime] = None
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None

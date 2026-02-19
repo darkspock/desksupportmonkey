@@ -131,3 +131,29 @@ class SlaAlertItem(BaseModel):
     hours_open: float
     sla_threshold_hours: int
     breached: bool
+
+
+# --- Budget Health ---
+
+class AtRiskDepartmentItem(BaseModel):
+    department_id: str
+    department_name: str
+    utilization_pct: float
+    remaining_cents: int
+
+
+class BudgetHealthResponse(BaseModel):
+    total_allocated_cents: int
+    total_spent_cents: int
+    departments_at_risk: list[AtRiskDepartmentItem]
+
+
+# --- Recent Purchase Orders ---
+
+class RecentPOItem(BaseModel):
+    id: str
+    po_number: str
+    vendor_name: str
+    status: str
+    total_amount_cents: int
+    created_at: Optional[datetime] = None

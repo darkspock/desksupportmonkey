@@ -1,0 +1,111 @@
+{% extends "reports/base.html" %}
+
+{% block content %}
+<div class="section">
+    <h2>Budget Overview — Fiscal Year {{ fiscal_year }}</h2>
+    <div class="cards">
+        <div class="card">
+            <div class="value">{{ total_allocated }}</div>
+            <div class="label">Total Allocated</div>
+        </div>
+        <div class="card">
+            <div class="value">{{ total_spent }}</div>
+            <div class="label">Total Spent</div>
+        </div>
+        <div class="card">
+            <div class="value">{{ total_remaining }}</div>
+            <div class="label">Remaining</div>
+        </div>
+        <div class="card">
+            <div class="value">{{ overall_utilization }}%</div>
+            <div class="label">Utilization</div>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <h2>Department Budgets</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Department</th>
+                <th>Allocated</th>
+                <th>Spent</th>
+                <th>Remaining</th>
+                <th>Utilization</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dept in departments %}
+            <tr>
+                <td>{{ dept.name }}</td>
+                <td>{{ dept.allocated }}</td>
+                <td>{{ dept.spent }}</td>
+                <td>{{ dept.remaining }}</td>
+                <td>
+                    {% if dept.utilization_pct > 100 %}
+                    <span class="badge badge-red">{{ dept.utilization_pct }}%</span>
+                    {% elif dept.utilization_pct > 80 %}
+                    <span class="badge badge-yellow">{{ dept.utilization_pct }}%</span>
+                    {% else %}
+                    <span class="badge badge-green">{{ dept.utilization_pct }}%</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if top_vendors %}
+<div class="section">
+    <h2>Top 5 Vendors by Spend</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Vendor</th>
+                <th>Total Spend</th>
+                <th>PO Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for v in top_vendors %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ v.name }}</td>
+                <td>{{ v.total_spend }}</td>
+                <td>{{ v.po_count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if top_asset_types %}
+<div class="section">
+    <h2>Top 5 Asset Types by Spend</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Asset Type</th>
+                <th>Total Spend</th>
+                <th>Item Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in top_asset_types %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ a.type }}</td>
+                <td>{{ a.total_spend }}</td>
+                <td>{{ a.item_count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

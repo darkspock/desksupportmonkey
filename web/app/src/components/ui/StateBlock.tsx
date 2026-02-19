@@ -13,9 +13,9 @@ interface ErrorStateProps {
 
 export function EmptyState({ message, action }: EmptyStateProps) {
   return (
-    <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center">
-      <p className="text-sm text-gray-600">{message}</p>
-      {action ? <div className="mt-3">{action}</div> : null}
+    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card py-16">
+      <p className="text-sm text-muted-foreground">{message}</p>
+      {action ? <div className="mt-4">{action}</div> : null}
     </div>
   );
 }
@@ -24,13 +24,13 @@ export function ErrorState({ message, onRetry }: ErrorStateProps) {
   const { t } = useI18n();
 
   return (
-    <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-4">
-      <p className="text-sm text-red-700">{message || t('errors.unexpected_detail')}</p>
+    <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-4">
+      <p className="text-sm text-destructive">{message || t('errors.unexpected_detail')}</p>
       {onRetry ? (
         <button
           type="button"
           onClick={onRetry}
-          className="mt-3 rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100"
+          className="mt-3 inline-flex items-center justify-center rounded-md h-8 px-3 text-sm font-medium border border-destructive/30 bg-card shadow-xs hover:bg-destructive/10 text-destructive transition-all"
         >
           {t('common.retry')}
         </button>

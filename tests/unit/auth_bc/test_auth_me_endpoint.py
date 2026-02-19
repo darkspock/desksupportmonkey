@@ -5,6 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from adapters.http.api.auth import dependencies as auth_dependencies
+from adapters.http.api.auth.dependencies import get_company_repo
 from app import app
 from core.database import get_db
 from src.auth_bc.user.domain.entities import User
@@ -28,27 +29,33 @@ def _super_admin_user() -> User:
 
 
 @pytest.fixture
-def company_client():
+def mock_company_repo():
+    return MagicMock()
+
+
+@pytest.fixture
+def company_client(mock_company_repo):
     app.dependency_overrides[auth_dependencies.get_current_user] = lambda: _company_user()
     app.dependency_overrides[get_db] = lambda: MagicMock()
+    app.dependency_overrides[get_company_repo] = lambda: mock_company_repo
     client = TestClient(app)
     yield client
     app.dependency_overrides.clear()
 
 
 @pytest.fixture
-def super_admin_client():
+def super_admin_client(mock_company_repo):
     app.dependency_overrides[auth_dependencies.get_current_user] = lambda: _super_admin_user()
     app.dependency_overrides[get_db] = lambda: MagicMock()
+    app.dependency_overrides[get_company_repo] = lambda: mock_company_repo
     client = TestClient(app)
     yield client
     app.dependency_overrides.clear()
 
 
 class TestAuthMeEndpoint:
-    @patch("adapters.http.api.auth.routers.CompanyRepository")
-    def test_includes_company_name_when_company_is_present(self, MockCompanyRepository, company_client):
-        MockCompanyRepository.return_value.find_by_id.return_value = SimpleNamespace(name="Acme Corp")
+    def test_includes_company_name_when_company_is_present(self, company_client, mock_company_repo):
+        mock_company_repo.find_by_id.return_value = SimpleNamespace(name="Acme Corp")
 
         response = company_client.get("/api/v1/auth/me")
 
@@ -56,14 +63,13 @@ class TestAuthMeEndpoint:
         data = response.json()["data"]
         assert data["company_id"] == "comp1"
         assert data["company_name"] == "Acme Corp"
-        MockCompanyRepository.return_value.find_by_id.assert_called_once_with("comp1")
+        mock_company_repo.find_by_id.assert_called_once_with("comp1")
 
-    @patch("adapters.http.api.auth.routers.CompanyRepository")
-    def test_skips_company_lookup_for_super_admin(self, MockCompanyRepository, super_admin_client):
+    def test_skips_company_lookup_for_super_admin(self, super_admin_client, mock_company_repo):
         response = super_admin_client.get("/api/v1/auth/me")
 
         assert response.status_code == 200
         data = response.json()["data"]
         assert data["company_id"] is None
         assert data["company_name"] is None
-        MockCompanyRepository.return_value.find_by_id.assert_not_called()
+        mock_company_repo.find_by_id.assert_not_called()

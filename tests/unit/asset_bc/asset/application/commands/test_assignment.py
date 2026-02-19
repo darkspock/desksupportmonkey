@@ -48,16 +48,13 @@ class TestAssignAssetCommand:
         user_repo.find_by_id_and_company.return_value = user
 
         handler = AssignAssetCommandHandler(asset_repo=asset_repo, user_repo=user_repo)
-        result = handler.handle(
+        handler.handle(
             AssignAssetCommand(
                 asset_id=asset.id, company_id="comp1",
                 user_id=user.id, performed_by="tech1",
             )
         )
 
-        assert result.status == AssetStatus.ASSIGNED
-        assert result.assigned_to == user.id
-        assert result.department_id == "dept1"
         asset_repo.save.assert_called_once()
         asset_repo.save_event.assert_called_once()
         event = asset_repo.save_event.call_args[0][0]
@@ -142,14 +139,13 @@ class TestUnassignAssetCommand:
         repo.save.side_effect = lambda a: a
         handler = UnassignAssetCommandHandler(asset_repo=repo)
 
-        result = handler.handle(
+        handler.handle(
             UnassignAssetCommand(
                 asset_id=asset.id, company_id="comp1", performed_by="tech1",
             )
         )
 
-        assert result.status == AssetStatus.IN_STOCK
-        assert result.assigned_to is None
+        repo.save.assert_called_once()
         repo.save_event.assert_called_once()
         event = repo.save_event.call_args[0][0]
         assert event.event_type == "unassigned"

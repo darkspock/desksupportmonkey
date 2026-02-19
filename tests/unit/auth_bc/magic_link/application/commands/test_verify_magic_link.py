@@ -8,8 +8,8 @@ from src.auth_bc.magic_link.application.commands.verify_magic_link import (
     ExpiredTokenError,
     InvalidTokenError,
     UsedTokenError,
-    VerifyMagicLinkCommand,
-    VerifyMagicLinkCommandHandler,
+    VerifyMagicLinkRequest,
+    VerifyMagicLinkService,
 )
 from src.auth_bc.magic_link.domain.entities import MagicLink
 from src.auth_bc.user.domain.entities import User
@@ -25,13 +25,13 @@ def _make_user():
     return User.create(email="user@company.com", role=UserRole.EMPLOYEE, company_id="comp123")
 
 
-class TestVerifyMagicLinkCommandHandler:
+class TestVerifyMagicLinkService:
     def setup_method(self):
         self.magic_link_repo = MagicMock()
         self.user_repo = MagicMock()
         self.company_lookup = MagicMock()
         self.jwt_service = MagicMock()
-        self.handler = VerifyMagicLinkCommandHandler(
+        self.handler = VerifyMagicLinkService(
             magic_link_repo=self.magic_link_repo,
             user_repo=self.user_repo,
             company_lookup=self.company_lookup,
@@ -46,7 +46,7 @@ class TestVerifyMagicLinkCommandHandler:
         self.user_repo.find_by_email.return_value = user
         self.jwt_service.create_token.return_value = "jwt-token"
 
-        result = self.handler.handle(VerifyMagicLinkCommand(token=ml.token))
+        result = self.handler.handle(VerifyMagicLinkRequest(token=ml.token))
 
         assert result == "jwt-token"
         self.magic_link_repo.update_used_at.assert_called_once()
@@ -58,7 +58,7 @@ class TestVerifyMagicLinkCommandHandler:
         self.user_repo.find_by_email.return_value = None
         self.jwt_service.create_token.return_value = "jwt-token"
 
-        result = self.handler.handle(VerifyMagicLinkCommand(token=ml.token))
+        result = self.handler.handle(VerifyMagicLinkRequest(token=ml.token))
 
         assert result == "jwt-token"
         self.user_repo.save.assert_called_once()
@@ -67,7 +67,7 @@ class TestVerifyMagicLinkCommandHandler:
         self.magic_link_repo.find_by_token.return_value = None
 
         with pytest.raises(InvalidTokenError):
-            self.handler.handle(VerifyMagicLinkCommand(token="bad-token"))
+            self.handler.handle(VerifyMagicLinkRequest(token="bad-token"))
 
     def test_used_token(self):
         ml = _make_valid_magic_link()
@@ -75,7 +75,7 @@ class TestVerifyMagicLinkCommandHandler:
         self.magic_link_repo.find_by_token.return_value = ml
 
         with pytest.raises(UsedTokenError):
-            self.handler.handle(VerifyMagicLinkCommand(token=ml.token))
+            self.handler.handle(VerifyMagicLinkRequest(token=ml.token))
 
     def test_expired_token(self):
         ml = _make_valid_magic_link()
@@ -83,7 +83,7 @@ class TestVerifyMagicLinkCommandHandler:
         self.magic_link_repo.find_by_token.return_value = ml
 
         with pytest.raises(ExpiredTokenError):
-            self.handler.handle(VerifyMagicLinkCommand(token=ml.token))
+            self.handler.handle(VerifyMagicLinkRequest(token=ml.token))
 
     def test_company_restricted(self):
         ml = _make_valid_magic_link()
@@ -91,7 +91,7 @@ class TestVerifyMagicLinkCommandHandler:
         self.company_lookup.find_company_by_email_domain.return_value = ("comp123", False)
 
         with pytest.raises(CompanyRestrictedError):
-            self.handler.handle(VerifyMagicLinkCommand(token=ml.token))
+            self.handler.handle(VerifyMagicLinkRequest(token=ml.token))
 
     def test_deactivated_user(self):
         ml = _make_valid_magic_link()
@@ -102,4 +102,4 @@ class TestVerifyMagicLinkCommandHandler:
         self.user_repo.find_by_email.return_value = user
 
         with pytest.raises(InvalidTokenError):
-            self.handler.handle(VerifyMagicLinkCommand(token=ml.token))
+            self.handler.handle(VerifyMagicLinkRequest(token=ml.token))

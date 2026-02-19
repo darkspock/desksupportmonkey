@@ -98,29 +98,34 @@ export default function CompaniesPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-gray-900">{t('page.companies.title')}</h2>
-        <button onClick={() => setShowForm(!showForm)} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
-          {showForm ? t('common.cancel') : t('page.companies.new')}
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground">{t('page.companies.title')}</h2>
+        <button
+          onClick={() => setShowForm(!showForm)}
+          className={showForm
+            ? 'inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50'
+            : 'inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50'}
+        >
+          {showForm ? t('common.close') : t('page.companies.new')}
         </button>
       </div>
 
       {showForm && (
         <Card className="mb-4">
           <form onSubmit={(e) => { e.preventDefault(); create.mutate(); }} className="space-y-3">
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-destructive">{error}</p>}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('table.company_name')}</label>
-              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="w-full border rounded-lg px-3 py-2 text-sm" />
+              <label className="block mb-1.5 text-muted-foreground">{t('table.company_name')}</label>
+              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="w-full" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.register.admin_email')}</label>
-              <input type="email" value={form.admin_email} onChange={(e) => setForm({ ...form, admin_email: e.target.value })} required className="w-full border rounded-lg px-3 py-2 text-sm" />
+              <label className="block mb-1.5 text-muted-foreground">{t('auth.register.admin_email')}</label>
+              <input type="email" value={form.admin_email} onChange={(e) => setForm({ ...form, admin_email: e.target.value })} required className="w-full" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('table.email_domains')}</label>
-              <input value={form.email_domains} onChange={(e) => setForm({ ...form, email_domains: e.target.value })} placeholder={t('common.placeholder_domains_short')} className="w-full border rounded-lg px-3 py-2 text-sm" />
+              <label className="block mb-1.5 text-muted-foreground">{t('table.email_domains')}</label>
+              <input value={form.email_domains} onChange={(e) => setForm({ ...form, email_domains: e.target.value })} placeholder={t('common.placeholder_domains_short')} className="w-full" />
             </div>
-            <button type="submit" disabled={create.isPending} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm disabled:opacity-50">
+            <button type="submit" disabled={create.isPending} className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50">
               {create.isPending ? t('page.companies.creating') : t('page.companies.create')}
             </button>
           </form>
@@ -129,22 +134,22 @@ export default function CompaniesPage() {
 
       {editingCompany && (
         <Card className="mb-4">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">{t('page.companies.edit')}</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3">{t('page.companies.edit')}</h3>
           <div className="space-y-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('table.name')}</label>
+              <label className="block mb-1.5 text-muted-foreground">{t('table.name')}</label>
               <input
                 value={editingCompany.name}
                 onChange={(e) => setEditingCompany({ ...editingCompany, name: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('table.email_domains')}</label>
+              <label className="block mb-1.5 text-muted-foreground">{t('table.email_domains')}</label>
               <input
                 value={editingCompany.email_domains}
                 onChange={(e) => setEditingCompany({ ...editingCompany, email_domains: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -154,11 +159,11 @@ export default function CompaniesPage() {
                   updateCompany.mutate({ id: editingCompany.id, name: editingCompany.name, emailDomains: domains });
                 }}
                 disabled={updateCompany.isPending || !editingCompany.name.trim()}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
               >
                 {updateCompany.isPending ? t('auth.set_password.saving') : t('common.save')}
               </button>
-              <button onClick={() => setEditingCompany(null)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+              <button onClick={() => setEditingCompany(null)} className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50">
                 {t('common.cancel')}
               </button>
             </div>
@@ -168,7 +173,7 @@ export default function CompaniesPage() {
 
       <Card>
         <div className="mb-4">
-          <input placeholder={t('common.search')} value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="border rounded-lg px-3 py-1.5 text-sm w-48" />
+          <input placeholder={t('common.search')} value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="w-48" />
         </div>
 
         {isLoading ? <Loading /> : isError ? (
@@ -184,7 +189,7 @@ export default function CompaniesPage() {
           <>
             <Table>
               <thead><tr><Th>{t('table.name')}</Th><Th>{t('table.status')}</Th><Th>{t('table.users')}</Th><Th>{t('table.departments')}</Th><Th>{t('table.actions')}</Th></tr></thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody>
                 {data.data.map((c) => (
                   <tr key={c.id}>
                     <Td>{c.name}</Td>
@@ -195,14 +200,14 @@ export default function CompaniesPage() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => setEditingCompany({ id: c.id, name: c.name, email_domains: c.email_domains.join(', ') })}
-                          className="text-xs text-blue-600 hover:underline"
+                          className="text-xs text-primary hover:underline"
                         >
                           {t('common.edit')}
                         </button>
                         <select
                           value={c.status}
                           onChange={(e) => requestStatusChange(c, e.target.value)}
-                          className="border rounded px-2 py-1 text-xs"
+                          className="text-xs"
                         >
                           <option value="active">{t('enum.active')}</option>
                           <option value="suspended">{t('enum.suspended')}</option>

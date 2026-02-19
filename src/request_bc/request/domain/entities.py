@@ -11,6 +11,7 @@ from src.request_bc.request.domain.enums import (
     RequestStatus,
     RequestType,
     VALID_STATUS_TRANSITIONS,
+    VALID_SUBTYPES,
 )
 
 
@@ -25,6 +26,7 @@ class ServiceRequest:
     status: RequestStatus
     priority: RequestPriority
     assigned_to: Optional[str] = None
+    subtype: Optional[str] = None
     data: Optional[dict] = field(default=None)
     resolved_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
@@ -39,20 +41,33 @@ class ServiceRequest:
         title: str,
         description: str,
         data: Optional[dict] = None,
+        id: Optional[str] = None,
+        subtype: Optional[str] = None,
+        requires_approval: bool = False,
     ) -> "ServiceRequest":
         if not title or not title.strip():
             raise ValueError("Title is required")
         if not description or not description.strip():
             raise ValueError("Description is required")
+        if subtype is not None:
+            valid = [s.value for s in VALID_SUBTYPES.get(type, [])]
+            if not valid:
+                raise ValueError(f"Request type '{type.value}' does not support subtypes")
+            if subtype not in valid:
+                raise ValueError(f"Invalid subtype '{subtype}' for type '{type.value}'")
+        initial_status = (
+            RequestStatus.PENDING_APPROVAL if requires_approval else RequestStatus.SUBMITTED
+        )
         return cls(
-            id=str(ulid.new()),
+            id=id or str(ulid.new()),
             company_id=company_id,
             created_by=created_by,
             type=type,
             title=title.strip(),
             description=description.strip(),
-            status=RequestStatus.SUBMITTED,
+            status=initial_status,
             priority=DEFAULT_PRIORITY[type],
+            subtype=subtype,
             data=data,
         )
 
@@ -111,11 +126,12 @@ class RequestComment:
         request_id: str,
         author_id: str,
         body: str,
+        id: Optional[str] = None,
     ) -> "RequestComment":
         if not body or not body.strip():
             raise ValueError("Comment body is required")
         return cls(
-            id=str(ulid.new()),
+            id=id or str(ulid.new()),
             request_id=request_id,
             author_id=author_id,
             body=body.strip(),
@@ -136,11 +152,12 @@ class RequestNote:
         request_id: str,
         author_id: str,
         body: str,
+        id: Optional[str] = None,
     ) -> "RequestNote":
         if not body or not body.strip():
             raise ValueError("Note body is required")
         return cls(
-            id=str(ulid.new()),
+            id=id or str(ulid.new()),
             request_id=request_id,
             author_id=author_id,
             body=body.strip(),
