@@ -24,9 +24,9 @@ export function Td({ children, className }: { children: React.ReactNode; classNa
   );
 }
 
-export function Tr({ children, className }: { children: React.ReactNode; className?: string }) {
+export function Tr({ children, className, onClick }: { children: React.ReactNode; className?: string; onClick?: () => void }) {
   return (
-    <tr className={cn('border-b border-border transition-colors hover:bg-muted/50', className)}>
+    <tr className={cn('border-b border-border transition-colors hover:bg-muted/50', className)} onClick={onClick}>
       {children}
     </tr>
   );

@@ -6,7 +6,7 @@ import { useI18n } from '../../lib/i18n';
 import type { RequestType } from '../../types';
 import { VALID_SUBTYPES } from '../../types';
 
-const TYPE_CONFIG: { key: RequestType; icon: JSX.Element; descKey: string }[] = [
+const TYPE_CONFIG: { key: RequestType; icon: React.ReactNode; descKey: string }[] = [
   {
     key: 'incident',
     descKey: 'page.new_request.type_desc_incident',
