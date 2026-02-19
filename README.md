@@ -39,24 +39,32 @@ Each agent has a specific prompt and responsibilities. The pipeline ensures that
 
 | Role | Capabilities |
 |------|-------------|
-| **Employee** | View assigned equipment, submit service requests (incidents, new equipment, onboarding), track request status, receive real-time notifications |
-| **Technician** | Request queue with filters, assign/update request status, public comments and internal notes, asset inventory management, CSV asset import, warranty tracking |
-| **Admin** | Dashboard with metrics and SLA alerts, user management and role assignment, department management, PDF report generation (asset inventory, request summary, technician performance) |
+| **Employee** | View assigned equipment, submit service requests (6 types with AI classification), track requests, schedule appointments, view shipments, receive real-time notifications |
+| **Technician** | Request queue with filters, asset inventory with QR/barcodes, maintenance records and calendar, shipment management, availability settings, internal notes |
+| **Admin** | Dashboard with metrics and SLA alerts, user and department management, equipment profiles, procurement (POs, vendors, budgets), maintenance templates, PDF reports, API keys, AI configuration |
 | **Super Admin** | Multi-tenant company management, company status control (active/suspended/deactivated) |
 
 ### Authentication
 
 - **Magic link** passwordless login for all users
 - **Email + password** login for admin accounts
+- **API keys** for external integrations (MCP server, Claude Desktop)
 - First-visit password setup flow for new admins
 - JWT-based session management
 
 ### Platform Capabilities
 
-- Multi-tenant architecture with company isolation
-- Real-time WebSocket notifications
-- Background PDF report generation (Celery)
-- S3-compatible file storage (MinIO)
+- Multi-tenant architecture with company isolation (11 bounded contexts)
+- AI-powered request classification (type, subtype, priority) via Groq or OpenAI
+- AI-assisted auto-assignment matching assets to employee equipment profiles
+- Purchase orders, vendor directory, and department budget enforcement
+- Scheduled maintenance with templates, recurrence, and overdue alerts
+- Equipment shipment tracking (outbound, inbound, returns)
+- Appointment scheduling with technician availability management
+- MCP server exposing 57 AI-callable tools for Claude Desktop and other assistants
+- Real-time WebSocket notifications with domain event bus
+- Background PDF report generation (Celery + MinIO)
+- Bilingual interface (English and Spanish)
 - Idempotent seed script for demo data with 3 sample companies
 
 ---
@@ -104,41 +112,44 @@ Each agent has a specific prompt and responsibilities. The pipeline ensures that
 ```
 desksupportmonkey/
 │
-├── src/                          # Backend domain logic (DDD bounded contexts)
-│   ├── auth_bc/                  #   Authentication & authorization
-│   │   ├── user/                 #     User management, roles, passwords
-│   │   ├── magic_link/           #     Magic link token lifecycle
-│   │   └── company_lookup/       #     Multi-tenant company identification
-│   ├── company_bc/               #   Company & department management
-│   │   ├── company/              #     Company CRUD, status, email domains
-│   │   └── department/           #     Department CRUD within companies
-│   ├── asset_bc/                 #   IT asset inventory
-│   │   └── asset/                #     Asset CRUD, assignment, CSV import, events
-│   ├── request_bc/               #   Service request management (core domain)
-│   │   └── request/              #     Requests, comments, notes, status workflow
-│   ├── notification_bc/          #   Real-time notification system
-│   │   └── notification/         #     Notification storage, event bus, delivery
-│   ├── report_bc/                #   Report generation
-│   │   └── report/               #     PDF reports via Celery async tasks
+├── src/                          # Backend domain logic (11 DDD bounded contexts)
+│   ├── auth_bc/                  #   Authentication, users, roles, API keys
+│   ├── company_bc/               #   Companies, departments, equipment profiles, AI config
+│   ├── asset_bc/                 #   IT asset inventory, assignment, QR/barcodes
+│   ├── request_bc/               #   Service requests, AI classification, priority scoring
+│   ├── notification_bc/          #   Real-time WebSocket notifications, event routing
+│   ├── report_bc/                #   Async PDF report generation (Celery + S3)
+│   ├── procurement_bc/           #   Purchase orders, vendors, department budgets
+│   ├── appointment_bc/           #   Support appointments, technician availability
+│   ├── shipping_bc/              #   Equipment shipments, addresses, delivery tracking
+│   ├── maintenance_bc/           #   Scheduled maintenance, templates, recurring plans
+│   ├── mcp_bc/                   #   MCP server — 57 AI-callable tools
 │   └── framework/                #   Shared base classes (Command/Query bus)
 │
-├── adapters/                     # HTTP layer (Ports & Adapters pattern)
-│   └── http/
-│       ├── api/                  #   REST API routers and schemas
-│       │   ├── auth/             #     Login, magic link, password, /me
-│       │   ├── registration/     #     Company self-registration
-│       │   ├── companies/        #     Company management (super admin)
-│       │   ├── departments/      #     Department CRUD
-│       │   ├── users/            #     User management & roles
-│       │   ├── assets/           #     Asset CRUD, import, assignment
-│       │   ├── requests/         #     Service request lifecycle
-│       │   ├── my/               #     User-scoped endpoints (my equipment, my requests)
-│       │   ├── dashboard/        #     Admin dashboard metrics & alerts
-│       │   ├── reports/          #     Report generation & download
-│       │   └── health/           #     Health check endpoint
-│       ├── ws/                   #   WebSocket notification delivery
-│       ├── middleware/           #   Error handlers
-│       └── schemas/              #   Shared response schemas
+├── adapters/                     # HTTP + MCP layer (Ports & Adapters pattern)
+│   ├── http/api/                 #   REST API routers and schemas
+│   │   ├── auth/                 #     Login, magic link, password, API keys
+│   │   ├── registration/         #     Company self-registration
+│   │   ├── companies/            #     Company management (super admin)
+│   │   ├── departments/          #     Department CRUD
+│   │   ├── users/                #     User management & roles
+│   │   ├── assets/               #     Asset CRUD, import, assignment
+│   │   ├── requests/             #     Service request lifecycle
+│   │   ├── my/                   #     User-scoped endpoints (equipment, requests)
+│   │   ├── dashboard/            #     Admin dashboard metrics & alerts
+│   │   ├── reports/              #     Report generation & download
+│   │   ├── purchase_orders/      #     Purchase order lifecycle
+│   │   ├── vendors/              #     Vendor directory
+│   │   ├── budgets/              #     Department budget management
+│   │   ├── appointments/         #     Appointment scheduling
+│   │   ├── availability/         #     Technician availability
+│   │   ├── shipments/            #     Equipment shipments
+│   │   ├── addresses/            #     Shipping addresses
+│   │   ├── maintenance/          #     Maintenance records
+│   │   ├── maintenance_templates/#     Templates & recurring plans
+│   │   ├── equipment_profiles/   #     Department equipment profiles
+│   │   └── settings/             #     AI config, classification, procurement
+│   └── mcp/                      #   MCP server (57 tools for AI assistants)
 │
 ├── core/                         # Shared infrastructure
 │   ├── config.py                 #   Pydantic settings from environment
@@ -153,44 +164,49 @@ desksupportmonkey/
 │   ├── mixins.py                 #   ULID and timestamp ORM mixins
 │   └── tasks/                    #   Celery task definitions (reports)
 │
-├── web/app/                      # React frontend
+├── web/app/                      # React frontend (v0 shadcn/ui design system)
 │   └── src/
 │       ├── pages/                #   Page components by role
-│       │   ├── auth/             #     Login, register, verify, set-password
-│       │   ├── employee/         #     My equipment, my requests, notifications
-│       │   ├── technician/       #     Request queue, asset management
-│       │   ├── admin/            #     Dashboard, users, departments, reports
+│       │   ├── auth/             #     Login, register, verify, set-password, change-password
+│       │   ├── employee/         #     Equipment, requests, appointments, shipments, notifications
+│       │   ├── technician/       #     Request queue, assets, maintenance, shipments, calendar
+│       │   ├── admin/            #     Dashboard, users, departments, reports, procurement, settings
 │       │   └── superadmin/       #     Company management
 │       ├── components/           #   Reusable components
 │       │   ├── layout/           #     AppLayout, Sidebar, Header
-│       │   └── ui/               #     Badge, Card, Table, Pagination, Loading
-│       ├── contexts/             #   React contexts (AuthContext)
-│       ├── hooks/                #   Custom hooks (WebSocket, notifications)
+│       │   └── ui/               #     Badge, Card, Table, Tooltip, Pagination, Loading
+│       ├── locales/              #   i18n (en.ts, es.ts)
+│       ├── hooks/                #   Custom hooks (WebSocket, notifications, i18n)
 │       ├── lib/                  #   API client (Axios), utilities
 │       ├── types/                #   TypeScript type definitions
 │       └── router.tsx            #   Route definitions
 │
-├── tests/                        # Test suite (433 tests, 58 files)
+├── tests/                        # Test suite (1,358 tests, 288 files)
 │   ├── unit/                     #   Unit tests per bounded context
 │   │   ├── auth_bc/              #     Auth tests (user, magic link, company lookup)
-│   │   ├── company_bc/           #     Company & department tests
+│   │   ├── company_bc/           #     Company, department, equipment profile tests
 │   │   ├── asset_bc/             #     Asset management tests
-│   │   ├── request_bc/           #     Service request tests
+│   │   ├── request_bc/           #     Service request, AI classification tests
 │   │   ├── notification_bc/      #     Notification tests
 │   │   ├── report_bc/            #     Report generation tests
+│   │   ├── procurement_bc/       #     Purchase orders, vendors, budgets tests
+│   │   ├── appointment_bc/       #     Appointment scheduling tests
+│   │   ├── shipping_bc/          #     Shipment tracking tests
+│   │   ├── maintenance_bc/       #     Maintenance templates and plans tests
+│   │   ├── mcp_bc/               #     MCP server tool tests
 │   │   ├── dashboard/            #     Dashboard metrics tests
 │   │   └── core/                 #     Infrastructure tests (JWT, password, storage)
-│   └── integration/              #   Integration tests (WebSocket)
+│   └── integration/              #   Integration tests (full HTTP stack)
 │
 ├── alembic/                      # Database migrations
-│   └── versions/                 #   8 migration scripts
+│   └── versions/                 #   32 migration scripts
 │
 ├── scripts/                      # Utility scripts
 │   └── seed_demo_data.py         #   Idempotent demo data seeder (3 companies)
 │
 ├── docs/                         # Product documentation
 │   ├── product/                  #   Functional & technical requirements, roadmap
-│   └── epics/                    #   9 epics with requirements, slicing, validation
+│   └── epics/                    #   19 epics with requirements, slicing, validation
 │       ├── e0-foundation/        #     Project bootstrap & auth infrastructure
 │       ├── e1-company-management/#     Company CRUD, departments, users
 │       ├── e2-asset-inventory/   #     Asset CRUD, assignment, import
@@ -199,7 +215,9 @@ desksupportmonkey/
 │       ├── e5-admin-dashboard/   #     Metrics, charts, SLA alerts
 │       ├── e6-report-generation/ #     PDF reports via Celery
 │       ├── e7-frontend/          #     React SPA setup
-│       └── e8-seed-data-demo/    #     Demo data generation
+│       ├── e8-seed-data-demo/    #     Demo data generation
+│       ├── e11-e17/              #     Equipment profiles, procurement, maintenance, shipping, appointments
+│       └── e35-mcp-server/       #     MCP server for AI assistants
 │
 ├── ai_docs/                      # AI development pipeline
 │   ├── agents/                   #   10 AI agent definitions (see below)

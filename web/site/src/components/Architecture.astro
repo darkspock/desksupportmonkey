@@ -1,11 +1,16 @@
 ---
 const boundedContexts = [
-  { name: 'auth_bc', desc: 'Authentication, magic links, users, roles', color: 'bg-blue-500' },
-  { name: 'company_bc', desc: 'Multi-tenant company management, departments', color: 'bg-indigo-500' },
-  { name: 'asset_bc', desc: 'IT asset inventory, categories, assignments', color: 'bg-emerald-500' },
-  { name: 'request_bc', desc: 'Service requests, lifecycle, assignment', color: 'bg-amber-500' },
-  { name: 'notification_bc', desc: 'Real-time notifications via WebSocket', color: 'bg-purple-500' },
-  { name: 'report_bc', desc: 'Async report generation (Celery + S3)', color: 'bg-rose-500' },
+  { name: 'auth_bc', desc: 'Authentication, magic links, users, roles, API keys', color: 'bg-blue-500' },
+  { name: 'company_bc', desc: 'Multi-tenant companies, departments, equipment profiles, AI config', color: 'bg-indigo-500' },
+  { name: 'asset_bc', desc: 'IT asset inventory, assignments, history, QR/barcodes', color: 'bg-emerald-500' },
+  { name: 'request_bc', desc: 'Service requests, AI classification, priority scoring, approval', color: 'bg-amber-500' },
+  { name: 'notification_bc', desc: 'Real-time WebSocket notifications, event routing', color: 'bg-purple-500' },
+  { name: 'report_bc', desc: 'Async PDF report generation (Celery + S3)', color: 'bg-rose-500' },
+  { name: 'procurement_bc', desc: 'Purchase orders, vendors, department budgets', color: 'bg-orange-500' },
+  { name: 'appointment_bc', desc: 'Support appointments, technician availability, calendar', color: 'bg-cyan-500' },
+  { name: 'shipping_bc', desc: 'Equipment shipments, addresses, delivery tracking', color: 'bg-pink-500' },
+  { name: 'maintenance_bc', desc: 'Scheduled maintenance, templates, recurring plans', color: 'bg-violet-500' },
+  { name: 'mcp_bc', desc: 'MCP server: 57 AI-callable tools for external assistants', color: 'bg-fuchsia-500' },
 ];
 
 const backendTech = ['Python 3.13', 'FastAPI', 'SQLAlchemy', 'Alembic', 'Celery', 'Redis'];
@@ -23,7 +28,7 @@ const infraTech = ['PostgreSQL', 'Redis', 'MinIO (S3)'];
     </div>
 
     <!-- Bounded Contexts -->
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-16">
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-16">
       {boundedContexts.map((bc) => (
         <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div class="flex items-center gap-3 mb-2">
