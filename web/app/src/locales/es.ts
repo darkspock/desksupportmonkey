@@ -113,7 +113,7 @@ const es: Record<string, string> = {
   'auth.verify.error_failed': 'La verificación falló',
 
   'auth.set_password.title': 'Define tu contraseña',
-  'auth.set_password.subtitle': 'Las cuentas admin requieren contraseña para continuar.',
+  'auth.set_password.subtitle': 'Tu cuenta requiere contraseña para continuar.',
   'auth.set_password.new_password': 'Nueva contraseña',
   'auth.set_password.confirm_password': 'Confirmar contraseña',
   'auth.set_password.placeholder_min_8': 'Mínimo 8 caracteres',

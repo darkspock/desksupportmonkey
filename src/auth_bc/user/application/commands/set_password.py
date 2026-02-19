@@ -41,8 +41,8 @@ class SetPasswordCommandHandler(CommandHandler[SetPasswordCommand]):
         if user is None:
             raise UserNotFoundError("User not found")
 
-        if user.role not in (UserRole.ADMIN, UserRole.SUPER_ADMIN):
-            raise NotAdminError("Only admins can set a password")
+        if user.role not in (UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TECHNICIAN):
+            raise NotAdminError("Only admin and technician accounts can set a password")
 
         if len(command.password) < 8:
             raise WeakPasswordError("Password must be at least 8 characters")
