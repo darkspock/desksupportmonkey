@@ -95,6 +95,7 @@ const es: Record<string, string> = {
   'auth.login.register_company': 'Registrar compañía',
   'auth.login.error_send_magic': 'No se pudo enviar el enlace mágico',
   'auth.login.error_login_failed': 'Error de inicio de sesión',
+  'auth.login.error_invalid_email': 'Introduce un correo de trabajo válido.',
 
   'auth.register.title': 'Registrar tu compañía',
   'auth.register.subtitle': 'Crea un nuevo espacio de trabajo y cuenta administradora.',

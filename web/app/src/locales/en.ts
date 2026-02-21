@@ -95,6 +95,7 @@ const en: Record<string, string> = {
   'auth.login.register_company': 'Register your company',
   'auth.login.error_send_magic': 'Failed to send magic link',
   'auth.login.error_login_failed': 'Login failed',
+  'auth.login.error_invalid_email': 'Enter a valid work email.',
 
   'auth.register.title': 'Register your company',
   'auth.register.subtitle': 'Create a new company workspace and admin account.',

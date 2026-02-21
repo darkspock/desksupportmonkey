@@ -8,6 +8,22 @@ import { useI18n } from '../../lib/i18n';
 
 type LoginMode = 'magic-link' | 'password';
 
+function getAuthErrorMessage(
+  err: unknown,
+  fallback: string,
+  t: (key: string, vars?: Record<string, unknown>, fallback?: { defaultValue: string }) => string,
+): string {
+  const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
+  if (typeof detail === 'string' && detail.trim()) {
+    const normalized = detail.toLowerCase();
+    if (normalized.includes('valid email address')) {
+      return t('auth.login.error_invalid_email');
+    }
+    return detail;
+  }
+  return fallback;
+}
+
 export default function LoginPage() {
   const { user, login } = useAuth();
   const { t } = useI18n();
@@ -35,7 +51,7 @@ export default function LoginPage() {
       await api.post('/auth/magic-link', { email });
       setSent(true);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('auth.login.error_send_magic');
+      const msg = getAuthErrorMessage(err, t('auth.login.error_send_magic'), t);
       setError(msg);
     } finally {
       setLoading(false);
@@ -51,7 +67,7 @@ export default function LoginPage() {
       await login(data.data.access_token);
       navigate(returnTo ?? '/', { replace: true });
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('auth.login.error_login_failed');
+      const msg = getAuthErrorMessage(err, t('auth.login.error_login_failed'), t);
       setError(msg);
     } finally {
       setLoading(false);

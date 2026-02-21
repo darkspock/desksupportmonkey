@@ -23,6 +23,8 @@ BLOCKED_DOMAINS = frozenset({
 def _normalize_domain(raw: str) -> str:
     """Validate and normalize a domain entry."""
     d = raw.lower().strip()
+    if d.startswith("@"):
+        d = d[1:].strip()
     if "@" in d:
         raise ValueError(f"'{raw}' looks like an email address, not a domain. Use the part after @, e.g. 'example.com'")
     if not d or "." not in d:

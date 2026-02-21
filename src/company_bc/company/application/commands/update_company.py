@@ -38,6 +38,7 @@ class UpdateCompanyCommandHandler(CommandHandler[UpdateCompanyCommand]):
         company = self.company_repo.find_by_id(command.company_id)
         if not company:
             raise CompanyNotFoundError("Company not found")
+        normalized_domains: Optional[list[str]] = None
 
         # Check name uniqueness (exclude self)
         if command.name and command.name.strip().lower() != company.name.lower():
@@ -47,13 +48,18 @@ class UpdateCompanyCommandHandler(CommandHandler[UpdateCompanyCommand]):
 
         # Check domain uniqueness (exclude own domains)
         if command.email_domains is not None:
-            for domain in command.email_domains:
-                owner = self.company_repo.find_domain(domain.lower().strip())
+            normalized_domains = Company.create(
+                name=company.name,
+                email_domains=command.email_domains,
+                id=company.id,
+            ).email_domains
+            for domain in normalized_domains:
+                owner = self.company_repo.find_domain(domain)
                 if owner and owner != company.id:
                     raise DomainAlreadyTakenError(domain)
 
         # Update entity
-        company.update(name=command.name, email_domains=command.email_domains)
+        company.update(name=command.name, email_domains=normalized_domains)
         self.company_repo.save(company)
 
         if command.email_domains is not None:

@@ -53,3 +53,16 @@ class TestRegisterCompany:
         })
 
         assert resp.status_code == 409
+
+    @patch("core.email.get_email_service")
+    def test_register_accepts_leading_at_in_email_domain(self, mock_email, client):
+        mock_email.return_value = MagicMock()
+
+        resp = client.post("/api/v1/register", json={
+            "name": "At Domain Startup",
+            "admin_email": "founder@atdomain.tech",
+            "email_domains": ["@atdomain.tech"],
+        })
+
+        assert resp.status_code == 201
+        assert "registered" in resp.json()["data"]["message"].lower()

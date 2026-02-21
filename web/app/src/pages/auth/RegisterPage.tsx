@@ -6,6 +6,8 @@ import api from '../../lib/api';
 import { getDefaultRouteForRole } from '../../lib/navigation';
 import { useI18n } from '../../lib/i18n';
 
+const normalizeDomain = (value: string) => value.trim().toLowerCase().replace(/^@+/, '');
+
 export default function RegisterPage() {
   const { user } = useAuth();
   const { t } = useI18n();
@@ -25,7 +27,7 @@ export default function RegisterPage() {
     try {
       const domains = emailDomains
         .split(',')
-        .map((d) => d.trim())
+        .map(normalizeDomain)
         .filter(Boolean);
 
       if (domains.length === 0) {
@@ -34,7 +36,9 @@ export default function RegisterPage() {
         return;
       }
 
-      const invalid = domains.find((d) => d.includes('@') || !d.includes('.'));
+      const invalid = domains.find(
+        (d) => d.includes('@') || !d.includes('.') || d.startsWith('.') || d.endsWith('.'),
+      );
       if (invalid) {
         setError(t('auth.register.error_invalid_domain', { domain: invalid }));
         setLoading(false);

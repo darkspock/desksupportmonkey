@@ -82,3 +82,15 @@ class TestUpdateCompanyCommand:
             UpdateCompanyCommand(company_id=existing_company.id, name="Acme Corp")
         )
         handler.company_repo.save.assert_called_once()
+
+    def test_domains_with_leading_at_are_normalized(self, handler, existing_company):
+        handler.company_repo.find_by_id.return_value = existing_company
+        handler.company_repo.find_domain.return_value = None
+
+        handler.handle(
+            UpdateCompanyCommand(company_id=existing_company.id, email_domains=["@new.tech"])
+        )
+
+        assert existing_company.email_domains == ["new.tech"]
+        handler.company_repo.find_domain.assert_called_once_with("new.tech")
+        handler.company_repo.save_domains.assert_called_once_with(existing_company.id, ["new.tech"])

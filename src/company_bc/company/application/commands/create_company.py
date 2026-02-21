@@ -55,16 +55,17 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
         if existing:
             raise CompanyNameExistsError("Company with this name already exists")
 
-        # Check domain uniqueness
-        for domain in command.email_domains:
-            owner = self.company_repo.find_domain(domain.lower().strip())
-            if owner:
-                raise DomainAlreadyTakenError(domain)
-
-        # Create company
+        # Validate + normalize domains early so uniqueness checks are canonical
         company = Company.create(
             name=command.name, email_domains=command.email_domains, id=command.id,
         )
+
+        # Check domain uniqueness
+        for domain in company.email_domains:
+            owner = self.company_repo.find_domain(domain)
+            if owner:
+                raise DomainAlreadyTakenError(domain)
+
         self.company_repo.save(company)
         self.company_repo.save_domains(company.id, company.email_domains)
 

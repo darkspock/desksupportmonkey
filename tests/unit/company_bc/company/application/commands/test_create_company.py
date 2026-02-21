@@ -101,3 +101,16 @@ class TestCreateCompanyCommand:
                     admin_email="existing@acme.com",
                 )
             )
+
+    def test_domains_with_leading_at_are_normalized(self, handler):
+        handler.company_repo.find_by_name.return_value = None
+        handler.company_repo.find_domain.return_value = None
+
+        handler.handle(
+            CreateCompanyCommand(name="Acme Corp", email_domains=["@acme.tech"])
+        )
+
+        saved_company = handler.company_repo.save.call_args[0][0]
+        assert saved_company.email_domains == ["acme.tech"]
+        handler.company_repo.find_domain.assert_called_once_with("acme.tech")
+        handler.company_repo.save_domains.assert_called_once_with(saved_company.id, ["acme.tech"])

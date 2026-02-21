@@ -23,6 +23,14 @@ class TestRequestMagicLink:
 
         assert resp.status_code == 403
 
+    def test_magic_link_invalid_email_returns_readable_validation_message(self, client):
+        resp = client.post("/api/v1/auth/magic-link", json={"email": "invalid-email"})
+
+        assert resp.status_code == 422
+        message = resp.json()["error"]["message"]
+        assert "email" in message.lower()
+        assert "[{" not in message
+
 
 class TestVerifyMagicLink:
     def test_verify_invalid_token(self, client):
