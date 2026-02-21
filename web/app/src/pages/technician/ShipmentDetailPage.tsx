@@ -180,11 +180,11 @@ export default function ShipmentDetailPage() {
   }
   if (!shipment) return <ErrorState message={t('page.shipment_detail.not_found')} />;
 
-  const isDraft = shipment.status === 'DRAFT';
-  const isDispatched = shipment.status === 'DISPATCHED';
-  const isInTransit = shipment.status === 'IN_TRANSIT';
-  const isDelivered = shipment.status === 'DELIVERED';
-  const isTerminal = shipment.status === 'FAILED' || shipment.status === 'CANCELLED';
+  const isDraft = shipment.status === 'draft';
+  const isDispatched = shipment.status === 'dispatched';
+  const isInTransit = shipment.status === 'in_transit';
+  const isDelivered = shipment.status === 'delivered';
+  const isTerminal = shipment.status === 'failed' || shipment.status === 'cancelled';
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -195,7 +195,7 @@ export default function ShipmentDetailPage() {
               <Badge variant={statusColors[shipment.status] || 'default'}>
                 {t(`enum.shipment_status.${shipment.status}`)}
               </Badge>
-              <Badge variant={shipment.direction === 'OUTBOUND' ? 'info' : 'warning'}>
+              <Badge variant={shipment.direction === 'outbound' ? 'info' : 'warning'}>
                 {t(`enum.shipment_direction.${shipment.direction}`)}
               </Badge>
               <span className="text-xs text-muted-foreground">{t(`enum.destination_type.${shipment.destination_type}`)}</span>

@@ -140,7 +140,7 @@ export default function ShipmentCreatePage() {
   const [recipientName, setRecipientName] = useState('');
   const [itemsDescription, setItemsDescription] = useState('');
   const [internalNotes, setInternalNotes] = useState('');
-  const [saveEmployeeAddress, setSaveEmployeeAddress] = useState(false);
+  const [saveEmployeeAddress] = useState(false);
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [assetSearch, setAssetSearch] = useState('');
   const [formError, setFormError] = useState('');
@@ -151,11 +151,6 @@ export default function ShipmentCreatePage() {
   const [inlineAddr, setInlineAddr] = useState({ label: '', street_line_1: '', street_line_2: '', city: '', state: '', postal_code: '', country: 'US' });
   const [inlineAddrTarget, setInlineAddrTarget] = useState<'origin' | 'destination' | null>(null);
   const inlineAddrValid = inlineAddr.street_line_1.trim() && inlineAddr.city.trim() && inlineAddr.state.trim() && inlineAddr.postal_code.trim();
-
-  const resetInlineAddr = () => {
-    setInlineAddr({ label: '', street_line_1: '', street_line_2: '', city: '', state: '', postal_code: '', country: 'US' });
-    setInlineAddrTarget(null);
-  };
 
   /* ---- Queries ---- */
   const addressesQuery = useQuery({

@@ -106,9 +106,9 @@ export default function ShipmentsPage() {
 
   const stats = useMemo(() => ({
     total: statsQuery.data?.meta?.total ?? 0,
-    inTransit: statsRows.filter((s) => s.status === 'IN_TRANSIT').length,
-    delivered: statsRows.filter((s) => s.status === 'DELIVERED').length,
-    pending: statsRows.filter((s) => s.status === 'DRAFT' || s.status === 'DISPATCHED').length,
+    inTransit: statsRows.filter((s) => s.status === 'in_transit').length,
+    delivered: statsRows.filter((s) => s.status === 'delivered').length,
+    pending: statsRows.filter((s) => s.status === 'draft' || s.status === 'dispatched').length,
   }), [statsRows, statsQuery.data?.meta?.total]);
 
   return (

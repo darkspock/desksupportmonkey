@@ -925,7 +925,7 @@ export default function RequestDetailPage() {
                           <Badge variant={shipStatusColors[s.status] || 'default'}>
                             {t(`enum.shipment_status.${s.status}`)}
                           </Badge>
-                          <Badge variant={s.direction === 'OUTBOUND' ? 'info' : 'warning'}>
+                          <Badge variant={s.direction === 'outbound' ? 'info' : 'warning'}>
                             {t(`enum.shipment_direction.${s.direction}`)}
                           </Badge>
                         </div>
