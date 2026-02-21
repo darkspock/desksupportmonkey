@@ -19,10 +19,12 @@ from adapters.http.api.my.schemas import (
     MyEquipmentResponse,
     MyCompanySettingsResponse,
     MyMaintenanceResponse,
+    MyProfileResponse,
     MyRequestResponse,
     NotificationListMeta,
     NotificationResponse,
     UpdateMyCompanySettingsRequest,
+    UpdateMyProfileRequest,
 )
 from adapters.http.schemas.responses import PaginationMeta
 from src.auth_bc.user.domain.entities import User
@@ -146,6 +148,23 @@ def _to_company_settings(detail: object) -> dict:
             id=detail.company.id,
             name=detail.company.name,
             email_domains=detail.company.email_domains,
+        ).model_dump(mode="json")
+    }
+
+
+@router.patch("/profile")
+def update_my_profile(
+    body: UpdateMyProfileRequest,
+    current_user: User = Depends(get_current_user),
+    user_repo: UserRepository = Depends(get_user_repo),
+):
+    current_user.name = body.name.strip()
+    user_repo.save(current_user)
+    return {
+        "data": MyProfileResponse(
+            id=current_user.id,
+            email=current_user.email,
+            name=current_user.name,
         ).model_dump(mode="json")
     }
 

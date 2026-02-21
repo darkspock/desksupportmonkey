@@ -28,6 +28,7 @@ from adapters.http.api.requests.schemas import (
     CreateRequestRequest,
     NoteResponse,
     RejectRequestRequest,
+    RequestEventResponse,
     RequestListItemResponse,
     RequestResponse,
 )
@@ -610,6 +611,36 @@ def get_request(
             assigned_to_name=name_map.get(detail.request.assigned_to) if detail.request.assigned_to else None,
             assigned_to_email=email_map.get(detail.request.assigned_to) if detail.request.assigned_to else None,
         ).model_dump(mode="json")
+    }
+
+
+@router.get("/{request_id}/events")
+def list_request_events(
+    request_id: str,
+    current_user: User = Depends(get_current_user),
+    request_repo: RequestRepository = Depends(get_request_repo),
+    user_repo: UserRepository = Depends(get_user_repo),
+):
+    _verify_request_access(request_id, current_user.company_id, current_user, request_repo)
+    events = request_repo.find_events(request_id=request_id, company_id=current_user.company_id)
+
+    actor_ids = [e.performed_by for e in events if e.performed_by]
+    email_map, name_map = _user_maps(user_repo, actor_ids)
+
+    return {
+        "data": [
+            RequestEventResponse(
+                id=e.id,
+                request_id=e.request_id,
+                event_type=e.event_type,
+                data=e.data,
+                performed_by=e.performed_by,
+                performed_by_name=name_map.get(e.performed_by),
+                performed_by_email=email_map.get(e.performed_by),
+                created_at=e.created_at,
+            ).model_dump(mode="json")
+            for e in events
+        ]
     }
 
 

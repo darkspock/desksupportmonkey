@@ -6,11 +6,16 @@ import { Header } from './Header';
 import { PageLoading } from '../ui/Loading';
 import { getDefaultRouteForRole } from '../../lib/navigation';
 import { useNotificationRealtime } from '../../hooks/useNotificationRealtime';
+import { useI18n } from '../../lib/i18n';
+import api from '../../lib/api';
 
 export function AppLayout() {
-  const { user, loading } = useAuth();
+  const { user, loading, refreshUser } = useAuth();
   const location = useLocation();
+  const { t } = useI18n();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+  const [savingName, setSavingName] = useState(false);
 
   useNotificationRealtime();
 
@@ -35,6 +40,19 @@ export function AppLayout() {
     return <Navigate to={getDefaultRouteForRole(user.role)} replace />;
   }
 
+  const showNameModal = !user.name;
+
+  const handleSaveName = async () => {
+    if (!nameInput.trim() || savingName) return;
+    setSavingName(true);
+    try {
+      await api.patch('/my/profile', { name: nameInput.trim() });
+      await refreshUser();
+    } finally {
+      setSavingName(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar mobileOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
@@ -46,6 +64,42 @@ export function AppLayout() {
           </div>
         </main>
       </div>
+
+      {showNameModal && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="relative z-[91] w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lg">
+            <h3 className="text-lg font-semibold text-foreground">
+              {t('profile.complete_profile')}
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {t('profile.enter_name')}
+            </p>
+            <input
+              type="text"
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSaveName();
+              }}
+              placeholder={t('profile.full_name')}
+              autoFocus
+              maxLength={100}
+              className="mt-4 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={handleSaveName}
+                disabled={!nameInput.trim() || savingName}
+                className="inline-flex items-center justify-center rounded-md h-9 px-4 text-sm font-medium shadow-xs transition-all disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                {savingName ? t('common.saving') : t('common.save')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

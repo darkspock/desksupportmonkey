@@ -53,6 +53,16 @@ class UpdateMyCompanySettingsRequest(BaseModel):
     email_domains: list[str] = Field(min_length=1)
 
 
+class UpdateMyProfileRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+
+
+class MyProfileResponse(BaseModel):
+    id: str
+    email: str
+    name: Optional[str] = None
+
+
 class MyMaintenanceResponse(BaseModel):
     id: str
     asset_id: str

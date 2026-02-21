@@ -161,6 +161,17 @@ export interface Note {
   created_at: string;
 }
 
+export interface RequestEventItem {
+  id: string;
+  request_id: string;
+  event_type: string;
+  data?: Record<string, unknown> | null;
+  performed_by: string;
+  performed_by_name?: string | null;
+  performed_by_email?: string | null;
+  created_at?: string | null;
+}
+
 // Notification
 export interface Notification {
   id: string;

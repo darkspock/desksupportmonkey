@@ -30,6 +30,7 @@ const es: Record<string, string> = {
   'header.close_navigation': 'Cerrar navegación',
   'header.notifications': 'Notificaciones',
   'header.sign_out': 'Cerrar sesión',
+  'header.change_name': 'Cambiar nombre',
   'header.change_password': 'Cambiar contraseña',
   'header.language': 'Idioma',
   'header.company': 'Compañía',
@@ -258,9 +259,16 @@ const es: Record<string, string> = {
   'page.notifications.error_mark_all': 'No se pudieron marcar todas como leídas',
   'page.notifications.error_mark_read': 'No se pudo marcar la notificación como leída',
 
-  'page.request_queue.title': 'Cola de solicitudes',
+  'page.request_queue.title': 'Solicitudes',
   'page.request_queue.subtitle': 'Gestiona y resuelve las solicitudes de servicio de los empleados',
   'page.request_queue.new': 'Nueva solicitud',
+  'page.request_queue.view_list': 'Listado',
+  'page.request_queue.view_kanban': 'Kanban',
+  'page.request_queue.kanban_pending': 'Pendientes',
+  'page.request_queue.kanban_in_review': 'En revisión',
+  'page.request_queue.kanban_in_progress': 'En progreso',
+  'page.request_queue.kanban_finalized_7d': 'Finalizado (7 días)',
+  'page.request_queue.kanban_drag_hint': 'Arrastra cada tarjeta a la siguiente columna para avanzar el estado.',
   'page.request_queue.search_placeholder': 'Buscar por t\u00edtulo, nombre, email o ID...',
   'page.request_queue.all_statuses': 'Todos los estados',
   'page.request_queue.all_types': 'Todos los tipos',
@@ -322,6 +330,14 @@ const es: Record<string, string> = {
   'page.request_detail.updated': 'Actualizado',
   'page.request_detail.resolved_at': 'Resuelto',
   'page.request_detail.actions': 'Acciones',
+  'page.request_detail.history': 'Histórico',
+  'page.request_detail.no_history': 'Todavía no hay historial',
+  'page.request_detail.event_created': 'Solicitud creada',
+  'page.request_detail.event_assigned': 'Solicitud asignada',
+  'page.request_detail.event_approved': 'Solicitud aprobada',
+  'page.request_detail.event_rejected': 'Solicitud rechazada',
+  'page.request_detail.event_comment_added': 'Comentario agregado',
+  'page.request_detail.event_note_added': 'Nota interna agregada',
 
   'page.asset_list.title': 'Inventario de activos',
   'page.asset_list.subtitle': 'Gestiona todo el hardware y dispositivos de la empresa',
@@ -1295,6 +1311,11 @@ const es: Record<string, string> = {
   'table.dispatched': 'Enviado',
   'table.delivered': 'Entregado',
   'table.recipient': 'Destinatario',
+
+  // Profile completion
+  'profile.complete_profile': 'Completa tu perfil',
+  'profile.enter_name': 'Por favor, introduce tu nombre para continuar',
+  'profile.full_name': 'Nombre completo',
 };
 
 export default es;

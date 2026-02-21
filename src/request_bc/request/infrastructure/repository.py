@@ -76,6 +76,25 @@ class RequestRepository(RequestRepositoryInterface):
         self.session.flush()
         return event
 
+    def find_events(self, request_id: str, company_id: str) -> list[RequestEvent]:
+        models = (
+            self.session.execute(
+                select(RequestEventModel)
+                .join(
+                    ServiceRequestModel,
+                    ServiceRequestModel.id == RequestEventModel.request_id,
+                )
+                .where(
+                    RequestEventModel.request_id == request_id,
+                    ServiceRequestModel.company_id == company_id,
+                )
+                .order_by(RequestEventModel.created_at.desc())
+            )
+            .scalars()
+            .all()
+        )
+        return [self._event_to_entity(m) for m in models]
+
     def count_comments(self, request_id: str) -> int:
         result = self.session.execute(
             select(func.count()).select_from(RequestCommentModel).where(

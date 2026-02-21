@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -65,6 +65,17 @@ class NoteResponse(BaseModel):
     author_id: str
     author_email: Optional[str] = None
     body: str
+    created_at: Optional[datetime] = None
+
+
+class RequestEventResponse(BaseModel):
+    id: str
+    request_id: str
+    event_type: str
+    data: Optional[dict[str, Any]] = None
+    performed_by: str
+    performed_by_name: Optional[str] = None
+    performed_by_email: Optional[str] = None
     created_at: Optional[datetime] = None
 
 

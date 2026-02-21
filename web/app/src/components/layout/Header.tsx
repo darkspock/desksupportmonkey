@@ -3,16 +3,20 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useI18n } from '../../lib/i18n';
+import api from '../../lib/api';
 
 interface HeaderProps {
   onMenuToggle?: () => void;
 }
 
 export function Header({ onMenuToggle }: HeaderProps) {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const { unread } = useNotifications();
   const { language, setLanguage, t } = useI18n();
   const [open, setOpen] = useState(false);
+  const [nameModalOpen, setNameModalOpen] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+  const [savingName, setSavingName] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const companyName = user?.company_name?.trim();
   const canManagePassword = user?.role === 'admin' || user?.role === 'super_admin';
@@ -29,7 +33,26 @@ export function Header({ onMenuToggle }: HeaderProps) {
     ? user.email.substring(0, 2).toUpperCase()
     : '??';
 
+  const openNameModal = () => {
+    setNameInput(user?.name ?? '');
+    setNameModalOpen(true);
+    setOpen(false);
+  };
+
+  const handleSaveName = async () => {
+    if (!nameInput.trim() || savingName) return;
+    setSavingName(true);
+    try {
+      await api.patch('/my/profile', { name: nameInput.trim() });
+      await refreshUser();
+      setNameModalOpen(false);
+    } finally {
+      setSavingName(false);
+    }
+  };
+
   return (
+    <>
     <header className="sticky top-0 z-30 h-14 border-b border-border bg-card flex items-center justify-between px-4 md:px-6">
       <div className="flex items-center gap-3">
         <button
@@ -55,17 +78,28 @@ export function Header({ onMenuToggle }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-3">
-        <label className="sr-only" htmlFor="language-selector">{t('header.language')}</label>
-        <select
-          id="language-selector"
-          value={language}
-          onChange={(e) => setLanguage(e.target.value as 'en' | 'es')}
-          className="rounded-md border border-input bg-card px-2 py-1 text-xs text-foreground"
+        <div
+          role="group"
           aria-label={t('header.language')}
+          className="inline-flex items-center rounded-md border border-input bg-card p-0.5"
         >
-          <option value="en">EN</option>
-          <option value="es">ES</option>
-        </select>
+          <button
+            type="button"
+            onClick={() => setLanguage('es')}
+            aria-pressed={language === 'es'}
+            className={`inline-flex h-7 min-w-[34px] items-center justify-center rounded-sm px-2 text-xs font-medium transition-colors ${language === 'es' ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-accent'}`}
+          >
+            ES
+          </button>
+          <button
+            type="button"
+            onClick={() => setLanguage('en')}
+            aria-pressed={language === 'en'}
+            className={`inline-flex h-7 min-w-[34px] items-center justify-center rounded-sm px-2 text-xs font-medium transition-colors ${language === 'en' ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-accent'}`}
+          >
+            EN
+          </button>
+        </div>
 
         <Link to="/my/notifications" className="relative text-muted-foreground hover:text-foreground transition-colors" aria-label={t('header.notifications')} title={t('header.notifications')}>
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -99,7 +133,17 @@ export function Header({ onMenuToggle }: HeaderProps) {
               {companyName && (
                 <div className="truncate border-b border-border px-3 py-2 text-sm text-foreground">{companyName}</div>
               )}
-              <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border">{t(`enum.${user?.role ?? ''}`)}</div>
+              <div className="px-3 py-2 border-b border-border">
+                <div className="text-xs text-muted-foreground">{t(`enum.${user?.role ?? ''}`)}</div>
+                {user?.name && <div className="truncate text-sm text-foreground mt-0.5">{user.name}</div>}
+              </div>
+              <button
+                type="button"
+                onClick={openNameModal}
+                className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-accent"
+              >
+                {t('header.change_name')}
+              </button>
               {canManagePassword && (
                 <Link
                   to="/auth/change-password"
@@ -117,5 +161,53 @@ export function Header({ onMenuToggle }: HeaderProps) {
         </div>
       </div>
     </header>
+
+    {nameModalOpen && (
+      <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
+        <button
+          type="button"
+          className="absolute inset-0 bg-black/40"
+          onClick={() => setNameModalOpen(false)}
+          aria-label={t('common.close')}
+        />
+        <div className="relative z-[91] w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lg">
+          <h3 className="text-lg font-semibold text-foreground">
+            {t('header.change_name')}
+          </h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {t('profile.enter_name')}
+          </p>
+          <input
+            type="text"
+            value={nameInput}
+            onChange={(e) => setNameInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleSaveName(); }}
+            placeholder={t('profile.full_name')}
+            autoFocus
+            maxLength={100}
+            className="mt-4 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+          <div className="mt-5 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setNameModalOpen(false)}
+              disabled={savingName}
+              className="inline-flex items-center justify-center rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50"
+            >
+              {t('common.cancel')}
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveName}
+              disabled={!nameInput.trim() || savingName}
+              className="inline-flex items-center justify-center rounded-md h-9 px-4 text-sm font-medium shadow-xs transition-all disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {savingName ? t('common.saving') : t('common.save')}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

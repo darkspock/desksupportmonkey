@@ -10,7 +10,7 @@ import { EmployeeSearchSelect } from '../../components/ui/EmployeeSearchSelect';
 import { useToast } from '../../hooks/useToast';
 import { formatDateTime } from '../../lib/date';
 import { humanizeToken, useI18n } from '../../lib/i18n';
-import type { ServiceRequest, Comment, Note, AIClassificationData, RecentPO, Appointment, TimeSlot, Shipment, AssignableUser, PaginatedResponse, User } from '../../types';
+import type { ServiceRequest, Comment, Note, RequestEventItem, AIClassificationData, RecentPO, Appointment, TimeSlot, Shipment, AssignableUser, PaginatedResponse, User } from '../../types';
 
 /* ── helper components ────────────────────────────────────────────── */
 
@@ -162,6 +162,34 @@ function AIClassificationCard({ data, t }: { data: AIClassificationData; t: (key
   );
 }
 
+function requestEventLabel(
+  event: RequestEventItem,
+  t: (key: string, params?: Record<string, string | number>, options?: { defaultValue?: string }) => string,
+): string {
+  const data = (event.data ?? {}) as Record<string, unknown>;
+  if (event.event_type === 'status_changed') {
+    const oldStatus = typeof data.old_status === 'string' ? data.old_status : null;
+    const newStatus = typeof data.new_status === 'string' ? data.new_status : null;
+    if (oldStatus && newStatus) {
+      return `${t('table.status')}: ${t(`enum.${oldStatus}`, undefined, { defaultValue: humanizeToken(oldStatus) })} -> ${t(`enum.${newStatus}`, undefined, { defaultValue: humanizeToken(newStatus) })}`;
+    }
+  }
+  if (event.event_type === 'priority_changed') {
+    const oldPriority = typeof data.old_priority === 'string' ? data.old_priority : null;
+    const newPriority = typeof data.new_priority === 'string' ? data.new_priority : null;
+    if (oldPriority && newPriority) {
+      return `${t('table.priority')}: ${t(`enum.${oldPriority}`, undefined, { defaultValue: humanizeToken(oldPriority) })} -> ${t(`enum.${newPriority}`, undefined, { defaultValue: humanizeToken(newPriority) })}`;
+    }
+  }
+  if (event.event_type === 'rejected') {
+    const reason = typeof data.reason === 'string' ? data.reason : '';
+    return reason ? `${t('enum.rejected')}: ${reason}` : t('enum.rejected');
+  }
+  return t(`page.request_detail.event_${event.event_type}`, undefined, {
+    defaultValue: humanizeToken(event.event_type),
+  });
+}
+
 /* ── Type icon map ────────────────────────────────────────────────── */
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {
@@ -261,6 +289,15 @@ export default function RequestDetailPage() {
       return data.data as Shipment[];
     },
     enabled: isTech,
+  });
+
+  const { data: requestEvents } = useQuery({
+    queryKey: ['request-events', id],
+    queryFn: async () => {
+      const { data } = await api.get(`/requests/${id}/events`);
+      return data.data as RequestEventItem[];
+    },
+    enabled: !!id,
   });
 
   const { data: techniciansData } = useQuery({
@@ -1046,6 +1083,36 @@ export default function RequestDetailPage() {
               )}
             </div>
           )}
+
+          {/* Request History */}
+          <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+            <h3 className="text-sm font-medium text-foreground">
+              {t('page.request_detail.history', undefined, { defaultValue: 'History' })}
+            </h3>
+            {requestEvents && requestEvents.length > 0 ? (
+              <div className="space-y-2">
+                {requestEvents.map((event) => (
+                  <div key={event.id} className="rounded-lg border border-border/60 bg-secondary/40 px-3 py-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs text-foreground">
+                        {requestEventLabel(event, t)}
+                      </span>
+                      <span className="shrink-0 text-[11px] text-muted-foreground">
+                        {event.created_at ? formatDateTime(event.created_at) : '—'}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {event.performed_by_name || event.performed_by_email || event.performed_by}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {t('page.request_detail.no_history', undefined, { defaultValue: 'No history yet' })}
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>

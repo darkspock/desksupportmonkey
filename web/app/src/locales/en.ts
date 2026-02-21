@@ -30,6 +30,7 @@ const en: Record<string, string> = {
   'header.close_navigation': 'Close navigation',
   'header.notifications': 'Notifications',
   'header.sign_out': 'Sign out',
+  'header.change_name': 'Change name',
   'header.change_password': 'Change password',
   'header.language': 'Language',
   'header.company': 'Company',
@@ -261,6 +262,13 @@ const en: Record<string, string> = {
   'page.request_queue.title': 'Request Queue',
   'page.request_queue.subtitle': 'Manage and resolve service requests from employees',
   'page.request_queue.new': 'New Request',
+  'page.request_queue.view_list': 'List',
+  'page.request_queue.view_kanban': 'Kanban',
+  'page.request_queue.kanban_pending': 'Pending',
+  'page.request_queue.kanban_in_review': 'In Review',
+  'page.request_queue.kanban_in_progress': 'In Progress',
+  'page.request_queue.kanban_finalized_7d': 'Finalized (7 days)',
+  'page.request_queue.kanban_drag_hint': 'Drag each card to the next column to advance status.',
   'page.request_queue.search_placeholder': 'Search by title, name, email or ID...',
   'page.request_queue.all_statuses': 'All statuses',
   'page.request_queue.all_types': 'All types',
@@ -322,6 +330,14 @@ const en: Record<string, string> = {
   'page.request_detail.updated': 'Updated',
   'page.request_detail.resolved_at': 'Resolved',
   'page.request_detail.actions': 'Actions',
+  'page.request_detail.history': 'History',
+  'page.request_detail.no_history': 'No history yet',
+  'page.request_detail.event_created': 'Request created',
+  'page.request_detail.event_assigned': 'Request assigned',
+  'page.request_detail.event_approved': 'Request approved',
+  'page.request_detail.event_rejected': 'Request rejected',
+  'page.request_detail.event_comment_added': 'Comment added',
+  'page.request_detail.event_note_added': 'Internal note added',
 
   'page.asset_list.title': 'Asset Inventory',
   'page.asset_list.subtitle': 'Track and manage all company hardware and devices',
@@ -1295,6 +1311,11 @@ const en: Record<string, string> = {
   'table.dispatched': 'Dispatched',
   'table.delivered': 'Delivered',
   'table.recipient': 'Recipient',
+
+  // Profile completion
+  'profile.complete_profile': 'Complete your profile',
+  'profile.enter_name': 'Please enter your name to continue',
+  'profile.full_name': 'Full name',
 };
 
 export default en;

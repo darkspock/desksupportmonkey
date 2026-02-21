@@ -198,6 +198,38 @@ class TestGetRequest:
         assert resp.status_code == 404
 
 
+class TestRequestEvents:
+    def test_list_events_as_owner(self, client, auth_as, employee_user):
+        auth_as(employee_user)
+        create_resp = _create_request(client, title="History request")
+        req_id = create_resp.json()["data"]["id"]
+
+        resp = client.get(f"/api/v1/requests/{req_id}/events")
+
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert len(data) >= 1
+        assert any(e["event_type"] == "created" for e in data)
+
+    def test_list_events_includes_status_changed(self, client, auth_as, employee_user, technician_user):
+        auth_as(employee_user)
+        create_resp = _create_request(client, title="Status history request")
+        req_id = create_resp.json()["data"]["id"]
+
+        auth_as(technician_user)
+        status_resp = client.patch(f"/api/v1/requests/{req_id}/status", json={"status": "in_review"})
+        assert status_resp.status_code == 200
+
+        resp = client.get(f"/api/v1/requests/{req_id}/events")
+        assert resp.status_code == 200
+
+        status_events = [e for e in resp.json()["data"] if e["event_type"] == "status_changed"]
+        assert status_events
+        first = status_events[0]
+        assert first["data"]["old_status"] == "submitted"
+        assert first["data"]["new_status"] == "in_review"
+
+
 class TestChangeRequestStatus:
     def test_change_status(self, client, auth_as, employee_user, technician_user):
         auth_as(employee_user)

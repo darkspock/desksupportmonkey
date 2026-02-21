@@ -22,6 +22,9 @@ class RequestRepositoryInterface(ABC):
     def save_event(self, event: RequestEvent) -> RequestEvent: ...
 
     @abstractmethod
+    def find_events(self, request_id: str, company_id: str) -> list[RequestEvent]: ...
+
+    @abstractmethod
     def count_comments(self, request_id: str) -> int: ...
 
     @abstractmethod
