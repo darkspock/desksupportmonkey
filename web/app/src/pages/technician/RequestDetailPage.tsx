@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import api from '../../lib/api';
@@ -204,6 +204,7 @@ export default function RequestDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { user, isRole } = useAuth();
   const { t } = useI18n();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const isTech = isRole('technician', 'admin', 'super_admin');
@@ -438,8 +439,14 @@ export default function RequestDetailPage() {
     rejected: ['submitted'],
   };
   const nextStatuses = statusActions[request.status] || [];
+  const userNextStatusByFlow: Record<string, string | undefined> = {
+    pending_approval: 'submitted',
+    submitted: 'in_review',
+    in_review: 'in_progress',
+    in_progress: 'resolved',
+  };
+  const userNextStatus = userNextStatusByFlow[request.status];
   const isPendingApproval = request.status === 'pending_approval';
-  const backToListPath = isTech ? '/requests' : '/my/requests';
   const typeIcon = TYPE_ICONS[request.type];
 
   /* ── render ────────────────────────────────────────────────── */
@@ -449,12 +456,13 @@ export default function RequestDetailPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link
-            to={backToListPath}
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
             className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-colors"
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><path d="m15 18-6-6 6-6" /></svg>
-          </Link>
+          </button>
           <div>
             <h2 className="text-2xl font-semibold tracking-tight text-foreground">{request.title}</h2>
             <p className="mt-0.5 text-sm text-muted-foreground">{t('page.request_detail.page_subtitle')}</p>
@@ -612,7 +620,28 @@ export default function RequestDetailPage() {
             {/* Status */}
             <div>
               <h3 className="text-sm font-medium text-muted-foreground mb-2">{t('table.status')}</h3>
-              <StatusBadge status={request.status} />
+              {!isTech && userNextStatus ? (
+                <div className="flex items-center gap-2">
+                  <StatusBadge status={request.status} />
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-3.5 w-3.5 text-muted-foreground"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="m13 6 6 6-6 6" />
+                  </svg>
+                  <span className="inline-flex items-center rounded-md border border-dashed border-muted-foreground/60 bg-white px-2 py-0.5 text-xs font-medium text-muted-foreground/90">
+                    {t(`enum.${userNextStatus}`, undefined, { defaultValue: humanizeToken(userNextStatus) })}
+                  </span>
+                </div>
+              ) : (
+                <StatusBadge status={request.status} />
+              )}
             </div>
             <div className="h-px bg-border" />
 
@@ -631,7 +660,12 @@ export default function RequestDetailPage() {
                   <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
                 </svg>
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium text-foreground">{request.created_by_email || request.created_by}</span>
+                  <span className="text-sm font-medium text-foreground">
+                    {request.created_by_name || request.created_by_email || request.created_by}
+                  </span>
+                  {request.created_by_name && request.created_by_email && (
+                    <span className="text-xs text-muted-foreground">{request.created_by_email}</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -644,10 +678,22 @@ export default function RequestDetailPage() {
                 <div className="flex items-center gap-2">
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
                     <span className="text-xs font-medium text-primary">
-                      {(request.assigned_to_email || '?').split('@')[0].split('.').map(p => p[0]?.toUpperCase() ?? '').join('').slice(0, 2)}
+                      {(request.assigned_to_name || request.assigned_to_email || '?')
+                        .split('@')[0]
+                        .split('.')
+                        .map(p => p[0]?.toUpperCase() ?? '')
+                        .join('')
+                        .slice(0, 2)}
                     </span>
                   </div>
-                  <span className="text-sm text-foreground">{request.assigned_to_email || request.assigned_to}</span>
+                  <div className="flex flex-col">
+                    <span className="text-sm text-foreground">
+                      {request.assigned_to_name || request.assigned_to_email || request.assigned_to}
+                    </span>
+                    {request.assigned_to_name && request.assigned_to_email && (
+                      <span className="text-xs text-muted-foreground">{request.assigned_to_email}</span>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <span className="text-sm text-muted-foreground">{t('common.unassigned')}</span>
@@ -871,7 +917,7 @@ export default function RequestDetailPage() {
                 <div className="space-y-2">
                   {linkedShipments.map((s) => {
                     const shipStatusColors: Record<string, string> = {
-                      draft: 'default', dispatched: 'info', in_transit: 'warning', delivered: 'success', failed: 'danger', cancelled: 'default',
+                      DRAFT: 'default', DISPATCHED: 'info', IN_TRANSIT: 'warning', DELIVERED: 'success', FAILED: 'danger', CANCELLED: 'default',
                     };
                     return (
                       <Link key={s.id} to={`/shipments/${s.id}`} className="flex items-center justify-between bg-secondary rounded-lg px-3 py-2 hover:bg-secondary/80 transition-colors">
@@ -879,7 +925,7 @@ export default function RequestDetailPage() {
                           <Badge variant={shipStatusColors[s.status] || 'default'}>
                             {t(`enum.shipment_status.${s.status}`)}
                           </Badge>
-                          <Badge variant={s.direction === 'outbound' ? 'info' : 'warning'}>
+                          <Badge variant={s.direction === 'OUTBOUND' ? 'info' : 'warning'}>
                             {t(`enum.shipment_direction.${s.direction}`)}
                           </Badge>
                         </div>

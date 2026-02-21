@@ -16,6 +16,9 @@ export default function SetPasswordPage() {
   const [loading, setLoading] = useState(false);
 
   if (!user) return <Navigate to="/auth/login" replace />;
+  if (user.role !== 'admin' && user.role !== 'super_admin' && user.role !== 'technician') {
+    return <Navigate to={getDefaultRouteForRole(user.role)} replace />;
+  }
   if (user.password_set) return <Navigate to={getDefaultRouteForRole(user.role)} replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {

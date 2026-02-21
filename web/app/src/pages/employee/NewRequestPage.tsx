@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
 import { useI18n } from '../../lib/i18n';
+import { useToast } from '../../hooks/useToast';
 import type { RequestType } from '../../types';
 import { VALID_SUBTYPES } from '../../types';
 
@@ -73,15 +74,22 @@ export default function NewRequestPage() {
   const navigate = useNavigate();
   const { t } = useI18n();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
+  const [searchParams] = useSearchParams();
+  const onBehalfOf = searchParams.get('on_behalf_of');
+  const onBehalfOfLabel = searchParams.get('on_behalf_of_label');
   const [form, setForm] = useState<{ type: RequestType; title: string; description: string; subtype: string }>({
     type: '' as RequestType,
     title: '',
     description: '',
     subtype: '',
   });
-  const [error, setError] = useState('');
 
   const subtypeOptions = form.type ? (VALID_SUBTYPES[form.type] ?? []) : [];
+
+  const showError = (msg: string) => {
+    showToast({ title: msg, variant: 'error', durationMs: 5000 });
+  };
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -91,6 +99,7 @@ export default function NewRequestPage() {
         description: form.description,
       };
       if (form.subtype) body.subtype = form.subtype;
+      if (onBehalfOf) body.on_behalf_of = onBehalfOf;
       const { data } = await api.post('/requests', body);
       return data.data;
     },
@@ -99,9 +108,27 @@ export default function NewRequestPage() {
       navigate(`/requests/${data.id}`);
     },
     onError: (err: unknown) => {
-      setError((err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('page.new_request.error_create'));
+      showError(
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('page.new_request.error_create'),
+      );
     },
   });
+
+  const handleSubmit = () => {
+    if (!form.type) {
+      showError(t('page.new_request.error_type_required'));
+      return;
+    }
+    if (!form.title.trim()) {
+      showError(t('page.new_request.error_title_required'));
+      return;
+    }
+    if (!form.description.trim()) {
+      showError(t('page.new_request.error_description_required'));
+      return;
+    }
+    mutation.mutate();
+  };
 
   return (
     <div className="space-y-6">
@@ -115,18 +142,17 @@ export default function NewRequestPage() {
         </p>
       </div>
 
-      <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }} className="space-y-6">
+      <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-6">
         <div className="rounded-lg border border-border bg-card p-6 space-y-6">
-          {error && (
-            <div className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {onBehalfOfLabel && (
+            <div className="flex items-center gap-2 rounded-md bg-primary/10 px-3 py-2 text-sm text-primary">
               <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 8v4M12 16h.01" />
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
               </svg>
-              {error}
+              {t('page.new_request.on_behalf_of')} <span className="font-medium">{onBehalfOfLabel}</span>
             </div>
           )}
-
           {/* Type selector cards */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-3">{t('page.new_request.type_label')}</label>
@@ -161,7 +187,6 @@ export default function NewRequestPage() {
               <input
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                required
                 className="w-full"
                 placeholder={t('page.new_request.title_placeholder')}
               />
@@ -189,7 +214,6 @@ export default function NewRequestPage() {
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              required
               rows={5}
               className="w-full resize-none"
               placeholder={t('page.new_request.description_placeholder')}
@@ -211,7 +235,7 @@ export default function NewRequestPage() {
           </button>
           <button
             type="submit"
-            disabled={mutation.isPending || !form.type || !form.title || !form.description}
+            disabled={mutation.isPending}
             className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
           >
             {mutation.isPending ? t('page.new_request.submitting') : t('page.new_request.submit')}

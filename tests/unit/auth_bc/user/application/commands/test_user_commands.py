@@ -82,6 +82,21 @@ class TestChangeUserRoleCommand:
                 )
             )
 
+    def test_same_role_for_self_is_noop(self):
+        user = _make_user(role=UserRole.ADMIN)
+        repo = MagicMock()
+        repo.find_by_id_and_company.return_value = user
+        handler = ChangeUserRoleCommandHandler(user_repo=repo)
+
+        handler.handle(
+            ChangeUserRoleCommand(
+                user_id="user1", company_id="comp1",
+                current_user_id="user1", new_role="admin",
+            )
+        )
+
+        repo.save.assert_not_called()
+
     def test_cannot_assign_super_admin(self):
         user = _make_user()
         repo = MagicMock()

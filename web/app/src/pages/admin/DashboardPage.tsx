@@ -369,7 +369,7 @@ export default function DashboardPage() {
               <div className="flex gap-4 flex-wrap">
                 {Object.entries(shipmentDashboard?.active_by_status ?? {}).map(([status, count]) => (
                   <div key={status} className="flex items-center gap-2">
-                    <Badge variant={status === 'draft' ? 'default' : status === 'dispatched' ? 'info' : status === 'in_transit' ? 'warning' : 'default'}>
+                    <Badge variant={status === 'DRAFT' ? 'default' : status === 'DISPATCHED' ? 'info' : status === 'IN_TRANSIT' ? 'warning' : 'default'}>
                       {t(`enum.shipment_status.${status}`, undefined, { defaultValue: humanizeToken(status) })}
                     </Badge>
                     <span className="text-sm font-medium text-foreground">{count}</span>

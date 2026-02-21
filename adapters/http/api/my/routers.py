@@ -73,6 +73,7 @@ from src.appointment_bc.appointment.application.queries.my_appointments import (
     MyAppointmentsQuery,
     MyAppointmentsQueryHandler,
 )
+from src.appointment_bc.appointment.domain.entities import Appointment
 from src.appointment_bc.appointment.infrastructure.repository import (
     AppointmentRepository,
 )
@@ -95,6 +96,35 @@ from src.auth_bc.user.infrastructure.repository import UserRepository
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/my", tags=["my"])
+
+
+def _display_name(user: Optional[User]) -> Optional[str]:
+    if not user:
+        return None
+    if user.name and user.name.strip():
+        return user.name.strip()
+    local = user.email.split("@", 1)[0].replace(".", " ").replace("_", " ").replace("-", " ").strip()
+    normalized = " ".join(part.capitalize() for part in local.split())
+    return normalized or user.email
+
+
+def _effective_technician_id_for_employee_view(
+    appointment: Appointment,
+    current_user: User,
+    request_repo: RequestRepository,
+) -> str:
+    """Fallback to request assignee when legacy appointments point technician to employee."""
+    if appointment.technician_id != current_user.id:
+        return appointment.technician_id
+
+    request = request_repo.find_by_id(
+        appointment.request_id,
+        current_user.company_id,
+    )
+    if request and request.assigned_to and request.assigned_to != current_user.id:
+        return request.assigned_to
+
+    return appointment.technician_id
 
 
 def _validate_admin_with_company(current_user: User) -> None:
@@ -276,31 +306,81 @@ def my_appointments(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     appointment_status: Optional[str] = Query(None, alias="status"),
+    view: Optional[str] = Query(None),
     current_user: User = Depends(get_current_user),
     appointment_repo: AppointmentRepository = Depends(get_appointment_repo),
+    user_repo: UserRepository = Depends(get_user_repo),
+    request_repo: RequestRepository = Depends(get_request_repo),
 ):
-    handler = MyAppointmentsQueryHandler(appointment_repo=appointment_repo)
-    appointments, total = handler.handle(
-        MyAppointmentsQuery(
+    is_technician_view = (
+        view == "technician"
+        and current_user.role.has_access(UserRole.TECHNICIAN)
+    )
+    if is_technician_view:
+        query = MyAppointmentsQuery(
+            technician_id=current_user.id,
+            company_id=current_user.company_id,
+            page=page,
+            page_size=page_size,
+            status=appointment_status,
+        )
+    else:
+        query = MyAppointmentsQuery(
             employee_id=current_user.id,
             company_id=current_user.company_id,
             page=page,
             page_size=page_size,
             status=appointment_status,
         )
-    )
+
+    handler = MyAppointmentsQueryHandler(appointment_repo=appointment_repo)
+    appointments, total = handler.handle(query)
+
+    effective_technician_ids: dict[str, str] = {}
+    for appointment in appointments:
+        if is_technician_view:
+            effective_technician_ids[appointment.id] = appointment.technician_id
+        else:
+            effective_technician_ids[appointment.id] = _effective_technician_id_for_employee_view(
+                appointment,
+                current_user,
+                request_repo,
+            )
+
+    # Resolve user emails
+    user_ids = set()
+    for a in appointments:
+        user_ids.add(effective_technician_ids.get(a.id, a.technician_id))
+        user_ids.add(a.employee_id)
+    user_map: dict[str, User] = {}
+    for uid in user_ids:
+        u = user_repo.find_by_id(uid)
+        if u:
+            user_map[uid] = u
+
     return {
         "data": [
             {
                 "id": a.id,
                 "request_id": a.request_id,
-                "technician_id": a.technician_id,
+                "technician_id": effective_technician_ids.get(a.id, a.technician_id),
+                "employee_id": a.employee_id,
                 "status": a.status.value,
                 "scheduled_start": a.scheduled_start.isoformat() if a.scheduled_start else None,
                 "scheduled_end": a.scheduled_end.isoformat() if a.scheduled_end else None,
                 "duration_minutes": a.duration_minutes,
                 "location": a.location,
                 "created_at": a.created_at.isoformat() if a.created_at else None,
+                "technician_name": _display_name(
+                    user_map.get(effective_technician_ids.get(a.id, a.technician_id))
+                ),
+                "technician_email": (
+                    user_map[effective_technician_ids[a.id]].email
+                    if effective_technician_ids.get(a.id) in user_map
+                    else None
+                ),
+                "employee_name": _display_name(user_map.get(a.employee_id)),
+                "employee_email": user_map[a.employee_id].email if a.employee_id in user_map else None,
             }
             for a in appointments
         ],
@@ -332,8 +412,11 @@ def my_shipments(
                 "destination_type": s.destination_type.value,
                 "status": s.status.value,
                 "carrier": s.carrier,
+                "service_level": s.service_level,
                 "tracking_number": s.tracking_number,
                 "tracking_url": s.tracking_url,
+                "items_description": s.items_description,
+                "internal_notes": s.internal_notes,
                 "dispatched_at": s.dispatched_at.isoformat() if s.dispatched_at else None,
                 "delivered_at": s.delivered_at.isoformat() if s.delivered_at else None,
                 "item_count": len(s.items),

@@ -4,7 +4,7 @@ services:
     env_file:
       - .env
     ports:
-      - "5443:5432"
+      - "5444:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
     restart: unless-stopped
@@ -17,7 +17,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6398:6379"
+      - "6399:6379"
     volumes:
       - redis_data:/data
     restart: unless-stopped
@@ -30,8 +30,8 @@ services:
   minio:
     image: minio/minio:latest
     ports:
-      - "9000:9000"  # S3 API
-      - "9001:9001"  # Web Console
+      - "9002:9000"  # S3 API
+      - "9003:9001"  # Web Console
     volumes:
       - minio_data:/data
     environment:

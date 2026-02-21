@@ -35,8 +35,11 @@ class CreateShipmentCommand(Command):
     recipient_name: Optional[str] = None
     recipient_user_id: Optional[str] = None
     carrier: Optional[str] = None
+    service_level: Optional[str] = None
     tracking_number: Optional[str] = None
     tracking_url: Optional[str] = None
+    items_description: Optional[str] = None
+    internal_notes: Optional[str] = None
     request_id: Optional[str] = None
     po_id: Optional[str] = None
     return_for_shipment_id: Optional[str] = None
@@ -88,8 +91,13 @@ class CreateShipmentCommandHandler(
                 command.recipient_user_id
             ),
             carrier=command.carrier,
+            service_level=command.service_level,
             tracking_number=command.tracking_number,
             tracking_url=command.tracking_url,
+            items_description=(
+                command.items_description
+            ),
+            internal_notes=command.internal_notes,
             request_id=command.request_id,
             po_id=command.po_id,
             return_for_shipment_id=(

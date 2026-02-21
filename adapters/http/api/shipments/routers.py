@@ -145,8 +145,11 @@ def _to_response(shipment: Shipment) -> dict:
         recipient_name=shipment.recipient_name,
         recipient_user_id=shipment.recipient_user_id,
         carrier=shipment.carrier,
+        service_level=shipment.service_level,
         tracking_number=shipment.tracking_number,
         tracking_url=shipment.tracking_url,
+        items_description=shipment.items_description,
+        internal_notes=shipment.internal_notes,
         request_id=shipment.request_id,
         po_id=shipment.po_id,
         return_for_shipment_id=shipment.return_for_shipment_id,
@@ -200,8 +203,13 @@ def create_shipment(
                 recipient_name=body.recipient_name,
                 recipient_user_id=body.recipient_user_id,
                 carrier=body.carrier,
+                service_level=body.service_level,
                 tracking_number=body.tracking_number,
                 tracking_url=body.tracking_url,
+                items_description=(
+                    body.items_description
+                ),
+                internal_notes=body.internal_notes,
                 request_id=body.request_id,
                 po_id=body.po_id,
                 notes=body.notes,
@@ -342,8 +350,13 @@ def update_shipment(
                 company_id=current_user.company_id,
                 performed_by=current_user.id,
                 carrier=body.carrier,
+                service_level=body.service_level,
                 tracking_number=body.tracking_number,
                 tracking_url=body.tracking_url,
+                items_description=(
+                    body.items_description
+                ),
+                internal_notes=body.internal_notes,
                 notes=body.notes,
             )
         )

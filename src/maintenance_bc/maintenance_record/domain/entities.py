@@ -38,6 +38,9 @@ class MaintenanceRecord:
     overdue_alert_sent: bool = False
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    # Read-model projections (populated by list queries with JOINs)
+    employee_name: Optional[str] = None
+    employee_email: Optional[str] = None
 
     @classmethod
     def create(

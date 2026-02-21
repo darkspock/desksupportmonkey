@@ -15,8 +15,9 @@ from src.framework.application.query_bus import (
 
 @dataclass
 class MyAppointmentsQuery(Query):
-    employee_id: str
-    company_id: str
+    employee_id: Optional[str] = None
+    technician_id: Optional[str] = None
+    company_id: str = ""
     page: int = 1
     page_size: int = 20
     status: Optional[str] = None
@@ -43,4 +44,5 @@ class MyAppointmentsQueryHandler(
             page_size=query.page_size,
             status=query.status,
             employee_id=query.employee_id,
+            technician_id=query.technician_id,
         )

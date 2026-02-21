@@ -15,6 +15,7 @@ import type { User, UserRole, Department, PaginatedResponse } from '../../types'
 interface EditModalState {
   userId: string;
   email: string;
+  name: string;
   role: UserRole;
   departmentId: string;
 }
@@ -37,6 +38,7 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState('');
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteName, setInviteName] = useState('');
   const [inviteRole, setInviteRole] = useState('employee');
   const [inviteError, setInviteError] = useState('');
   const [editModal, setEditModal] = useState<EditModalState | null>(null);
@@ -69,9 +71,11 @@ export default function UsersPage() {
   );
 
   const inviteUser = useMutation({
-    mutationFn: ({ email, role }: { email: string; role: string }) => api.post('/users/invite', { email, role }),
+    mutationFn: ({ email, name, role }: { email: string; name: string; role: string }) =>
+      api.post('/users/invite', { email, name: name || undefined, role }),
     onSuccess: () => {
       setInviteEmail('');
+      setInviteName('');
       setInviteRole('employee');
       setInviteError('');
       setShowInviteModal(false);
@@ -88,8 +92,11 @@ export default function UsersPage() {
 
   const saveEdit = useMutation({
     mutationFn: async (payload: EditModalState) => {
-      await api.patch(`/users/${payload.userId}/role`, { role: payload.role });
-      await api.patch(`/users/${payload.userId}/department`, { department_id: payload.departmentId || null });
+      await api.patch(`/users/${payload.userId}`, {
+        name: payload.name || null,
+        role: payload.role,
+        department_id: payload.departmentId || null,
+      });
     },
     onSuccess: () => {
       setEditError('');
@@ -140,6 +147,7 @@ export default function UsersPage() {
       if (showInviteModal && !inviteUser.isPending) {
         setShowInviteModal(false);
         setInviteEmail('');
+        setInviteName('');
         setInviteRole('employee');
         setInviteError('');
       }
@@ -166,6 +174,7 @@ export default function UsersPage() {
           type="button"
           onClick={() => {
             setInviteEmail('');
+            setInviteName('');
             setInviteRole('employee');
             setInviteError('');
             setShowInviteModal(true);
@@ -235,6 +244,7 @@ export default function UsersPage() {
             <thead>
               <tr className="hover:bg-transparent">
                 <Th className="pl-4">{t('table.email')}</Th>
+                <Th>{t('table.name')}</Th>
                 <Th>{t('table.role')}</Th>
                 <Th className="hidden md:table-cell">{t('table.department')}</Th>
                 <Th>{t('table.status')}</Th>
@@ -247,6 +257,7 @@ export default function UsersPage() {
                   <Td className="pl-4">
                     <span className="text-sm font-medium text-foreground">{u.email}</span>
                   </Td>
+                  <Td><span className="text-sm text-foreground">{u.name || '—'}</span></Td>
                   <Td>{t(`enum.${u.role}`)}</Td>
                   <Td className="hidden md:table-cell">{u.department_id ? (departmentNameById.get(u.department_id) ?? t('common.unassigned')) : t('common.unassigned')}</Td>
                   <Td>{u.is_active ? <Badge variant="success">{t('page.users.active')}</Badge> : <Badge variant="danger">{t('page.users.inactive')}</Badge>}</Td>
@@ -260,6 +271,7 @@ export default function UsersPage() {
                             setEditModal({
                               userId: u.id,
                               email: u.email,
+                              name: u.name || '',
                               role: u.role,
                               departmentId: u.department_id ?? '',
                             });
@@ -351,7 +363,7 @@ export default function UsersPage() {
                   return;
                 }
                 setInviteError('');
-                inviteUser.mutate({ email, role: inviteRole });
+                inviteUser.mutate({ email, name: inviteName.trim(), role: inviteRole });
               }}
               className="mt-4 space-y-4"
             >
@@ -369,6 +381,16 @@ export default function UsersPage() {
                 />
               </div>
               <div>
+                <label className="mb-1.5 block text-muted-foreground">{t('table.name')}</label>
+                <input
+                  type="text"
+                  value={inviteName}
+                  onChange={(e) => setInviteName(e.target.value)}
+                  placeholder={t('common.placeholder_name')}
+                  className="w-full bg-card"
+                />
+              </div>
+              <div>
                 <label className="mb-1.5 block text-muted-foreground">{t('table.role')}</label>
                 <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value)} className="w-full bg-card">
                   {['employee', 'technician', 'admin'].map((r) => <option key={r} value={r}>{t(`enum.${r}`)}</option>)}
@@ -381,6 +403,7 @@ export default function UsersPage() {
                     if (inviteUser.isPending) return;
                     setShowInviteModal(false);
                     setInviteEmail('');
+                    setInviteName('');
                     setInviteRole('employee');
                     setInviteError('');
                   }}
@@ -431,6 +454,16 @@ export default function UsersPage() {
             >
               <div>
                 {editError && <p className="mb-2 text-sm text-destructive">{editError}</p>}
+                <label className="mb-1.5 block text-muted-foreground">{t('table.name')}</label>
+                <input
+                  type="text"
+                  value={editModal.name}
+                  onChange={(e) => setEditModal({ ...editModal, name: e.target.value })}
+                  placeholder={t('common.placeholder_name')}
+                  className="w-full bg-card"
+                />
+              </div>
+              <div>
                 <label className="mb-1.5 block text-muted-foreground">{t('table.role')}</label>
                 <select
                   value={editModal.role}

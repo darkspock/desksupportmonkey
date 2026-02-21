@@ -3,7 +3,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.97 0.002 240);
+  --background: oklch(0.99 0.001 240);
   --foreground: oklch(0.13 0.02 240);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.13 0.02 240);
@@ -107,7 +107,7 @@
   input[type="date"],
   input[type="datetime-local"],
   input[type="time"] {
-    @apply h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-xs transition-[color,box-shadow,border-color] placeholder:text-muted-foreground;
+    @apply h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-xs transition-[color,box-shadow,border-color] placeholder:text-[oklch(0.62_0.01_240)];
   }
   input:focus-visible {
     border-color: var(--ring);
@@ -116,7 +116,7 @@
   }
 
   textarea {
-    @apply w-full min-h-16 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs transition-[color,box-shadow,border-color] placeholder:text-muted-foreground;
+    @apply w-full min-h-16 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs transition-[color,box-shadow,border-color] placeholder:text-[oklch(0.62_0.01_240)];
   }
   textarea:focus-visible {
     border-color: var(--ring);

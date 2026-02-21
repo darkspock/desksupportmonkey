@@ -56,6 +56,9 @@ class ShipmentModel(ULIDMixin, TimestampMixin, Base):
     carrier: Mapped[Optional[str]] = mapped_column(
         String(100), nullable=True,
     )
+    service_level: Mapped[Optional[str]] = mapped_column(
+        String(40), nullable=True,
+    )
     tracking_number: Mapped[Optional[str]] = (
         mapped_column(
             String(100), nullable=True,
@@ -63,6 +66,12 @@ class ShipmentModel(ULIDMixin, TimestampMixin, Base):
     )
     tracking_url: Mapped[Optional[str]] = mapped_column(
         String(500), nullable=True,
+    )
+    items_description: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True,
+    )
+    internal_notes: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True,
     )
     request_id: Mapped[Optional[str]] = mapped_column(
         String(26),

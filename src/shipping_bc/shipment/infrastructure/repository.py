@@ -56,10 +56,17 @@ class ShipmentRepository(ShipmentRepositoryInterface):
                 shipment.recipient_user_id
             )
             existing.carrier = shipment.carrier
+            existing.service_level = shipment.service_level
             existing.tracking_number = (
                 shipment.tracking_number
             )
             existing.tracking_url = shipment.tracking_url
+            existing.items_description = (
+                shipment.items_description
+            )
+            existing.internal_notes = (
+                shipment.internal_notes
+            )
             existing.request_id = shipment.request_id
             existing.po_id = shipment.po_id
             existing.return_for_shipment_id = (
@@ -104,8 +111,13 @@ class ShipmentRepository(ShipmentRepositoryInterface):
                     shipment.recipient_user_id
                 ),
                 carrier=shipment.carrier,
+                service_level=shipment.service_level,
                 tracking_number=shipment.tracking_number,
                 tracking_url=shipment.tracking_url,
+                items_description=(
+                    shipment.items_description
+                ),
+                internal_notes=shipment.internal_notes,
                 request_id=shipment.request_id,
                 po_id=shipment.po_id,
                 return_for_shipment_id=(
@@ -367,8 +379,11 @@ class ShipmentRepository(ShipmentRepositoryInterface):
             recipient_name=model.recipient_name,
             recipient_user_id=model.recipient_user_id,
             carrier=model.carrier,
+            service_level=model.service_level,
             tracking_number=model.tracking_number,
             tracking_url=model.tracking_url,
+            items_description=model.items_description,
+            internal_notes=model.internal_notes,
             request_id=model.request_id,
             po_id=model.po_id,
             return_for_shipment_id=(

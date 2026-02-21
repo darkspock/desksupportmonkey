@@ -11,12 +11,12 @@ import { useI18n } from '../../lib/i18n';
 import type { Shipment, PaginatedResponse } from '../../types';
 
 const statusColors: Record<string, string> = {
-  draft: 'default',
-  dispatched: 'info',
-  in_transit: 'warning',
-  delivered: 'success',
-  failed: 'danger',
-  cancelled: 'default',
+  DRAFT: 'default',
+  DISPATCHED: 'info',
+  IN_TRANSIT: 'warning',
+  DELIVERED: 'success',
+  FAILED: 'danger',
+  CANCELLED: 'default',
 };
 
 export default function MyShipmentsPage() {

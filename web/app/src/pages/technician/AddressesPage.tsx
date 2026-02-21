@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
 import { Loading } from '../../components/ui/Loading';
@@ -32,11 +33,19 @@ const emptyForm: AddressForm = {
 };
 
 export default function AddressesPage() {
+  const [searchParams] = useSearchParams();
+  const createMode = searchParams.get('mode');
+  const preselectedUserId = searchParams.get('user_id') ?? '';
+  const startsInEmployeeCreate = createMode === 'employee';
   const [page, setPage] = useState(1);
   const [typeFilter, setTypeFilter] = useState('');
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(startsInEmployeeCreate);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<AddressForm>(emptyForm);
+  const [form, setForm] = useState<AddressForm>(
+    startsInEmployeeCreate
+      ? { ...emptyForm, is_office: false, user_id: preselectedUserId }
+      : emptyForm,
+  );
   const [formError, setFormError] = useState('');
   const [deactivateId, setDeactivateId] = useState<string | null>(null);
   const queryClient = useQueryClient();
@@ -169,6 +178,17 @@ export default function AddressesPage() {
     setShowForm(true);
   };
 
+  const openCreateEmployee = (userId = '') => {
+    setEditingId(null);
+    setFormError('');
+    setForm({
+      ...emptyForm,
+      is_office: false,
+      user_id: userId,
+    });
+    setShowForm(true);
+  };
+
   const closeForm = () => {
     setShowForm(false);
     setEditingId(null);
@@ -183,21 +203,31 @@ export default function AddressesPage() {
           <h2 className="text-2xl font-semibold tracking-tight text-foreground">{t('page.addresses.title')}</h2>
           <p className="mt-1 text-sm text-muted-foreground">{t('page.addresses.subtitle')}</p>
         </div>
-        {showForm ? (
-          <button
-            onClick={closeForm}
-            className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50"
-          >
-            {t('common.close')}
-          </button>
-        ) : (
-          <button
-            onClick={openCreate}
-            className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
-          >
-            {t('page.addresses.new')}
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {showForm ? (
+            <button
+              onClick={closeForm}
+              className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50"
+            >
+              {t('common.close')}
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => openCreateEmployee()}
+                className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50"
+              >
+                {t('page.addresses.new_employee')}
+              </button>
+              <button
+                onClick={openCreate}
+                className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+              >
+                {t('page.addresses.new')}
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="flex gap-2 mb-4">

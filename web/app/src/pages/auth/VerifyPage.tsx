@@ -23,14 +23,10 @@ export default function VerifyPage() {
 
     api.post('/auth/verify', { token })
       .then(async (res) => {
-        const { access_token, password_set } = res.data.data;
+        const { access_token } = res.data.data;
         await login(access_token);
-
-        if (password_set === false) {
-          setRedirect('/auth/set-password');
-        } else {
-          setRedirect(returnTo ?? '/');
-        }
+        // Password-gate is enforced centrally in AppLayout by role.
+        setRedirect(returnTo ?? '/');
       })
       .catch((err) => {
         setError(err.response?.data?.detail || t('auth.verify.error_failed'));

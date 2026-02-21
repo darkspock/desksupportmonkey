@@ -27,6 +27,7 @@ class MaintenanceRecordRepositoryInterface(ABC):
         priority: Optional[str] = None,
         scheduled_from: Optional[datetime] = None,
         scheduled_to: Optional[datetime] = None,
+        search: Optional[str] = None,
     ) -> tuple[list[MaintenanceRecord], int]: ...
 
     @abstractmethod

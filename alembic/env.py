@@ -30,7 +30,7 @@ def get_database_url():
     user = os.environ.get("POSTGRES_USER", "postgres")
     password = os.environ.get("POSTGRES_PASSWORD", "postgres")
     host = os.environ.get("POSTGRES_HOST", "localhost")
-    port = os.environ.get("POSTGRES_PORT", "5443")
+    port = os.environ.get("POSTGRES_PORT", "5444")
     db = os.environ.get("POSTGRES_DB", "dsm_dev")
     return f"postgresql://{user}:{password}@{host}:{port}/{db}"
 

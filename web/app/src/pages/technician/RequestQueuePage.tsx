@@ -11,7 +11,7 @@ import { Pagination } from '../../components/ui/Pagination';
 import { Tooltip } from '../../components/ui/Tooltip';
 import { formatDate } from '../../lib/date';
 import { useI18n } from '../../lib/i18n';
-import type { ServiceRequest, PaginatedResponse } from '../../types';
+import type { ServiceRequest, PaginatedResponse, AssignableUser } from '../../types';
 import { VALID_SUBTYPES } from '../../types';
 
 type MenuAction = {
@@ -33,6 +33,82 @@ export default function RequestQueuePage() {
   const [subtype, setSubtype] = useState('');
   const [search, setSearch] = useState('');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+  // Employee selection modal state
+  const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+  const [employeeSearch, setEmployeeSearch] = useState('');
+  const [showNewEmployeeForm, setShowNewEmployeeForm] = useState(false);
+  const [newEmpEmail, setNewEmpEmail] = useState('');
+  const [newEmpName, setNewEmpName] = useState('');
+  const [newEmpError, setNewEmpError] = useState('');
+
+  const usersQuery = useQuery({
+    queryKey: ['request-modal-assignable-users'],
+    queryFn: async () => {
+      const { data } = await api.get('/assets/assignable-users');
+      return data.data as AssignableUser[];
+    },
+    enabled: showEmployeeModal,
+  });
+
+  const filteredEmployees = useMemo(() => {
+    const all = usersQuery.data ?? [];
+    if (!employeeSearch.trim()) return all;
+    const q = employeeSearch.toLowerCase();
+    return all.filter(
+      (u) => u.email.toLowerCase().includes(q) || (u.name && u.name.toLowerCase().includes(q)),
+    );
+  }, [usersQuery.data, employeeSearch]);
+
+  const createEmployeeMut = useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post('/users/quick-create', {
+        email: newEmpEmail.trim(),
+        name: newEmpName.trim() || undefined,
+      });
+      return data.data as AssignableUser;
+    },
+    onSuccess: (created) => {
+      setNewEmpError('');
+      void queryClient.invalidateQueries({ queryKey: ['request-modal-assignable-users'] });
+      selectEmployee(created);
+    },
+    onError: (err: unknown) => {
+      setNewEmpError(
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+        || t('page.new_request.error_create'),
+      );
+    },
+  });
+
+  const handleCreateEmployee = () => {
+    setNewEmpError('');
+    const email = newEmpEmail.trim();
+    if (!email) {
+      setNewEmpError(t('page.users.error_email_required'));
+      return;
+    }
+    if (!email.includes('@')) {
+      setNewEmpError(t('page.vendors.error_email_invalid'));
+      return;
+    }
+    createEmployeeMut.mutate();
+  };
+
+  const openEmployeeModal = () => {
+    setEmployeeSearch('');
+    setShowNewEmployeeForm(false);
+    setNewEmpEmail('');
+    setNewEmpName('');
+    setNewEmpError('');
+    setShowEmployeeModal(true);
+  };
+
+  const selectEmployee = (u: AssignableUser) => {
+    setShowEmployeeModal(false);
+    const label = u.name || u.email;
+    navigate(`/my/requests/new?on_behalf_of=${u.id}&on_behalf_of_label=${encodeURIComponent(label)}`);
+  };
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['requests', page, status, type, subtype, search],
@@ -226,12 +302,13 @@ export default function RequestQueuePage() {
             {t('page.request_queue.subtitle')}
           </p>
         </div>
-        <Link
-          to="/my/requests/new"
+        <button
+          type="button"
+          onClick={openEmployeeModal}
           className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
         >
           {t('page.request_queue.new')}
-        </Link>
+        </button>
       </div>
 
       {/* Stats */}
@@ -351,9 +428,12 @@ export default function RequestQueuePage() {
                       >
                         {r.title}
                       </Link>
-                      {r.created_by_email && (
-                        <p className="text-xs text-muted-foreground">{r.created_by_email}</p>
-                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {r.created_by_name || r.created_by_email}
+                        {r.created_by_name && r.created_by_email && (
+                          <span className="ml-1 text-muted-foreground/60">({r.created_by_email})</span>
+                        )}
+                      </p>
                     </Td>
                     <Td>
                       <span className="text-sm text-muted-foreground">{t(`enum.${r.type}`)}</span>
@@ -362,7 +442,7 @@ export default function RequestQueuePage() {
                     <Td><StatusBadge status={r.priority} /></Td>
                     <Td><StatusBadge status={r.status} /></Td>
                     <Td className="hidden md:table-cell">
-                      <span className="text-sm text-muted-foreground">{r.assigned_to_email || r.assigned_to || '—'}</span>
+                      <span className="text-sm text-muted-foreground">{r.assigned_to_name || r.assigned_to_email || '—'}</span>
                     </Td>
                     <Td className="hidden sm:table-cell">
                       <span className="text-sm text-muted-foreground">{formatDate(r.created_at)}</span>
@@ -445,6 +525,125 @@ export default function RequestQueuePage() {
           </Table>
           <Pagination page={page} pageSize={20} total={data.meta.total} onChange={setPage} />
         </>
+      )}
+
+      {/* Employee selection modal */}
+      {showEmployeeModal && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setShowEmployeeModal(false)}
+            aria-label={t('common.close')}
+          />
+          <div className="relative z-[91] w-full max-w-lg rounded-xl border border-border bg-card p-6 shadow-lg">
+            <h3 className="text-lg font-semibold text-foreground">
+              {t('page.request_queue.select_employee')}
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {t('page.request_queue.select_employee_desc')}
+            </p>
+
+            {/* New Employee toggle */}
+            {!showNewEmployeeForm ? (
+              <button
+                type="button"
+                onClick={() => setShowNewEmployeeForm(true)}
+                className="mt-4 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+              >
+                {t('page.request_queue.new_employee')}
+              </button>
+            ) : (
+              <div className="mt-4 rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+                {newEmpError && (
+                  <div className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                    <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 8v4M12 16h.01" />
+                    </svg>
+                    {newEmpError}
+                  </div>
+                )}
+                <div className="flex items-end gap-2">
+                  <div className="flex-1 space-y-2">
+                    <input
+                      type="email"
+                      value={newEmpEmail}
+                      onChange={(e) => { setNewEmpEmail(e.target.value); setNewEmpError(''); }}
+                      placeholder="email@company.com"
+                      className="w-full text-sm"
+                    />
+                    <input
+                      type="text"
+                      value={newEmpName}
+                      onChange={(e) => setNewEmpName(e.target.value)}
+                      placeholder={t('table.name')}
+                      className="w-full text-sm"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    disabled={createEmployeeMut.isPending}
+                    onClick={handleCreateEmployee}
+                    className="shrink-0 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-all"
+                  >
+                    {createEmployeeMut.isPending ? t('page.request_queue.creating_employee') : t('page.request_queue.create_employee')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowNewEmployeeForm(false); setNewEmpEmail(''); setNewEmpName(''); setNewEmpError(''); }}
+                    className="shrink-0 rounded-md border border-border bg-card px-3 py-2 text-sm font-medium text-foreground hover:bg-accent transition-all"
+                  >
+                    {t('common.cancel')}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Search */}
+            <div className="mt-4">
+              <input
+                type="search"
+                value={employeeSearch}
+                onChange={(e) => setEmployeeSearch(e.target.value)}
+                placeholder={t('page.request_queue.search_employee')}
+                className="w-full"
+              />
+            </div>
+
+            {/* User list */}
+            <div className="mt-3 max-h-72 overflow-auto rounded-lg border border-border">
+              {usersQuery.isLoading ? (
+                <p className="px-4 py-3 text-sm text-muted-foreground">{t('common.loading')}</p>
+              ) : filteredEmployees.length === 0 ? (
+                <p className="px-4 py-3 text-sm text-muted-foreground">{t('page.request_queue.no_employee_match')}</p>
+              ) : (
+                filteredEmployees.map((u) => (
+                  <button
+                    key={u.id}
+                    type="button"
+                    onClick={() => selectEmployee(u)}
+                    className="flex w-full items-center justify-between border-b border-border/50 px-4 py-2.5 text-left text-sm text-foreground hover:bg-accent last:border-b-0"
+                  >
+                    <span className="truncate font-medium">{u.name || u.email}</span>
+                    <span className="ml-3 text-xs text-muted-foreground">{u.email}</span>
+                  </button>
+                ))
+              )}
+            </div>
+
+            {/* Cancel */}
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowEmployeeModal(false)}
+                className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm hover:bg-accent transition-all"
+              >
+                {t('common.cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

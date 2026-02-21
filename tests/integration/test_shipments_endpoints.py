@@ -82,7 +82,12 @@ class TestCreateShipment:
         asset_id = _create_asset(client, "SHIP-SN001")
 
         resp = _create_shipment(
-            client, shipping_address.id, [asset_id],
+            client,
+            shipping_address.id,
+            [asset_id],
+            service_level="two_day",
+            items_description="Laptop + Dock",
+            internal_notes="Handle with care",
         )
 
         assert resp.status_code == 201
@@ -91,6 +96,9 @@ class TestCreateShipment:
         assert data["direction"] == "OUTBOUND"
         assert data["item_count"] == 1
         assert len(data["items"]) == 1
+        assert data["service_level"] == "two_day"
+        assert data["items_description"] == "Laptop + Dock"
+        assert data["internal_notes"] == "Handle with care"
 
     def test_create_with_asset_conflict_returns_409(
         self, client, auth_as, technician_user,
@@ -165,12 +173,18 @@ class TestUpdateShipment:
             json={
                 "carrier": "FedEx",
                 "tracking_number": "FX999",
+                "service_level": "overnight",
+                "items_description": "Laptop only",
+                "internal_notes": "Deliver before 10am",
                 "notes": "Rush delivery",
             },
         )
         assert resp.status_code == 200
         data = resp.json()["data"]
         assert data["carrier"] == "FedEx"
+        assert data["service_level"] == "overnight"
+        assert data["items_description"] == "Laptop only"
+        assert data["internal_notes"] == "Deliver before 10am"
         assert data["notes"] == "Rush delivery"
 
 

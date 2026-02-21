@@ -10,6 +10,7 @@ class CreateRequestRequest(BaseModel):
     description: str = Field(min_length=1)
     subtype: Optional[str] = None
     data: Optional[dict] = None
+    on_behalf_of: Optional[str] = None
 
 
 class ChangeStatusRequest(BaseModel):
@@ -32,8 +33,10 @@ class RequestListItemResponse(BaseModel):
     status: str
     priority: str
     assigned_to: Optional[str] = None
+    assigned_to_name: Optional[str] = None
     assigned_to_email: Optional[str] = None
     created_by: str
+    created_by_name: Optional[str] = None
     created_by_email: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -69,8 +72,10 @@ class RequestResponse(BaseModel):
     id: str
     company_id: str
     created_by: str
+    created_by_name: Optional[str] = None
     created_by_email: Optional[str] = None
     assigned_to: Optional[str] = None
+    assigned_to_name: Optional[str] = None
     assigned_to_email: Optional[str] = None
     type: str
     subtype: Optional[str] = None

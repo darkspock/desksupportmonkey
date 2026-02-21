@@ -7,8 +7,8 @@ interface ToastItem extends Required<Pick<ToastInput, 'title' | 'variant' | 'dur
 }
 
 const variantClass: Record<ToastVariant, string> = {
-  success: 'border-success/30 bg-success/10 text-foreground',
-  error: 'border-destructive/30 bg-destructive/10 text-foreground',
+  success: 'border-success bg-success/90 text-success-foreground',
+  error: 'border-destructive bg-destructive/90 text-white',
   info: 'border-border bg-card text-foreground',
 };
 
@@ -41,12 +41,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`pointer-events-auto rounded-lg border px-4 py-3 shadow-sm ${variantClass[toast.variant]}`}
+            className={`pointer-events-auto rounded-lg border px-4 py-3 shadow-lg ${variantClass[toast.variant]}`}
             role="status"
             aria-live="polite"
           >
             <p className="text-sm font-semibold">{toast.title}</p>
-            {toast.description && <p className="mt-1 text-xs text-muted-foreground">{toast.description}</p>}
+            {toast.description && <p className={`mt-1 text-xs ${toast.variant === 'info' ? 'text-muted-foreground' : 'opacity-90'}`}>{toast.description}</p>}
           </div>
         ))}
       </div>

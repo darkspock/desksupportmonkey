@@ -49,10 +49,13 @@ class ChangeUserRoleCommandHandler(CommandHandler[ChangeUserRoleCommand]):
         if not user:
             raise UserNotFoundError("User not found")
 
+        new_role = UserRole(command.new_role)
+        if user.role == new_role:
+            return
+
         if command.user_id == command.current_user_id:
             raise CannotChangeSelfError("Cannot change your own role")
 
-        new_role = UserRole(command.new_role)
         if new_role == UserRole.SUPER_ADMIN:
             raise CannotAssignSuperAdminError("Cannot assign super_admin role")
 

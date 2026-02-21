@@ -272,6 +272,42 @@ class TestMyAppointments:
         assert "data" in body
         assert "meta" in body
         assert body["meta"]["total"] >= 1
+        first = body["data"][0]
+        assert first["technician_name"]
+
+    def test_my_appointments_resolves_technician_from_assigned_request(
+        self, client, auth_as, technician_user, employee_user,
+    ):
+        auth_as(employee_user)
+        request_id = _create_request(client)
+
+        auth_as(technician_user)
+        assign_resp = client.patch(
+            f"/api/v1/requests/{request_id}/assign",
+            json={"user_id": technician_user.id},
+        )
+        assert assign_resp.status_code == 200
+
+        # Legacy/bad data case: appointment stores employee as technician.
+        create_resp = _create_appointment(
+            client,
+            request_id,
+            employee_user.id,
+            employee_user.id,
+            start="2026-03-19T12:00:00Z",
+        )
+        assert create_resp.status_code == 201
+
+        auth_as(employee_user)
+        resp = client.get("/api/v1/my/appointments")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["meta"]["total"] >= 1
+
+        first = body["data"][0]
+        assert first["employee_id"] == employee_user.id
+        assert first["technician_id"] == technician_user.id
+        assert first["technician_email"] == technician_user.email
 
 
 class TestRequestCascade:

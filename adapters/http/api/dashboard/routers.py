@@ -317,6 +317,7 @@ def shipment_summary(
                     "destination_type": s.destination_type.value,
                     "status": s.status.value,
                     "carrier": s.carrier,
+                    "service_level": s.service_level,
                     "tracking_number": s.tracking_number,
                     "delivered_at": s.delivered_at.isoformat() if s.delivered_at else None,
                     "item_count": len(s.items),

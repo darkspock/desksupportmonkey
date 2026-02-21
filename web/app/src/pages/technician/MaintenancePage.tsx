@@ -10,7 +10,7 @@ import { Loading } from '../../components/ui/Loading';
 import { EmptyState, ErrorState } from '../../components/ui/StateBlock';
 import { formatDateTime } from '../../lib/date';
 import { useI18n } from '../../lib/i18n';
-import type { MaintenanceRecord, PaginatedResponse, User } from '../../types';
+import type { MaintenanceRecord, PaginatedResponse } from '../../types';
 
 const statusVariant: Record<string, 'default' | 'info' | 'success' | 'warning' | 'danger'> = {
   scheduled: 'info',
@@ -32,32 +32,19 @@ export default function MaintenancePage() {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState('');
   const [priority, setPriority] = useState('');
-  const [assetId, setAssetId] = useState('');
-  const [technicianId, setTechnicianId] = useState('');
+  const [search, setSearch] = useState('');
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['maintenance', page, status, priority, assetId, technicianId],
+    queryKey: ['maintenance', page, status, priority, search],
     queryFn: async () => {
       const params: Record<string, string | number> = { page, page_size: 20 };
       if (status) params.status = status;
       if (priority) params.priority = priority;
-      if (assetId) params.asset_id = assetId;
-      if (technicianId) params.technician_id = technicianId;
+      if (search.trim()) params.search = search.trim();
       const { data } = await api.get('/maintenance', { params });
       return data as PaginatedResponse<MaintenanceRecord>;
     },
   });
-
-  const { data: techniciansData } = useQuery({
-    queryKey: ['maintenance-list-technicians-options'],
-    queryFn: async () => {
-      const { data } = await api.get('/users', { params: { page: 1, page_size: 100, role: 'technician' } });
-      return data as PaginatedResponse<User>;
-    },
-  });
-
-  const technicians = techniciansData?.data ?? [];
-  const technicianById = new Map(technicians.map((tech) => [tech.id, tech.email]));
 
   return (
     <div className="flex flex-col gap-6">
@@ -97,9 +84,9 @@ export default function MaintenancePage() {
           </svg>
           <input
             type="search"
-            value={assetId}
-            onChange={(e) => { setAssetId(e.target.value); setPage(1); }}
-            placeholder={t('page.maintenance.filter_asset')}
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            placeholder={t('page.maintenance.search_placeholder')}
             className="w-full pl-9 bg-card"
           />
         </div>
@@ -124,18 +111,6 @@ export default function MaintenancePage() {
               <option key={p} value={p}>{t(`enum.maintenance_priority.${p.toLowerCase()}`)}</option>
             ))}
           </select>
-          <select
-            value={technicianId}
-            onChange={(e) => { setTechnicianId(e.target.value); setPage(1); }}
-            className="w-[150px] bg-card"
-          >
-            <option value="">{t('page.maintenance.filter_technician')}</option>
-            {technicians.map((tech) => (
-              <option key={tech.id} value={tech.id}>
-                {tech.email}
-              </option>
-            ))}
-          </select>
         </div>
       </div>
 
@@ -155,8 +130,8 @@ export default function MaintenancePage() {
                 <Th className="pl-4">{t('table.status')}</Th>
                 <Th>{t('table.priority')}</Th>
                 <Th>{t('table.title')}</Th>
+                <Th>{t('table.employee')}</Th>
                 <Th>{t('table.asset')}</Th>
-                <Th>{t('table.technician')}</Th>
                 <Th>{t('table.date')}</Th>
                 <Th className="pr-4"><span className="sr-only">{t('table.actions')}</span></Th>
               </tr>
@@ -178,8 +153,8 @@ export default function MaintenancePage() {
                       </Badge>
                     </Td>
                     <Td>{r.title}</Td>
+                    <Td>{r.employee_name || r.employee_email || '—'}</Td>
                     <Td><span className="font-mono text-xs">{r.asset_id.slice(0, 8)}</span></Td>
-                    <Td>{r.technician_id ? technicianById.get(r.technician_id) || r.technician_id : '—'}</Td>
                     <Td>{r.scheduled_at ? formatDateTime(r.scheduled_at) : '—'}</Td>
                     <td className="px-4 py-3 text-sm">
                       <div className="flex items-center justify-end">

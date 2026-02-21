@@ -25,6 +25,7 @@ class ListMaintenanceRecordsQuery(Query):
     priority: Optional[str] = None
     scheduled_from: Optional[datetime] = None
     scheduled_to: Optional[datetime] = None
+    search: Optional[str] = None
 
 
 class ListMaintenanceRecordsQueryHandler(
@@ -53,4 +54,5 @@ class ListMaintenanceRecordsQueryHandler(
             priority=query.priority,
             scheduled_from=query.scheduled_from,
             scheduled_to=query.scheduled_to,
+            search=query.search,
         )

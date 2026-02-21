@@ -572,7 +572,7 @@ export default function AssetDetailPage() {
             <tbody>
               {shipments.map((s) => (
                 <tr key={s.id} className="cursor-pointer hover:bg-secondary" onClick={() => navigate(`/shipments/${s.id}`)}>
-                  <Td><Badge variant={s.direction === 'outbound' ? 'info' : 'warning'}>{t(`enum.shipment_direction.${s.direction}`)}</Badge></Td>
+                  <Td><Badge variant={s.direction === 'OUTBOUND' ? 'info' : 'warning'}>{t(`enum.shipment_direction.${s.direction}`)}</Badge></Td>
                   <Td>{t(`enum.destination_type.${s.destination_type}`)}</Td>
                   <Td>{s.carrier || '—'}</Td>
                   <Td><StatusBadge status={s.status} /></Td>

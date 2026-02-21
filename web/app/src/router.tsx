@@ -48,6 +48,7 @@ const MaintenancePage = lazy(() => import('./pages/technician/MaintenancePage'))
 const MaintenanceDetailPage = lazy(() => import('./pages/technician/MaintenanceDetailPage'));
 const MaintenanceFormPage = lazy(() => import('./pages/technician/MaintenanceFormPage'));
 const MyMaintenancePage = lazy(() => import('./pages/technician/MyMaintenancePage'));
+const MyTaskAppointmentsPage = lazy(() => import('./pages/technician/MyTaskAppointmentsPage'));
 const MaintenanceTemplatesPage = lazy(() => import('./pages/admin/MaintenanceTemplatesPage'));
 const CompaniesPage = lazy(() => import('./pages/superadmin/CompaniesPage'));
 
@@ -81,6 +82,10 @@ export const router = createBrowserRouter([
       {
         path: 'my/maintenance',
         element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><MyMaintenancePage /></S></RequireRole>,
+      },
+      {
+        path: 'my/tasks/appointments',
+        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><MyTaskAppointmentsPage /></S></RequireRole>,
       },
       // Shared detail route (ownership validated by backend)
       { path: 'requests/:id', element: <S><RequestDetailPage /></S> },

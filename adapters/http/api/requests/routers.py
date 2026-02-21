@@ -146,23 +146,52 @@ router = APIRouter(prefix="/api/v1/requests", tags=["requests"])
 # ---------------------------------------------------------------------------
 
 
-def _user_email_map(user_repo: UserRepository, user_ids: list[str]) -> dict[str, str]:
+def _display_name(user: User | None) -> str | None:
+    if not user:
+        return None
+    if user.name and user.name.strip():
+        return user.name.strip()
+    local = (
+        user.email.split("@", 1)[0]
+        .replace(".", " ")
+        .replace("_", " ")
+        .replace("-", " ")
+        .strip()
+    )
+    normalized = " ".join(part.capitalize() for part in local.split())
+    return normalized or user.email
+
+
+def _user_maps(
+    user_repo: UserRepository, user_ids: list[str],
+) -> tuple[dict[str, str], dict[str, str | None]]:
     users = user_repo.find_by_ids(user_ids)
-    return {uid: user.email for uid, user in users.items()}
+    email_map = {uid: user.email for uid, user in users.items()}
+    name_map = {uid: _display_name(user) for uid, user in users.items()}
+    return email_map, name_map
+
+
+def _user_email_map(user_repo: UserRepository, user_ids: list[str]) -> dict[str, str]:
+    email_map, _ = _user_maps(user_repo, user_ids)
+    return email_map
 
 
 def _to_response(
     request: ServiceRequest,
     comment_count: int = 0,
+    created_by_name: str | None = None,
     created_by_email: str | None = None,
+    assigned_to_name: str | None = None,
     assigned_to_email: str | None = None,
 ) -> RequestResponse:
     return RequestResponse(
         id=request.id,
         company_id=request.company_id,
         created_by=request.created_by,
+        created_by_name=created_by_name,
         created_by_email=created_by_email,
         assigned_to=request.assigned_to,
+        assigned_to_name=assigned_to_name,
         assigned_to_email=assigned_to_email,
         type=request.type.value,
         subtype=request.subtype,
@@ -178,7 +207,11 @@ def _to_response(
     )
 
 
-def _to_list_item(r: ServiceRequest, email_map: dict[str, str]) -> dict:
+def _to_list_item(
+    r: ServiceRequest,
+    email_map: dict[str, str],
+    name_map: dict[str, str | None],
+) -> dict:
     return RequestListItemResponse(
         id=r.id,
         type=r.type.value,
@@ -187,8 +220,10 @@ def _to_list_item(r: ServiceRequest, email_map: dict[str, str]) -> dict:
         status=r.status.value,
         priority=r.priority.value,
         assigned_to=r.assigned_to,
+        assigned_to_name=name_map.get(r.assigned_to) if r.assigned_to else None,
         assigned_to_email=email_map.get(r.assigned_to) if r.assigned_to else None,
         created_by=r.created_by,
+        created_by_name=name_map.get(r.created_by),
         created_by_email=email_map.get(r.created_by),
         created_at=r.created_at,
         updated_at=r.updated_at,
@@ -345,9 +380,9 @@ def list_requests(
     )
     user_ids = [r.created_by for r in requests]
     user_ids.extend([r.assigned_to for r in requests if r.assigned_to])
-    email_map = _user_email_map(user_repo, user_ids)
+    email_map, name_map = _user_maps(user_repo, user_ids)
     return {
-        "data": [_to_list_item(r, email_map) for r in requests],
+        "data": [_to_list_item(r, email_map, name_map) for r in requests],
         "meta": PaginationMeta(page=page, page_size=page_size, total=total).model_dump(),
     }
 
@@ -366,12 +401,23 @@ def create_request(
     classification_config_repo: ClassificationConfigRepository = Depends(
         get_classification_config_repo,
     ),
+    user_repo: UserRepository = Depends(get_user_repo),
 ):
+    # Resolve effective user (on_behalf_of for technician/admin)
+    effective_user = current_user
+    effective_role = current_user.role.value
+    if body.on_behalf_of and current_user.role.has_access(UserRole.TECHNICIAN):
+        target_user = user_repo.find_by_id(body.on_behalf_of)
+        if not target_user or target_user.company_id != current_user.company_id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Target user not found")
+        effective_user = target_user
+        effective_role = "employee"
+
     # Look up department for scoring and approval routing
     dept_priority_weight = 0
     dept_has_manager = False
     dept_manager_id = None
-    dept_id = current_user.department_id
+    dept_id = effective_user.department_id
     if dept_id and current_user.company_id:
         dept = dept_repo.find_by_id(dept_id, current_user.company_id)
         if dept:
@@ -491,12 +537,12 @@ def create_request(
     try:
         handler.handle(
             CreateRequestCommand(
-                company_id=current_user.company_id, created_by=current_user.id,
+                company_id=current_user.company_id, created_by=effective_user.id,
                 type=resolved_type, title=body.title,
                 description=body.description, data=body.data, id=request_id,
                 subtype=resolved_subtype,
                 department_priority_weight=dept_priority_weight,
-                user_role=current_user.role.value,
+                user_role=effective_role,
                 department_has_manager=dept_has_manager,
                 ai_priority_hint=ai_priority_hint,
                 ai_classification=ai_classification,
@@ -510,7 +556,7 @@ def create_request(
     # Auto-assign only for onboarding at creation; new_equipment auto-assigns post-approval
     if request.type == RequestType.ONBOARDING:
         _attempt_auto_assign(
-            request, current_user, request_repo,
+            request, effective_user, request_repo,
             profile_repo, config_repo, asset_repo,
         )
 
@@ -526,7 +572,13 @@ def create_request(
         )
         event_bus.publish(approval_event, db)
 
-    return {"data": _to_response(request, created_by_email=current_user.email).model_dump(mode="json")}
+    return {
+        "data": _to_response(
+            request,
+            created_by_name=_display_name(effective_user),
+            created_by_email=effective_user.email,
+        ).model_dump(mode="json")
+    }
 
 
 @router.get("/{request_id}")
@@ -549,11 +601,13 @@ def get_request(
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
 
     user_ids = [detail.request.created_by] + ([detail.request.assigned_to] if detail.request.assigned_to else [])
-    email_map = _user_email_map(user_repo, user_ids)
+    email_map, name_map = _user_maps(user_repo, user_ids)
     return {
         "data": _to_response(
             detail.request, detail.comment_count,
+            created_by_name=name_map.get(detail.request.created_by),
             created_by_email=email_map.get(detail.request.created_by),
+            assigned_to_name=name_map.get(detail.request.assigned_to) if detail.request.assigned_to else None,
             assigned_to_email=email_map.get(detail.request.assigned_to) if detail.request.assigned_to else None,
         ).model_dump(mode="json")
     }
@@ -716,9 +770,11 @@ def approve_request(
         actor_id=current_user.id,
     )
     event_bus.publish(status_event, db)
-    email_map = _user_email_map(user_repo, [request.created_by])
+    email_map, name_map = _user_maps(user_repo, [request.created_by])
     return {"data": _to_response(
-        request, created_by_email=email_map.get(request.created_by)
+        request,
+        created_by_name=name_map.get(request.created_by),
+        created_by_email=email_map.get(request.created_by),
     ).model_dump(mode="json")}
 
 
@@ -768,9 +824,11 @@ def reject_request(
         actor_id=current_user.id,
     )
     event_bus.publish(status_event, db)
-    email_map = _user_email_map(user_repo, [request.created_by])
+    email_map, name_map = _user_maps(user_repo, [request.created_by])
     return {"data": _to_response(
-        request, created_by_email=email_map.get(request.created_by)
+        request,
+        created_by_name=name_map.get(request.created_by),
+        created_by_email=email_map.get(request.created_by),
     ).model_dump(mode="json")}
 
 

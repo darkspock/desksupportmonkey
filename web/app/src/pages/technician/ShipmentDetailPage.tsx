@@ -13,12 +13,12 @@ import { useI18n } from '../../lib/i18n';
 import type { Shipment, ShippingAddress } from '../../types';
 
 const statusColors: Record<string, string> = {
-  draft: 'default',
-  dispatched: 'info',
-  in_transit: 'warning',
-  delivered: 'success',
-  failed: 'danger',
-  cancelled: 'default',
+  DRAFT: 'default',
+  DISPATCHED: 'info',
+  IN_TRANSIT: 'warning',
+  DELIVERED: 'success',
+  FAILED: 'danger',
+  CANCELLED: 'default',
 };
 
 function formatAddress(addr: ShippingAddress | undefined): string {
@@ -40,6 +40,16 @@ export default function ShipmentDetailPage() {
   const [failReason, setFailReason] = useState('');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
+
+  // Inline edit state
+  const [editing, setEditing] = useState(false);
+  const [editCarrier, setEditCarrier] = useState('');
+  const [editServiceLevel, setEditServiceLevel] = useState('');
+  const [editTrackingNumber, setEditTrackingNumber] = useState('');
+  const [editTrackingUrl, setEditTrackingUrl] = useState('');
+  const [editItemsDescription, setEditItemsDescription] = useState('');
+  const [editInternalNotes, setEditInternalNotes] = useState('');
+  const [editNotes, setEditNotes] = useState('');
 
   const { data: shipment, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['shipment', id],
@@ -75,6 +85,36 @@ export default function ShipmentDetailPage() {
 
   const errDetail = (err: unknown) =>
     (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('page.shipment_detail.error_action');
+
+  const startEditing = () => {
+    if (!shipment) return;
+    setEditCarrier(shipment.carrier ?? '');
+    setEditServiceLevel(shipment.service_level ?? '');
+    setEditTrackingNumber(shipment.tracking_number ?? '');
+    setEditTrackingUrl(shipment.tracking_url ?? '');
+    setEditItemsDescription(shipment.items_description ?? '');
+    setEditInternalNotes(shipment.internal_notes ?? '');
+    setEditNotes(shipment.notes ?? '');
+    setEditing(true);
+  };
+
+  const updateShipment = useMutation({
+    mutationFn: () => api.patch(`/shipments/${id}`, {
+      carrier: editCarrier || null,
+      service_level: editServiceLevel || null,
+      tracking_number: editTrackingNumber || null,
+      tracking_url: editTrackingUrl || null,
+      items_description: editItemsDescription || null,
+      internal_notes: editInternalNotes || null,
+      notes: editNotes || null,
+    }),
+    onSuccess: () => {
+      invalidate();
+      setEditing(false);
+      showToast({ title: t('page.shipment_detail.toast_updated'), variant: 'success' });
+    },
+    onError: (err: unknown) => showToast({ title: errDetail(err), variant: 'error', durationMs: 5000 }),
+  });
 
   const dispatch = useMutation({
     mutationFn: () => api.post(`/shipments/${id}/dispatch`, {
@@ -140,11 +180,11 @@ export default function ShipmentDetailPage() {
   }
   if (!shipment) return <ErrorState message={t('page.shipment_detail.not_found')} />;
 
-  const isDraft = shipment.status === 'draft';
-  const isDispatched = shipment.status === 'dispatched';
-  const isInTransit = shipment.status === 'in_transit';
-  const isDelivered = shipment.status === 'delivered';
-  const isTerminal = shipment.status === 'failed' || shipment.status === 'cancelled';
+  const isDraft = shipment.status === 'DRAFT';
+  const isDispatched = shipment.status === 'DISPATCHED';
+  const isInTransit = shipment.status === 'IN_TRANSIT';
+  const isDelivered = shipment.status === 'DELIVERED';
+  const isTerminal = shipment.status === 'FAILED' || shipment.status === 'CANCELLED';
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -155,36 +195,104 @@ export default function ShipmentDetailPage() {
               <Badge variant={statusColors[shipment.status] || 'default'}>
                 {t(`enum.shipment_status.${shipment.status}`)}
               </Badge>
-              <Badge variant={shipment.direction === 'outbound' ? 'info' : 'warning'}>
+              <Badge variant={shipment.direction === 'OUTBOUND' ? 'info' : 'warning'}>
                 {t(`enum.shipment_direction.${shipment.direction}`)}
               </Badge>
               <span className="text-xs text-muted-foreground">{t(`enum.destination_type.${shipment.destination_type}`)}</span>
             </div>
             <p className="mt-2 text-xs text-muted-foreground font-mono">{shipment.id}</p>
           </div>
+          {!isTerminal && !editing && (
+            <button
+              onClick={startEditing}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 h-8 text-xs font-medium text-foreground hover:bg-accent transition-all"
+            >
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" /></svg>
+              {t('common.edit')}
+            </button>
+          )}
         </div>
 
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div><span className="text-muted-foreground">{t('page.shipment_detail.carrier')}:</span> {shipment.carrier || '—'}</div>
-          <div>
-            <span className="text-muted-foreground">{t('page.shipment_detail.tracking')}:</span>{' '}
-            {shipment.tracking_url ? (
-              <a href={shipment.tracking_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                {shipment.tracking_number || t('page.shipment_detail.tracking')}
-              </a>
-            ) : (
-              shipment.tracking_number || '—'
+        {editing ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-muted-foreground">{t('page.shipment_detail.carrier')}</label>
+                <input value={editCarrier} onChange={(e) => setEditCarrier(e.target.value)} className="w-full" placeholder="FedEx, UPS, DHL..." />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-muted-foreground">{t('page.shipment_detail.service_level')}</label>
+                <input value={editServiceLevel} onChange={(e) => setEditServiceLevel(e.target.value)} className="w-full" placeholder="Standard, 24h, 48h..." />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-muted-foreground">{t('page.shipment_detail.tracking')} #</label>
+                <input value={editTrackingNumber} onChange={(e) => setEditTrackingNumber(e.target.value)} className="w-full" />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-muted-foreground">{t('page.shipment_detail.tracking')} URL</label>
+                <input value={editTrackingUrl} onChange={(e) => setEditTrackingUrl(e.target.value)} className="w-full" placeholder="https://..." />
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-muted-foreground">{t('page.shipment_detail.items_description')}</label>
+              <textarea value={editItemsDescription} onChange={(e) => setEditItemsDescription(e.target.value)} rows={3} className="w-full resize-none" />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-muted-foreground">{t('page.shipment_detail.internal_notes')}</label>
+              <textarea value={editInternalNotes} onChange={(e) => setEditInternalNotes(e.target.value)} rows={2} className="w-full resize-none" />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-muted-foreground">{t('page.shipment_detail.notes')}</label>
+              <textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={2} className="w-full resize-none" />
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => updateShipment.mutate()}
+                disabled={updateShipment.isPending}
+                className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+              >
+                {updateShipment.isPending ? t('common.saving') : t('common.save')}
+              </button>
+              <button
+                onClick={() => setEditing(false)}
+                className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all"
+              >
+                {t('common.cancel')}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div><span className="text-muted-foreground">{t('page.shipment_detail.carrier')}:</span> {shipment.carrier || '—'}</div>
+            <div>
+              <span className="text-muted-foreground">{t('page.shipment_detail.tracking')}:</span>{' '}
+              {shipment.tracking_url ? (
+                <a href={shipment.tracking_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                  {shipment.tracking_number || t('page.shipment_detail.tracking')}
+                </a>
+              ) : (
+                shipment.tracking_number || '—'
+              )}
+            </div>
+            <div><span className="text-muted-foreground">{t('table.recipient')}:</span> {shipment.recipient_name || '—'}</div>
+            <div><span className="text-muted-foreground">{t('table.items')}:</span> {shipment.item_count}</div>
+            {shipment.service_level && (
+              <div><span className="text-muted-foreground">{t('page.shipment_detail.service_level')}:</span> {shipment.service_level}</div>
+            )}
+            {shipment.items_description && (
+              <div className="col-span-2"><span className="text-muted-foreground">{t('page.shipment_detail.items_description')}:</span> {shipment.items_description}</div>
+            )}
+            {shipment.internal_notes && (
+              <div className="col-span-2"><span className="text-muted-foreground">{t('page.shipment_detail.internal_notes')}:</span> {shipment.internal_notes}</div>
+            )}
+            {shipment.dispatched_at && (
+              <div><span className="text-muted-foreground">{t('page.shipment_detail.dispatched_at')}:</span> {formatDateTime(shipment.dispatched_at)}</div>
+            )}
+            {shipment.delivered_at && (
+              <div><span className="text-muted-foreground">{t('page.shipment_detail.delivered_at')}:</span> {formatDateTime(shipment.delivered_at)}</div>
             )}
           </div>
-          <div><span className="text-muted-foreground">{t('table.recipient')}:</span> {shipment.recipient_name || '—'}</div>
-          <div><span className="text-muted-foreground">{t('table.items')}:</span> {shipment.item_count}</div>
-          {shipment.dispatched_at && (
-            <div><span className="text-muted-foreground">{t('page.shipment_detail.dispatched_at')}:</span> {formatDateTime(shipment.dispatched_at)}</div>
-          )}
-          {shipment.delivered_at && (
-            <div><span className="text-muted-foreground">{t('page.shipment_detail.delivered_at')}:</span> {formatDateTime(shipment.delivered_at)}</div>
-          )}
-        </div>
+        )}
       </Card>
 
       <Card>

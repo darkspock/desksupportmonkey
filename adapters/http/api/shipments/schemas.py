@@ -13,8 +13,11 @@ class CreateShipmentRequest(BaseModel):
     recipient_name: Optional[str] = None
     recipient_user_id: Optional[str] = None
     carrier: Optional[str] = None
+    service_level: Optional[str] = None
     tracking_number: Optional[str] = None
     tracking_url: Optional[str] = None
+    items_description: Optional[str] = None
+    internal_notes: Optional[str] = None
     request_id: Optional[str] = None
     po_id: Optional[str] = None
     notes: Optional[str] = None
@@ -40,8 +43,11 @@ class DeliverShipmentRequest(BaseModel):
 
 class UpdateShipmentRequest(BaseModel):
     carrier: Optional[str] = None
+    service_level: Optional[str] = None
     tracking_number: Optional[str] = None
     tracking_url: Optional[str] = None
+    items_description: Optional[str] = None
+    internal_notes: Optional[str] = None
     notes: Optional[str] = None
 
 
@@ -77,8 +83,11 @@ class ShipmentResponse(BaseModel):
     recipient_name: Optional[str] = None
     recipient_user_id: Optional[str] = None
     carrier: Optional[str] = None
+    service_level: Optional[str] = None
     tracking_number: Optional[str] = None
     tracking_url: Optional[str] = None
+    items_description: Optional[str] = None
+    internal_notes: Optional[str] = None
     request_id: Optional[str] = None
     po_id: Optional[str] = None
     return_for_shipment_id: Optional[str] = None

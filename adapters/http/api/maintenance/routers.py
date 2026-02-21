@@ -96,6 +96,7 @@ def list_maintenance_records(
     priority: Optional[str] = Query(None),
     scheduled_from: Optional[datetime] = Query(None),
     scheduled_to: Optional[datetime] = Query(None),
+    search: Optional[str] = Query(None),
     current_user: User = Depends(tech_dep),
     controller: MaintenanceController = Depends(get_maintenance_controller),
 ):
@@ -109,6 +110,7 @@ def list_maintenance_records(
         priority=priority,
         scheduled_from=scheduled_from,
         scheduled_to=scheduled_to,
+        search=search,
     )
     return {
         "data": records,

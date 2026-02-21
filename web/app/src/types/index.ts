@@ -125,8 +125,10 @@ export interface ServiceRequest {
   id: string;
   company_id: string;
   created_by: string;
+  created_by_name?: string | null;
   created_by_email?: string | null;
   assigned_to: string | null;
+  assigned_to_name?: string | null;
   assigned_to_email?: string | null;
   type: RequestType;
   subtype?: string | null;
@@ -429,7 +431,9 @@ export interface Appointment {
   created_by: string;
   created_at?: string | null;
   updated_at?: string | null;
+  technician_name?: string | null;
   technician_email?: string | null;
+  employee_name?: string | null;
   employee_email?: string | null;
 }
 
@@ -487,8 +491,11 @@ export interface Shipment {
   origin_address_id?: string | null;
   destination_address_id?: string | null;
   carrier?: string | null;
+  service_level?: string | null;
   tracking_number?: string | null;
   tracking_url?: string | null;
+  items_description?: string | null;
+  internal_notes?: string | null;
   recipient_name?: string | null;
   recipient_user_id?: string | null;
   request_id?: string | null;
@@ -574,6 +581,8 @@ export interface MaintenanceRecord {
   overdue_alert_sent: boolean;
   created_at?: string | null;
   updated_at?: string | null;
+  employee_name?: string | null;
+  employee_email?: string | null;
 }
 
 export interface MaintenanceChecklistItem {

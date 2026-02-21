@@ -2,7 +2,7 @@
 Root conftest for integration tests.
 
 Provides real PostgreSQL database fixtures, FastAPI TestClient, and auth helpers.
-Requires Docker PostgreSQL running on localhost:5443.
+Requires Docker PostgreSQL running on localhost:5444.
 """
 
 import pytest
@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from core.base import Base
 
 TEST_DB_NAME = "dsm_test"
-TEST_DB_URL = f"postgresql://postgres:postgres@localhost:5443/{TEST_DB_NAME}"
+TEST_DB_URL = f"postgresql://postgres:postgres@localhost:5444/{TEST_DB_NAME}"
 
 
 # ---------------------------------------------------------------------------
@@ -26,7 +26,7 @@ TEST_DB_URL = f"postgresql://postgres:postgres@localhost:5443/{TEST_DB_NAME}"
 def create_test_database():
     """Create the test database if it doesn't exist (session-scoped)."""
     conn = psycopg2.connect(
-        dbname="postgres", user="postgres", password="postgres", host="localhost", port=5443,
+        dbname="postgres", user="postgres", password="postgres", host="localhost", port=5444,
     )
     conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     cur = conn.cursor()

@@ -21,7 +21,7 @@ const statusColors: Record<string, string> = {
   NO_SHOW: 'default',
 };
 
-export default function MyAppointmentsPage() {
+export default function MyTaskAppointmentsPage() {
   const [page, setPage] = useState(1);
   const [cancelId, setCancelId] = useState<string | null>(null);
   const { t } = useI18n();
@@ -29,9 +29,9 @@ export default function MyAppointmentsPage() {
   const { showToast } = useToast();
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['my-appointments', page],
+    queryKey: ['my-task-appointments', page],
     queryFn: async () => {
-      const { data } = await api.get('/my/appointments', { params: { page, page_size: 20, view: 'employee' } });
+      const { data } = await api.get('/my/appointments', { params: { page, page_size: 20, view: 'technician' } });
       return data as PaginatedResponse<Appointment>;
     },
   });
@@ -39,12 +39,12 @@ export default function MyAppointmentsPage() {
   const cancelAppointment = useMutation({
     mutationFn: async (appointmentId: string) => {
       await api.post(`/appointments/${appointmentId}/cancel`, {
-        reason: 'Cancelled by employee',
+        reason: 'Cancelled by technician',
       });
     },
     onSuccess: () => {
       setCancelId(null);
-      queryClient.invalidateQueries({ queryKey: ['my-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['my-task-appointments'] });
       showToast({ title: t('page.my_appointments.toast_cancelled'), variant: 'success' });
     },
     onError: (err: unknown) => {
@@ -60,8 +60,8 @@ export default function MyAppointmentsPage() {
     <div className="flex flex-col gap-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-semibold tracking-tight text-foreground">{t('page.my_appointments.title')}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{t('page.my_appointments.subtitle')}</p>
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground">{t('page.my_task_appointments.title')}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t('page.my_task_appointments.subtitle')}</p>
       </div>
 
       <Card>
@@ -88,8 +88,8 @@ export default function MyAppointmentsPage() {
                           <p className="text-xs text-muted-foreground">{a.duration_minutes} min</p>
                         </div>
                         <div>
-                          <p className="text-sm text-foreground">{a.technician_name || a.technician_email || a.technician_id}</p>
-                          {a.technician_name && <p className="text-xs text-muted-foreground">{a.technician_email}</p>}
+                          <p className="text-sm text-foreground">{a.employee_name || a.employee_email || a.employee_id}</p>
+                          {a.employee_name && <p className="text-xs text-muted-foreground">{a.employee_email}</p>}
                           {a.location && <p className="text-xs text-muted-foreground">{a.location}</p>}
                         </div>
                         <Badge variant={statusColors[a.status] || 'default'}>
@@ -130,8 +130,8 @@ export default function MyAppointmentsPage() {
                           <p className="text-xs text-muted-foreground">{a.duration_minutes} min</p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">{a.technician_name || a.technician_email || a.technician_id}</p>
-                          {a.technician_name && <p className="text-xs text-muted-foreground">{a.technician_email}</p>}
+                          <p className="text-sm text-muted-foreground">{a.employee_name || a.employee_email || a.employee_id}</p>
+                          {a.employee_name && <p className="text-xs text-muted-foreground">{a.employee_email}</p>}
                         </div>
                         <Badge variant={statusColors[a.status] || 'default'}>
                           {t(`enum.appointment_status.${a.status}`)}

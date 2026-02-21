@@ -20,8 +20,11 @@ class UpdateShipmentCommand(Command):
     company_id: str
     performed_by: str
     carrier: Optional[str] = None
+    service_level: Optional[str] = None
     tracking_number: Optional[str] = None
     tracking_url: Optional[str] = None
+    items_description: Optional[str] = None
+    internal_notes: Optional[str] = None
     notes: Optional[str] = None
 
 
@@ -47,12 +50,24 @@ class UpdateShipmentCommandHandler(
 
         if command.carrier is not None:
             shipment.carrier = command.carrier
+        if command.service_level is not None:
+            shipment.service_level = (
+                command.service_level
+            )
         if command.tracking_number is not None:
             shipment.tracking_number = (
                 command.tracking_number
             )
         if command.tracking_url is not None:
             shipment.tracking_url = command.tracking_url
+        if command.items_description is not None:
+            shipment.items_description = (
+                command.items_description
+            )
+        if command.internal_notes is not None:
+            shipment.internal_notes = (
+                command.internal_notes
+            )
         if command.notes is not None:
             shipment.notes = command.notes
 

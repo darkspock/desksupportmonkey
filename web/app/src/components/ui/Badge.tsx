@@ -26,6 +26,7 @@ const statusColors: Record<string, string> = {
   low: 'default', medium: 'warning', high: 'danger', urgent: 'danger',
   draft: 'default', approved: 'success', cancelled: 'danger',
   scheduled: 'info', overdue: 'danger', skipped: 'default',
+  DRAFT: 'default', DISPATCHED: 'info', IN_TRANSIT: 'warning', DELIVERED: 'success', FAILED: 'danger', CANCELLED: 'default',
 };
 
 export function StatusBadge({ status }: { status?: string | null }) {

@@ -10,8 +10,8 @@ class AuthSettings(BaseSettings):
 
 
 class CelerySettings(BaseSettings):
-    CELERY_BROKER_URL: str = "redis://localhost:6398/0"
-    CELERY_RESULT_BACKEND: str = "redis://localhost:6398/0"
+    CELERY_BROKER_URL: str = "redis://localhost:6399/0"
+    CELERY_RESULT_BACKEND: str = "redis://localhost:6399/0"
     CELERY_TASK_TIME_LIMIT: int = 300  # 5 minutes
     CELERY_TASK_SOFT_TIME_LIMIT: int = 270  # 4.5 minutes
 
@@ -22,7 +22,7 @@ class S3Settings(BaseSettings):
     AWS_ACCESS_KEY_ID: str = "minioadmin"
     AWS_SECRET_ACCESS_KEY: str = "minioadmin"
     AWS_REGION: str = "us-east-1"
-    S3_ENDPOINT_URL: str = "http://localhost:9000"
+    S3_ENDPOINT_URL: str = "http://localhost:9002"
     S3_REPORTS_BUCKET: str = "dsm-reports"
     S3_SIGNED_URL_EXPIRY: int = 3600  # 1 hour
 
@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = "postgres"
     POSTGRES_DB: str = "dsm_dev"
     POSTGRES_HOST: str = "localhost"
-    POSTGRES_PORT: int = 5443
+    POSTGRES_PORT: int = 5444
 
     # Environment
     ENVIRONMENT: str = "development"

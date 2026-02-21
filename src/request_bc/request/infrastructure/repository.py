@@ -12,6 +12,7 @@ from src.request_bc.request.domain.entities import (
 )
 from src.request_bc.request.domain.enums import RequestPriority, RequestStatus, RequestType
 from src.request_bc.request.domain.repository import RequestRepositoryInterface
+from src.auth_bc.user.infrastructure.models import UserModel
 from src.request_bc.request.infrastructure.models import (
     RequestCommentModel,
     RequestEventModel,
@@ -101,10 +102,16 @@ class RequestRepository(RequestRepositoryInterface):
 
         if search:
             pattern = f"%{search}%"
-            stmt = stmt.where(
+            creator = UserModel.__table__.alias("creator")
+            stmt = stmt.outerjoin(
+                creator, ServiceRequestModel.created_by == creator.c.id,
+            ).where(
                 or_(
                     ServiceRequestModel.title.ilike(pattern),
                     ServiceRequestModel.description.ilike(pattern),
+                    ServiceRequestModel.id.ilike(pattern),
+                    creator.c.name.ilike(pattern),
+                    creator.c.email.ilike(pattern),
                 )
             )
         if status is not None:

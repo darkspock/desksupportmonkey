@@ -2,8 +2,11 @@ import json
 from datetime import UTC, datetime, timedelta
 from typing import Optional
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
+
+from src.asset_bc.asset.infrastructure.models import AssetModel
+from src.auth_bc.user.infrastructure.models import UserModel
 
 from src.maintenance_bc.maintenance_record.domain.entities import MaintenanceRecord
 from src.maintenance_bc.maintenance_record.domain.enums import (
@@ -104,9 +107,24 @@ class MaintenanceRecordRepository(MaintenanceRecordRepositoryInterface):
         priority: Optional[str] = None,
         scheduled_from: Optional[datetime] = None,
         scheduled_to: Optional[datetime] = None,
+        search: Optional[str] = None,
     ) -> tuple[list[MaintenanceRecord], int]:
-        stmt = select(MaintenanceRecordModel).where(
-            MaintenanceRecordModel.company_id == company_id,
+        employee = UserModel.__table__.alias("employee")
+        stmt = (
+            select(
+                MaintenanceRecordModel,
+                employee.c.name.label("employee_name"),
+                employee.c.email.label("employee_email"),
+            )
+            .outerjoin(
+                AssetModel,
+                AssetModel.id == MaintenanceRecordModel.asset_id,
+            )
+            .outerjoin(
+                employee,
+                employee.c.id == AssetModel.assigned_to,
+            )
+            .where(MaintenanceRecordModel.company_id == company_id)
         )
 
         if status:
@@ -129,18 +147,38 @@ class MaintenanceRecordRepository(MaintenanceRecordRepositoryInterface):
             stmt = stmt.where(
                 MaintenanceRecordModel.scheduled_at <= scheduled_to,
             )
+        if search:
+            pattern = f"%{search}%"
+            stmt = stmt.where(
+                or_(
+                    MaintenanceRecordModel.id.ilike(pattern),
+                    MaintenanceRecordModel.title.ilike(pattern),
+                    MaintenanceRecordModel.description.ilike(pattern),
+                    employee.c.name.ilike(pattern),
+                    employee.c.email.ilike(pattern),
+                )
+            )
 
-        total = self.session.execute(
-            select(func.count()).select_from(stmt.subquery()),
-        ).scalar()
+        count_sub = stmt.with_only_columns(
+            func.count(MaintenanceRecordModel.id),
+        ).order_by(None)
+        total = self.session.execute(count_sub).scalar()
 
-        models = self.session.execute(
+        rows = self.session.execute(
             stmt.order_by(MaintenanceRecordModel.scheduled_at.asc())
             .offset((page - 1) * page_size)
             .limit(page_size)
-        ).scalars().all()
+        ).all()
 
-        return [self._to_entity(m) for m in models], (total or 0)
+        results: list[MaintenanceRecord] = []
+        for row in rows:
+            model = row[0]
+            entity = self._to_entity(model)
+            entity.employee_name = row.employee_name
+            entity.employee_email = row.employee_email
+            results.append(entity)
+
+        return results, (total or 0)
 
     def find_due_within_hours(
         self,

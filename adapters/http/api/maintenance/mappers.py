@@ -32,4 +32,6 @@ class MaintenanceMapper:
             overdue_alert_sent=record.overdue_alert_sent,
             created_at=record.created_at,
             updated_at=record.updated_at,
+            employee_name=record.employee_name,
+            employee_email=record.employee_email,
         ).model_dump(mode="json")

@@ -130,6 +130,7 @@ class MaintenanceController:
         priority: Optional[str],
         scheduled_from: Optional[datetime],
         scheduled_to: Optional[datetime],
+        search: Optional[str] = None,
     ) -> tuple[list[dict], int]:
         handler = ListMaintenanceRecordsQueryHandler(
             record_repo=self.record_repo,
@@ -145,6 +146,7 @@ class MaintenanceController:
                 priority=priority,
                 scheduled_from=scheduled_from,
                 scheduled_to=scheduled_to,
+                search=search,
             )
         )
         return [MaintenanceMapper.to_response(r) for r in records], total

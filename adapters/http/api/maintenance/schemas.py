@@ -64,3 +64,5 @@ class MaintenanceRecordResponse(BaseModel):
     overdue_alert_sent: bool
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    employee_name: Optional[str] = None
+    employee_email: Optional[str] = None

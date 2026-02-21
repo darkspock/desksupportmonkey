@@ -17,6 +17,12 @@ const day1Epics = [
   { id: '', title: 'Infrastructure & DevOps', description: 'Production setup, Nginx, systemd, SSL, CI/CD, Docker Compose' },
 ];
 
+const day3Items = [
+  { title: 'Design Overhaul with V0 & Stitch', description: 'Rebuilt the entire frontend look using V0.app and Google Stitch to replace the generic AI aesthetic with a polished, professional design' },
+  { title: 'Refactoring & Bug Fixes', description: 'Dedicated session to clean up accumulated tech debt, fix edge cases discovered by early testers, and improve code consistency' },
+  { title: 'UX Polish', description: 'Improved navigation flows, loading states, error handling, and overall user experience based on real-world feedback' },
+];
+
 const day2Epics = [
   { id: 'E11', title: 'Department Equipment Profiles', description: 'Role-based equipment profiles and automatic assignment' },
   { id: 'E12', title: 'Request Typification & Approval', description: 'Structured categories, scoring and approval flow' },
@@ -53,7 +59,7 @@ const pendingEpics = [
   { id: 'E40', title: 'Vulnerability Management', description: 'CVE exposure and remediation workflows', priority: 'Medium' },
 ];
 
-const completedCount = day1Epics.length + day2Epics.length;
+const completedCount = day1Epics.length + day2Epics.length + day3Items.length;
 const total = completedCount + pendingEpics.length;
 const progressPercent = Math.round((completedCount / total) * 100);
 
@@ -85,6 +91,12 @@ const priorityStyles: Record<string, { bg: string; text: string }> = {
             <div class="h-full rounded-full bg-emerald-500 transition-all" style={`width: ${progressPercent}%`}></div>
           </div>
           <div class="mt-2 text-xs text-slate-500 text-right">{progressPercent}%</div>
+          <div class="mt-4 flex items-center gap-2 justify-center text-sm text-slate-600">
+            <svg class="h-4 w-4 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span>Target completion: <strong class="text-slate-900">March 1, 2026</strong></span>
+          </div>
         </div>
       </div>
 
@@ -98,7 +110,11 @@ const priorityStyles: Record<string, { bg: string; text: string }> = {
           <h2 class="text-2xl font-bold text-slate-900">Day 1</h2>
           <span class="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">{day1Epics.length}</span>
         </div>
-        <p class="text-sm text-slate-500 mb-6 ml-11">Full base designed, implemented, and deployed in the first 24 hours.</p>
+        <p class="text-sm text-slate-500 mb-4 ml-11">Full base designed, implemented, and deployed in the first 24 hours.</p>
+        <div class="ml-11 mb-6 rounded-xl bg-emerald-50/60 border border-emerald-200/60 p-4 text-sm text-slate-700 leading-relaxed space-y-2">
+          <p>The goal was clear: <strong>ship a working MVP in one day</strong> to prove that a production-grade platform could be built from scratch using AI-assisted development. 12 epics covering auth, multi-tenancy, assets, service requests, real-time notifications, reports, and a full React frontend.</p>
+          <p>After deploying, a pre-commit hook failure went unnoticed and the initial code only followed DDD and Hexagonal Architecture at about <strong>70%</strong>. It took an extra hour to fix the architecture violations and bring everything into proper compliance &mdash; a good reminder that AI speed doesn't eliminate the need for validation checks.</p>
+        </div>
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {day1Epics.map((epic) => (
             <div class="flex items-start gap-3 rounded-xl border-l-4 border-emerald-400 bg-white py-3 pl-4 pr-4 shadow-sm">
@@ -127,7 +143,11 @@ const priorityStyles: Record<string, { bg: string; text: string }> = {
           <h2 class="text-2xl font-bold text-slate-900">Day 2</h2>
           <span class="rounded-full bg-teal-100 px-2.5 py-0.5 text-xs font-semibold text-teal-700">{day2Epics.length}</span>
         </div>
-        <p class="text-sm text-slate-500 mb-6 ml-11">Built on top of Day 1 with advanced modules completed.</p>
+        <p class="text-sm text-slate-500 mb-4 ml-11">Built on top of Day 1 with advanced modules completed.</p>
+        <div class="ml-11 mb-6 rounded-xl bg-teal-50/60 border border-teal-200/60 p-4 text-sm text-slate-700 leading-relaxed space-y-2">
+          <p>With the foundation solid, Day 2 focused on <strong>expanding the platform's capabilities</strong> with advanced modules: AI-powered request classification, procurement with budget controls, appointment scheduling, equipment shipping, scheduled maintenance, and an MCP server exposing 57 AI-callable tools.</p>
+          <p>As we built and shared progress, <strong>feedback from early reviewers sparked new ideas</strong> and refinements. Features were shaped in real time by the conversation between what was planned and what people actually wanted to see. The roadmap grew organically alongside the code.</p>
+        </div>
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {day2Epics.map((epic) => (
             <div class="flex items-start gap-3 rounded-xl border-l-4 border-teal-400 bg-white py-3 pl-4 pr-4 shadow-sm">
@@ -140,6 +160,36 @@ const priorityStyles: Record<string, { bg: string; text: string }> = {
                   <span class="text-sm font-semibold text-slate-900 truncate">{epic.title}</span>
                 </div>
                 <p class="mt-0.5 text-xs text-slate-500 line-clamp-2">{epic.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div class="mb-16">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="flex h-8 w-8 items-center justify-center rounded-full bg-violet-100">
+            <svg class="h-4 w-4 text-violet-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold text-slate-900">Day 3</h2>
+          <span class="rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-semibold text-violet-700">{day3Items.length}</span>
+        </div>
+        <p class="text-sm text-slate-500 mb-4 ml-11">Design overhaul and dedicated refactoring session.</p>
+        <div class="ml-11 mb-6 rounded-xl bg-violet-50/60 border border-violet-200/60 p-4 text-sm text-slate-700 leading-relaxed space-y-2">
+          <p>Honest assessment: <strong>the design looked too "AI-generated"</strong> &mdash; functional but bland. We brought in <strong>V0.app</strong> and <strong>Google Stitch</strong> to completely rethink the visual identity, producing a more distinctive, professional interface that didn't scream "default template".</p>
+          <p>The rest of the day was <strong>dedicated to refactoring</strong>: cleaning up accumulated tech debt, fixing bugs surfaced by real usage, and tightening the overall code quality. No new features &mdash; just making everything that existed work better and look better.</p>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {day3Items.map((item) => (
+            <div class="flex items-start gap-3 rounded-xl border-l-4 border-violet-400 bg-white py-3 pl-4 pr-4 shadow-sm">
+              <svg class="mt-0.5 h-5 w-5 shrink-0 text-violet-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0" />
+              </svg>
+              <div class="min-w-0">
+                <span class="text-sm font-semibold text-slate-900">{item.title}</span>
+                <p class="mt-0.5 text-xs text-slate-500 line-clamp-2">{item.description}</p>
               </div>
             </div>
           ))}

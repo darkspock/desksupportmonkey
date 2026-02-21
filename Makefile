@@ -45,7 +45,7 @@ start-docker:
 ## Start backend (FastAPI with auto-reload)
 start-backend:
 	@echo "$(GREEN)Starting backend API...$(NC)"
-	@PYTHONPATH=src uv run uvicorn app:app --reload --host 0.0.0.0 --port 8000
+	@PYTHONPATH=src uv run uvicorn app:app --reload --host 0.0.0.0 --port 8001
 
 ## Start Celery worker for background tasks (reports queue)
 queue:
@@ -132,7 +132,7 @@ lint:
 
 ## Run OWASP ZAP API scan (requires backend running on port 8000)
 scan:
-	@echo "$(GREEN)Running OWASP ZAP API scan against http://localhost:8000...$(NC)"
+	@echo "$(GREEN)Running OWASP ZAP API scan against http://localhost:8001...$(NC)"
 	@echo "$(YELLOW)Make sure the backend is running (make start-backend)$(NC)"
 	@docker run --rm -t \
 		--add-host=host.docker.internal:host-gateway \
@@ -206,7 +206,7 @@ help:
 	@echo ""
 	@echo "Services:"
 	@echo "  - Frontend:       http://localhost:5173"
-	@echo "  - Backend API:    http://localhost:8000"
-	@echo "  - API Docs:       http://localhost:8000/docs"
+	@echo "  - Backend API:    http://localhost:8001"
+	@echo "  - API Docs:       http://localhost:8001/docs"
 	@echo "  - Mailpit:        http://localhost:8028"
 	@echo "  - MinIO Console:  http://localhost:9001"
