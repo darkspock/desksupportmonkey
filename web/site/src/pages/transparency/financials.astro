@@ -1,7 +1,14 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
-const FIXED_COSTS = 259;
+const BASE_COSTS = 259;          // month 1 total (includes €100 Claude Code)
+const CLAUDE_UPGRADE = 100;      // +€100 from month 4 (Claude Code → €200/month)
+const COST_GROWTH = 0.10;        // +10%/month for infrastructure services
+
+// Monthly cost for month index i (0 = Mar 2026)
+function monthlyCosts(i: number): number {
+  return Math.round(BASE_COSTS * Math.pow(1 + COST_GROWTH, i)) + (i >= 3 ? CLAUDE_UPGRADE : 0);
+}
 
 const rawData = [
   { month: 'Mar 2026', nis2: false, conservative: { customers: 2, mrr: 174 }, realistic: { customers: 5, mrr: 435 }, optimistic: { customers: 7, mrr: 609 } },
@@ -24,9 +31,10 @@ function buildRows(scenario: ScenarioKey) {
   let cumulative = 0;
   let monthlyBEFound = false;
   let cumulativeBEFound = false;
-  return rawData.map((row) => {
+  return rawData.map((row, i) => {
     const mrr = row[scenario].mrr;
-    const cashflow = mrr - FIXED_COSTS;
+    const costs = monthlyCosts(i);
+    const cashflow = mrr - costs;
     cumulative += cashflow;
     const monthlyBE = !monthlyBEFound && cashflow >= 0;
     const cumulativeBE = !cumulativeBEFound && cumulative >= 0;
@@ -37,7 +45,7 @@ function buildRows(scenario: ScenarioKey) {
       nis2: row.nis2,
       customers: row[scenario].customers,
       mrr,
-      costs: FIXED_COSTS,
+      costs,
       cashflow,
       cumulative,
       monthlyBE,
@@ -99,7 +107,11 @@ function fmt(n: number) {
             </tbody>
           </table>
         </div>
-        <p class="mt-3 text-xs text-slate-500">No salaries until ~€2,000 MRR. Orchestrator works without pay for the first 6 months.</p>
+        <p class="mt-3 text-xs text-slate-500">
+          Infrastructure costs grow <strong>+10%/month</strong> as services scale (emails, CDN, backups, monitoring).
+          Claude Code upgrades from €100 → <strong>€200/month from Jun 2026</strong> (month 4).
+          No salaries until ~€2,000 MRR.
+        </p>
       </section>
 
       <!-- Key milestones -->
@@ -107,7 +119,7 @@ function fmt(n: number) {
         <h2 class="text-xl font-bold text-slate-900 mb-4">Key Financial Milestones</h2>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {[
-            { label: 'Break-even', value: '~3 customers', note: 'Monthly cashflow ≥ €0' },
+            { label: 'Break-even (launch)', value: '~3 customers', note: 'At €259 costs (month 1)' },
             { label: 'Founder salary', value: '~€2,000 MRR', note: 'Sep 2026 realistic target' },
             { label: 'First hire budget', value: '~€5,000–8,000 MRR', note: 'Head of CS / Customer Success' },
           ].map((m) => (
@@ -123,7 +135,7 @@ function fmt(n: number) {
       <!-- Tabbed projections -->
       <section class="mb-10">
         <h2 class="text-xl font-bold text-slate-900 mb-1">12-Month Projections</h2>
-        <p class="text-sm text-slate-500 mb-5">Avg. revenue per account ~€87/month · Fixed costs €259/month · NIS2 audit season starts Sep 2026</p>
+        <p class="text-sm text-slate-500 mb-5">Avg. revenue per account ~€87/month · Costs start at €259/month growing +10%/month · Claude Code €200 from Jun 2026 · NIS2 audit season Sep 2026</p>
 
         <!-- Tabs -->
         <div class="flex gap-1 mb-0 border-b border-slate-200">
