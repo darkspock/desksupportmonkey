@@ -28,7 +28,7 @@
 | E21 | Software License Management | Track software licenses per user and department — seat compliance (used vs purchased), renewal alerts, cost allocation per department, and license audit reports | Medium | Pending |
 | E22 | Employee Onboarding/Offboarding | Automated workflows for new hires (equipment pack based on department + role from E11) and departures (return checklist, account deactivation, asset recovery tracking) | High | Pending |
 | E23 | Multi-channel Intake | Email-to-ticket conversion, Slack/Teams integration for creating and tracking requests, and chatbot for guided ticket creation without entering the app | Medium | Pending |
-| E24 | SSO & Directory Sync | SAML/OIDC single sign-on for corporate login, LDAP/Active Directory synchronization of users, departments, and roles with automatic provisioning | High | Pending |
+| E24 | Google & Microsoft Login | Google and Microsoft OAuth2 login buttons, backend token verification, account linking by email, new user auto-creation by domain match | High | Pending |
 | E25 | Vendor & Supply Chain Risk | Vendor directory with contacts and contracts, vendor SLA tracking, incident history per vendor, warranty claim routing, vendor performance reports, third-party risk assessment questionnaires (NIS2/DORA Article 28), supply chain security scoring, and critical ICT provider dependency mapping | Medium | Pending |
 | E26 | Observability with SigNoz | OpenTelemetry instrumentation for FastAPI, SQLAlchemy, Celery, and Redis — self-hosted SigNoz for distributed tracing, metrics, logs, error tracking, and performance dashboards | Medium | Pending |
 | E27 | Surveys & Feedback | CSAT surveys after ticket resolution (star rating + comment), decision polls for purchase planning (connects with E14), onboarding feedback after equipment delivery (connects with E22), and satisfaction metrics per technician, department, and category | Medium | Pending |
@@ -45,6 +45,7 @@
 | E38 | Asset Criticality & CMDB | Asset criticality classification (Critical/High/Medium/Low), Configuration Item (CI) relationship mapping (asset-to-service, asset-to-asset dependencies), business impact analysis per asset, criticality-based SLA escalation rules, and dependency graph visualization | Medium | Pending |
 | E39 | Compliance Dashboard | Compliance posture management — control mapping to NIS2, DORA, and ISO 27001 articles, compliance status per control (compliant/partial/non-compliant), evidence collection linking controls to audit logs, incidents, and change records, compliance gap analysis reports, and audit-ready PDF export per framework | High | Pending |
 | E40 | Vulnerability Management | Track known vulnerabilities per asset — CVE tracking linked to asset brand/model/OS, severity scoring (CVSS), remediation ticket auto-creation from vulnerabilities, patch status tracking, vulnerability scan result import (CSV/API), and vulnerability-to-asset exposure dashboard | Medium | Pending |
+| E42 | SSO & Directory Sync | SAML/OIDC enterprise single sign-on configuration, LDAP/Active Directory synchronization of users, departments, and roles, automatic provisioning/deprovisioning, group-to-role mapping from identity provider | High | Pending |
 
 ---
 
@@ -293,6 +294,20 @@ E10: Asset QR & Barcodes (depends on E2 + E7)
 - Vulnerability dashboard: open vulnerabilities by severity, assets at risk, mean time to remediate (MTTR)
 - Exposure score per asset: aggregate of unpatched vulnerability severities
 - Export: vulnerability report PDF/CSV for compliance evidence
+
+### E42: SSO & Directory Sync
+- SAML 2.0 and OIDC enterprise SSO configuration per company
+- Admin SSO setup wizard: metadata URL, certificate upload, entity ID, ACS URL
+- SP-initiated and IdP-initiated login flows
+- LDAP/Active Directory connector: server URL, bind DN, base DN, search filters
+- Scheduled directory synchronization (users, departments, groups)
+- Automatic user provisioning: create accounts from directory entries
+- Automatic user deprovisioning: deactivate accounts removed from directory
+- Group-to-role mapping: map AD groups to platform roles (admin, technician, employee)
+- Department sync: map AD organizational units to platform departments
+- Sync audit log: record each sync run with created/updated/deactivated counts
+- Conflict resolution: handle email changes, department renames, role conflicts
+- Depends on E24 (Google & Microsoft Login) for foundational OAuth infrastructure
 
 ---
 
