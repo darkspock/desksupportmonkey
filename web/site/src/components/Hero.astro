@@ -10,18 +10,24 @@ const { appUrl } = Astro.props;
   <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--color-blue-900)_0%,_transparent_60%)] opacity-40"></div>
   <div class="relative mx-auto max-w-6xl px-6 text-center">
     <img src="/logo.png" alt="Desk Support Monkey" class="mx-auto h-24 w-24 sm:h-32 sm:w-32 mb-8 drop-shadow-lg" />
+    <div class="inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-4 py-1.5 text-sm font-medium text-amber-400 mb-6">
+      <svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+      </svg>
+      NIS2 compliant — audit trail included from day one
+    </div>
     <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-6xl">
       IT equipment ops,<br class="hidden sm:block" /> simplified.
     </h1>
     <p class="mx-auto mt-5 max-w-2xl text-lg text-slate-300">
-      Manage laptops, desktops, phones, and all company hardware in one place — from service requests
-      and inventory tracking to procurement, maintenance, and shipping. Built for IT teams, not generic helpdesks.
+      Manage laptops, desktops, phones, and all company hardware in one place — service requests,
+      asset inventory, procurement, and maintenance. With full audit trail for NIS2 compliance.
     </p>
     <div class="mt-6 flex flex-wrap justify-center gap-3 text-sm text-slate-400">
       <span class="rounded-full border border-slate-700 px-3 py-1">Laptops & Desktops</span>
       <span class="rounded-full border border-slate-700 px-3 py-1">Monitors & Peripherals</span>
       <span class="rounded-full border border-slate-700 px-3 py-1">Phones & Tablets</span>
-      <span class="rounded-full border border-slate-700 px-3 py-1">Printers & More</span>
+      <span class="rounded-full border border-slate-700 px-3 py-1">NIS2 Audit Trail</span>
     </div>
     <div class="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
       <a

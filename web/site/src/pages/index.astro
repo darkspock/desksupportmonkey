@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Hero.astro';
+import NIS2Section from '../components/NIS2Section.astro';
 import AppFeatures from '../components/AppFeatures.astro';
 import AISummary from '../components/AISummary.astro';
 
@@ -9,6 +10,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || 'https://app.desksupportmonkey.
 
 <BaseLayout title="Desk Support Monkey — IT Support, Simplified">
   <Hero appUrl={appUrl} />
+  <NIS2Section />
   <AppFeatures />
   <AISummary />
 </BaseLayout>

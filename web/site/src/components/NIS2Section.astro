@@ -1,0 +1,141 @@
+---
+const appUrl = import.meta.env.PUBLIC_APP_URL || 'https://app.desksupportmonkey.com';
+
+const requirements = [
+  {
+    article: 'Art. 21(2)(a)',
+    requirement: 'ICT asset management',
+    feature: 'Asset Inventory',
+    status: 'live',
+    description: 'Track every device — laptops, phones, servers — with full assignment history.',
+  },
+  {
+    article: 'Art. 21(2)(b)',
+    requirement: 'Incident handling & reporting',
+    feature: 'Service Requests + Audit Trail',
+    status: 'live',
+    description: 'Log, classify, and resolve IT incidents with a tamper-proof audit trail.',
+  },
+  {
+    article: 'Art. 21(2)(c)',
+    requirement: 'Business continuity & backups',
+    feature: 'Maintenance Plans',
+    status: 'live',
+    description: 'Preventive and corrective maintenance schedules with full documentation.',
+  },
+  {
+    article: 'Art. 21(2)(h)',
+    requirement: 'Human resources security',
+    feature: 'Equipment Assignment History',
+    status: 'live',
+    description: 'Every device assignment, return, and transfer logged with timestamps.',
+  },
+  {
+    article: 'Art. 21(2)(j)',
+    requirement: 'Supply chain security',
+    feature: 'Procurement & Vendors',
+    status: 'live',
+    description: 'Vendor directory, purchase orders, and goods receipt with asset creation.',
+  },
+  {
+    article: 'NIS2 Report',
+    requirement: 'One-click compliance documentation',
+    feature: 'NIS2 Compliance Module',
+    status: 'coming',
+    description: 'Automated compliance reports mapped to NIS2 articles, ready for auditors.',
+  },
+];
+---
+
+<section class="relative bg-slate-950 py-20 overflow-hidden">
+  <!-- Subtle grid background -->
+  <div class="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:48px_48px] opacity-40"></div>
+  <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--color-blue-950)_0%,_transparent_70%)] opacity-60"></div>
+
+  <div class="relative mx-auto max-w-6xl px-6">
+
+    <!-- Header -->
+    <div class="text-center mb-14">
+      <div class="inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-4 py-1.5 text-sm font-medium text-amber-400 mb-5">
+        <svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+        </svg>
+        EU NIS2 Directive — Enforcement active since October 2024
+      </div>
+      <h2 class="text-3xl font-bold text-white sm:text-4xl">
+        NIS2 compliance, built into your IT operations
+      </h2>
+      <p class="mt-4 max-w-2xl mx-auto text-slate-400 text-lg">
+        The EU's NIS2 directive requires documented ICT asset management, incident response, and audit trails.
+        Desk Support Monkey covers the operational layer — no extra tools needed.
+      </p>
+      <div class="mt-4 inline-flex items-center gap-2 text-sm text-slate-500">
+        <svg class="h-4 w-4 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        First NIS2 audits expected September 2026 — prepare now
+      </div>
+    </div>
+
+    <!-- Requirements grid -->
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-14">
+      {requirements.map((req) => (
+        <div class:list={[
+          'relative rounded-xl border p-5 transition-colors',
+          req.status === 'coming'
+            ? 'border-amber-500/30 bg-amber-950/20'
+            : 'border-slate-700/60 bg-slate-900/60',
+        ]}>
+          {req.status === 'coming' && (
+            <span class="absolute top-4 right-4 rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-400 border border-amber-500/30">
+              Coming soon
+            </span>
+          )}
+          {req.status === 'live' && (
+            <span class="absolute top-4 right-4 rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-400 border border-emerald-500/30">
+              ✓ Available
+            </span>
+          )}
+          <div class="mb-3">
+            <span class="text-xs font-mono text-slate-500">{req.article}</span>
+            <h3 class="mt-1 text-sm font-semibold text-slate-300">{req.requirement}</h3>
+          </div>
+          <div class:list={[
+            'mb-2 text-xs font-medium',
+            req.status === 'coming' ? 'text-amber-400' : 'text-blue-400',
+          ]}>
+            {req.feature}
+          </div>
+          <p class="text-xs text-slate-500 leading-relaxed">{req.description}</p>
+        </div>
+      ))}
+    </div>
+
+    <!-- CTA -->
+    <div class="rounded-2xl border border-blue-500/20 bg-blue-950/30 p-8 text-center">
+      <h3 class="text-xl font-bold text-white mb-2">NIS2 Compliance Module — coming soon</h3>
+      <p class="text-slate-400 text-sm max-w-xl mx-auto mb-6">
+        Automated compliance reports mapped to NIS2 articles, one-click audit documentation,
+        and a compliance dashboard for your IT manager and auditors.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <a
+          href={`${appUrl}/auth/register`}
+          class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 hover:bg-blue-500 transition-colors"
+        >
+          Start for free — audit-ready from day one
+          <svg class="ml-2 h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+        </a>
+        <a
+          href="/transparency/market"
+          class="inline-flex items-center justify-center rounded-xl border border-slate-600 bg-slate-800 px-6 py-3 text-sm font-semibold text-slate-300 hover:bg-slate-700 transition-colors"
+        >
+          Learn about our NIS2 approach
+        </a>
+      </div>
+    </div>
+
+  </div>
+</section>
