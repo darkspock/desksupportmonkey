@@ -1,0 +1,144 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Business Model — DeskSupportMonkey" description="How DeskSupportMonkey makes money. 100% AI-managed company, open source core, employee-based cloud SaaS pricing, bootstrapped to profitability.">
+  <div class="pt-24 pb-20">
+    <div class="mx-auto max-w-3xl px-6">
+
+      <a href="/transparency" class="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 transition-colors mb-6">
+        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        Transparency
+      </a>
+
+      <h1 class="text-4xl font-bold text-slate-900 tracking-tight mb-3">Business Model</h1>
+      <p class="text-slate-500 text-sm mb-10">Last updated: February 2026</p>
+
+      <!-- Two things simultaneously -->
+      <div class="mb-10 rounded-2xl border-2 border-slate-900 bg-white p-6">
+        <h2 class="text-lg font-bold text-slate-900 mb-3">Two products, one company</h2>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 text-sm">
+          <div class="rounded-xl bg-blue-50 border border-blue-200 p-4">
+            <div class="text-xl mb-2">🖥️</div>
+            <div class="font-bold text-blue-900 mb-1">The IT product</div>
+            <p class="text-blue-800">IT asset lifecycle management platform for NIS2 compliance. Cloud SaaS from €49/month. Open source, self-hostable for free.</p>
+          </div>
+          <div class="rounded-xl bg-slate-900 p-4">
+            <div class="text-xl mb-2">🎼</div>
+            <div class="font-bold text-white mb-1">The experiment</div>
+            <p class="text-slate-300">A public case study: can 1 human + AI agents run a SaaS company? All numbers, decisions, and results public on GitHub. The story generates distribution.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Open Source Core -->
+      <section class="mb-10">
+        <h2 class="text-xl font-bold text-slate-900 mb-3">Open Source Core (AGPL)</h2>
+        <p class="text-slate-600 text-sm leading-relaxed mb-3">
+          The full platform is open source under AGPL-3.0. Anyone can self-host it for free. The AGPL license ensures
+          that forks cannot be monetized as a service without releasing modifications — this protects against a competitor
+          taking the code and building a closed commercial product on top of it.
+        </p>
+        <p class="text-slate-600 text-sm leading-relaxed">
+          Open source is distribution. A sysadmin finds the project on GitHub, tests it, and buys the cloud version
+          when they need managed infrastructure. No sales call, no demo request, no friction.
+        </p>
+      </section>
+
+      <!-- Cloud SaaS Revenue -->
+      <section class="mb-10">
+        <h2 class="text-xl font-bold text-slate-900 mb-3">Cloud SaaS Revenue</h2>
+        <p class="text-slate-600 text-sm leading-relaxed mb-4">
+          One flat monthly fee based on company size. No per-user fees, no per-asset fees, no overage charges.
+        </p>
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 text-slate-600">
+              <tr>
+                <th class="px-4 py-3 text-left font-semibold">Plan</th>
+                <th class="px-4 py-3 text-left font-semibold">Company Size</th>
+                <th class="px-4 py-3 text-left font-semibold">Price/month</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr><td class="px-4 py-3 font-medium">Free</td><td class="px-4 py-3 text-slate-500">Self-hosted, unlimited</td><td class="px-4 py-3">€0</td></tr>
+              <tr><td class="px-4 py-3 font-medium">Starter</td><td class="px-4 py-3 text-slate-500">≤25 employees</td><td class="px-4 py-3">€49</td></tr>
+              <tr><td class="px-4 py-3 font-medium">Growth</td><td class="px-4 py-3 text-slate-500">≤100 employees</td><td class="px-4 py-3">€99</td></tr>
+              <tr><td class="px-4 py-3 font-medium">Scale</td><td class="px-4 py-3 text-slate-500">100+ employees</td><td class="px-4 py-3">€199</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Team model -->
+      <section class="mb-10">
+        <h2 class="text-xl font-bold text-slate-900 mb-3">Team Model: AI Agents + Human Advisors</h2>
+        <p class="text-slate-600 text-sm leading-relaxed mb-4">
+          There are no employees. The company is run by one human (Director de Orquesta) directing AI agents.
+          When human expertise is needed, we bring in advisors — not employees.
+        </p>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3 text-sm mb-4">
+          {[
+            { icon: '🤖', title: 'AI Agents', desc: 'Engineering, growth, CS, ops — all AI-executed under human direction' },
+            { icon: '🎼', title: 'The Orchestrator', desc: 'One human: sets direction, reviews output, makes final calls, owns accountability' },
+            { icon: '👁️', title: 'Human Advisors', desc: 'Domain experts on retainer — NIS2, tech, sales — no full-time salaries' },
+          ].map((item) => (
+            <div class="rounded-xl bg-slate-50 border border-slate-200 p-3 text-center">
+              <div class="text-2xl mb-1">{item.icon}</div>
+              <div class="font-semibold text-slate-800 mb-1">{item.title}</div>
+              <div class="text-xs text-slate-500">{item.desc}</div>
+            </div>
+          ))}
+        </div>
+        <p class="text-xs text-slate-500">
+          This model improves gross margin significantly vs. traditional SaaS: no sales salaries, no engineer salaries,
+          no CS headcount. Fixed costs: ~€210/month (infrastructure + AI tools).
+        </p>
+      </section>
+
+      <!-- Unit economics -->
+      <section class="mb-10">
+        <h2 class="text-xl font-bold text-slate-900 mb-3">Unit Economics</h2>
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 text-slate-600">
+              <tr>
+                <th class="px-4 py-3 text-left font-semibold">Metric</th>
+                <th class="px-4 py-3 text-left font-semibold">Target</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-slate-700">
+              <tr><td class="px-4 py-3">Fixed monthly costs</td><td class="px-4 py-3 font-medium">~€210</td></tr>
+              <tr><td class="px-4 py-3">Break-even customers</td><td class="px-4 py-3 font-medium">~5 (Starter plan)</td></tr>
+              <tr><td class="px-4 py-3">Average Revenue Per Account</td><td class="px-4 py-3 font-medium">~€87/month (blended)</td></tr>
+              <tr><td class="px-4 py-3">Gross margin</td><td class="px-4 py-3 font-medium">&gt;90% (no human labor cost)</td></tr>
+              <tr><td class="px-4 py-3">CAC target</td><td class="px-4 py-3 font-medium">€0 (organic only)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Bootstrapping -->
+      <section class="mb-6">
+        <h2 class="text-xl font-bold text-slate-900 mb-3">Bootstrapped — No Investors</h2>
+        <p class="text-slate-600 text-sm leading-relaxed mb-3">
+          No venture capital. No angel investors. No accelerator. 100% founder-owned.
+        </p>
+        <p class="text-slate-600 text-sm leading-relaxed mb-3">
+          IT managers want tools that are still around in 5 years. A bootstrapped company optimizes for survival
+          and customer value, not growth metrics for a deck. The AI-managed model makes this economically viable
+          at a scale that would be impossible with a traditional team.
+        </p>
+        <div class="rounded-xl bg-slate-50 border border-slate-200 p-4 text-sm text-slate-700">
+          <strong>Path to sustainability:</strong> Break-even at ~5 paying customers.
+          Founder draws first salary at ~€2,000 MRR.
+          First human advisor at ~€3,000 MRR.
+          First human hire (if ever needed) at ~€8,000+ MRR.
+        </div>
+      </section>
+
+    </div>
+  </div>
+</BaseLayout>

@@ -1,0 +1,224 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const appUrl = import.meta.env.PUBLIC_APP_URL || 'https://app.desksupportmonkey.com';
+
+const plans = [
+  {
+    name: 'Free',
+    price: '€0',
+    period: 'forever',
+    description: 'Self-host on your own server. Full platform, no limits.',
+    employees: 'Unlimited employees',
+    highlight: false,
+    badge: null,
+    cta: 'Get started',
+    ctaHref: 'https://github.com/desksupportmonkey/desksupportmonkey',
+    features: [
+      'Full IT asset lifecycle management',
+      'Unlimited assets & devices',
+      'Incident tickets linked to assets',
+      'NIS2 audit trail export',
+      'Employee portal',
+      'CSV import/export',
+      'Self-hosted — your infrastructure',
+      'Community support (GitHub)',
+    ],
+  },
+  {
+    name: 'Starter',
+    price: '€49',
+    period: '/month',
+    description: 'Cloud-hosted. For teams up to 25 employees.',
+    employees: 'Up to 25 employees',
+    highlight: false,
+    badge: null,
+    cta: 'Start free trial',
+    ctaHref: `${appUrl}/auth/register`,
+    features: [
+      'Everything in Free',
+      'Cloud-hosted in EU (GDPR compliant)',
+      'Automatic backups',
+      'SSL & security managed',
+      'Email support (48h)',
+      'No per-user or per-asset fees',
+    ],
+  },
+  {
+    name: 'Growth',
+    price: '€99',
+    period: '/month',
+    description: 'Cloud-hosted. For companies up to 100 employees.',
+    employees: 'Up to 100 employees',
+    highlight: true,
+    badge: 'Most popular',
+    cta: 'Start free trial',
+    ctaHref: `${appUrl}/auth/register`,
+    features: [
+      'Everything in Starter',
+      'Priority email support (24h)',
+      'NIS2 compliance reports PDF',
+      'Bulk asset operations',
+      'Advanced filters & search',
+    ],
+  },
+  {
+    name: 'Scale',
+    price: '€199',
+    period: '/month',
+    description: 'Cloud-hosted. For larger companies 100+ employees.',
+    employees: '100+ employees',
+    highlight: false,
+    badge: null,
+    cta: 'Start free trial',
+    ctaHref: `${appUrl}/auth/register`,
+    features: [
+      'Everything in Growth',
+      'Same-day support SLA',
+      'Direct CEO access',
+      'Custom onboarding',
+      'DPA (Data Processing Agreement)',
+      'Invoice billing available',
+    ],
+  },
+];
+---
+
+<BaseLayout title="Pricing — DeskSupportMonkey" description="Simple, transparent pricing based on company size. No per-user fees, no per-asset fees. Free self-hosted version always available.">
+  <div class="pt-24 pb-20">
+
+    <!-- Hero -->
+    <div class="mx-auto max-w-3xl px-6 text-center">
+      <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 mb-6">
+        Simple pricing
+      </div>
+      <h1 class="text-4xl font-bold text-slate-900 tracking-tight sm:text-5xl">
+        Pay by company size.<br />Not by user or asset.
+      </h1>
+      <p class="mt-5 text-lg text-slate-600 max-w-2xl mx-auto">
+        No surprise bills as you grow. One flat fee based on how many employees your company has.
+        Self-host for free, or let us handle the infrastructure.
+      </p>
+    </div>
+
+    <!-- Plans grid -->
+    <div class="mx-auto mt-14 max-w-6xl px-6">
+      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {plans.map((plan) => (
+          <div class:list={[
+            'relative flex flex-col rounded-2xl border p-6',
+            plan.highlight
+              ? 'border-blue-600 bg-blue-600 text-white shadow-xl shadow-blue-200'
+              : 'border-slate-200 bg-white shadow-sm'
+          ]}>
+            {plan.badge && (
+              <div class="absolute -top-3 left-1/2 -translate-x-1/2">
+                <span class="rounded-full bg-amber-400 px-3 py-0.5 text-xs font-semibold text-slate-900">
+                  {plan.badge}
+                </span>
+              </div>
+            )}
+
+            <div class="mb-4">
+              <h2 class:list={['text-lg font-bold', plan.highlight ? 'text-white' : 'text-slate-900']}>
+                {plan.name}
+              </h2>
+              <div class="mt-1 flex items-baseline gap-1">
+                <span class:list={['text-3xl font-bold', plan.highlight ? 'text-white' : 'text-slate-900']}>
+                  {plan.price}
+                </span>
+                <span class:list={['text-sm', plan.highlight ? 'text-blue-200' : 'text-slate-500']}>
+                  {plan.period}
+                </span>
+              </div>
+              <p class:list={['mt-2 text-sm', plan.highlight ? 'text-blue-100' : 'text-slate-500']}>
+                {plan.employees}
+              </p>
+              <p class:list={['mt-1 text-sm', plan.highlight ? 'text-blue-100' : 'text-slate-500']}>
+                {plan.description}
+              </p>
+            </div>
+
+            <a
+              href={plan.ctaHref}
+              class:list={[
+                'mt-auto mb-5 block rounded-lg px-4 py-2.5 text-center text-sm font-semibold transition-colors',
+                plan.highlight
+                  ? 'bg-white text-blue-600 hover:bg-blue-50'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              ]}
+            >
+              {plan.cta}
+            </a>
+
+            <ul class="space-y-2.5">
+              {plan.features.map((f) => (
+                <li class="flex items-start gap-2 text-sm">
+                  <svg class:list={['mt-0.5 h-4 w-4 shrink-0', plan.highlight ? 'text-blue-200' : 'text-blue-500']} fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span class:list={[plan.highlight ? 'text-blue-50' : 'text-slate-600']}>{f}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- No hidden fees callout -->
+    <div class="mx-auto mt-12 max-w-3xl px-6">
+      <div class="rounded-2xl bg-slate-100 p-6 text-center">
+        <p class="text-sm font-semibold text-slate-700">No per-user fees. No per-asset fees. No overage charges.</p>
+        <p class="mt-1 text-sm text-slate-500">One flat monthly price based on your company size. Unlimited assets, unlimited incidents, unlimited users.</p>
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <div class="mx-auto mt-16 max-w-3xl px-6">
+      <h2 class="text-2xl font-bold text-slate-900 mb-8">Frequently asked questions</h2>
+
+      <div class="space-y-6">
+        <div>
+          <h3 class="font-semibold text-slate-900">Is the self-hosted version really free?</h3>
+          <p class="mt-1 text-sm text-slate-600">Yes, completely. The full source code is on GitHub under AGPL license. You can run it on your own server with no restrictions and no license fee. You pay for your own infrastructure (a €5/month VPS is enough for most companies).</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900">What counts as an "employee"?</h3>
+          <p class="mt-1 text-sm text-slate-600">Total headcount in your company. Not active users in the app, not seats — just your total number of employees. This is the same number you'd report for NIS2 compliance purposes.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900">Can I switch plans later?</h3>
+          <p class="mt-1 text-sm text-slate-600">Yes. You can upgrade or downgrade at any time. We prorate the difference on the next billing cycle.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900">Is there a free trial for cloud plans?</h3>
+          <p class="mt-1 text-sm text-slate-600">Yes, 14 days free on any cloud plan. No credit card required to start.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900">Do you offer annual billing?</h3>
+          <p class="mt-1 text-sm text-slate-600">Yes, annual billing is available at 2 months free (10× the monthly price). Contact us for an invoice.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900">Where is the data stored?</h3>
+          <p class="mt-1 text-sm text-slate-600">All cloud plan data is stored in the EU (AWS eu-west region) and is fully GDPR compliant. Enterprise customers can request a DPA (Data Processing Agreement).</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- NIS2 callout -->
+    <div class="mx-auto mt-16 max-w-3xl px-6">
+      <div class="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+        <div class="text-2xl mb-3">🏛️</div>
+        <h3 class="text-lg font-bold text-slate-900">NIS2 compliance from €49/month</h3>
+        <p class="mt-2 text-sm text-slate-600 max-w-xl mx-auto">
+          NIS2 requires documented IT asset inventories and incident tracking. DeskSupportMonkey was built specifically for this.
+          Every plan includes the audit trail export you need to show an auditor.
+        </p>
+        <a href={`${appUrl}/auth/register`} class="mt-5 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">
+          Start your free trial
+        </a>
+      </div>
+    </div>
+
+  </div>
+</BaseLayout>

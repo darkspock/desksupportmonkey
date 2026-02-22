@@ -1,0 +1,200 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Go-to-Market — DeskSupportMonkey" description="How DeskSupportMonkey plans to reach customers. The AI-managed company story as the primary distribution channel, plus podcasts, events, courses, and open source.">
+  <div class="pt-24 pb-20">
+    <div class="mx-auto max-w-3xl px-6">
+
+      <a href="/transparency" class="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 transition-colors mb-6">
+        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        Transparency
+      </a>
+
+      <h1 class="text-4xl font-bold text-slate-900 tracking-tight mb-3">Go-to-Market Strategy</h1>
+      <p class="text-slate-500 text-sm mb-10">Last updated: February 2026 · Budget: near zero</p>
+
+      <!-- Core bet -->
+      <div class="mb-10 rounded-2xl bg-slate-900 p-6 text-white">
+        <h2 class="text-base font-bold mb-2">The core bet: the story is the distribution</h2>
+        <p class="text-slate-300 text-sm leading-relaxed mb-3">
+          We are not just selling IT asset management software. We are running a public experiment:
+          can a 1-person company with AI agents compete with a 50-person SaaS team?
+        </p>
+        <p class="text-slate-300 text-sm leading-relaxed">
+          The moment someone hears "this product is built and managed entirely by AI, with one human as the Orchestrator,"
+          they share it. That is free distribution that no ad budget can buy. The story and the product are both worth following.
+        </p>
+      </div>
+
+      <!-- First 6 months awareness -->
+      <section class="mb-10">
+        <h2 class="text-xl font-bold text-slate-900 mb-2">First 6 Months: Awareness Campaign</h2>
+        <p class="text-sm text-slate-500 mb-6">The first 6 months are about getting known — not just as another ITAM tool, but as the AI-managed company running the experiment live.</p>
+
+        <div class="space-y-5">
+
+          <!-- Social media -->
+          <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-xl">💼</span>
+              <h3 class="font-bold text-slate-900">LinkedIn (primary channel)</h3>
+              <span class="text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded-full ml-auto shrink-0">Week 1 onwards</span>
+            </div>
+            <ul class="space-y-1.5 text-sm text-slate-600">
+              {[
+                'Weekly posts documenting the AI orchestration model — what I delegated to AI and what I kept',
+                'Monthly MRR transparency updates (including €0 months — the journey is the content)',
+                'NIS2 educational content in Spanish targeting IT managers',
+                'Posts about product decisions: "How I used Claude to architect this feature"',
+                'Engagement with IT manager community in Spain',
+              ].map((item) => (
+                <li class="flex items-start gap-2">
+                  <span class="mt-1.5 h-1.5 w-1.5 rounded-full bg-blue-400 shrink-0"></span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <!-- Podcasts -->
+          <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-xl">🎙️</span>
+              <h3 class="font-bold text-slate-900">Podcasts — guest appearances</h3>
+              <span class="text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full ml-auto shrink-0">Months 1–3</span>
+            </div>
+            <p class="text-sm text-slate-600 mb-3">
+              The "AI-managed company" angle is compelling enough to get booked without 10K followers.
+              The pitch: "I run a SaaS company without employees. Here are the real numbers."
+            </p>
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {[
+                { label: 'Tech & AI podcasts', desc: 'AI/future-of-work, startup building, AI agents' },
+                { label: 'IT management podcasts', desc: 'Sysadmin communities, IT operations, MSP shows' },
+                { label: 'Spanish startup shows', desc: 'La Startup Española equivalents, bootstrapping shows' },
+                { label: 'Core stories to tell', desc: 'How Claude wrote the product · How AI handles growth · Why NIS2 is the perfect first market' },
+              ].map((item) => (
+                <div class="rounded-lg bg-slate-50 border border-slate-100 p-2.5 text-xs">
+                  <div class="font-semibold text-slate-700 mb-0.5">{item.label}</div>
+                  <div class="text-slate-500">{item.desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <!-- Events -->
+          <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-xl">🎤</span>
+              <h3 class="font-bold text-slate-900">Events — speaking slots</h3>
+              <span class="text-xs font-medium text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full ml-auto shrink-0">Months 2–4</span>
+            </div>
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 mb-3">
+              {[
+                'NIS2 compliance events in Spain — be the practical tool voice',
+                'IT manager forums and ISACA Spain chapter events',
+                'Startup events: South Summit, 4YFN, similar',
+                'AI/future-of-work events — ideal for the AI-managed company story',
+              ].map((item) => (
+                <div class="flex items-start gap-2 text-sm text-slate-600">
+                  <span class="mt-1.5 h-1.5 w-1.5 rounded-full bg-purple-400 shrink-0"></span>
+                  {item}
+                </div>
+              ))}
+            </div>
+            <div class="rounded-lg bg-purple-50 border border-purple-100 p-2.5 text-xs text-purple-800">
+              <strong>Talk title:</strong> "Cómo gestionar una empresa de software sin empleados" — works for both NIS2 events and AI/startup events.
+            </div>
+          </div>
+
+          <!-- Courses -->
+          <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-xl">📚</span>
+              <h3 class="font-bold text-slate-900">Courses & Educational Content</h3>
+              <span class="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full ml-auto shrink-0">Months 1–6</span>
+            </div>
+            <div class="space-y-2 text-sm text-slate-600">
+              <div class="flex items-start gap-2">
+                <span class="mt-1.5 h-1.5 w-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                <span><strong>Free course:</strong> "How to prepare your IT asset inventory for NIS2" — builds credibility, generates qualified leads</span>
+              </div>
+              <div class="flex items-start gap-2">
+                <span class="mt-1.5 h-1.5 w-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                <span><strong>Email mini-course (5 days):</strong> "5 steps to NIS2 IT asset compliance" — captures emails, filters serious buyers</span>
+              </div>
+              <div class="flex items-start gap-2">
+                <span class="mt-1.5 h-1.5 w-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                <span><strong>Future paid course:</strong> "AI-orchestrated company management" — for founders exploring this model</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Distribution layers -->
+      <section class="mb-10">
+        <h2 class="text-xl font-bold text-slate-900 mb-5">Distribution Layers</h2>
+        <div class="space-y-4">
+          {[
+            {
+              n: '01', title: 'The AI-managed company story',
+              desc: 'The startup/ folder in the repo documents everything. This is as much a marketing asset as the product. Developers, IT professionals, and founders share it. Every share is a free impression in front of exactly the right audience.',
+            },
+            {
+              n: '02', title: 'Open source product (GitHub)',
+              desc: 'Self-hosters install it, trust it, and recommend it to peers. GitHub stars and forks are leading indicators of awareness. Self-hosters become cloud customers when they grow.',
+            },
+            {
+              n: '03', title: 'Podcasts + Events + Courses',
+              desc: 'First 6-month awareness campaign. The AI-managed company angle gets podcast bookings. NIS2 events position us as the practical compliance tool. Courses generate leads and establish domain authority.',
+            },
+            {
+              n: '04', title: 'SEO & content',
+              desc: 'NIS2 + ITAM keyword targeting. Comparison articles. Setup guides. Slow to build, compounds indefinitely.',
+            },
+            {
+              n: '05', title: 'Community & word of mouth',
+              desc: 'r/sysadmin, r/selfhosted, LinkedIn IT manager groups. One satisfied IT manager in manufacturing can refer 3–5 similar companies.',
+            },
+            {
+              n: '06', title: 'Product-led growth',
+              desc: 'Free and open source plans are permanent. Users upgrade when they hit company size limits or need cloud convenience. Conversion happens naturally.',
+            },
+          ].map((layer) => (
+            <div class="flex items-start gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <span class="text-xl font-bold text-slate-200 shrink-0 leading-none">{layer.n}</span>
+              <div>
+                <div class="font-semibold text-slate-800 mb-1">{layer.title}</div>
+                <p class="text-sm text-slate-500 leading-relaxed">{layer.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <!-- What we don't do -->
+      <div class="rounded-xl bg-slate-50 border border-slate-200 p-5 text-sm text-slate-600">
+        <h3 class="font-semibold text-slate-800 mb-2">What we explicitly don't do</h3>
+        <ul class="space-y-1">
+          {[
+            'Paid ads before organic channels are saturated',
+            'GitHub stars or fake reviews',
+            'Press releases — organic press (HN, tech blogs) converts better',
+            'Hire employees to replace AI agents before product-market fit is proven',
+          ].map((item) => (
+            <li class="flex items-start gap-2">
+              <span class="mt-0.5 text-slate-400">✗</span>
+              {item}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</BaseLayout>

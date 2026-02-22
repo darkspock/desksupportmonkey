@@ -6,39 +6,104 @@ interface Props {
 const { appUrl } = Astro.props;
 const currentPath = Astro.url.pathname;
 
-const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/built-with-ai', label: 'Built with AI' },
-  { href: '/books', label: 'Books' },
-  { href: '/training', label: 'Training' },
-  { href: '/opensource', label: 'GitHub' },
-  { href: '/roadmap', label: 'Roadmap' },
-  { href: '/contact', label: 'Contact' },
-];
+const isActive = (href: string) =>
+  currentPath === href || (href !== '/' && currentPath.startsWith(href));
 ---
 
 <header class="fixed inset-x-0 top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
   <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
     <a href="/" class="flex items-center gap-2.5">
       <img src="/logo.png" alt="DeskSupportMonkey" class="h-8 w-8" />
-      <span class="text-lg font-bold text-slate-900 hidden sm:inline">Desk Support Monkey</span>
+      <span class="text-lg font-bold text-slate-900 hidden sm:inline">DeskSupportMonkey</span>
     </a>
 
     <!-- Desktop nav -->
     <nav class="hidden md:flex items-center gap-1">
-      {navLinks.map((link) => (
-        <a
-          href={link.href}
-          class:list={[
-            'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-            currentPath === link.href || (link.href !== '/' && currentPath.startsWith(link.href))
-              ? 'text-blue-600 bg-blue-50'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100',
-          ]}
-        >
-          {link.label}
-        </a>
-      ))}
+
+      <!-- Product dropdown -->
+      <div class="relative group">
+        <button class:list={[
+          'flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+          isActive('/pricing') || isActive('/roadmap')
+            ? 'text-blue-600 bg-blue-50'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+        ]}>
+          Product
+          <svg class="h-3.5 w-3.5 opacity-60" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <div class="absolute left-0 top-full mt-1 hidden group-hover:block w-44 rounded-xl border border-slate-200 bg-white py-1.5 shadow-lg">
+          <a href="/" class:list={['block px-4 py-2 text-sm transition-colors', isActive('/') && currentPath === '/' ? 'text-blue-600 bg-blue-50' : 'text-slate-700 hover:bg-slate-50']}>Features</a>
+          <a href="/pricing" class:list={['block px-4 py-2 text-sm transition-colors', isActive('/pricing') ? 'text-blue-600 bg-blue-50' : 'text-slate-700 hover:bg-slate-50']}>Pricing</a>
+          <a href="/roadmap" class:list={['block px-4 py-2 text-sm transition-colors', isActive('/roadmap') ? 'text-blue-600 bg-blue-50' : 'text-slate-700 hover:bg-slate-50']}>Roadmap</a>
+        </div>
+      </div>
+
+      <!-- Transparency dropdown -->
+      <div class="relative group">
+        <button class:list={[
+          'flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+          isActive('/transparency')
+            ? 'text-blue-600 bg-blue-50'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+        ]}>
+          Transparency
+          <svg class="h-3.5 w-3.5 opacity-60" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <div class="absolute left-0 top-full mt-1 hidden group-hover:block w-48 rounded-xl border border-slate-200 bg-white py-1.5 shadow-lg">
+          <a href="/transparency/team" class:list={['block px-4 py-2 text-sm transition-colors', isActive('/transparency/team') ? 'text-blue-600 bg-blue-50' : 'text-slate-700 hover:bg-slate-50']}>Team</a>
+          <a href="/transparency/business-model" class:list={['block px-4 py-2 text-sm transition-colors', isActive('/transparency/business-model') ? 'text-blue-600 bg-blue-50' : 'text-slate-700 hover:bg-slate-50']}>Business Model</a>
+          <a href="/transparency/financials" class:list={['block px-4 py-2 text-sm transition-colors', isActive('/transparency/financials') ? 'text-blue-600 bg-blue-50' : 'text-slate-700 hover:bg-slate-50']}>Financials</a>
+          <a href="/transparency/market" class:list={['block px-4 py-2 text-sm transition-colors', isActive('/transparency/market') ? 'text-blue-600 bg-blue-50' : 'text-slate-700 hover:bg-slate-50']}>Market</a>
+          <a href="/transparency/go-to-market" class:list={['block px-4 py-2 text-sm transition-colors', isActive('/transparency/go-to-market') ? 'text-blue-600 bg-blue-50' : 'text-slate-700 hover:bg-slate-50']}>Go-to-Market</a>
+          <a href="/transparency/competitive" class:list={['block px-4 py-2 text-sm transition-colors', isActive('/transparency/competitive') ? 'text-blue-600 bg-blue-50' : 'text-slate-700 hover:bg-slate-50']}>Competitive</a>
+        </div>
+      </div>
+
+      <!-- Open Source -->
+      <a
+        href="/opensource"
+        class:list={[
+          'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+          isActive('/opensource') ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100',
+        ]}
+      >
+        Open Source
+      </a>
+
+      <!-- Resources dropdown -->
+      <div class="relative group">
+        <button class:list={[
+          'flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+          isActive('/built-with-ai') || isActive('/books') || isActive('/training')
+            ? 'text-blue-600 bg-blue-50'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+        ]}>
+          Resources
+          <svg class="h-3.5 w-3.5 opacity-60" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <div class="absolute left-0 top-full mt-1 hidden group-hover:block w-44 rounded-xl border border-slate-200 bg-white py-1.5 shadow-lg">
+          <a href="/built-with-ai" class:list={['block px-4 py-2 text-sm transition-colors', isActive('/built-with-ai') ? 'text-blue-600 bg-blue-50' : 'text-slate-700 hover:bg-slate-50']}>Built with AI</a>
+          <a href="/books" class:list={['block px-4 py-2 text-sm transition-colors', isActive('/books') ? 'text-blue-600 bg-blue-50' : 'text-slate-700 hover:bg-slate-50']}>Books</a>
+          <a href="/training" class:list={['block px-4 py-2 text-sm transition-colors', isActive('/training') ? 'text-blue-600 bg-blue-50' : 'text-slate-700 hover:bg-slate-50']}>Training</a>
+        </div>
+      </div>
+
+      <!-- Contact -->
+      <a
+        href="/contact"
+        class:list={[
+          'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+          isActive('/contact') ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100',
+        ]}
+      >
+        Contact
+      </a>
     </nav>
 
     <div class="flex items-center gap-2">
@@ -70,21 +135,28 @@ const navLinks = [
 
   <!-- Mobile menu -->
   <div id="mobile-menu" class="hidden md:hidden border-t border-slate-200 bg-white px-6 pb-4">
-    {navLinks.map((link) => (
-      <a
-        href={link.href}
-        class:list={[
-          'block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-          currentPath === link.href
-            ? 'text-blue-600 bg-blue-50'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100',
-        ]}
-      >
-        {link.label}
-      </a>
-    ))}
-    <div class="mt-2 border-t border-slate-100 pt-2">
-      <a href={`${appUrl}/auth/login`} class="block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100">
+    <div class="py-1 text-xs font-semibold uppercase tracking-wider text-slate-400 mt-3">Product</div>
+    <a href="/" class:list={['block rounded-lg px-3 py-2 text-sm font-medium transition-colors', currentPath === '/' ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:bg-slate-100']}>Features</a>
+    <a href="/pricing" class:list={['block rounded-lg px-3 py-2 text-sm font-medium transition-colors', isActive('/pricing') ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:bg-slate-100']}>Pricing</a>
+    <a href="/roadmap" class:list={['block rounded-lg px-3 py-2 text-sm font-medium transition-colors', isActive('/roadmap') ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:bg-slate-100']}>Roadmap</a>
+
+    <div class="py-1 text-xs font-semibold uppercase tracking-wider text-slate-400 mt-3">Transparency</div>
+    <a href="/transparency/team" class:list={['block rounded-lg px-3 py-2 text-sm font-medium transition-colors', isActive('/transparency/team') ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:bg-slate-100']}>Team</a>
+    <a href="/transparency/business-model" class:list={['block rounded-lg px-3 py-2 text-sm font-medium transition-colors', isActive('/transparency/business-model') ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:bg-slate-100']}>Business Model</a>
+    <a href="/transparency/financials" class:list={['block rounded-lg px-3 py-2 text-sm font-medium transition-colors', isActive('/transparency/financials') ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:bg-slate-100']}>Financials</a>
+    <a href="/transparency/market" class:list={['block rounded-lg px-3 py-2 text-sm font-medium transition-colors', isActive('/transparency/market') ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:bg-slate-100']}>Market</a>
+    <a href="/transparency/go-to-market" class:list={['block rounded-lg px-3 py-2 text-sm font-medium transition-colors', isActive('/transparency/go-to-market') ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:bg-slate-100']}>Go-to-Market</a>
+    <a href="/transparency/competitive" class:list={['block rounded-lg px-3 py-2 text-sm font-medium transition-colors', isActive('/transparency/competitive') ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:bg-slate-100']}>Competitive</a>
+
+    <div class="py-1 text-xs font-semibold uppercase tracking-wider text-slate-400 mt-3">More</div>
+    <a href="/opensource" class:list={['block rounded-lg px-3 py-2 text-sm font-medium transition-colors', isActive('/opensource') ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:bg-slate-100']}>Open Source</a>
+    <a href="/built-with-ai" class:list={['block rounded-lg px-3 py-2 text-sm font-medium transition-colors', isActive('/built-with-ai') ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:bg-slate-100']}>Built with AI</a>
+    <a href="/books" class:list={['block rounded-lg px-3 py-2 text-sm font-medium transition-colors', isActive('/books') ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:bg-slate-100']}>Books</a>
+    <a href="/training" class:list={['block rounded-lg px-3 py-2 text-sm font-medium transition-colors', isActive('/training') ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:bg-slate-100']}>Training</a>
+    <a href="/contact" class:list={['block rounded-lg px-3 py-2 text-sm font-medium transition-colors', isActive('/contact') ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:bg-slate-100']}>Contact</a>
+
+    <div class="mt-3 border-t border-slate-100 pt-3">
+      <a href={`${Astro.props.appUrl}/auth/login`} class="block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100">
         Log in
       </a>
     </div>

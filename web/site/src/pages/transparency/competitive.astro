@@ -1,0 +1,211 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const competitors = [
+  {
+    name: 'DeskSupportMonkey',
+    type: 'Us',
+    openSource: true,
+    selfHost: true,
+    price: '€0–€199/mo',
+    userBased: false,
+    nis2Focus: true,
+    lifecycle: true,
+    incidentAssetLink: true,
+    highlight: true,
+  },
+  {
+    name: 'GLPI',
+    type: 'Open source',
+    openSource: true,
+    selfHost: true,
+    price: '€0 (self-hosted)',
+    userBased: false,
+    nis2Focus: false,
+    lifecycle: true,
+    incidentAssetLink: true,
+    highlight: false,
+  },
+  {
+    name: 'Snipe-IT',
+    type: 'Open source',
+    openSource: true,
+    selfHost: true,
+    price: '€0–€499/mo',
+    userBased: false,
+    nis2Focus: false,
+    lifecycle: true,
+    incidentAssetLink: false,
+    highlight: false,
+  },
+  {
+    name: 'Lansweeper',
+    type: 'Commercial',
+    openSource: false,
+    selfHost: false,
+    price: '€0–€1500+/yr',
+    userBased: false,
+    nis2Focus: false,
+    lifecycle: false,
+    incidentAssetLink: false,
+    highlight: false,
+  },
+  {
+    name: 'Freshservice',
+    type: 'Commercial SaaS',
+    openSource: false,
+    selfHost: false,
+    price: '€19–€99/agent/mo',
+    userBased: true,
+    nis2Focus: false,
+    lifecycle: true,
+    incidentAssetLink: true,
+    highlight: false,
+  },
+  {
+    name: 'Jira Service Mgmt',
+    type: 'Commercial SaaS',
+    openSource: false,
+    selfHost: false,
+    price: '€0–€47.82/agent/mo',
+    userBased: true,
+    nis2Focus: false,
+    lifecycle: false,
+    incidentAssetLink: true,
+    highlight: false,
+  },
+];
+
+type FeatureCell = boolean | string;
+const checkIcon = (val: FeatureCell, highlight: boolean) => val === true
+  ? `<span class="${highlight ? 'text-blue-300' : 'text-green-600'}">✓</span>`
+  : val === false
+    ? `<span class="${highlight ? 'text-blue-400/50' : 'text-slate-300'}">✗</span>`
+    : String(val);
+---
+
+<BaseLayout title="Competitive Analysis — DeskSupportMonkey" description="How DeskSupportMonkey compares to GLPI, Snipe-IT, Lansweeper, Freshservice, and Jira Service Management.">
+  <div class="pt-24 pb-20">
+    <div class="mx-auto max-w-5xl px-6">
+
+      <a href="/transparency" class="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 transition-colors mb-6">
+        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        Transparency
+      </a>
+
+      <h1 class="text-4xl font-bold text-slate-900 tracking-tight mb-3">Competitive Analysis</h1>
+      <p class="text-slate-500 text-sm mb-10">Last updated: February 2026</p>
+
+      <!-- Comparison table -->
+      <section class="mb-10">
+        <h2 class="text-xl font-bold text-slate-900 mb-4">Feature Comparison</h2>
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-slate-50 text-slate-600 text-xs uppercase tracking-wide">
+                <th class="px-4 py-3 text-left font-semibold">Product</th>
+                <th class="px-4 py-3 text-center font-semibold">Open Source</th>
+                <th class="px-4 py-3 text-center font-semibold">Self-host</th>
+                <th class="px-4 py-3 text-center font-semibold">Per-user pricing</th>
+                <th class="px-4 py-3 text-center font-semibold">NIS2 focus</th>
+                <th class="px-4 py-3 text-center font-semibold">Full lifecycle</th>
+                <th class="px-4 py-3 text-center font-semibold">Incident↔Asset link</th>
+                <th class="px-4 py-3 text-left font-semibold">Price</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              {competitors.map((c) => (
+                <tr class:list={[c.highlight ? 'bg-blue-600 text-white' : 'text-slate-700']}>
+                  <td class="px-4 py-3">
+                    <div class="font-semibold">{c.name}</div>
+                    <div class:list={['text-xs', c.highlight ? 'text-blue-200' : 'text-slate-400']}>{c.type}</div>
+                  </td>
+                  <td class="px-4 py-3 text-center text-base" set:html={checkIcon(c.openSource, c.highlight)}></td>
+                  <td class="px-4 py-3 text-center text-base" set:html={checkIcon(c.selfHost, c.highlight)}></td>
+                  <td class="px-4 py-3 text-center text-base" set:html={checkIcon(c.userBased, c.highlight)}></td>
+                  <td class="px-4 py-3 text-center text-base" set:html={checkIcon(c.nis2Focus, c.highlight)}></td>
+                  <td class="px-4 py-3 text-center text-base" set:html={checkIcon(c.lifecycle, c.highlight)}></td>
+                  <td class="px-4 py-3 text-center text-base" set:html={checkIcon(c.incidentAssetLink, c.highlight)}></td>
+                  <td class:list={['px-4 py-3 text-xs font-medium', c.highlight ? 'text-blue-100' : 'text-slate-600']}>{c.price}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Competitor profiles -->
+      <section class="mb-10 space-y-6">
+        <h2 class="text-xl font-bold text-slate-900">Competitor Profiles</h2>
+
+        {[
+          {
+            name: 'GLPI',
+            verdict: 'Closest feature match. But zero NIS2 positioning and complex to set up for SMBs.',
+            details: 'GLPI is a comprehensive ITSM platform used widely in France and Spain. Strong asset management and helpdesk. However, it is complex to deploy and maintain (requires LAMP stack), the UI feels dated, and there is no NIS2 compliance narrative. SMBs that try GLPI often find it overwhelming. Our positioning: simpler, modern, NIS2-ready.',
+            threat: 'Medium',
+          },
+          {
+            name: 'Snipe-IT',
+            verdict: 'Great asset tracking. No incident management. Not a helpdesk replacement.',
+            details: 'Snipe-IT handles asset tracking very well but stops there. There is no incident/ticket system tied to assets, no NIS2 reporting, and no employee portal. Companies that outgrow Snipe-IT need a system that connects assets to incidents — that is DeskSupportMonkey.',
+            threat: 'Low',
+          },
+          {
+            name: 'Lansweeper',
+            verdict: 'IT asset discovery tool. Different use case. No lifecycle or incident management.',
+            details: 'Lansweeper focuses on network scanning and asset discovery — finding what is on your network automatically. We focus on lifecycle management and incident tracking of known assets. Different problems, different buyers. Some companies use both.',
+            threat: 'Low',
+          },
+          {
+            name: 'Freshservice',
+            verdict: 'Enterprise ITSM. Per-agent pricing, €19–€99/agent/month. Overkill for SMBs.',
+            details: 'Freshservice is excellent for IT teams of 10+ technicians. But at €19–99 per agent per month, a 5-person IT team pays €1,140–€5,940/year just for the tool. DeskSupportMonkey costs €49–199/month for the entire company regardless of how many agents. For SMBs with 1–3 IT staff, the economics are dramatically better.',
+            threat: 'Medium',
+          },
+          {
+            name: 'Jira Service Management',
+            verdict: 'Developer-focused, not IT asset management. Complex for non-technical teams.',
+            details: 'JSM is built around software development workflows adapted for IT. The asset management module (Assets) requires significant setup and is really designed for enterprise IT. For an IT manager at a 30-person manufacturing company trying to comply with NIS2, JSM is not a viable option.',
+            threat: 'Low',
+          },
+        ].map((c) => (
+          <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="flex items-start justify-between gap-4 flex-wrap mb-2">
+              <h3 class="font-bold text-slate-900">{c.name}</h3>
+              <span class:list={[
+                'text-xs font-medium px-2 py-0.5 rounded-full shrink-0',
+                c.threat === 'High' ? 'text-red-700 bg-red-50' :
+                c.threat === 'Medium' ? 'text-amber-700 bg-amber-50' :
+                'text-green-700 bg-green-50'
+              ]}>Threat: {c.threat}</span>
+            </div>
+            <p class="text-sm font-medium text-slate-700 mb-2">{c.verdict}</p>
+            <p class="text-sm text-slate-500 leading-relaxed">{c.details}</p>
+          </div>
+        ))}
+      </section>
+
+      <!-- Our moat -->
+      <section class="mb-6">
+        <h2 class="text-xl font-bold text-slate-900 mb-4">Our Differentiation</h2>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {[
+            { title: 'NIS2-first narrative', description: 'No competitor actively positions their product as the NIS2 compliance tool. We own that space.' },
+            { title: 'Asset-incident linkage', description: 'Every ticket is tied to a specific device. This is the core audit trail requirement. Most tools make this optional or complex.' },
+            { title: 'Employee-based pricing', description: 'No per-user or per-agent fees. A company with 50 employees and 2 IT staff pays the same as one with 10 IT staff.' },
+            { title: 'Self-hostable + cloud', description: 'Technical buyers who distrust SaaS can run it themselves. The cloud option converts them when they grow.' },
+          ].map((d) => (
+            <div class="rounded-xl bg-slate-50 border border-slate-200 p-4">
+              <h3 class="text-sm font-bold text-slate-800 mb-1">{d.title}</h3>
+              <p class="text-sm text-slate-600">{d.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+    </div>
+  </div>
+</BaseLayout>

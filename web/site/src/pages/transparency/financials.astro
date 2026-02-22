@@ -1,0 +1,133 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const projections = [
+  { month: 'Mar 2026', conservative: { customers: 2, mrr: 174 }, realistic: { customers: 5, mrr: 435 }, optimistic: { customers: 7, mrr: 609 } },
+  { month: 'Apr 2026', conservative: { customers: 3, mrr: 261 }, realistic: { customers: 7, mrr: 609 }, optimistic: { customers: 10, mrr: 870 } },
+  { month: 'May 2026', conservative: { customers: 4, mrr: 348 }, realistic: { customers: 9, mrr: 783 }, optimistic: { customers: 14, mrr: 1218 } },
+  { month: 'Jun 2026', conservative: { customers: 5, mrr: 435 }, realistic: { customers: 11, mrr: 957 }, optimistic: { customers: 18, mrr: 1566 } },
+  { month: 'Jul 2026', conservative: { customers: 7, mrr: 609 }, realistic: { customers: 15, mrr: 1305 }, optimistic: { customers: 24, mrr: 2088 } },
+  { month: 'Aug 2026', conservative: { customers: 9, mrr: 783 }, realistic: { customers: 19, mrr: 1653 }, optimistic: { customers: 31, mrr: 2697 } },
+  { month: 'Sep 2026', conservative: { customers: 12, mrr: 1044 }, realistic: { customers: 25, mrr: 2175 }, optimistic: { customers: 40, mrr: 3480 } },
+  { month: 'Oct 2026', conservative: { customers: 16, mrr: 1392 }, realistic: { customers: 33, mrr: 2871 }, optimistic: { customers: 52, mrr: 4524 } },
+  { month: 'Nov 2026', conservative: { customers: 21, mrr: 1827 }, realistic: { customers: 43, mrr: 3741 }, optimistic: { customers: 67, mrr: 5829 } },
+  { month: 'Dec 2026', conservative: { customers: 26, mrr: 2262 }, realistic: { customers: 54, mrr: 4698 }, optimistic: { customers: 83, mrr: 7221 } },
+  { month: 'Jan 2027', conservative: { customers: 31, mrr: 2697 }, realistic: { customers: 66, mrr: 5742 }, optimistic: { customers: 102, mrr: 8874 } },
+  { month: 'Feb 2027', conservative: { customers: 36, mrr: 3132 }, realistic: { customers: 79, mrr: 6873 }, optimistic: { customers: 123, mrr: 10701 } },
+];
+---
+
+<BaseLayout title="Financials — DeskSupportMonkey" description="12-month revenue projections, costs, and path to profitability for DeskSupportMonkey.">
+  <div class="pt-24 pb-20">
+    <div class="mx-auto max-w-4xl px-6">
+
+      <a href="/transparency" class="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 transition-colors mb-6">
+        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        Transparency
+      </a>
+
+      <h1 class="text-4xl font-bold text-slate-900 tracking-tight mb-3">Financials</h1>
+      <p class="text-slate-500 text-sm mb-10">Last updated: February 2026 · All figures in EUR</p>
+
+      <!-- Fixed costs -->
+      <section class="mb-10">
+        <h2 class="text-xl font-bold text-slate-900 mb-4">Monthly Fixed Costs</h2>
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 text-slate-600">
+              <tr>
+                <th class="px-4 py-3 text-left font-semibold">Item</th>
+                <th class="px-4 py-3 text-left font-semibold">Cost/month</th>
+                <th class="px-4 py-3 text-left font-semibold">Notes</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-slate-700">
+              <tr><td class="px-4 py-3">AWS (EC2 + RDS + S3)</td><td class="px-4 py-3 font-medium">€100</td><td class="px-4 py-3 text-slate-500">Production + staging</td></tr>
+              <tr><td class="px-4 py-3">Claude Code (AI development)</td><td class="px-4 py-3 font-medium">€100</td><td class="px-4 py-3 text-slate-500">Core engineering tool</td></tr>
+              <tr><td class="px-4 py-3">Email, domain, monitoring</td><td class="px-4 py-3 font-medium">~€10</td><td class="px-4 py-3 text-slate-500">Resend + Namecheap + misc</td></tr>
+              <tr class="bg-slate-50"><td class="px-4 py-3 font-bold">Total fixed</td><td class="px-4 py-3 font-bold text-slate-900">~€210</td><td class="px-4 py-3 text-slate-500">Excluding Stripe fees (~1.5%+€0.25/tx)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="mt-3 text-xs text-slate-500">No salaries until ~€2,000 MRR. Founder works without pay for the first 6 months.</p>
+      </section>
+
+      <!-- Key milestones -->
+      <section class="mb-10">
+        <h2 class="text-xl font-bold text-slate-900 mb-4">Key Financial Milestones</h2>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {[
+            { label: 'Break-even', value: '~5 customers', note: 'Covers €210 fixed costs' },
+            { label: 'Founder salary', value: '~€2,000 MRR', note: 'Sep 2026 realistic target' },
+            { label: 'First hire budget', value: '~€5,000–8,000 MRR', note: 'Head of CS / Customer Success' },
+          ].map((m) => (
+            <div class="rounded-xl border border-slate-200 bg-white p-4 text-center shadow-sm">
+              <div class="text-2xl font-bold text-blue-600">{m.value}</div>
+              <div class="mt-1 font-semibold text-slate-800 text-sm">{m.label}</div>
+              <div class="mt-1 text-xs text-slate-500">{m.note}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <!-- 12-month projections -->
+      <section class="mb-10">
+        <h2 class="text-xl font-bold text-slate-900 mb-2">12-Month Revenue Projections</h2>
+        <p class="text-sm text-slate-500 mb-4">Based on average revenue per account of ~€87/month (blended plan mix). September 2026 shows NIS2 audit season acceleration.</p>
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 text-slate-600">
+              <tr>
+                <th class="px-4 py-3 text-left font-semibold">Month</th>
+                <th class="px-4 py-3 text-center font-semibold">Conservative<br/><span class="font-normal text-xs">customers / MRR</span></th>
+                <th class="px-4 py-3 text-center font-semibold bg-blue-50 text-blue-700">Realistic<br/><span class="font-normal text-xs">customers / MRR</span></th>
+                <th class="px-4 py-3 text-center font-semibold">Optimistic<br/><span class="font-normal text-xs">customers / MRR</span></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              {projections.map((row) => (
+                <tr class:list={[row.month === 'Sep 2026' ? 'bg-amber-50' : '']}>
+                  <td class="px-4 py-2.5 font-medium text-slate-700">
+                    {row.month}
+                    {row.month === 'Sep 2026' && <span class="ml-1.5 text-xs text-amber-600">NIS2 audit season</span>}
+                  </td>
+                  <td class="px-4 py-2.5 text-center text-slate-600">{row.conservative.customers} / €{row.conservative.mrr.toLocaleString()}</td>
+                  <td class="px-4 py-2.5 text-center font-medium text-blue-700 bg-blue-50/50">{row.realistic.customers} / €{row.realistic.mrr.toLocaleString()}</td>
+                  <td class="px-4 py-2.5 text-center text-slate-600">{row.optimistic.customers} / €{row.optimistic.mrr.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Assumptions -->
+      <section class="mb-10">
+        <h2 class="text-xl font-bold text-slate-900 mb-3">Projection Assumptions</h2>
+        <ul class="space-y-2 text-sm text-slate-600">
+          {[
+            'Average MRR per customer ~€87 (blended mix: 60% Starter €49, 30% Growth €99, 10% Scale €199)',
+            'No churn in projections (conservative: 5% monthly churn would reduce these by ~15% by month 12)',
+            'Zero paid acquisition — 100% organic through open source, LinkedIn, GitHub',
+            'September 2026 NIS2 audit season: companies that received compliance letters in Q4 2024 face first audits',
+            'Year 2 EU expansion multiplier applied from January 2027 (Germany, Italy)',
+          ].map((a) => (
+            <li class="flex items-start gap-2">
+              <span class="mt-0.5 text-slate-400">•</span>
+              {a}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <!-- Disclaimer -->
+      <div class="rounded-xl bg-slate-100 p-4 text-xs text-slate-500">
+        These are internal projections, not guarantees. They are published as part of our build-in-public commitment.
+        Actual results will depend on product-market fit, execution, and market adoption timing.
+      </div>
+
+    </div>
+  </div>
+</BaseLayout>
