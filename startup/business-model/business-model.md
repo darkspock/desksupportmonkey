@@ -84,7 +84,7 @@ Pricing is based on number of employees in the client company, not on user seats
 | Monthly Churn | <3% |
 | Net Revenue Retention | >105% (upsells offset churn) |
 
-The AI-managed model improves gross margin significantly vs. a traditional SaaS: no sales salaries, no engineer salaries, no customer success headcount. The cost base is infrastructure + AI tools (~€210/month fixed).
+The AI-managed model improves gross margin significantly vs. a traditional SaaS: no sales salaries, no engineer salaries, no customer success headcount. The cost base is infrastructure + AI tools (~€260/month fixed).
 
 ---
 

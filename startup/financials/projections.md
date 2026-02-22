@@ -11,10 +11,11 @@
 
 | Concept | Monthly |
 |---|---|
-| AWS (production + staging) | €100 |
+| AWS EC2 c6a.xlarge (production) | €110 |
+| AWS RDS + S3 + staging | €40 |
 | Claude Code | €100 |
 | Stripe + email + misc | €10 |
-| **Total** | **€210/month** |
+| **Total** | **€260/month** |
 
 No salaries until Month 7 (September 2026) — all MRR goes to cash reserves.
 
@@ -75,28 +76,28 @@ No salaries until Month 7 (September 2026) — all MRR goes to cash reserves.
 | Nov | €1,914 | €5,046 | €11,136 |
 | Dec | €2,523 | €7,395 | €17,835 |
 
-### Cashflow after fixed costs (€210/month)
+### Cashflow after fixed costs (€260/month)
 
 | Month | C | R | O |
 |---|---|---|---|
-| Mar | -€138 | -€121 | +€312 |
-| Apr | -€121 | +€399 | +€486 |
-| May | -€96 | +€573 | +€747 |
-| Jun | -€79 | +€747 | +€1,182 |
-| Jul | -€66 | +€1,095 | +€1,704 |
-| Aug | +€660 | +€1,443 | +€2,487 |
-| Sep | +€921 | +€2,226 | +€4,140 |
-| Oct | +€1,269 | +€3,270 | +€6,750 |
-| Nov | +€1,704 | +€4,836 | +€10,926 |
-| Dec | +€2,313 | +€7,185 | +€17,625 |
+| Mar | -€188 | -€171 | +€262 |
+| Apr | -€171 | +€349 | +€436 |
+| May | -€146 | +€523 | +€697 |
+| Jun | -€129 | +€697 | +€1,132 |
+| Jul | -€116 | +€1,045 | +€1,654 |
+| Aug | +€610 | +€1,393 | +€2,437 |
+| Sep | +€871 | +€2,176 | +€4,090 |
+| Oct | +€1,219 | +€3,220 | +€6,700 |
+| Nov | +€1,654 | +€4,786 | +€10,876 |
+| Dec | +€2,263 | +€7,135 | +€17,575 |
 
 ### Cumulative cash reserve (end of year)
 
 | Scenario | Cash at Dec 2026 |
 |---|---|
-| Conservative | ~€6,000 |
-| Realistic | ~€21,000 |
-| Optimistic | ~€44,000 |
+| Conservative | ~€5,500 |
+| Realistic | ~€20,500 |
+| Optimistic | ~€43,500 |
 
 ---
 
@@ -136,10 +137,10 @@ NIS2 enforcement pressure peaks. DORA fully active in financial sector. CRA phas
 
 | Hire | MRR trigger | Est. month (Realistic) |
 |---|---|---|
-| CEO starts drawing salary | €2,000 MRR | Sep 2026 |
-| Head of Growth | €7,000 MRR | Nov 2026 |
-| Senior Engineer | €12,000 MRR | Q1 2027 |
-| Head of CS & Ops | €18,000 MRR | Q2 2027 |
+| Orchestrator starts drawing salary | €2,000 MRR | Sep 2026 |
+| First human advisor retainer | €3,000 MRR | Oct 2026 |
+| Head of Growth (if hiring) | €7,000 MRR | Nov 2026 |
+| Senior Engineer (if hiring) | €12,000 MRR | Q1 2027 |
 
 ---
 
@@ -149,6 +150,7 @@ NIS2 enforcement pressure peaks. DORA fully active in financial sector. CRA phas
 - **Churn in early months** — if beta users don't convert to paid, launch MRR could be lower than conservative
 - **Competition** — larger players (Freshservice, Lansweeper) could add NIS2 compliance features and undercut the positioning
 - **Pricing validation** — employee-based pricing is untested; first 10 customers will tell us if €99-199 is the right range
+- **AWS costs** — production server (c6a.xlarge) runs ~€110/month; if traffic stays low, could downgrade to t3.medium (~€30) to cut costs
 
 ---
 
