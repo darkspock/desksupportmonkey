@@ -45,8 +45,12 @@ def get_current_user(
 
     # Check company status (skip for super admins with no company)
     if user.company_id:
+        from datetime import timedelta, datetime, timezone
         from src.company_bc.company.infrastructure.repository import CompanyRepository
+        from src.company_bc.company.infrastructure.models import CompanyModel
         from src.company_bc.company.domain.enums import CompanyStatus
+        from src.company_bc.company.domain.billing_enums import BillingStatus
+        from core.config import settings as _settings
 
         company_repo = CompanyRepository(db)
         company = company_repo.find_by_id(user.company_id)
@@ -55,6 +59,29 @@ def get_current_user(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Company access is currently restricted",
             )
+
+        # Lazy grace period expiry: suspend if 15 days have elapsed
+        if (
+            company
+            and not _settings.stripe.OPEN_SOURCE_MODE
+            and company.billing_status == BillingStatus.GRACE_PERIOD
+            and company.grace_period_started_at
+        ):
+            started = company.grace_period_started_at
+            if started.tzinfo is None:
+                started = started.replace(tzinfo=timezone.utc)
+            if started + timedelta(days=15) < datetime.now(timezone.utc):
+                # ORM-level update (WHERE guard) so session identity map stays consistent
+                from sqlalchemy import select as sqlalchemy_select
+                model = db.execute(
+                    sqlalchemy_select(CompanyModel)
+                    .where(CompanyModel.id == company.id)
+                    .where(CompanyModel.billing_status == "grace_period")
+                ).scalar_one_or_none()
+                if model:
+                    model.billing_status = "suspended"
+                    db.flush()
+                    company.billing_status = BillingStatus.SUSPENDED
 
     # Set tenant context
     set_tenant(company_id=user.company_id, user_id=user.id, role=user.role.value)

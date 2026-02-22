@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Outlet, Navigate, useLocation } from 'react-router-dom';
+import { Outlet, Navigate, useLocation, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
@@ -8,6 +9,52 @@ import { getDefaultRouteForRole } from '../../lib/navigation';
 import { useNotificationRealtime } from '../../hooks/useNotificationRealtime';
 import { useI18n } from '../../lib/i18n';
 import api from '../../lib/api';
+
+interface BillingStatus {
+  billing_status: string;
+  complimentary: boolean;
+  grace_days_remaining: number | null;
+}
+
+function BillingBanner({ role }: { role: string }) {
+  const { t } = useI18n();
+
+  const { data } = useQuery<BillingStatus>({
+    queryKey: ['billing-overview'],
+    queryFn: async () => {
+      const { data } = await api.get('/billing/');
+      return data as BillingStatus;
+    },
+    // Silently skip on error (non-admins won't hit this, but guard anyway)
+    retry: false,
+    enabled: role === 'admin',
+    staleTime: 30_000,
+  });
+
+  if (!data || data.complimentary) return null;
+  if (data.billing_status === 'grace_period') {
+    const days = data.grace_days_remaining ?? 0;
+    return (
+      <div className="w-full bg-yellow-500 px-4 py-2 text-center text-sm font-medium text-yellow-950">
+        {t('page.billing.banner_grace', { days: String(days) })}{' '}
+        <Link to="/billing" className="underline hover:no-underline">
+          {t('page.billing.banner_action')}
+        </Link>
+      </div>
+    );
+  }
+  if (data.billing_status === 'suspended') {
+    return (
+      <div className="w-full bg-red-600 px-4 py-2 text-center text-sm font-medium text-white">
+        {t('page.billing.banner_suspended')}{' '}
+        <Link to="/billing" className="underline hover:no-underline">
+          {t('page.billing.banner_action')}
+        </Link>
+      </div>
+    );
+  }
+  return null;
+}
 
 export function AppLayout() {
   const { user, loading, refreshUser } = useAuth();
@@ -58,6 +105,7 @@ export function AppLayout() {
       <Sidebar mobileOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
       <div className="min-w-0 flex-1 flex flex-col">
         <Header onMenuToggle={() => setMobileNavOpen(true)} />
+        {user.role === 'admin' && <BillingBanner role={user.role} />}
         <main className="min-w-0 flex-1 p-4 md:p-6">
           <div className="mx-auto w-full max-w-7xl">
             <Outlet />

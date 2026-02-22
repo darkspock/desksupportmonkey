@@ -43,6 +43,10 @@ class CompanyRepositoryInterface(ABC):
         ...
 
     @abstractmethod
+    def count_assets(self, company_id: str) -> int:
+        ...
+
+    @abstractmethod
     def delete(self, company_id: str) -> None:
         """Delete a company and its email domains."""
         ...

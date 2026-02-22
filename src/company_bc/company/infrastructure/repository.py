@@ -140,6 +140,22 @@ class CompanyRepository(CompanyRepositoryInterface):
         except Exception:
             return 0
 
+    def count_assets(self, company_id: str) -> int:
+        try:
+            from src.asset_bc.asset.infrastructure.models import AssetModel
+
+            return (
+                self.session.execute(
+                    select(func.count()).select_from(AssetModel)
+                    .where(
+                        AssetModel.company_id == company_id,
+                        AssetModel.status != "decommissioned",
+                    )
+                ).scalar()
+            ) or 0
+        except Exception:
+            return 0
+
     def delete(self, company_id: str) -> None:
         self.session.execute(
             delete(CompanyEmailDomainModel)

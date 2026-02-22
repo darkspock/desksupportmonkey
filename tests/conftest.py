@@ -125,6 +125,7 @@ def client(db_session):
     from adapters.http.api.companies.dependencies import get_stripe_client as get_stripe_client_companies
     from adapters.http.api.registration.dependencies import get_stripe_client as get_stripe_client_registration
     from adapters.http.api.billing.dependencies import get_stripe_client as get_stripe_client_billing
+    from adapters.http.api.billing.dependencies import get_billing_service
     from src.notification_bc.notification.application.services.event_bus import EventBus
 
     application = create_app()
@@ -140,6 +141,11 @@ def client(db_session):
     application.dependency_overrides[get_stripe_client_companies] = lambda: mock_stripe
     application.dependency_overrides[get_stripe_client_registration] = lambda: mock_stripe
     application.dependency_overrides[get_stripe_client_billing] = lambda: mock_stripe
+
+    mock_billing_service = MagicMock()
+    mock_billing_service.create_checkout_session.return_value = "https://checkout.stripe.com/test"
+    mock_billing_service.create_portal_session.return_value = "https://billing.stripe.com/test"
+    application.dependency_overrides[get_billing_service] = lambda: mock_billing_service
 
     with TestClient(application, raise_server_exceptions=False) as c:
         yield c

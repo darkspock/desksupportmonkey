@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from core.config import settings
 from core.database import get_db
 from core.stripe_client import StripeClient
+from src.company_bc.company.application.services.stripe_billing_service import StripeBillingService
 from src.company_bc.company.infrastructure.repository import CompanyRepository
 
 
@@ -13,6 +14,13 @@ def get_company_repo(db: Session = Depends(get_db)) -> CompanyRepository:
 
 def get_stripe_client() -> StripeClient:
     return StripeClient(
+        secret_key=settings.stripe.STRIPE_SECRET_KEY,
+        open_source_mode=settings.stripe.OPEN_SOURCE_MODE,
+    )
+
+
+def get_billing_service() -> StripeBillingService:
+    return StripeBillingService(
         secret_key=settings.stripe.STRIPE_SECRET_KEY,
         open_source_mode=settings.stripe.OPEN_SOURCE_MODE,
     )
