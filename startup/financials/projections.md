@@ -11,11 +11,13 @@
 
 | Concept | Monthly |
 |---|---|
-| AWS EC2 c6a.xlarge (production) | €110 |
-| AWS RDS + S3 + staging | €40 |
+| AWS EC2 c5a.xlarge (production) | €115 |
+| AWS RDS PostgreSQL t3.micro (prod) | €12 |
+| AWS RDS PostgreSQL t3.micro (staging) | €12 |
+| AWS S3 | €5 |
 | Claude Code | €100 |
-| Stripe + email + misc | €10 |
-| **Total** | **€260/month** |
+| Email + domain + misc | €15 |
+| **Total** | **~€259/month** |
 
 No salaries until Month 7 (September 2026) — all MRR goes to cash reserves.
 
@@ -150,7 +152,7 @@ NIS2 enforcement pressure peaks. DORA fully active in financial sector. CRA phas
 - **Churn in early months** — if beta users don't convert to paid, launch MRR could be lower than conservative
 - **Competition** — larger players (Freshservice, Lansweeper) could add NIS2 compliance features and undercut the positioning
 - **Pricing validation** — employee-based pricing is untested; first 10 customers will tell us if €99-199 is the right range
-- **AWS costs** — production server (c6a.xlarge) runs ~€110/month; if traffic stays low, could downgrade to t3.medium (~€30) to cut costs
+- **AWS costs** — production server (c5a.xlarge) runs ~€115/month; RDS starts on t3.micro (~€12) and scales up as needed
 
 ---
 

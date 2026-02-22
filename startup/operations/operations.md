@@ -12,15 +12,17 @@
 |---|---|---|---|
 | Code & version control | GitHub | Free | Source of truth for everything — code, issues, docs, startup folder |
 | AI development | Claude Code | €100/month | Core of the engineering workflow — specs → implementation → review |
-| Infrastructure | AWS EC2 c6a.xlarge (prod) | ~€110/month | 4 vCPU AMD, 8 GB RAM |
-| Infrastructure | AWS RDS + S3 + staging | ~€40/month | RDS t3.small + S3 + staging EC2 |
+| Infrastructure | AWS EC2 c5a.xlarge (prod) | ~€115/month | 4 vCPU AMD, 8 GB RAM |
+| Infrastructure | AWS RDS PostgreSQL t3.micro (prod) | ~€12/month | Production database (upgrade to t3.small at scale) |
+| Infrastructure | AWS RDS PostgreSQL t3.micro (staging) | ~€12/month | Staging database |
+| Infrastructure | AWS S3 | ~€5/month | File storage, reports, attachments |
 | Error monitoring | Sentry | Free plan | Already configured |
 | Domain | Namecheap / similar | ~€15/year | desksupportmonkey.com |
 | Email (transactional) | Resend or Mailgun | ~€10/month | Magic links, notifications, invoices |
 | Email (company) | Google Workspace or Zoho | ~€5/month | hola@desksupportmonkey.com |
 | Customer support | GitHub Issues | Free | Public issues for bugs/features; private repo for customer tickets |
 | Payments | Stripe | 1.5% + €0.25/tx | No monthly fee |
-| **Total fixed** | | **~€260/month** | Excluding Stripe fees (~1.5% + €0.25/tx) |
+| **Total fixed** | | **~€255/month** | Excluding Stripe fees (~1.5% + €0.25/tx) |
 
 ---
 

@@ -44,11 +44,13 @@ const projections = [
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-slate-700">
-              <tr><td class="px-4 py-3">AWS EC2 c6a.xlarge (production)</td><td class="px-4 py-3 font-medium">~€110</td><td class="px-4 py-3 text-slate-500">4 vCPU AMD EPYC, 8 GB RAM</td></tr>
-              <tr><td class="px-4 py-3">AWS RDS + S3 + staging</td><td class="px-4 py-3 font-medium">~€40</td><td class="px-4 py-3 text-slate-500">RDS t3.small + S3 + staging EC2</td></tr>
+              <tr><td class="px-4 py-3">AWS EC2 c5a.xlarge (production)</td><td class="px-4 py-3 font-medium">~€115</td><td class="px-4 py-3 text-slate-500">4 vCPU AMD, 8 GB RAM</td></tr>
+              <tr><td class="px-4 py-3">AWS RDS PostgreSQL t3.micro (prod)</td><td class="px-4 py-3 font-medium">~€12</td><td class="px-4 py-3 text-slate-500">Production database</td></tr>
+              <tr><td class="px-4 py-3">AWS RDS PostgreSQL t3.micro (staging)</td><td class="px-4 py-3 font-medium">~€12</td><td class="px-4 py-3 text-slate-500">Staging database</td></tr>
+              <tr><td class="px-4 py-3">AWS S3</td><td class="px-4 py-3 font-medium">~€5</td><td class="px-4 py-3 text-slate-500">File storage, reports, attachments</td></tr>
               <tr><td class="px-4 py-3">Claude Code (AI development)</td><td class="px-4 py-3 font-medium">€100</td><td class="px-4 py-3 text-slate-500">Core engineering tool</td></tr>
-              <tr><td class="px-4 py-3">Email, domain, monitoring</td><td class="px-4 py-3 font-medium">~€10</td><td class="px-4 py-3 text-slate-500">Resend + Namecheap + misc</td></tr>
-              <tr class="bg-slate-50"><td class="px-4 py-3 font-bold">Total fixed</td><td class="px-4 py-3 font-bold text-slate-900">~€260</td><td class="px-4 py-3 text-slate-500">Excluding Stripe fees (~1.5%+€0.25/tx)</td></tr>
+              <tr><td class="px-4 py-3">Email, domain, monitoring</td><td class="px-4 py-3 font-medium">~€15</td><td class="px-4 py-3 text-slate-500">Resend + Namecheap + company email + misc</td></tr>
+              <tr class="bg-slate-50"><td class="px-4 py-3 font-bold">Total fixed</td><td class="px-4 py-3 font-bold text-slate-900">~€259</td><td class="px-4 py-3 text-slate-500">Excluding Stripe fees (~1.5%+€0.25/tx)</td></tr>
             </tbody>
           </table>
         </div>
@@ -60,7 +62,7 @@ const projections = [
         <h2 class="text-xl font-bold text-slate-900 mb-4">Key Financial Milestones</h2>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {[
-            { label: 'Break-even', value: '~6 customers', note: 'Covers €260 fixed costs' },
+            { label: 'Break-even', value: '~6 customers', note: 'Covers €259 fixed costs' },
             { label: 'Founder salary', value: '~€2,000 MRR', note: 'Sep 2026 realistic target' },
             { label: 'First hire budget', value: '~€5,000–8,000 MRR', note: 'Head of CS / Customer Success' },
           ].map((m) => (
@@ -76,7 +78,7 @@ const projections = [
       <!-- 12-month projections -->
       <section class="mb-10">
         <h2 class="text-xl font-bold text-slate-900 mb-2">12-Month Revenue Projections</h2>
-        <p class="text-sm text-slate-500 mb-4">Based on average revenue per account of ~€87/month (blended plan mix). Fixed costs €260/month. September 2026 shows NIS2 audit season acceleration.</p>
+        <p class="text-sm text-slate-500 mb-4">Based on average revenue per account of ~€87/month (blended plan mix). Fixed costs ~€259/month. September 2026 shows NIS2 audit season acceleration.</p>
         <div class="overflow-x-auto rounded-xl border border-slate-200">
           <table class="w-full text-sm">
             <thead class="bg-slate-50 text-slate-600">
