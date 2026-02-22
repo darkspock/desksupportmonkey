@@ -11,13 +11,13 @@ type LoginMode = 'magic-link' | 'password';
 function getAuthErrorMessage(
   err: unknown,
   fallback: string,
-  t: (key: string, vars?: Record<string, unknown>, fallback?: { defaultValue: string }) => string,
+  invalidEmailMessage: string,
 ): string {
   const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
   if (typeof detail === 'string' && detail.trim()) {
     const normalized = detail.toLowerCase();
     if (normalized.includes('valid email address')) {
-      return t('auth.login.error_invalid_email');
+      return invalidEmailMessage;
     }
     return detail;
   }
@@ -51,7 +51,11 @@ export default function LoginPage() {
       await api.post('/auth/magic-link', { email });
       setSent(true);
     } catch (err: unknown) {
-      const msg = getAuthErrorMessage(err, t('auth.login.error_send_magic'), t);
+      const msg = getAuthErrorMessage(
+        err,
+        t('auth.login.error_send_magic'),
+        t('auth.login.error_invalid_email'),
+      );
       setError(msg);
     } finally {
       setLoading(false);
@@ -67,7 +71,11 @@ export default function LoginPage() {
       await login(data.data.access_token);
       navigate(returnTo ?? '/', { replace: true });
     } catch (err: unknown) {
-      const msg = getAuthErrorMessage(err, t('auth.login.error_login_failed'), t);
+      const msg = getAuthErrorMessage(
+        err,
+        t('auth.login.error_login_failed'),
+        t('auth.login.error_invalid_email'),
+      );
       setError(msg);
     } finally {
       setLoading(false);
