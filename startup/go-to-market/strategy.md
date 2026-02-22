@@ -14,7 +14,7 @@ We are not just selling IT asset management software. We are running a public ex
 
 > **Can a 1-person company with AI agents compete with a 50-person SaaS team?**
 
-The founder is the Director de Orquesta — the only human. Every line of code is written by Claude Code. Every strategy document, market analysis, financial projection, and piece of content is AI-produced under explicit human direction. The entire company is public on GitHub.
+The founder is the Orchestrator — the only human. Every line of code is written by Claude Code. Every strategy document, market analysis, financial projection, and piece of content is AI-produced under explicit human direction. The entire company is public on GitHub.
 
 This story is not a marketing gimmick. It is the truth. And it is the most shareable thing about this company. The moment someone hears "this product was built and is managed entirely by AI, with one human as the orchestrator," they share it. That is free distribution that no ad budget can buy.
 

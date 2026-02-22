@@ -2,7 +2,7 @@
 
 **Date:** 2026-02-22
 **Philosophy:** Minimal tooling. Every tool must earn its place. If GitHub can do it, we don't add another tool.
-**Team model:** 1 human (Director de Orquesta) + AI agents. No employees. Advisors when needed.
+**Team model:** 1 human (Orchestrator) + AI agents. No employees. Advisors when needed.
 
 ---
 

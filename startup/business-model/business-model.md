@@ -26,7 +26,7 @@ DeskSupportMonkey is two things simultaneously:
 1. An IT asset management platform for NIS2 compliance
 2. A public experiment in AI-managed company operations
 
-The founder is the Director de Orquesta — the only human. Every function — engineering, growth, customer success, operations — is handled by AI agents under explicit human direction. The entire company, including this document, is public on GitHub.
+The founder is the Orchestrator — the only human. Every function — engineering, growth, customer success, operations — is handled by AI agents under explicit human direction. The entire company, including this document, is public on GitHub.
 
 This is not a gimmick. It is the business model thesis: if AI can run a SaaS company at 10% of the traditional cost, the unit economics are unbeatable. We are proving it live.
 
@@ -91,7 +91,7 @@ The AI-managed model improves gross margin significantly vs. a traditional SaaS:
 ## Team Model: Advisors, Not Employees
 
 ### Current state
-- 1 human: Director de Orquesta (founder)
+- 1 human: Orchestrator (founder)
 - AI agents: engineering, growth, customer success, operations, content
 
 ### When human expertise is needed

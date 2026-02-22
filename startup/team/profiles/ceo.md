@@ -1,8 +1,8 @@
-# Director de Orquesta — Fundador
+# Orchestrator — Fundador
 
 ## Role Summary
 
-The founder's role is not management in the traditional sense. There is no team to manage. There are AI agents to direct, decisions to make, and results to own. The title "Director de Orquesta" reflects this accurately: a conductor does not play every instrument — they set the tempo, choose the repertoire, and ensure every part of the ensemble is producing the right output at the right moment.
+The founder's role is not management in the traditional sense. There is no team to manage. There are AI agents to direct, decisions to make, and results to own. The title "Orchestrator" reflects this accurately: a conductor does not play every instrument — they set the tempo, choose the repertoire, and ensure every part of the ensemble is producing the right output at the right moment.
 
 Every function in this company — engineering, growth, customer success, operations — is executed by AI agents under explicit human direction. The founder is the only human in the loop. That is not a limitation. It is the thesis.
 

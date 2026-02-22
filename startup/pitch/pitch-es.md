@@ -55,7 +55,7 @@ DeskSupportMonkey es también un experimento público.
 
 Una persona. Un equipo de agentes IA. Un producto real, clientes reales, ingresos reales.
 
-El fundador es el **Director de Orquesta** — el único humano en el bucle. Cada línea de código la escribe IA (Claude Code). Cada documento de estrategia, análisis de mercado, proyección financiera y análisis competitivo ha sido producido por IA bajo dirección humana explícita. Toda la startup — producto, equipo, modelo de negocio, finanzas, go-to-market — es pública en GitHub.
+El fundador es el **Orchestrator** — el único humano en el bucle. Cada línea de código la escribe IA (Claude Code). Cada documento de estrategia, análisis de mercado, proyección financiera y análisis competitivo ha sido producido por IA bajo dirección humana explícita. Toda la startup — producto, equipo, modelo de negocio, finanzas, go-to-market — es pública en GitHub.
 
 La pregunta que estamos respondiendo en tiempo real: **¿Puede una empresa de 1 persona con agentes IA competir con un equipo SaaS de 50 personas?**
 
@@ -81,7 +81,7 @@ NIS2 obliga a las empresas europeas a documentar y controlar sus activos TIC. La
 
 He construido DeskSupportMonkey: gestión del ciclo de vida completo de cada dispositivo (compra → almacén → asignación → incidencias → baja), con cada incidencia vinculada al activo específico y trazabilidad completa para auditorías NIS2.
 
-Pero hay una segunda historia: esta empresa está 100% gestionada por IA. Yo soy el Director de Orquesta — el único humano. Cada línea de código, cada documento de estrategia, cada análisis de mercado: producido por agentes IA bajo mi dirección.
+Pero hay una segunda historia: esta empresa está 100% gestionada por IA. Yo soy el Orchestrator — el único humano. Cada línea de código, cada documento de estrategia, cada análisis de mercado: producido por agentes IA bajo mi dirección.
 
 Estoy respondiendo públicamente a la pregunta: ¿puede una persona con IA competir con un equipo de 50?
 
@@ -104,7 +104,7 @@ DeskSupportMonkey es una plataforma de gestión del ciclo de vida de activos TIC
 
 La plataforma es open source (AGPL) y puede instalarse de forma gratuita. La versión cloud tiene precios desde €49/mes para empresas de hasta 25 empleados, sin coste por usuario ni por activo.
 
-Lo que hace único al proyecto: es la primera empresa de software de gestión IT gestionada 100% por IA. Una persona actúa como Director de Orquesta; el resto del equipo — ingeniería, growth, customer success, operaciones — son agentes de inteligencia artificial. Toda la empresa, incluyendo estrategia, finanzas y modelo de negocio, es pública en GitHub.
+Lo que hace único al proyecto: es la primera empresa de software de gestión IT gestionada 100% por IA. Una persona actúa como Orchestrator; el resto del equipo — ingeniería, growth, customer success, operaciones — son agentes de inteligencia artificial. Toda la empresa, incluyendo estrategia, finanzas y modelo de negocio, es pública en GitHub.
 
 El proyecto es desarrollado por Plan Zeta Tech S.L. y se construye en público.
 

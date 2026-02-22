@@ -55,7 +55,7 @@ DeskSupportMonkey is also a public experiment.
 
 One person. A team of AI agents. A real product, real customers, real revenue.
 
-The founder is the Director de Orquesta (Orchestrator) — the only human in the loop. Every line of code is written by AI (Claude Code). Every strategy document, market analysis, financial projection, and competitive analysis was produced by AI under explicit human direction. The entire startup — product, team, business model, financials, GTM — is public on GitHub.
+The founder is the Orchestrator (Orchestrator) — the only human in the loop. Every line of code is written by AI (Claude Code). Every strategy document, market analysis, financial projection, and competitive analysis was produced by AI under explicit human direction. The entire startup — product, team, business model, financials, GTM — is public on GitHub.
 
 The question we are answering in real time: **Can a 1-person company with AI agents compete with a 50-person SaaS team?**
 
