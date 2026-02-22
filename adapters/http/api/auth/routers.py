@@ -87,6 +87,20 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
+def _check_billing_not_suspended(user: Optional[User], db: Session) -> None:
+    """Block new login sessions for billing-suspended companies (skip for open source / complimentary)."""
+    if not user or not user.company_id:
+        return
+    from core.config import settings as _settings
+    if _settings.stripe.OPEN_SOURCE_MODE:
+        return
+    from src.company_bc.company.infrastructure.repository import CompanyRepository as _CompanyRepository
+    from src.company_bc.company.domain.billing_enums import BillingStatus
+    company = _CompanyRepository(db).find_by_id(user.company_id)
+    if company and not company.complimentary and company.billing_status == BillingStatus.SUSPENDED:
+        raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail="account_suspended")
+
+
 def _user_response(user: User, company_name: Optional[str] = None) -> dict:
     return UserResponse(
         id=user.id,
@@ -172,6 +186,7 @@ def verify_magic_link(
 
     payload = JWTService().decode_token(access_token)
     user = user_repo.find_by_id(payload["sub"])
+    _check_billing_not_suspended(user, db)
     password_set = user.has_password if user else False
     return {"data": {**TokenResponse(access_token=access_token).model_dump(), "password_set": password_set}}
 
@@ -203,6 +218,9 @@ def password_login(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account is inactive",
         )
+    payload = JWTService().decode_token(access_token)
+    user = user_repo.find_by_id(payload["sub"])
+    _check_billing_not_suspended(user, db)
     return {"data": TokenResponse(access_token=access_token).model_dump()}
 
 
@@ -240,7 +258,9 @@ def set_password(
 @router.post("/oauth/google", response_model=None)
 def google_oauth_login(
     body: OAuthLoginRequest,
+    db: Session = Depends(get_db),
     service: GoogleOAuthLoginService = Depends(get_google_oauth_login_service),
+    user_repo: UserRepository = Depends(get_user_repo),
 ):
     """Exchange a Google ID token for a DeskSupportMonkey JWT."""
     try:
@@ -260,13 +280,18 @@ def google_oauth_login(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Your company is not registered yet")
     except OAuthProviderAlreadyLinkedError:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This Google account is already linked to another user")
+    payload = JWTService().decode_token(access_token)
+    user = user_repo.find_by_id(payload["sub"])
+    _check_billing_not_suspended(user, db)
     return {"data": TokenResponse(access_token=access_token).model_dump()}
 
 
 @router.post("/oauth/microsoft", response_model=None)
 def microsoft_oauth_login(
     body: OAuthLoginRequest,
+    db: Session = Depends(get_db),
     service: MicrosoftOAuthLoginService = Depends(get_microsoft_oauth_login_service),
+    user_repo: UserRepository = Depends(get_user_repo),
 ):
     """Exchange a Microsoft ID token for a DeskSupportMonkey JWT."""
     try:
@@ -286,6 +311,9 @@ def microsoft_oauth_login(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Your company is not registered yet")
     except OAuthProviderAlreadyLinkedError:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This Microsoft account is already linked to another user")
+    payload = JWTService().decode_token(access_token)
+    user = user_repo.find_by_id(payload["sub"])
+    _check_billing_not_suspended(user, db)
     return {"data": TokenResponse(access_token=access_token).model_dump()}
 
 

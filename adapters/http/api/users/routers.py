@@ -86,6 +86,26 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/users", tags=["users"])
 
 
+def _check_user_limit_not_reached(company_id: str, company_repo: CompanyRepository) -> None:
+    """Block adding new users when the plan limit is reached (skip for open source / complimentary)."""
+    from core.config import settings as _settings
+    if _settings.stripe.OPEN_SOURCE_MODE:
+        return
+    from src.company_bc.company.domain.plan_gate import PlanGate
+    company = company_repo.find_by_id(company_id)
+    if not company or company.complimentary:
+        return
+    limit = PlanGate.get_user_limit(company.plan)
+    if limit is None:
+        return
+    current = company_repo.count_users(company_id)
+    if current >= limit:
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail="plan_limit_reached",
+        )
+
+
 def _to_response(user: User) -> UserDetailResponse:
     return UserDetailResponse(
         id=user.id,
@@ -196,6 +216,7 @@ def invite_user(
     magic_link_repo: MagicLinkRepository = Depends(get_magic_link_repo),
 ):
     company_id = _require_company_id(current_user)
+    _check_user_limit_not_reached(company_id, company_repo)
     email = body.email.lower().strip()
     invite_role = UserRole.EMPLOYEE
     if body.role:
@@ -274,6 +295,7 @@ async def import_users_confirm(
     employee_role_repo=Depends(get_employee_role_repo),
 ):
     company_id = _require_company_id(current_user)
+    _check_user_limit_not_reached(company_id, company_repo)
     if file.size and file.size > 1_048_576:
         raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="File size exceeds 1MB limit")
 
@@ -333,6 +355,7 @@ def quick_create_employee(
     company_repo: CompanyRepository = Depends(get_company_repo),
 ):
     company_id = _require_company_id(current_user)
+    _check_user_limit_not_reached(company_id, company_repo)
     email = body.email.lower().strip()
     _validate_invite_email(email, company_id, company_repo)
     existing = user_repo.find_by_email(email)

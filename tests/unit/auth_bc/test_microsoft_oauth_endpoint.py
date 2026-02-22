@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from adapters.http.api.auth import dependencies as auth_deps
 from app import app
 from core.database import get_db
+from core.jwt import JWTService
 from src.auth_bc.user.application.commands.microsoft_oauth_login import (
     CompanyRestrictedError,
     InvalidEmailDomainError,
@@ -25,7 +26,12 @@ def clean_overrides():
 
 
 def _client_with_service(mock_service):
+    mock_user = MagicMock()
+    mock_user.company_id = None
+    mock_user_repo = MagicMock()
+    mock_user_repo.find_by_id.return_value = mock_user
     app.dependency_overrides[get_db] = lambda: MagicMock()
+    app.dependency_overrides[auth_deps.get_user_repo] = lambda: mock_user_repo
     app.dependency_overrides[auth_deps.get_microsoft_oauth_login_service] = lambda: mock_service
     return TestClient(app)
 
@@ -33,13 +39,14 @@ def _client_with_service(mock_service):
 class TestMicrosoftOAuthEndpoint:
     def test_success_returns_token(self):
         mock_service = MagicMock(spec=MicrosoftOAuthLoginService)
-        mock_service.handle.return_value = "jwt_token_here"
+        real_token = JWTService().create_token("user-id", None, "admin")
+        mock_service.handle.return_value = real_token
         client = _client_with_service(mock_service)
 
         resp = client.post("/api/v1/auth/oauth/microsoft", json={"id_token": "valid_ms_token"})
 
         assert resp.status_code == 200
-        assert resp.json()["data"]["access_token"] == "jwt_token_here"
+        assert resp.json()["data"]["access_token"] == real_token
 
     def test_not_configured_returns_501(self):
         mock_service = MagicMock(spec=MicrosoftOAuthLoginService)
