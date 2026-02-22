@@ -2,7 +2,7 @@
 
 **Epic:** [requirements.md](requirements.md)
 **Date:** 2026-02-22
-**Total Features:** 3
+**Total Features:** 4
 
 ---
 
@@ -15,6 +15,8 @@ E24 is sliced into 3 features following a dependency chain: first build the OAut
 ## Dependency Graph
 
 ```
+Fx: Unconfirmed Domain Reclaim
+ │
 F0: Backend OAuth Infrastructure
  │
  ├── F1: Google Login (Backend + Frontend)
@@ -22,7 +24,7 @@ F0: Backend OAuth Infrastructure
  └── F2: Microsoft Login (Backend + Frontend)
 ```
 
-F1 and F2 both depend on F0 but are independent of each other.
+Fx adds `email_verified_at` to User, which F0's OAuthLoginService marks on first OAuth login. F1 and F2 both depend on F0 but are independent of each other.
 
 ---
 
@@ -30,9 +32,10 @@ F1 and F2 both depend on F0 but are independent of each other.
 
 | # | Feature | Dependencies | Value Delivered | Complexity | Status |
 |---|---|---|---|---|---|
-| F0 | Backend OAuth Infrastructure | E0 | User entity extended, OAuth config, provider availability endpoint, shared login logic | S | Pending |
-| F1 | Google Login | F0 | Users can log in with Google, frontend button, token verification | M | Pending |
-| F2 | Microsoft Login | F0 | Users can log in with Microsoft, frontend button, token verification | M | Pending |
+| Fx | Unconfirmed Domain Reclaim | — | `email_verified_at` on User, allow re-registering domains with no confirmed users | XS | Done |
+| F0 | Backend OAuth Infrastructure | Fx | User entity extended, OAuth config, provider availability endpoint, shared login logic | S | Done |
+| F1 | Google Login | F0 | Users can log in with Google, frontend button, token verification | M | Done |
+| F2 | Microsoft Login | F0 | Users can log in with Microsoft, frontend button, token verification | M | Done |
 
 ---
 

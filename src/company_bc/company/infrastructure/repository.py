@@ -115,6 +115,16 @@ class CompanyRepository(CompanyRepositoryInterface):
         except Exception:
             return 0
 
+    def delete(self, company_id: str) -> None:
+        self.session.execute(
+            delete(CompanyEmailDomainModel)
+            .where(CompanyEmailDomainModel.company_id == company_id)
+        )
+        self.session.execute(
+            delete(CompanyModel).where(CompanyModel.id == company_id)
+        )
+        self.session.flush()
+
     def _to_entity(self, model: CompanyModel) -> Company:
         domains = self.session.execute(
             select(CompanyEmailDomainModel.domain)

@@ -60,11 +60,18 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
             name=command.name, email_domains=command.email_domains, id=command.id,
         )
 
-        # Check domain uniqueness
+        # Check domain uniqueness — allow reclaiming if the owning company has no confirmed users
         for domain in company.email_domains:
-            owner = self.company_repo.find_domain(domain)
-            if owner:
-                raise DomainAlreadyTakenError(domain)
+            owner_id = self.company_repo.find_domain(domain)
+            if owner_id:
+                if self.user_repo.has_any_verified_user_in_company(owner_id):
+                    raise DomainAlreadyTakenError(domain)
+                # No confirmed users: delete the unconfirmed company so this registration can proceed
+                logger.info(
+                    "Reclaiming domain '%s' from unconfirmed company %s", domain, owner_id
+                )
+                self.user_repo.delete_by_company(owner_id)
+                self.company_repo.delete(owner_id)
 
         self.company_repo.save(company)
         self.company_repo.save_domains(company.id, company.email_domains)

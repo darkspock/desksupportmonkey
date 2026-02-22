@@ -7,17 +7,23 @@ from sqlalchemy.orm import Session
 from adapters.http.api.auth.dependencies import (
     get_company_repo,
     get_current_user,
+    get_google_oauth_login_service,
     get_magic_link_repo,
+    get_microsoft_oauth_login_service,
+    get_oauth_settings,
     get_user_repo,
 )
 from adapters.http.api.auth.schemas import (
     MagicLinkRequest,
+    OAuthLoginRequest,
+    OAuthProvidersResponse,
     PasswordLoginRequest,
     SetPasswordRequest,
     TokenResponse,
     UserResponse,
     VerifyRequest,
 )
+from core.config import OAuthSettings
 from core.database import get_db
 from core.email import get_email_service
 from core.jwt import JWTService
@@ -45,6 +51,20 @@ from src.auth_bc.user.application.commands.password_login import (
     PasswordLoginRequest as PasswordLoginInput,
     PasswordLoginService,
 )
+from src.auth_bc.user.application.commands.google_oauth_login import (
+    GoogleEmailNotVerified,
+    GoogleNotConfiguredError,
+    GoogleOAuthLoginRequest,
+    GoogleOAuthLoginService,
+    GoogleTokenInvalidError,
+)
+from src.auth_bc.user.application.commands.microsoft_oauth_login import (
+    MicrosoftMissingEmail,
+    MicrosoftNotConfiguredError,
+    MicrosoftOAuthLoginRequest,
+    MicrosoftOAuthLoginService,
+    MicrosoftTokenInvalidError,
+)
 from src.auth_bc.user.application.commands.set_password import (
     NotAdminError,
     SetPasswordCommand,
@@ -52,7 +72,13 @@ from src.auth_bc.user.application.commands.set_password import (
     UserNotFoundError as SetPasswordUserNotFoundError,
     WeakPasswordError,
 )
+from src.auth_bc.user.application.services.oauth_login_service import (
+    CompanyRestrictedError as OAuthCompanyRestrictedError,
+    InvalidEmailDomainError as OAuthInvalidEmailDomainError,
+    UserDeactivatedError,
+)
 from src.auth_bc.user.domain.entities import User
+from src.auth_bc.user.domain.exceptions import OAuthProviderAlreadyLinkedError
 from src.auth_bc.user.infrastructure.repository import UserRepository
 from src.company_bc.company.infrastructure.repository import CompanyRepository
 
@@ -72,7 +98,17 @@ def _user_response(user: User, company_name: Optional[str] = None) -> dict:
         employee_role_id=user.employee_role_id,
         is_active=user.is_active,
         password_set=user.has_password,
+        has_oauth=bool(user.google_id or user.microsoft_id),
     ).model_dump()
+
+
+@router.get("/oauth/providers", response_model=None)
+def get_oauth_providers(oauth: OAuthSettings = Depends(get_oauth_settings)):
+    """Return which OAuth providers are enabled on this deployment."""
+    return {"data": OAuthProvidersResponse(
+        google=bool(oauth.GOOGLE_CLIENT_ID),
+        microsoft=bool(oauth.MICROSOFT_CLIENT_ID),
+    ).model_dump()}
 
 
 @router.post("/magic-link", status_code=status.HTTP_200_OK)
@@ -199,6 +235,58 @@ def set_password(
             detail="Password must be at least 8 characters",
         )
     return {"data": {"message": "Password set successfully"}}
+
+
+@router.post("/oauth/google", response_model=None)
+def google_oauth_login(
+    body: OAuthLoginRequest,
+    service: GoogleOAuthLoginService = Depends(get_google_oauth_login_service),
+):
+    """Exchange a Google ID token for a DeskSupportMonkey JWT."""
+    try:
+        access_token = service.handle(GoogleOAuthLoginRequest(id_token=body.id_token))
+    except GoogleNotConfiguredError:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="Google login is not enabled on this server",
+        )
+    except (GoogleTokenInvalidError, GoogleEmailNotVerified) as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc))
+    except UserDeactivatedError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is inactive")
+    except OAuthCompanyRestrictedError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Company access is currently restricted")
+    except OAuthInvalidEmailDomainError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Your company is not registered yet")
+    except OAuthProviderAlreadyLinkedError:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This Google account is already linked to another user")
+    return {"data": TokenResponse(access_token=access_token).model_dump()}
+
+
+@router.post("/oauth/microsoft", response_model=None)
+def microsoft_oauth_login(
+    body: OAuthLoginRequest,
+    service: MicrosoftOAuthLoginService = Depends(get_microsoft_oauth_login_service),
+):
+    """Exchange a Microsoft ID token for a DeskSupportMonkey JWT."""
+    try:
+        access_token = service.handle(MicrosoftOAuthLoginRequest(id_token=body.id_token))
+    except MicrosoftNotConfiguredError:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="Microsoft login is not enabled on this server",
+        )
+    except (MicrosoftTokenInvalidError, MicrosoftMissingEmail) as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc))
+    except UserDeactivatedError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is inactive")
+    except OAuthCompanyRestrictedError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Company access is currently restricted")
+    except OAuthInvalidEmailDomainError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Your company is not registered yet")
+    except OAuthProviderAlreadyLinkedError:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This Microsoft account is already linked to another user")
+    return {"data": TokenResponse(access_token=access_token).model_dump()}
 
 
 @router.get("/me")

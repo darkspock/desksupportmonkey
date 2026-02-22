@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 from core.jwt import JWTService
 from src.auth_bc.magic_link.domain.repository import MagicLinkRepositoryInterface
@@ -77,6 +78,7 @@ class VerifyMagicLinkService:
                 role=UserRole.EMPLOYEE,
                 company_id=company_id,
             )
+            user.email_verified_at = datetime.now(timezone.utc)
             self.user_repo.save(user)
             logger.info("Created new user %s with employee role", user.email)
         else:
@@ -85,8 +87,13 @@ class VerifyMagicLinkService:
             if result is not None and not result[1]:
                 raise CompanyRestrictedError("Company access is currently restricted")
 
-        if not user.is_active:
-            raise InvalidTokenError("User account is deactivated")
+            if not user.is_active:
+                raise InvalidTokenError("User account is deactivated")
+
+            # Mark email as verified on first login
+            if user.email_verified_at is None:
+                user.email_verified_at = datetime.now(timezone.utc)
+                self.user_repo.save(user)
 
         # Generate JWT
         token = self.jwt_service.create_token(

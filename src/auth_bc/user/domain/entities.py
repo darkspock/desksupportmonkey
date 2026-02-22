@@ -18,6 +18,9 @@ class User:
     employee_role_id: Optional[str] = None
     is_active: bool = True
     password_hash: Optional[str] = None
+    email_verified_at: Optional[datetime] = None
+    google_id: Optional[str] = None
+    microsoft_id: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -61,6 +64,12 @@ class User:
 
     def set_password_hash(self, hashed: str) -> None:
         self.password_hash = hashed
+
+    def link_google(self, google_id: str) -> None:
+        self.google_id = google_id
+
+    def link_microsoft(self, microsoft_id: str) -> None:
+        self.microsoft_id = microsoft_id
 
     @property
     def has_password(self) -> bool:

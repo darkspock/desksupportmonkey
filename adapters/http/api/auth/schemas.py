@@ -29,6 +29,15 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class OAuthLoginRequest(BaseModel):
+    id_token: str
+
+
+class OAuthProvidersResponse(BaseModel):
+    google: bool
+    microsoft: bool
+
+
 class UserResponse(BaseModel):
     id: str
     email: str
@@ -39,3 +48,4 @@ class UserResponse(BaseModel):
     employee_role_id: Optional[str] = None
     is_active: bool
     password_set: bool = False
+    has_oauth: bool = False

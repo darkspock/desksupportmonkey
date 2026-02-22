@@ -12,6 +12,7 @@ export interface User {
   employee_role_id?: string | null;
   is_active: boolean;
   password_set?: boolean;
+  has_oauth?: boolean;
   created_at: string;
 }
 

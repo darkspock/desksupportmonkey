@@ -26,6 +26,9 @@ class UserRepository(UserRepositoryInterface):
             existing.employee_role_id = user.employee_role_id
             existing.is_active = user.is_active
             existing.password_hash = user.password_hash
+            existing.email_verified_at = user.email_verified_at
+            existing.google_id = user.google_id
+            existing.microsoft_id = user.microsoft_id
         else:
             model = UserModel(
                 id=user.id,
@@ -37,6 +40,9 @@ class UserRepository(UserRepositoryInterface):
                 employee_role_id=user.employee_role_id,
                 is_active=user.is_active,
                 password_hash=user.password_hash,
+                email_verified_at=user.email_verified_at,
+                google_id=user.google_id,
+                microsoft_id=user.microsoft_id,
             )
             self.session.add(model)
         self.session.flush()
@@ -161,6 +167,34 @@ class UserRepository(UserRepositoryInterface):
             ).scalar()
         ) or 0
 
+    def find_by_google_id(self, google_id: str) -> Optional[User]:
+        model = self.session.execute(
+            select(UserModel).where(UserModel.google_id == google_id)
+        ).scalar_one_or_none()
+        return self._to_entity(model) if model else None
+
+    def find_by_microsoft_id(self, microsoft_id: str) -> Optional[User]:
+        model = self.session.execute(
+            select(UserModel).where(UserModel.microsoft_id == microsoft_id)
+        ).scalar_one_or_none()
+        return self._to_entity(model) if model else None
+
+    def has_any_verified_user_in_company(self, company_id: str) -> bool:
+        result = self.session.execute(
+            select(UserModel.id).where(
+                UserModel.company_id == company_id,
+                UserModel.email_verified_at.is_not(None),
+            ).limit(1)
+        ).scalar_one_or_none()
+        return result is not None
+
+    def delete_by_company(self, company_id: str) -> None:
+        from sqlalchemy import delete as sa_delete
+        self.session.execute(
+            sa_delete(UserModel).where(UserModel.company_id == company_id)
+        )
+        self.session.flush()
+
     @staticmethod
     def _to_entity(model: UserModel) -> User:
         return User(
@@ -173,6 +207,9 @@ class UserRepository(UserRepositoryInterface):
             employee_role_id=model.employee_role_id,
             is_active=model.is_active,
             password_hash=model.password_hash,
+            email_verified_at=model.email_verified_at,
+            google_id=model.google_id,
+            microsoft_id=model.microsoft_id,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )

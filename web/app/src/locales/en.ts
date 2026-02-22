@@ -25,6 +25,7 @@ const en: Record<string, string> = {
   'common.placeholder_domains': 'company.com, company.org',
   'common.placeholder_domains_short': 'company.com, corp.com',
   'common.placeholder_name': 'Full name',
+  'common.and': 'and',
 
   'header.open_navigation': 'Open navigation menu',
   'header.close_navigation': 'Close navigation',
@@ -97,6 +98,13 @@ const en: Record<string, string> = {
   'auth.login.error_send_magic': 'Failed to send magic link',
   'auth.login.error_login_failed': 'Login failed',
   'auth.login.error_invalid_email': 'Enter a valid work email.',
+  'auth.login.terms_notice': 'By signing in, you agree to our',
+  'auth.login.or': 'Or continue with',
+  'auth.login.google_signin': 'Sign in with Google',
+  'auth.login.error_google_failed': 'Google sign-in failed',
+  'auth.login.error_oauth_generic': 'Sign-in failed. Please try again.',
+  'auth.login.microsoft_signin': 'Sign in with Microsoft',
+  'auth.login.error_microsoft_failed': 'Microsoft sign-in failed',
 
   'auth.register.title': 'Register your company',
   'auth.register.subtitle': 'Create a new company workspace and admin account.',
@@ -113,6 +121,10 @@ const en: Record<string, string> = {
   'auth.register.error_invalid_domain': '"{{domain}}" is not a valid domain. Enter just the domain (e.g. example.com), not a full email address.',
   'auth.register.error_blocked_domain': 'Public email providers like "{{domain}}" are not allowed. Use your company domain.',
   'auth.register.error_registration_failed': 'Registration failed',
+  'auth.register.accept_terms_prefix': 'I accept the',
+
+  'auth.terms.link': 'Terms & Conditions',
+  'auth.privacy.link': 'Privacy Policy',
 
   'auth.verify.title': 'Verify login link',
   'auth.verify.subtitle': 'We are validating your secure access token.',

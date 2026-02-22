@@ -60,3 +60,23 @@ class UserRepositoryInterface(ABC):
     def count_admins_by_company(self, company_id: str) -> int:
         """Count active admin users in a company."""
         ...
+
+    @abstractmethod
+    def find_by_google_id(self, google_id: str) -> Optional[User]:
+        """Find user by Google provider ID. Returns None if not found."""
+        ...
+
+    @abstractmethod
+    def find_by_microsoft_id(self, microsoft_id: str) -> Optional[User]:
+        """Find user by Microsoft provider ID. Returns None if not found."""
+        ...
+
+    @abstractmethod
+    def has_any_verified_user_in_company(self, company_id: str) -> bool:
+        """Return True if any user in the company has email_verified_at set."""
+        ...
+
+    @abstractmethod
+    def delete_by_company(self, company_id: str) -> None:
+        """Delete all users belonging to a company."""
+        ...

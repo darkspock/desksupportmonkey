@@ -5,6 +5,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from sqlalchemy.orm import Session
 
+from core.config import OAuthSettings, settings
 from core.database import get_db
 from core.jwt import JWTService, InvalidTokenError, ExpiredTokenError
 from core.tenant import set_tenant
@@ -73,6 +74,48 @@ def require_role(minimum_role: UserRole) -> Callable:
         return current_user
 
     return role_checker
+
+
+def get_oauth_settings() -> OAuthSettings:
+    return settings.oauth
+
+
+def get_oauth_login_service(db: Session = Depends(get_db)):
+    from src.auth_bc.user.application.services.oauth_login_service import OAuthLoginService
+    from src.auth_bc.company_lookup.infrastructure.service import CompanyLookupService
+    from core.jwt import JWTService as _JWTService
+
+    return OAuthLoginService(
+        user_repo=UserRepository(db),
+        company_lookup=CompanyLookupService(db),
+        jwt_service=_JWTService(),
+    )
+
+
+def get_microsoft_oauth_login_service(db: Session = Depends(get_db)):
+    from src.auth_bc.user.application.commands.microsoft_oauth_login import MicrosoftOAuthLoginService
+    from src.auth_bc.company_lookup.infrastructure.service import CompanyLookupService
+    from core.jwt import JWTService as _JWTService
+
+    return MicrosoftOAuthLoginService(
+        user_repo=UserRepository(db),
+        company_lookup=CompanyLookupService(db),
+        jwt_service=_JWTService(),
+        oauth_settings=settings.oauth,
+    )
+
+
+def get_google_oauth_login_service(db: Session = Depends(get_db)):
+    from src.auth_bc.user.application.commands.google_oauth_login import GoogleOAuthLoginService
+    from src.auth_bc.company_lookup.infrastructure.service import CompanyLookupService
+    from core.jwt import JWTService as _JWTService
+
+    return GoogleOAuthLoginService(
+        user_repo=UserRepository(db),
+        company_lookup=CompanyLookupService(db),
+        jwt_service=_JWTService(),
+        oauth_settings=settings.oauth,
+    )
 
 
 def get_user_repo(db: Session = Depends(get_db)) -> UserRepository:

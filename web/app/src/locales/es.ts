@@ -25,6 +25,7 @@ const es: Record<string, string> = {
   'common.placeholder_domains': 'empresa.com, empresa.org',
   'common.placeholder_domains_short': 'empresa.com, corp.com',
   'common.placeholder_name': 'Nombre completo',
+  'common.and': 'y',
 
   'header.open_navigation': 'Abrir navegación',
   'header.close_navigation': 'Cerrar navegación',
@@ -78,8 +79,8 @@ const es: Record<string, string> = {
 
   'auth.login.title': 'Iniciar sesión',
   'auth.login.subtitle': 'Accede de forma segura al espacio de trabajo de tu compañía.',
-  'auth.login.magic_link': 'Enlace mágico',
-  'auth.login.password': 'Contraseña',
+  'auth.login.magic_link': 'Empleados',
+  'auth.login.password': 'Admins',
   'auth.login.magic_sent': 'Enlace mágico enviado',
   'auth.login.magic_sent_desc': 'Revisa tu bandeja de entrada y abre el enlace.',
   'auth.login.send_another': 'Enviar otro enlace',
@@ -88,7 +89,7 @@ const es: Record<string, string> = {
   'auth.login.password_label': 'Contraseña',
   'auth.login.password_placeholder': 'Contraseña',
   'auth.login.sending': 'Enviando...',
-  'auth.login.send_magic_link': 'Enviar enlace mágico',
+  'auth.login.send_magic_link': 'Login por Email',
   'auth.login.signing_in': 'Iniciando sesión...',
   'auth.login.sign_in': 'Entrar',
   'auth.login.password_info': 'El acceso con contraseña está disponible para cuentas admin.',
@@ -97,6 +98,13 @@ const es: Record<string, string> = {
   'auth.login.error_send_magic': 'No se pudo enviar el enlace mágico',
   'auth.login.error_login_failed': 'Error de inicio de sesión',
   'auth.login.error_invalid_email': 'Introduce un correo de trabajo válido.',
+  'auth.login.terms_notice': 'Al iniciar sesión, aceptas nuestros',
+  'auth.login.or': 'O continuar con',
+  'auth.login.google_signin': 'Entrar con Google',
+  'auth.login.error_google_failed': 'Falló el inicio de sesión con Google',
+  'auth.login.error_oauth_generic': 'Error al iniciar sesión. Inténtalo de nuevo.',
+  'auth.login.microsoft_signin': 'Entrar con Microsoft',
+  'auth.login.error_microsoft_failed': 'Falló el inicio de sesión con Microsoft',
 
   'auth.register.title': 'Registrar tu compañía',
   'auth.register.subtitle': 'Crea un nuevo espacio de trabajo y cuenta administradora.',
@@ -113,6 +121,10 @@ const es: Record<string, string> = {
   'auth.register.error_invalid_domain': '"{{domain}}" no es un dominio válido. Introduce solo el dominio (ej. ejemplo.com), no un email completo.',
   'auth.register.error_blocked_domain': 'Proveedores de correo público como "{{domain}}" no están permitidos. Usa el dominio de tu empresa.',
   'auth.register.error_registration_failed': 'Registro fallido',
+  'auth.register.accept_terms_prefix': 'Acepto los',
+
+  'auth.terms.link': 'Términos y Condiciones',
+  'auth.privacy.link': 'Política de Privacidad',
 
   'auth.verify.title': 'Verificar enlace de acceso',
   'auth.verify.subtitle': 'Estamos validando tu token de acceso seguro.',

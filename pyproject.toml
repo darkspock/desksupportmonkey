@@ -38,6 +38,8 @@ dependencies = [
     # Monitoring
     "sentry-sdk[fastapi]>=2.0.0",
     "mcp>=1.26.0,<2.0.0",
+    "google-auth>=2.38.0",
+    "requests>=2.32.5",
 ]
 
 [project.optional-dependencies]

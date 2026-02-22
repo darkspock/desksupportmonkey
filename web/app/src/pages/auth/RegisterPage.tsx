@@ -17,6 +17,7 @@ export default function RegisterPage() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   if (user) return <Navigate to={getDefaultRouteForRole(user.role)} replace />;
 
@@ -123,9 +124,25 @@ export default function RegisterPage() {
             <p className="mt-1 text-xs text-muted-foreground">{t('auth.register.allowed_domains_help')}</p>
           </div>
 
+          <label htmlFor="accept-terms" className="flex items-start gap-2.5 cursor-pointer">
+            <input
+              id="accept-terms"
+              type="checkbox"
+              checked={acceptedTerms}
+              onChange={(e) => setAcceptedTerms(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-primary"
+            />
+            <span className="text-sm text-muted-foreground">
+              {t('auth.register.accept_terms_prefix')}{' '}
+              <a href="https://www.desksupportmonkey.com/terms/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{t('auth.terms.link')}</a>
+              {' '}{t('common.and')}{' '}
+              <a href="https://www.desksupportmonkey.com/privacy/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{t('auth.privacy.link')}</a>
+            </span>
+          </label>
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !acceptedTerms}
             className="h-9 w-full rounded-md bg-primary text-sm font-medium text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
           >
             {loading ? t('auth.register.registering') : t('auth.register.register_company')}

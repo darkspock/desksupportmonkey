@@ -45,6 +45,14 @@ class AISettings(BaseSettings):
     )
 
 
+class OAuthSettings(BaseSettings):
+    GOOGLE_CLIENT_ID: str = ""
+    MICROSOFT_CLIENT_ID: str = ""
+    MICROSOFT_TENANT_ID: str = "common"
+
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+
 class MCPSettings(BaseSettings):
     MCP_ENABLED: bool = False
     MCP_TRANSPORT: str = "stdio"
@@ -100,6 +108,9 @@ class Settings(BaseSettings):
 
     # MCP settings (nested)
     mcp: MCPSettings = MCPSettings()
+
+    # OAuth settings (nested)
+    oauth: OAuthSettings = OAuthSettings()
 
     @property
     def DATABASE_URL(self) -> str:

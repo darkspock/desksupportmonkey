@@ -18,6 +18,16 @@ class UserWriter(ABC):
         """Persist a user (insert or update)."""
         ...
 
+    @abstractmethod
+    def has_any_verified_user_in_company(self, company_id: str) -> bool:
+        """Return True if any user in the company has confirmed their email."""
+        ...
+
+    @abstractmethod
+    def delete_by_company(self, company_id: str) -> None:
+        """Delete all users belonging to a company."""
+        ...
+
 
 class MagicLinkWriter(ABC):
     """Port for magic link persistence from company_bc.
