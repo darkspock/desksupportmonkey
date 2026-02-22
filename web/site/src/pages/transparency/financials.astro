@@ -1,25 +1,66 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
-const projections = [
-  { month: 'Mar 2026', conservative: { customers: 2, mrr: 174 }, realistic: { customers: 5, mrr: 435 }, optimistic: { customers: 7, mrr: 609 } },
-  { month: 'Apr 2026', conservative: { customers: 3, mrr: 261 }, realistic: { customers: 7, mrr: 609 }, optimistic: { customers: 10, mrr: 870 } },
-  { month: 'May 2026', conservative: { customers: 4, mrr: 348 }, realistic: { customers: 9, mrr: 783 }, optimistic: { customers: 14, mrr: 1218 } },
-  { month: 'Jun 2026', conservative: { customers: 5, mrr: 435 }, realistic: { customers: 11, mrr: 957 }, optimistic: { customers: 18, mrr: 1566 } },
-  { month: 'Jul 2026', conservative: { customers: 7, mrr: 609 }, realistic: { customers: 15, mrr: 1305 }, optimistic: { customers: 24, mrr: 2088 } },
-  { month: 'Aug 2026', conservative: { customers: 9, mrr: 783 }, realistic: { customers: 19, mrr: 1653 }, optimistic: { customers: 31, mrr: 2697 } },
-  { month: 'Sep 2026', conservative: { customers: 12, mrr: 1044 }, realistic: { customers: 25, mrr: 2175 }, optimistic: { customers: 40, mrr: 3480 } },
-  { month: 'Oct 2026', conservative: { customers: 16, mrr: 1392 }, realistic: { customers: 33, mrr: 2871 }, optimistic: { customers: 52, mrr: 4524 } },
-  { month: 'Nov 2026', conservative: { customers: 21, mrr: 1827 }, realistic: { customers: 43, mrr: 3741 }, optimistic: { customers: 67, mrr: 5829 } },
-  { month: 'Dec 2026', conservative: { customers: 26, mrr: 2262 }, realistic: { customers: 54, mrr: 4698 }, optimistic: { customers: 83, mrr: 7221 } },
-  { month: 'Jan 2027', conservative: { customers: 31, mrr: 2697 }, realistic: { customers: 66, mrr: 5742 }, optimistic: { customers: 102, mrr: 8874 } },
-  { month: 'Feb 2027', conservative: { customers: 36, mrr: 3132 }, realistic: { customers: 79, mrr: 6873 }, optimistic: { customers: 123, mrr: 10701 } },
+const FIXED_COSTS = 259;
+
+const rawData = [
+  { month: 'Mar 2026', nis2: false, conservative: { customers: 2, mrr: 174 }, realistic: { customers: 5, mrr: 435 }, optimistic: { customers: 7, mrr: 609 } },
+  { month: 'Apr 2026', nis2: false, conservative: { customers: 3, mrr: 261 }, realistic: { customers: 7, mrr: 609 }, optimistic: { customers: 10, mrr: 870 } },
+  { month: 'May 2026', nis2: false, conservative: { customers: 4, mrr: 348 }, realistic: { customers: 9, mrr: 783 }, optimistic: { customers: 14, mrr: 1218 } },
+  { month: 'Jun 2026', nis2: false, conservative: { customers: 5, mrr: 435 }, realistic: { customers: 11, mrr: 957 }, optimistic: { customers: 18, mrr: 1566 } },
+  { month: 'Jul 2026', nis2: false, conservative: { customers: 7, mrr: 609 }, realistic: { customers: 15, mrr: 1305 }, optimistic: { customers: 24, mrr: 2088 } },
+  { month: 'Aug 2026', nis2: false, conservative: { customers: 9, mrr: 783 }, realistic: { customers: 19, mrr: 1653 }, optimistic: { customers: 31, mrr: 2697 } },
+  { month: 'Sep 2026', nis2: true,  conservative: { customers: 12, mrr: 1044 }, realistic: { customers: 25, mrr: 2175 }, optimistic: { customers: 40, mrr: 3480 } },
+  { month: 'Oct 2026', nis2: false, conservative: { customers: 16, mrr: 1392 }, realistic: { customers: 33, mrr: 2871 }, optimistic: { customers: 52, mrr: 4524 } },
+  { month: 'Nov 2026', nis2: false, conservative: { customers: 21, mrr: 1827 }, realistic: { customers: 43, mrr: 3741 }, optimistic: { customers: 67, mrr: 5829 } },
+  { month: 'Dec 2026', nis2: false, conservative: { customers: 26, mrr: 2262 }, realistic: { customers: 54, mrr: 4698 }, optimistic: { customers: 83, mrr: 7221 } },
+  { month: 'Jan 2027', nis2: false, conservative: { customers: 31, mrr: 2697 }, realistic: { customers: 66, mrr: 5742 }, optimistic: { customers: 102, mrr: 8874 } },
+  { month: 'Feb 2027', nis2: false, conservative: { customers: 36, mrr: 3132 }, realistic: { customers: 79, mrr: 6873 }, optimistic: { customers: 123, mrr: 10701 } },
 ];
+
+type ScenarioKey = 'conservative' | 'realistic' | 'optimistic';
+
+function buildRows(scenario: ScenarioKey) {
+  let cumulative = 0;
+  let monthlyBEFound = false;
+  let cumulativeBEFound = false;
+  return rawData.map((row) => {
+    const mrr = row[scenario].mrr;
+    const cashflow = mrr - FIXED_COSTS;
+    cumulative += cashflow;
+    const monthlyBE = !monthlyBEFound && cashflow >= 0;
+    const cumulativeBE = !cumulativeBEFound && cumulative >= 0;
+    if (monthlyBE) monthlyBEFound = true;
+    if (cumulativeBE) cumulativeBEFound = true;
+    return {
+      month: row.month,
+      nis2: row.nis2,
+      customers: row[scenario].customers,
+      mrr,
+      costs: FIXED_COSTS,
+      cashflow,
+      cumulative,
+      monthlyBE,
+      cumulativeBE,
+    };
+  });
+}
+
+const scenarios = {
+  conservative: buildRows('conservative'),
+  realistic: buildRows('realistic'),
+  optimistic: buildRows('optimistic'),
+};
+
+function fmt(n: number) {
+  const abs = Math.abs(n).toLocaleString('en-US');
+  return n < 0 ? `-€${abs}` : `+€${abs}`;
+}
 ---
 
 <BaseLayout title="Financials — Desk Support Monkey" description="12-month revenue projections, costs, and path to profitability for Desk Support Monkey.">
   <div class="pt-24 pb-20">
-    <div class="mx-auto max-w-4xl px-6">
+    <div class="mx-auto max-w-5xl px-6">
 
       <a href="/transparency" class="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 transition-colors mb-6">
         <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -50,7 +91,11 @@ const projections = [
               <tr><td class="px-4 py-3">AWS S3</td><td class="px-4 py-3 font-medium">~€5</td><td class="px-4 py-3 text-slate-500">File storage, reports, attachments</td></tr>
               <tr><td class="px-4 py-3">Claude Code (AI development)</td><td class="px-4 py-3 font-medium">€100</td><td class="px-4 py-3 text-slate-500">Core engineering tool</td></tr>
               <tr><td class="px-4 py-3">Email, domain, monitoring</td><td class="px-4 py-3 font-medium">~€15</td><td class="px-4 py-3 text-slate-500">Resend + Namecheap + company email + misc</td></tr>
-              <tr class="bg-slate-50"><td class="px-4 py-3 font-bold">Total fixed</td><td class="px-4 py-3 font-bold text-slate-900">~€259</td><td class="px-4 py-3 text-slate-500">Excluding Stripe fees (~1.5%+€0.25/tx)</td></tr>
+              <tr class="bg-slate-50 font-bold">
+                <td class="px-4 py-3">Total fixed</td>
+                <td class="px-4 py-3 text-slate-900">~€259</td>
+                <td class="px-4 py-3 text-slate-500 font-normal">Excluding Stripe fees (~1.5%+€0.25/tx)</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -62,7 +107,7 @@ const projections = [
         <h2 class="text-xl font-bold text-slate-900 mb-4">Key Financial Milestones</h2>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {[
-            { label: 'Break-even', value: '~6 customers', note: 'Covers €259 fixed costs' },
+            { label: 'Break-even', value: '~3 customers', note: 'Monthly cashflow ≥ €0' },
             { label: 'Founder salary', value: '~€2,000 MRR', note: 'Sep 2026 realistic target' },
             { label: 'First hire budget', value: '~€5,000–8,000 MRR', note: 'Head of CS / Customer Success' },
           ].map((m) => (
@@ -75,35 +120,77 @@ const projections = [
         </div>
       </section>
 
-      <!-- 12-month projections -->
+      <!-- Tabbed projections -->
       <section class="mb-10">
-        <h2 class="text-xl font-bold text-slate-900 mb-2">12-Month Revenue Projections</h2>
-        <p class="text-sm text-slate-500 mb-4">Based on average revenue per account of ~€87/month (blended plan mix). Fixed costs ~€259/month. September 2026 shows NIS2 audit season acceleration.</p>
-        <div class="overflow-x-auto rounded-xl border border-slate-200">
-          <table class="w-full text-sm">
-            <thead class="bg-slate-50 text-slate-600">
-              <tr>
-                <th class="px-4 py-3 text-left font-semibold">Month</th>
-                <th class="px-4 py-3 text-center font-semibold">Conservative<br/><span class="font-normal text-xs">customers / MRR</span></th>
-                <th class="px-4 py-3 text-center font-semibold bg-blue-50 text-blue-700">Realistic<br/><span class="font-normal text-xs">customers / MRR</span></th>
-                <th class="px-4 py-3 text-center font-semibold">Optimistic<br/><span class="font-normal text-xs">customers / MRR</span></th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100">
-              {projections.map((row) => (
-                <tr class:list={[row.month === 'Sep 2026' ? 'bg-amber-50' : '']}>
-                  <td class="px-4 py-2.5 font-medium text-slate-700">
-                    {row.month}
-                    {row.month === 'Sep 2026' && <span class="ml-1.5 text-xs text-amber-600">NIS2 audit season</span>}
-                  </td>
-                  <td class="px-4 py-2.5 text-center text-slate-600">{row.conservative.customers} / €{row.conservative.mrr.toLocaleString()}</td>
-                  <td class="px-4 py-2.5 text-center font-medium text-blue-700 bg-blue-50/50">{row.realistic.customers} / €{row.realistic.mrr.toLocaleString()}</td>
-                  <td class="px-4 py-2.5 text-center text-slate-600">{row.optimistic.customers} / €{row.optimistic.mrr.toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <h2 class="text-xl font-bold text-slate-900 mb-1">12-Month Projections</h2>
+        <p class="text-sm text-slate-500 mb-5">Avg. revenue per account ~€87/month · Fixed costs €259/month · NIS2 audit season starts Sep 2026</p>
+
+        <!-- Tabs -->
+        <div class="flex gap-1 mb-0 border-b border-slate-200">
+          {(['conservative', 'realistic', 'optimistic'] as const).map((s) => (
+            <button
+              data-tab={s}
+              class:list={[
+                'tab-btn px-5 py-2.5 text-sm font-medium rounded-t-lg border border-b-0 transition-colors -mb-px',
+                s === 'realistic'
+                  ? 'bg-white border-slate-200 text-blue-700 font-semibold'
+                  : 'bg-slate-50 border-transparent text-slate-500 hover:text-slate-700',
+              ]}
+            >
+              {s.charAt(0).toUpperCase() + s.slice(1)}
+            </button>
+          ))}
         </div>
+
+        <!-- Panels -->
+        {(['conservative', 'realistic', 'optimistic'] as const).map((scenario) => (
+          <div
+            data-panel={scenario}
+            class:list={['tab-panel', scenario !== 'realistic' ? 'hidden' : '']}
+          >
+            <div class="overflow-x-auto rounded-b-xl rounded-tr-xl border border-slate-200 border-t-0">
+              <table class="w-full text-sm">
+                <thead class="bg-slate-50 text-slate-600">
+                  <tr>
+                    <th class="px-4 py-3 text-left font-semibold">Month</th>
+                    <th class="px-4 py-3 text-right font-semibold">Customers</th>
+                    <th class="px-4 py-3 text-right font-semibold">MRR</th>
+                    <th class="px-4 py-3 text-right font-semibold">Costs</th>
+                    <th class="px-4 py-3 text-right font-semibold">Cashflow</th>
+                    <th class="px-4 py-3 text-right font-semibold">Cumulative</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                  {scenarios[scenario].map((row) => (
+                    <tr class:list={[row.nis2 ? 'bg-amber-50' : '']}>
+                      <td class="px-4 py-2.5 font-medium text-slate-700 whitespace-nowrap">
+                        {row.month}
+                        {row.nis2 && <span class="ml-1.5 text-xs text-amber-600 font-normal">NIS2</span>}
+                        {row.monthlyBE && <span class="ml-1.5 inline-block rounded-full bg-emerald-100 px-1.5 py-0.5 text-xs text-emerald-700 font-normal">monthly BE</span>}
+                        {row.cumulativeBE && !row.monthlyBE && <span class="ml-1.5 inline-block rounded-full bg-blue-100 px-1.5 py-0.5 text-xs text-blue-700 font-normal">cum. BE</span>}
+                      </td>
+                      <td class="px-4 py-2.5 text-right text-slate-600">{row.customers}</td>
+                      <td class="px-4 py-2.5 text-right font-medium text-slate-800">€{row.mrr.toLocaleString('en-US')}</td>
+                      <td class="px-4 py-2.5 text-right text-slate-500">-€{row.costs}</td>
+                      <td class:list={[
+                        'px-4 py-2.5 text-right font-semibold',
+                        row.cashflow >= 0 ? 'text-emerald-700' : 'text-red-600',
+                      ]}>
+                        {fmt(row.cashflow)}
+                      </td>
+                      <td class:list={[
+                        'px-4 py-2.5 text-right font-semibold',
+                        row.cumulative >= 0 ? 'text-emerald-700' : 'text-red-600',
+                      ]}>
+                        {fmt(row.cumulative)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ))}
       </section>
 
       <!-- Assumptions -->
@@ -111,11 +198,11 @@ const projections = [
         <h2 class="text-xl font-bold text-slate-900 mb-3">Projection Assumptions</h2>
         <ul class="space-y-2 text-sm text-slate-600">
           {[
-            'Average MRR per customer ~€87 (blended mix: 60% Starter €49, 30% Growth €99, 10% Scale €199)',
-            'No churn in projections (conservative: 5% monthly churn would reduce these by ~15% by month 12)',
+            'Average MRR per customer ~€87/month (blended mix: 60% Starter €49, 30% Growth €99, 10% Scale €199)',
+            'No churn in projections — conservative: 5% monthly churn would reduce these ~15% by month 12',
             'Zero paid acquisition — 100% organic through open source, LinkedIn, GitHub',
             'September 2026 NIS2 audit season: companies that received compliance letters in Q4 2024 face first audits',
-            'Year 2 EU expansion multiplier applied from January 2027 (Germany, Italy)',
+            'Year 2 EU expansion multiplier from January 2027 (Germany, Italy)',
           ].map((a) => (
             <li class="flex items-start gap-2">
               <span class="mt-0.5 text-slate-400">•</span>
@@ -134,3 +221,29 @@ const projections = [
     </div>
   </div>
 </BaseLayout>
+
+<script>
+  const buttons = document.querySelectorAll<HTMLButtonElement>('.tab-btn');
+  const panels = document.querySelectorAll<HTMLDivElement>('.tab-panel');
+
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+
+      buttons.forEach((b) => {
+        const active = b.dataset.tab === target;
+        b.classList.toggle('bg-white', active);
+        b.classList.toggle('border-slate-200', active);
+        b.classList.toggle('text-blue-700', active);
+        b.classList.toggle('font-semibold', active);
+        b.classList.toggle('bg-slate-50', !active);
+        b.classList.toggle('border-transparent', !active);
+        b.classList.toggle('text-slate-500', !active);
+      });
+
+      panels.forEach((p) => {
+        p.classList.toggle('hidden', p.dataset.panel !== target);
+      });
+    });
+  });
+</script>
