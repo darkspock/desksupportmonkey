@@ -1,15 +1,18 @@
+from datetime import datetime, timezone
 from typing import Optional
 
 import ulid
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
+from src.company_bc.company.domain.billing_enums import BillingStatus, PlanTier
 from src.company_bc.company.domain.entities import Company
 from src.company_bc.company.domain.enums import CompanyStatus
 from src.company_bc.company.domain.repository import CompanyRepositoryInterface
 from src.company_bc.company.infrastructure.models import (
     CompanyEmailDomainModel,
     CompanyModel,
+    ProcessedStripeEventModel,
 )
 
 
@@ -25,12 +28,34 @@ class CompanyRepository(CompanyRepositoryInterface):
             existing.name = company.name
             existing.status = company.status.value
             existing.is_active = company.is_active
+            existing.plan = company.plan.value
+            existing.billing_status = company.billing_status.value
+            existing.stripe_customer_id = company.stripe_customer_id
+            existing.stripe_subscription_id = company.stripe_subscription_id
+            existing.grace_period_started_at = company.grace_period_started_at
+            existing.current_period_end = company.current_period_end
+            existing.pending_downgrade_plan = (
+                company.pending_downgrade_plan.value
+                if company.pending_downgrade_plan else None
+            )
+            existing.complimentary = company.complimentary
         else:
             model = CompanyModel(
                 id=company.id,
                 name=company.name,
                 status=company.status.value,
                 is_active=company.is_active,
+                plan=company.plan.value,
+                billing_status=company.billing_status.value,
+                stripe_customer_id=company.stripe_customer_id,
+                stripe_subscription_id=company.stripe_subscription_id,
+                grace_period_started_at=company.grace_period_started_at,
+                current_period_end=company.current_period_end,
+                pending_downgrade_plan=(
+                    company.pending_downgrade_plan.value
+                    if company.pending_downgrade_plan else None
+                ),
+                complimentary=company.complimentary,
             )
             self.session.add(model)
         self.session.flush()
@@ -125,6 +150,28 @@ class CompanyRepository(CompanyRepositoryInterface):
         )
         self.session.flush()
 
+    def find_by_stripe_customer_id(self, customer_id: str) -> Optional[Company]:
+        model = self.session.execute(
+            select(CompanyModel).where(CompanyModel.stripe_customer_id == customer_id)
+        ).scalar_one_or_none()
+        if not model:
+            return None
+        return self._to_entity(model)
+
+    def mark_stripe_event_processed(self, event_id: str) -> None:
+        record = ProcessedStripeEventModel(
+            id=event_id,
+            processed_at=datetime.now(timezone.utc),
+        )
+        self.session.add(record)
+        self.session.flush()
+
+    def is_stripe_event_processed(self, event_id: str) -> bool:
+        result = self.session.execute(
+            select(ProcessedStripeEventModel).where(ProcessedStripeEventModel.id == event_id)
+        ).scalar_one_or_none()
+        return result is not None
+
     def _to_entity(self, model: CompanyModel) -> Company:
         domains = self.session.execute(
             select(CompanyEmailDomainModel.domain)
@@ -138,4 +185,15 @@ class CompanyRepository(CompanyRepositoryInterface):
             is_active=model.is_active,
             created_at=model.created_at,
             updated_at=model.updated_at,
+            plan=PlanTier(model.plan),
+            billing_status=BillingStatus(model.billing_status),
+            stripe_customer_id=model.stripe_customer_id,
+            stripe_subscription_id=model.stripe_subscription_id,
+            grace_period_started_at=model.grace_period_started_at,
+            current_period_end=model.current_period_end,
+            pending_downgrade_plan=(
+                PlanTier(model.pending_downgrade_plan)
+                if model.pending_downgrade_plan else None
+            ),
+            complimentary=model.complimentary,
         )

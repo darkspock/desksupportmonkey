@@ -12,6 +12,7 @@ all models are registered with SQLAlchemy's mapper.
 # Company BC
 from src.company_bc.company.infrastructure.models import CompanyModel  # noqa: F401
 from src.company_bc.company.infrastructure.models import CompanyEmailDomainModel  # noqa: F401
+from src.company_bc.company.infrastructure.models import ProcessedStripeEventModel  # noqa: F401
 
 # Department
 from src.company_bc.department.infrastructure.models import DepartmentModel  # noqa: F401
@@ -39,6 +40,7 @@ from src.report_bc.report.infrastructure.models import ReportModel  # noqa: F401
 __all__ = [
     "CompanyModel",
     "CompanyEmailDomainModel",
+    "ProcessedStripeEventModel",
     "DepartmentModel",
     "UserModel",
     "MagicLinkModel",

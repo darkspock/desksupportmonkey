@@ -1,9 +1,10 @@
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 import ulid
 
+from src.company_bc.company.domain.billing_enums import BillingStatus, PlanTier
 from src.company_bc.company.domain.enums import VALID_TRANSITIONS, CompanyStatus
 
 
@@ -43,6 +44,15 @@ class Company:
     is_active: bool = True
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    # Billing fields
+    plan: PlanTier = PlanTier.FREE
+    billing_status: BillingStatus = BillingStatus.ACTIVE
+    stripe_customer_id: Optional[str] = None
+    stripe_subscription_id: Optional[str] = None
+    grace_period_started_at: Optional[datetime] = None
+    current_period_end: Optional[datetime] = None
+    pending_downgrade_plan: Optional[PlanTier] = None
+    complimentary: bool = False
 
     @classmethod
     def create(cls, name: str, email_domains: list[str], id: Optional[str] = None) -> "Company":
@@ -83,3 +93,43 @@ class Company:
             )
         self.status = new_status
         self.is_active = new_status == CompanyStatus.ACTIVE
+
+    # ------------------------------------------------------------------
+    # Billing domain methods
+    # ------------------------------------------------------------------
+
+    def set_billing_status(self, status: BillingStatus) -> None:
+        self.billing_status = status
+
+    def apply_plan_change(
+        self,
+        plan: PlanTier,
+        subscription_id: str,
+        period_end: datetime,
+    ) -> None:
+        self.plan = plan
+        self.stripe_subscription_id = subscription_id
+        self.current_period_end = period_end
+        self.billing_status = BillingStatus.ACTIVE
+        self.grace_period_started_at = None
+        self.pending_downgrade_plan = None
+
+    def enter_grace_period(self) -> None:
+        self.billing_status = BillingStatus.GRACE_PERIOD
+        self.grace_period_started_at = datetime.now(timezone.utc)
+
+    def restore_billing(self) -> None:
+        self.billing_status = BillingStatus.ACTIVE
+        self.grace_period_started_at = None
+
+    def grant_complimentary(self, plan: PlanTier) -> None:
+        self.complimentary = True
+        self.plan = plan
+        self.billing_status = BillingStatus.ACTIVE
+        self.stripe_subscription_id = None
+        self.grace_period_started_at = None
+
+    def revoke_complimentary(self) -> None:
+        self.complimentary = False
+        self.plan = PlanTier.FREE
+        self.billing_status = BillingStatus.OVER_LIMIT

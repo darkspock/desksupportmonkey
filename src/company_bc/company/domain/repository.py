@@ -4,6 +4,7 @@ from typing import Optional
 from src.company_bc.company.domain.entities import Company
 
 
+
 class CompanyRepositoryInterface(ABC):
 
     @abstractmethod
@@ -44,4 +45,16 @@ class CompanyRepositoryInterface(ABC):
     @abstractmethod
     def delete(self, company_id: str) -> None:
         """Delete a company and its email domains."""
+        ...
+
+    @abstractmethod
+    def find_by_stripe_customer_id(self, customer_id: str) -> Optional[Company]:
+        ...
+
+    @abstractmethod
+    def mark_stripe_event_processed(self, event_id: str) -> None:
+        ...
+
+    @abstractmethod
+    def is_stripe_event_processed(self, event_id: str) -> bool:
         ...

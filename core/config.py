@@ -61,6 +61,17 @@ class MCPSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
+class StripeSettings(BaseSettings):
+    STRIPE_SECRET_KEY: str = ""
+    STRIPE_PUBLISHABLE_KEY: str = ""
+    STRIPE_WEBHOOK_SECRET: str = ""
+    STRIPE_PRICE_PREMIUM: str = ""
+    STRIPE_PRICE_ENTERPRISE: str = ""
+    OPEN_SOURCE_MODE: bool = False
+
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+
 class Settings(BaseSettings):
     # Database
     POSTGRES_USER: str = "postgres"
@@ -111,6 +122,9 @@ class Settings(BaseSettings):
 
     # OAuth settings (nested)
     oauth: OAuthSettings = OAuthSettings()
+
+    # Stripe / Billing settings (nested)
+    stripe: StripeSettings = StripeSettings()
 
     @property
     def DATABASE_URL(self) -> str:
