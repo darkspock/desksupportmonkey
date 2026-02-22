@@ -34,6 +34,7 @@ from adapters.http.api.maintenance.routers import router as maintenance_router
 from adapters.http.api.maintenance_templates.routers import (
     router as maintenance_templates_router,
 )
+from adapters.http.api.billing.routers import router as billing_router
 from adapters.http.ws.websocket import router as ws_router
 from adapters.http.middleware.error_handler import register_error_handlers
 from core.config import settings
@@ -107,6 +108,7 @@ def create_app() -> FastAPI:
     application.include_router(budgets_router)
     application.include_router(maintenance_router)
     application.include_router(maintenance_templates_router)
+    application.include_router(billing_router)
     application.include_router(ws_router)
 
     # MCP SSE transport (conditional)

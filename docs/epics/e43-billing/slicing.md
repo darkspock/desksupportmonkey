@@ -36,9 +36,9 @@ F0 and F1 may be implemented in parallel since F1 only needs F0's Company entity
 
 | # | Feature | Dependencies | Value Delivered | Complexity | Status |
 |---|---|---|---|---|---|
-| F0 | Billing Domain Foundation | — | Company entity billing fields, PlanGate service, enums, migration, Open Source mode bypass | M | Pending |
-| F1 | Stripe Customer Bootstrap | F0 | Stripe Customer created synchronously on registration; `stripe_customer_id` persisted | S | Pending |
-| F2 | Webhook Listener | F1 | Platform stays in sync with Stripe — plan changes, payment failures, grace period, restoration | L | Pending |
+| F0 | Billing Domain Foundation | — | Company entity billing fields, PlanGate service, enums, migration, Open Source mode bypass | M | Done |
+| F1 | Stripe Customer Bootstrap | F0 | Stripe Customer created synchronously on registration; `stripe_customer_id` persisted | S | Done |
+| F2 | Webhook Listener | F1 | Platform stays in sync with Stripe — plan changes, payment failures, grace period, restoration | L | Done |
 | F3 | Company Admin Billing UI | F2 | Admin can view plan/usage, upgrade via Checkout, manage via Portal; grace period banner; processing page | L | Pending |
 | F4 | Plan Enforcement | F3 | Resource limit checks on user invite and asset creation; feature gating with 402; read-only mode enforcement | L | Pending |
 | F5 | Super Admin Billing Management | F4 | Super admin can view, override, grant complimentary and revoke plans per company | M | Pending |

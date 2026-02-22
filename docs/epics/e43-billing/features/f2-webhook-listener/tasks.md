@@ -9,7 +9,7 @@
 ## Phase 1: Application Layer — Commands
 
 ### T1.1: ActivateSubscriptionCommand + Handler
-- [ ] **File:** `src/company_bc/company/application/commands/billing/activate_subscription.py` (NEW)
+- [x] **File:** `src/company_bc/company/application/commands/billing/activate_subscription.py` (NEW)
 - Triggered by Stripe event `checkout.session.completed`
 - `@dataclass class ActivateSubscriptionCommand(Command):`
   - `stripe_customer_id: str`
@@ -23,7 +23,7 @@
   4. Save company
 
 ### T1.2: SyncPlanChangeCommand + Handler
-- [ ] **File:** `src/company_bc/company/application/commands/billing/sync_plan_change.py` (NEW)
+- [x] **File:** `src/company_bc/company/application/commands/billing/sync_plan_change.py` (NEW)
 - Triggered by Stripe event `customer.subscription.updated`
 - `@dataclass class SyncPlanChangeCommand(Command):`
   - `stripe_customer_id: str`
@@ -38,7 +38,7 @@
   4. Save company
 
 ### T1.3: CancelSubscriptionCommand + Handler
-- [ ] **File:** `src/company_bc/company/application/commands/billing/cancel_subscription.py` (NEW)
+- [x] **File:** `src/company_bc/company/application/commands/billing/cancel_subscription.py` (NEW)
 - Triggered by Stripe event `customer.subscription.deleted`
 - `@dataclass class CancelSubscriptionCommand(Command):`
   - `stripe_customer_id: str`
@@ -48,7 +48,7 @@
   3. Save company
 
 ### T1.4: RestoreBillingCommand + Handler
-- [ ] **File:** `src/company_bc/company/application/commands/billing/restore_billing.py` (NEW)
+- [x] **File:** `src/company_bc/company/application/commands/billing/restore_billing.py` (NEW)
 - Triggered by Stripe event `invoice.payment_succeeded`
 - `@dataclass class RestoreBillingCommand(Command):`
   - `stripe_customer_id: str`
@@ -62,7 +62,7 @@
 ## Phase 2: Webhook Dispatcher
 
 ### T2.1: Create StripeWebhookDispatcher
-- [ ] **File:** `src/company_bc/company/application/services/stripe_webhook_dispatcher.py` (NEW)
+- [x] **File:** `src/company_bc/company/application/services/stripe_webhook_dispatcher.py` (NEW)
 - Class `StripeWebhookDispatcher`:
   - Dependencies: `company_repo: CompanyRepositoryInterface`
   - Method `dispatch(event: dict) -> None`:
@@ -78,7 +78,7 @@
     4. Mark event processed: `company_repo.mark_stripe_event_processed(event_id)`
 
 ### T2.2: Add signature verification to StripeClient
-- [ ] **File:** `core/stripe_client.py` (MODIFY)
+- [x] **File:** `core/stripe_client.py` (MODIFY)
 - Add `verify_webhook_signature(payload: bytes, sig_header: str, webhook_secret: str) -> dict`
   - Calls `stripe.Webhook.construct_event(payload, sig_header, webhook_secret)`
   - On `stripe.error.SignatureVerificationError`: raise `InvalidStripeSignatureError`
@@ -89,8 +89,8 @@
 ## Phase 3: HTTP Layer
 
 ### T3.1: Create billing router with webhook endpoint
-- [ ] **File:** `adapters/http/api/billing/__init__.py` (NEW — empty)
-- [ ] **File:** `adapters/http/api/billing/routers.py` (NEW)
+- [x] **File:** `adapters/http/api/billing/__init__.py` (NEW — empty)
+- [x] **File:** `adapters/http/api/billing/routers.py` (NEW)
 - `POST /webhook` (public, no auth):
   - Reads raw request body as `bytes` (do NOT use Pydantic — Stripe sends raw JSON)
   - Reads `Stripe-Signature` header
@@ -100,7 +100,7 @@
   - Returns `200 {"status": "ok"}`
 
 ### T3.2: Register billing router in app.py
-- [ ] **File:** `app.py` (MODIFY)
+- [x] **File:** `app.py` (MODIFY)
 - `app.include_router(billing_router, prefix="/api/v1/billing")`
 
 ---
@@ -108,33 +108,33 @@
 ## Phase 4: Tests
 
 ### T4.1: Unit tests — ActivateSubscriptionCommand
-- [ ] **File:** `tests/unit/company_bc/company/application/commands/billing/test_activate_subscription.py` (NEW)
+- [x] **File:** `tests/unit/company_bc/company/application/commands/billing/test_activate_subscription.py` (NEW)
 - Test: plan activated, subscription_id saved, billing_status = ACTIVE
 - Test: company not found → CompanyNotFoundError
 
 ### T4.2: Unit tests — SyncPlanChangeCommand
-- [ ] **File:** `tests/unit/company_bc/company/application/commands/billing/test_sync_plan_change.py` (NEW)
+- [x] **File:** `tests/unit/company_bc/company/application/commands/billing/test_sync_plan_change.py` (NEW)
 - Test: plan change applied, period_end updated
 - Test: `status=past_due` → grace period entered
 
 ### T4.3: Unit tests — CancelSubscriptionCommand
-- [ ] **File:** `tests/unit/company_bc/company/application/commands/billing/test_cancel_subscription.py` (NEW)
+- [x] **File:** `tests/unit/company_bc/company/application/commands/billing/test_cancel_subscription.py` (NEW)
 - Test: plan reset to FREE, subscription_id cleared
 
 ### T4.4: Unit tests — RestoreBillingCommand
-- [ ] **File:** `tests/unit/company_bc/company/application/commands/billing/test_restore_billing.py` (NEW)
+- [x] **File:** `tests/unit/company_bc/company/application/commands/billing/test_restore_billing.py` (NEW)
 - Test: billing restored from grace_period → active
 - Test: billing restored from suspended → active
 
 ### T4.5: Unit tests — StripeWebhookDispatcher
-- [ ] **File:** `tests/unit/company_bc/company/application/services/test_stripe_webhook_dispatcher.py` (NEW)
+- [x] **File:** `tests/unit/company_bc/company/application/services/test_stripe_webhook_dispatcher.py` (NEW)
 - Test: each event type routes to correct command
 - Test: duplicate event_id → returns immediately without dispatching (idempotency)
 - Test: unknown event type → ignored silently
 - Test: `invoice.payment_failed` → no command, no error
 
 ### T4.6: Integration tests — webhook endpoint
-- [ ] **File:** `tests/integration/test_billing_endpoints.py` (NEW)
+- [x] **File:** `tests/integration/test_billing_endpoints.py` (NEW)
 - Test: valid Stripe signature + known event → 200
 - Test: invalid Stripe signature → 400
 - Test: duplicate event_id → 200 without re-applying state change
@@ -145,10 +145,11 @@
 ## Phase 5: Verification
 
 ### T5.1: Run linter
-- [ ] `make lint`
+- [x] `make lint` — no new errors (pre-existing E24 issues in google/microsoft token verifiers only)
 
 ### T5.2: Run all tests
-- [ ] `make test` + `make test-integration`
+- [x] `make test` — 1177 passed
+- [x] `make test-integration` — 322 passed (7 pre-existing failures unchanged)
 
 ---
 

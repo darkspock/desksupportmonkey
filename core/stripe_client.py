@@ -37,3 +37,13 @@ class StripeClient:
         except stripe.error.StripeError as exc:
             logger.error("Stripe error cancelling subscription %s: %s", subscription_id, exc)
             raise StripeUnavailableError("Stripe is unavailable") from exc
+
+    def verify_webhook_signature(
+        self, payload: bytes, sig_header: str, webhook_secret: str
+    ) -> dict:
+        try:
+            event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
+            return dict(event)
+        except stripe.error.SignatureVerificationError as exc:
+            logger.warning("Invalid Stripe webhook signature: %s", exc)
+            raise InvalidStripeSignatureError("Invalid Stripe webhook signature") from exc

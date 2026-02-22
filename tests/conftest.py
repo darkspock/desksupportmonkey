@@ -124,6 +124,7 @@ def client(db_session):
     from adapters.http.api.dependencies import get_event_bus
     from adapters.http.api.companies.dependencies import get_stripe_client as get_stripe_client_companies
     from adapters.http.api.registration.dependencies import get_stripe_client as get_stripe_client_registration
+    from adapters.http.api.billing.dependencies import get_stripe_client as get_stripe_client_billing
     from src.notification_bc.notification.application.services.event_bus import EventBus
 
     application = create_app()
@@ -138,6 +139,7 @@ def client(db_session):
     application.dependency_overrides[get_event_bus] = lambda: EventBus()  # no subscribers
     application.dependency_overrides[get_stripe_client_companies] = lambda: mock_stripe
     application.dependency_overrides[get_stripe_client_registration] = lambda: mock_stripe
+    application.dependency_overrides[get_stripe_client_billing] = lambda: mock_stripe
 
     with TestClient(application, raise_server_exceptions=False) as c:
         yield c
