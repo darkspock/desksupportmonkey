@@ -2,7 +2,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.auth_bc.user.domain.enums import UserRole
 from src.company_bc.equipment_profile.application.commands.activate_profile import (  # noqa: E501
     ActivateEquipmentProfileCommand,
     ActivateEquipmentProfileCommandHandler,
@@ -24,7 +23,7 @@ class TestActivateEquipmentProfile:
             id="prof1",
             company_id="comp1",
             department_id="dept1",
-            role=UserRole.EMPLOYEE,
+            employee_role_id="er1",
         )
         profile.deactivate()
         assert profile.is_active is False
@@ -52,7 +51,7 @@ class TestActivateEquipmentProfile:
             id="prof1",
             company_id="comp1",
             department_id="dept1",
-            role=UserRole.EMPLOYEE,
+            employee_role_id="er1",
         )
         profile.deactivate()
 
@@ -60,7 +59,7 @@ class TestActivateEquipmentProfile:
             id="prof2",
             company_id="comp1",
             department_id="dept1",
-            role=UserRole.EMPLOYEE,
+            employee_role_id="er1",
         )
         assert conflicting.is_active is True
 
@@ -107,7 +106,7 @@ class TestDeactivateEquipmentProfile:
             id="prof1",
             company_id="comp1",
             department_id="dept1",
-            role=UserRole.EMPLOYEE,
+            employee_role_id="er1",
         )
         assert profile.is_active is True
 

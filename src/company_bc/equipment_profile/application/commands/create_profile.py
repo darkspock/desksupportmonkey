@@ -5,7 +5,6 @@ from typing import Optional
 import ulid
 
 from src.asset_bc.asset.domain.enums import AssetType
-from src.auth_bc.user.domain.enums import UserRole
 from src.company_bc.equipment_profile.domain.entities import (
     EquipmentProfile,
     EquipmentProfileItem,
@@ -33,13 +32,14 @@ class ProfileItemInput:
     preferred_model: Optional[str] = None
     min_ram_gb: Optional[int] = None
     min_storage_gb: Optional[int] = None
+    budget_cents: Optional[int] = None
 
 
 @dataclass
 class CreateEquipmentProfileCommand(Command):
     company_id: str
     department_id: str
-    role: UserRole
+    employee_role_id: str
     items: list[ProfileItemInput] = field(
         default_factory=list,
     )
@@ -62,12 +62,12 @@ class CreateEquipmentProfileCommandHandler(
         existing = self.profile_repo.find_active(
             company_id=command.company_id,
             department_id=command.department_id,
-            role=command.role.value,
+            employee_role_id=command.employee_role_id,
         )
         if existing:
             raise ActiveProfileExistsError(
                 "An active profile already exists "
-                "for this department and role",
+                "for this department and employee role",
             )
 
         profile_id = command.id or str(ulid.new())
@@ -75,7 +75,7 @@ class CreateEquipmentProfileCommandHandler(
             id=profile_id,
             company_id=command.company_id,
             department_id=command.department_id,
-            role=command.role,
+            employee_role_id=command.employee_role_id,
         )
         profile.items = [
             EquipmentProfileItem(
@@ -87,14 +87,15 @@ class CreateEquipmentProfileCommandHandler(
                 preferred_model=item.preferred_model,
                 min_ram_gb=item.min_ram_gb,
                 min_storage_gb=item.min_storage_gb,
+                budget_cents=item.budget_cents,
             )
             for item in command.items
         ]
         self.profile_repo.save(profile)
         logger.info(
             "Equipment profile %s created for "
-            "department %s role %s",
+            "department %s employee_role %s",
             profile_id,
             command.department_id,
-            command.role.value,
+            command.employee_role_id,
         )

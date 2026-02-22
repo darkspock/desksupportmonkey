@@ -5,7 +5,6 @@ from typing import Optional
 import ulid
 
 from src.asset_bc.asset.domain.enums import AssetType
-from src.auth_bc.user.domain.enums import UserRole
 
 
 @dataclass
@@ -18,6 +17,7 @@ class EquipmentProfileItem:
     preferred_model: Optional[str] = None
     min_ram_gb: Optional[int] = None
     min_storage_gb: Optional[int] = None
+    budget_cents: Optional[int] = None
 
 
 @dataclass
@@ -25,7 +25,7 @@ class EquipmentProfile:
     id: str
     company_id: str
     department_id: str
-    role: UserRole
+    employee_role_id: Optional[str] = None
     is_active: bool = True
     items: list[EquipmentProfileItem] = field(
         default_factory=list,
@@ -38,14 +38,14 @@ class EquipmentProfile:
         cls,
         company_id: str,
         department_id: str,
-        role: UserRole,
+        employee_role_id: str,
         id: Optional[str] = None,
     ) -> "EquipmentProfile":
         return cls(
             id=id or str(ulid.new()),
             company_id=company_id,
             department_id=department_id,
-            role=role,
+            employee_role_id=employee_role_id,
             is_active=True,
         )
 

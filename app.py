@@ -18,6 +18,7 @@ from adapters.http.api.dashboard.routers import router as dashboard_router
 from adapters.http.api.registration.routers import router as registration_router
 from adapters.http.api.reports.routers import router as reports_router
 from adapters.http.api.auth.api_keys_router import router as api_keys_router
+from adapters.http.api.employee_roles.routers import router as employee_roles_router
 from adapters.http.api.equipment_profiles.routers import router as equipment_profiles_router
 from adapters.http.api.settings.routers import router as settings_router
 from adapters.http.api.settings.classification_router import router as classification_settings_router
@@ -92,6 +93,7 @@ def create_app() -> FastAPI:
     application.include_router(dashboard_router)
     application.include_router(reports_router)
     application.include_router(api_keys_router)
+    application.include_router(employee_roles_router)
     application.include_router(equipment_profiles_router)
     application.include_router(settings_router)
     application.include_router(classification_settings_router)

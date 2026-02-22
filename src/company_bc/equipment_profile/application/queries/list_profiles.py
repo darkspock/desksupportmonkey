@@ -19,7 +19,7 @@ class ListEquipmentProfilesQuery(Query):
     page: int = 1
     page_size: int = 20
     department_id: Optional[str] = None
-    role: Optional[str] = None
+    employee_role_id: Optional[str] = None
     is_active: Optional[bool] = None
 
 
@@ -43,6 +43,6 @@ class ListEquipmentProfilesQueryHandler(
             page=query.page,
             page_size=query.page_size,
             department_id=query.department_id,
-            role=query.role,
+            employee_role_id=query.employee_role_id,
             is_active=query.is_active,
         )

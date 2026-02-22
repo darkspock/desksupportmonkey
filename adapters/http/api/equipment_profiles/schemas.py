@@ -19,11 +19,14 @@ class ProfileItemRequest(BaseModel):
     min_storage_gb: Optional[int] = Field(
         default=None, ge=1,
     )
+    budget_cents: Optional[int] = Field(
+        default=None, ge=0,
+    )
 
 
 class CreateProfileRequest(BaseModel):
     department_id: str = Field(min_length=1)
-    role: str = Field(min_length=1)
+    employee_role_id: str = Field(min_length=1)
     items: list[ProfileItemRequest] = Field(
         min_length=1,
     )
@@ -43,13 +46,14 @@ class ProfileItemResponse(BaseModel):
     preferred_model: Optional[str] = None
     min_ram_gb: Optional[int] = None
     min_storage_gb: Optional[int] = None
+    budget_cents: Optional[int] = None
 
 
 class ProfileResponse(BaseModel):
     id: str
     company_id: str
     department_id: str
-    role: str
+    employee_role_id: Optional[str] = None
     is_active: bool
     items: list[ProfileItemResponse] = []
     created_at: Optional[datetime] = None

@@ -6,24 +6,35 @@ from src.auth_bc.user.domain.enums import UserRole
 
 class TestUserRole:
     def test_role_hierarchy_levels(self):
-        assert UserRole.SUPER_ADMIN.level == 4
-        assert UserRole.ADMIN.level == 3
+        assert UserRole.SUPER_ADMIN.level == 5
+        assert UserRole.ADMIN.level == 4
+        assert UserRole.PROCUREMENT_MANAGER.level == 3
         assert UserRole.TECHNICIAN.level == 2
         assert UserRole.EMPLOYEE.level == 1
 
     def test_has_access_higher_role(self):
         assert UserRole.SUPER_ADMIN.has_access(UserRole.ADMIN)
         assert UserRole.ADMIN.has_access(UserRole.EMPLOYEE)
+        assert UserRole.PROCUREMENT_MANAGER.has_access(UserRole.TECHNICIAN)
 
     def test_has_access_same_role(self):
         assert UserRole.ADMIN.has_access(UserRole.ADMIN)
+        assert UserRole.PROCUREMENT_MANAGER.has_access(UserRole.PROCUREMENT_MANAGER)
 
     def test_has_access_lower_role_denied(self):
         assert not UserRole.EMPLOYEE.has_access(UserRole.ADMIN)
         assert not UserRole.TECHNICIAN.has_access(UserRole.SUPER_ADMIN)
+        assert not UserRole.TECHNICIAN.has_access(UserRole.PROCUREMENT_MANAGER)
+
+    def test_procurement_manager_access(self):
+        # procurement_manager can access technician-level resources
+        assert UserRole.PROCUREMENT_MANAGER.has_access(UserRole.TECHNICIAN)
+        # but cannot access admin-level resources
+        assert not UserRole.PROCUREMENT_MANAGER.has_access(UserRole.ADMIN)
 
     def test_string_values(self):
         assert UserRole.SUPER_ADMIN.value == "super_admin"
+        assert UserRole.PROCUREMENT_MANAGER.value == "procurement_manager"
         assert UserRole.EMPLOYEE.value == "employee"
 
 

@@ -6,6 +6,9 @@ from src.framework.application.command_bus import (
     Command,
     CommandHandler,
 )
+from src.company_bc.department.domain.repository import (
+    DepartmentRepositoryInterface,
+)
 from src.procurement_bc.purchase_order.domain.repository import (
     PurchaseOrderRepositoryInterface,
 )
@@ -42,6 +45,7 @@ class ApprovePurchaseOrderCommand(Command):
     purchase_order_id: str
     company_id: str
     approved_by: str = ""
+    budget_enforcement_enabled: Optional[bool] = None
 
 
 class ApprovePurchaseOrderCommandHandler(
@@ -53,9 +57,11 @@ class ApprovePurchaseOrderCommandHandler(
         budget_checker: Optional[
             "BudgetChecker"
         ] = None,
+        department_repo: Optional[DepartmentRepositoryInterface] = None,
     ):
         self.po_repo = po_repo
         self.budget_checker = budget_checker
+        self.department_repo = department_repo
         self._last_result: Optional[ApproveResult] = None
 
     def handle(
@@ -73,10 +79,28 @@ class ApprovePurchaseOrderCommandHandler(
         result = ApproveResult(department_id=po.department_id)
 
         if self.budget_checker:
+            budget_enforcement_enabled = command.budget_enforcement_enabled
+            if (
+                budget_enforcement_enabled is None
+                and self.department_repo is not None
+            ):
+                department = self.department_repo.find_by_id(
+                    po.department_id,
+                    command.company_id,
+                )
+                if department is not None:
+                    budget_enforcement_enabled = (
+                        department.budget_enforcement_enabled
+                    )
+
+            if budget_enforcement_enabled is None:
+                budget_enforcement_enabled = True
+
             check = self.budget_checker.check_approval(
                 command.company_id,
                 po.department_id,
                 po.total_amount_cents,
+                budget_enforcement_enabled=budget_enforcement_enabled,
             )
 
             if not check.allowed:

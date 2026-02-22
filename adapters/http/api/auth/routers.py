@@ -69,6 +69,7 @@ def _user_response(user: User, company_name: Optional[str] = None) -> dict:
         role=user.role.value,
         company_id=user.company_id,
         company_name=company_name,
+        employee_role_id=user.employee_role_id,
         is_active=user.is_active,
         password_set=user.has_password,
     ).model_dump()

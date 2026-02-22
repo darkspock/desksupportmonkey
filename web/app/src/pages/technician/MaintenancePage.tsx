@@ -3,8 +3,6 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../lib/api';
 import { Badge } from '../../components/ui/Badge';
-import { Table, Th, Td, Tr } from '../../components/ui/Table';
-import { Tooltip } from '../../components/ui/Tooltip';
 import { Pagination } from '../../components/ui/Pagination';
 import { Loading } from '../../components/ui/Loading';
 import { EmptyState, ErrorState } from '../../components/ui/StateBlock';
@@ -48,53 +46,32 @@ export default function MaintenancePage() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-            {t('page.maintenance.title')}
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t('page.maintenance.subtitle')}
-          </p>
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">{t('page.maintenance.title')}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t('page.maintenance.subtitle')}</p>
         </div>
         <Link
           to="/maintenance/new"
-          className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+          className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow-xs transition-all hover:bg-primary/90"
         >
-          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M5 12h14M12 5v14" />
-          </svg>
           {t('page.maintenance.new')}
         </Link>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <svg
-            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.3-4.3" />
-          </svg>
+      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <input
             type="search"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder={t('page.maintenance.search_placeholder')}
-            className="w-full pl-9 bg-card"
+            className="w-full sm:col-span-1"
           />
-        </div>
-        <div className="flex gap-2 flex-wrap">
           <select
             value={status}
             onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-            className="w-[150px] bg-card"
+            className="w-full"
           >
             <option value="">{t('page.maintenance.all_statuses')}</option>
             {['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'SKIPPED'].map((s) => (
@@ -104,7 +81,7 @@ export default function MaintenancePage() {
           <select
             value={priority}
             onChange={(e) => { setPriority(e.target.value); setPage(1); }}
-            className="w-[150px] bg-card"
+            className="w-full"
           >
             <option value="">{t('page.maintenance.all_priorities')}</option>
             {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((p) => (
@@ -123,17 +100,18 @@ export default function MaintenancePage() {
       ) : !data?.data.length ? (
         <EmptyState message={t('page.maintenance.empty')} />
       ) : (
-        <>
-          <Table>
+        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[980px] text-sm">
             <thead>
-              <tr className="hover:bg-transparent">
-                <Th className="pl-4">{t('table.status')}</Th>
-                <Th>{t('table.priority')}</Th>
-                <Th>{t('table.title')}</Th>
-                <Th>{t('table.employee')}</Th>
-                <Th>{t('table.asset')}</Th>
-                <Th>{t('table.date')}</Th>
-                <Th className="pr-4"><span className="sr-only">{t('table.actions')}</span></Th>
+              <tr className="border-b border-border bg-secondary/40">
+                <th className="px-4 py-2 text-left font-medium text-foreground">{t('table.status')}</th>
+                <th className="px-4 py-2 text-left font-medium text-foreground">{t('table.priority')}</th>
+                <th className="px-4 py-2 text-left font-medium text-foreground">{t('table.title')}</th>
+                <th className="px-4 py-2 text-left font-medium text-foreground">{t('table.employee')}</th>
+                <th className="px-4 py-2 text-left font-medium text-foreground">{t('table.asset')}</th>
+                <th className="px-4 py-2 text-left font-medium text-foreground">{t('table.date')}</th>
+                <th className="px-4 py-2 text-left font-medium text-foreground">{t('table.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -141,44 +119,43 @@ export default function MaintenancePage() {
                 const statusKey = r.status.toLowerCase();
                 const priorityKey = r.priority.toLowerCase();
                 return (
-                  <Tr key={r.id}>
-                    <Td className="pl-4">
+                  <tr key={r.id} className="border-b border-border/80 hover:bg-accent/30">
+                    <td className="px-4 py-3 align-top">
                       <Badge variant={statusVariant[statusKey] || 'default'}>
                         {t(`enum.maintenance_status.${statusKey}`)}
                       </Badge>
-                    </Td>
-                    <Td>
+                    </td>
+                    <td className="px-4 py-3 align-top">
                       <Badge variant={priorityVariant[priorityKey] || 'default'}>
                         {t(`enum.maintenance_priority.${priorityKey}`)}
                       </Badge>
-                    </Td>
-                    <Td>{r.title}</Td>
-                    <Td>{r.employee_name || r.employee_email || '—'}</Td>
-                    <Td><span className="font-mono text-xs">{r.asset_id.slice(0, 8)}</span></Td>
-                    <Td>{r.scheduled_at ? formatDateTime(r.scheduled_at) : '—'}</Td>
-                    <td className="px-4 py-3 text-sm">
-                      <div className="flex items-center justify-end">
-                        <Tooltip content={t('table.details')}>
-                          <Link
-                            to={`/maintenance/${r.id}`}
-                            aria-label={t('table.details')}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-                          >
-                            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                              <circle cx="12" cy="12" r="3" />
-                            </svg>
-                          </Link>
-                        </Tooltip>
+                    </td>
+                    <td className="px-4 py-3 align-top text-foreground">{r.title}</td>
+                    <td className="px-4 py-3 align-top text-foreground">{r.employee_name || r.employee_email || '—'}</td>
+                    <td className="px-4 py-3 align-top">
+                      <span className="font-mono text-xs text-muted-foreground">{r.asset_id.slice(0, 8)}</span>
+                    </td>
+                    <td className="px-4 py-3 align-top text-muted-foreground">{r.scheduled_at ? formatDateTime(r.scheduled_at) : '—'}</td>
+                    <td className="px-4 py-3 align-top">
+                      <div className="flex items-center gap-2">
+                        <Link
+                          to={`/maintenance/${r.id}`}
+                          className="inline-flex h-8 items-center rounded-md border border-border px-3 text-xs font-medium text-foreground hover:bg-accent"
+                        >
+                          {t('table.details')}
+                        </Link>
                       </div>
                     </td>
-                  </Tr>
+                  </tr>
                 );
               })}
             </tbody>
-          </Table>
-          <Pagination page={page} pageSize={20} total={data.meta.total} onChange={setPage} />
-        </>
+            </table>
+          </div>
+          <div className="border-t border-border bg-card px-4 py-3">
+            <Pagination page={page} pageSize={20} total={data.meta.total} onChange={setPage} />
+          </div>
+        </div>
       )}
     </div>
   );

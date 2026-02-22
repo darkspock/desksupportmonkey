@@ -40,6 +40,7 @@ const icons: Record<string, ReactNode> = {
   '/reports':                        icon('M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z'),
   '/settings/company':               icon('M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z'),
   '/settings/api-keys':              icon('M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z'),
+  '/settings/employee-roles':        icon('M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z'),
   '/settings/equipment-profiles':    icon('M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75'),
   '/settings/assignment-ai':         icon('M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z'),
   '/settings/availability':          icon('M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z'),
@@ -56,14 +57,22 @@ const icons: Record<string, ReactNode> = {
 /* ------------------------------------------------------------------ */
 
 interface NavItem {
+  type?: undefined;
   to: string;
   labelKey: string;
   roles?: string[];
 }
 
+interface NavSeparator {
+  type: 'separator';
+  roles?: string[];
+}
+
+type NavEntry = NavItem | NavSeparator;
+
 interface NavSection {
   labelKey?: string;
-  items: NavItem[];
+  items: NavEntry[];
 }
 
 interface SidebarProps {
@@ -84,22 +93,22 @@ const sections: NavSection[] = [
   {
     labelKey: 'nav.section_my_tasks',
     items: [
-      { to: '/my/tasks/appointments', labelKey: 'nav.my_task_appointments', roles: ['technician', 'admin', 'super_admin'] },
-      { to: '/my/maintenance', labelKey: 'nav.my_maintenance', roles: ['technician', 'admin', 'super_admin'] },
+      { to: '/my/tasks/appointments', labelKey: 'nav.my_task_appointments', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
+      { to: '/my/maintenance', labelKey: 'nav.my_maintenance', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
     ],
   },
   {
     labelKey: 'nav.section_operations',
     items: [
       { to: '/dashboard', labelKey: 'nav.dashboard', roles: ['admin', 'super_admin'] },
-      { to: '/requests', labelKey: 'nav.request_queue', roles: ['technician', 'admin', 'super_admin'] },
-      { to: '/calendar', labelKey: 'nav.calendar', roles: ['technician', 'admin', 'super_admin'] },
-      { to: '/assets', labelKey: 'nav.asset_inventory', roles: ['technician', 'admin', 'super_admin'] },
-      { to: '/vendors', labelKey: 'nav.vendors', roles: ['technician', 'admin', 'super_admin'] },
-      { to: '/purchase-orders', labelKey: 'nav.purchase_orders', roles: ['technician', 'admin', 'super_admin'] },
-      { to: '/shipments', labelKey: 'nav.shipments', roles: ['technician', 'admin', 'super_admin'] },
-      { to: '/maintenance', labelKey: 'nav.maintenance', roles: ['technician', 'admin', 'super_admin'] },
-      { to: '/addresses', labelKey: 'nav.addresses', roles: ['technician', 'admin', 'super_admin'] },
+      { to: '/requests', labelKey: 'nav.request_queue', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
+      { to: '/calendar', labelKey: 'nav.calendar', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
+      { to: '/assets', labelKey: 'nav.asset_inventory', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
+      { to: '/vendors', labelKey: 'nav.vendors', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
+      { to: '/purchase-orders', labelKey: 'nav.purchase_orders', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
+      { to: '/shipments', labelKey: 'nav.shipments', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
+      { to: '/maintenance', labelKey: 'nav.maintenance', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
+      { to: '/addresses', labelKey: 'nav.addresses', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
     ],
   },
   {
@@ -107,15 +116,18 @@ const sections: NavSection[] = [
     items: [
       { to: '/users', labelKey: 'nav.users', roles: ['admin', 'super_admin'] },
       { to: '/departments', labelKey: 'nav.departments', roles: ['admin', 'super_admin'] },
+      { to: '/settings/availability', labelKey: 'nav.availability_settings', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
+      { type: 'separator', roles: ['admin', 'super_admin'] },
       { to: '/reports', labelKey: 'nav.reports', roles: ['admin', 'super_admin'] },
+      { type: 'separator', roles: ['admin', 'super_admin'] },
       { to: '/settings/company', labelKey: 'nav.company_settings', roles: ['admin'] },
-      { to: '/settings/api-keys', labelKey: 'nav.api_keys', roles: ['admin', 'super_admin'] },
+      { to: '/settings/employee-roles', labelKey: 'nav.employee_roles', roles: ['admin', 'super_admin'] },
       { to: '/settings/equipment-profiles', labelKey: 'nav.equipment_profiles', roles: ['admin', 'super_admin'] },
-      { to: '/settings/assignment-ai', labelKey: 'nav.assignment_ai', roles: ['admin'] },
-      { to: '/settings/availability', labelKey: 'nav.availability_settings', roles: ['technician', 'admin', 'super_admin'] },
       { to: '/settings/request-classification', labelKey: 'nav.request_classification', roles: ['admin'] },
       { to: '/settings/procurement', labelKey: 'nav.procurement_settings', roles: ['admin'] },
       { to: '/maintenance-templates', labelKey: 'nav.maintenance_templates', roles: ['admin', 'super_admin'] },
+      { to: '/settings/assignment-ai', labelKey: 'nav.assignment_ai', roles: ['admin'] },
+      { to: '/settings/api-keys', labelKey: 'nav.api_keys', roles: ['admin', 'super_admin'] },
     ],
   },
   {
@@ -136,10 +148,32 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const role = user?.role;
   const companyName = user?.company_name?.trim() || user?.email || 'DeskSupportMonkey';
 
+  const isSeparator = (entry: NavEntry): entry is NavSeparator => entry.type === 'separator';
+
+  const normalizeSectionEntries = useCallback((items: NavEntry[]): NavEntry[] => {
+    const normalized: NavEntry[] = [];
+
+    for (const item of items) {
+      if (isSeparator(item)) {
+        if (normalized.length === 0 || isSeparator(normalized[normalized.length - 1])) continue;
+        normalized.push(item);
+        continue;
+      }
+      normalized.push(item);
+    }
+
+    while (normalized[0] && isSeparator(normalized[0])) normalized.shift();
+    while (normalized[normalized.length - 1] && isSeparator(normalized[normalized.length - 1])) normalized.pop();
+
+    return normalized;
+  }, []);
+
   const baseSections = sections
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) => !item.roles || (role && item.roles.includes(role))),
+      items: normalizeSectionEntries(
+        section.items.filter((item) => !item.roles || (role && item.roles.includes(role))),
+      ),
     }))
     .filter((section) => section.items.length > 0);
 
@@ -147,7 +181,9 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
     ? baseSections
       .map((section) => ({
         ...section,
-        items: section.items.filter((item) => item.to === '/companies' || item.to === '/settings/api-keys'),
+        items: normalizeSectionEntries(
+          section.items.filter((item) => !isSeparator(item) && (item.to === '/companies' || item.to === '/settings/api-keys')),
+        ),
       }))
       .filter((section) => section.items.length > 0)
     : baseSections;
@@ -175,7 +211,7 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
     const collapsed: Record<number, boolean> = {};
     visibleSections.forEach((section, i) => {
       if (!section.labelKey) return;
-      const hasActiveItem = section.items.some((item) => location.pathname.startsWith(item.to));
+      const hasActiveItem = section.items.some((item) => !isSeparator(item) && location.pathname.startsWith(item.to));
       collapsed[i] = !hasActiveItem;
     });
     return collapsed;
@@ -184,7 +220,16 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const [collapsed, setCollapsed] = useState<Record<number, boolean>>(getInitialCollapsed);
 
   const toggleSection = (index: number) => {
-    setCollapsed((prev) => ({ ...prev, [index]: !prev[index] }));
+    setCollapsed((prev) => {
+      const next: Record<number, boolean> = {};
+
+      visibleSections.forEach((section, i) => {
+        if (!section.labelKey) return;
+        next[i] = i === index ? !prev[i] : true;
+      });
+
+      return next;
+    });
   };
 
   const navContent = (closeFn?: () => void) => (
@@ -227,23 +272,29 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
               )}
               {isOpen && (
                 <div className="space-y-0.5">
-                  {section.items.map((item) => (
-                    <NavLink
-                      key={item.to}
-                      to={item.to}
-                      onClick={closeFn}
-                      className={({ isActive }) =>
-                        cn(
-                          'flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors',
-                          isActive
-                            ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                        )
-                      }
-                    >
-                      {icons[item.to]}
-                      {t(item.labelKey)}
-                    </NavLink>
+                  {section.items.map((item, itemIndex) => (
+                    isSeparator(item) ? (
+                      <div key={`${section.labelKey ?? 'section'}-sep-${itemIndex}`} className="my-1 px-3">
+                        <div className="h-px bg-sidebar-border/70" />
+                      </div>
+                    ) : (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        onClick={closeFn}
+                        className={({ isActive }) =>
+                          cn(
+                            'flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                            isActive
+                              ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                              : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                          )
+                        }
+                      >
+                        {icons[item.to]}
+                        {t(item.labelKey)}
+                      </NavLink>
+                    )
                   ))}
                 </div>
               )}

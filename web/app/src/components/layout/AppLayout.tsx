@@ -27,7 +27,7 @@ export function AppLayout() {
   }
 
   // Admin/super_admin/technician without password must set it first
-  if ((user.role === 'admin' || user.role === 'super_admin' || user.role === 'technician') && user.password_set === false) {
+  if ((user.role === 'admin' || user.role === 'super_admin' || user.role === 'procurement_manager' || user.role === 'technician') && user.password_set === false) {
     return <Navigate to="/auth/set-password" replace />;
   }
 

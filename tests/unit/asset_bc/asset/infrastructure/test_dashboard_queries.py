@@ -43,7 +43,7 @@ class TestCountByType:
         assert result["monitor"] == 10
         assert result["keyboard"] == 0
         assert result["other"] == 0
-        assert len(result) == 7
+        assert len(result) == 8
 
 
 class TestFindExpiringWarranties:

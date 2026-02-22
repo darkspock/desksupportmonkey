@@ -11,6 +11,7 @@ class CreateDepartmentRequest(BaseModel):
 class UpdateDepartmentRequest(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     priority_weight: Optional[int] = Field(None, ge=-1, le=2)
+    budget_enforcement_enabled: Optional[bool] = None
 
 
 class AssignManagerRequest(BaseModel):
@@ -26,6 +27,7 @@ class DepartmentResponse(BaseModel):
     manager_email: Optional[str] = None
     manager_name: Optional[str] = None
     priority_weight: int = 0
+    budget_enforcement_enabled: bool = False
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

@@ -22,6 +22,7 @@ class DepartmentRepository(DepartmentRepositoryInterface):
             existing.is_active = department.is_active
             existing.manager_user_id = department.manager_user_id
             existing.priority_weight = department.priority_weight
+            existing.budget_enforcement_enabled = department.budget_enforcement_enabled
         else:
             model = DepartmentModel(
                 id=department.id,
@@ -30,6 +31,7 @@ class DepartmentRepository(DepartmentRepositoryInterface):
                 is_active=department.is_active,
                 manager_user_id=department.manager_user_id,
                 priority_weight=department.priority_weight,
+                budget_enforcement_enabled=department.budget_enforcement_enabled,
             )
             self.session.add(model)
         self.session.flush()
@@ -101,6 +103,7 @@ class DepartmentRepository(DepartmentRepositoryInterface):
             is_active=model.is_active,
             manager_user_id=model.manager_user_id,
             priority_weight=model.priority_weight if model.priority_weight is not None else 0,
+            budget_enforcement_enabled=model.budget_enforcement_enabled if model.budget_enforcement_enabled is not None else False,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )

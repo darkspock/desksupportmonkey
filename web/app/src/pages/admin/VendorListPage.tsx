@@ -69,7 +69,7 @@ export default function VendorListPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
-  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'procurement_manager';
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -310,7 +310,7 @@ export default function VendorListPage() {
                   <Th>{t('page.vendors.phone')}</Th>
                   <Th>{t('table.status')}</Th>
                   <Th>{t('page.vendors.created')}</Th>
-                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">{t('table.actions')}</th>
+                  <th className="px-4 py-2 text-right font-medium text-foreground">{t('table.actions')}</th>
                 </tr>
               </thead>
               <tbody>

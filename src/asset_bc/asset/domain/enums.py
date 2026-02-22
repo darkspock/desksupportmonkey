@@ -7,6 +7,7 @@ class AssetType(str, Enum):
     KEYBOARD = "keyboard"
     MOUSE = "mouse"
     HEADSET = "headset"
+    PHONE = "phone"
     DOCKING_STATION = "docking_station"
     OTHER = "other"
 

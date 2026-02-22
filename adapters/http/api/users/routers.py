@@ -93,6 +93,7 @@ def _to_response(user: User) -> UserDetailResponse:
         role=user.role.value,
         company_id=user.company_id,
         department_id=user.department_id,
+        employee_role_id=user.employee_role_id,
         is_active=user.is_active,
         created_at=user.created_at,
         updated_at=user.updated_at,
@@ -407,6 +408,13 @@ def update_user(
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Department not found")
         except DepartmentInactiveError:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Cannot assign user to inactive department")
+
+    if "employee_role_id" in provided:
+        user = user_repo.find_by_id_and_company(user_id, company_id)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        user.assign_employee_role(body.employee_role_id)
+        user_repo.save(user)
 
     return _get_user_response(user_repo, user_id, company_id)
 

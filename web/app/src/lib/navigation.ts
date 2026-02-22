@@ -6,6 +6,7 @@ export function getDefaultRouteForRole(role?: UserRole | null): string {
       return '/companies';
     case 'admin':
       return '/dashboard';
+    case 'procurement_manager':
     case 'technician':
       return '/requests';
     case 'employee':

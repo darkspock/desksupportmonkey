@@ -44,11 +44,11 @@ class ActivateEquipmentProfileCommandHandler(
             )
 
         # Deactivate any existing active profile
-        # for the same department+role
+        # for the same department+employee_role
         conflicting = self.profile_repo.find_active(
             company_id=profile.company_id,
             department_id=profile.department_id,
-            role=profile.role.value,
+            employee_role_id=profile.employee_role_id,
         )
         if conflicting and conflicting.id != profile.id:
             conflicting.deactivate()

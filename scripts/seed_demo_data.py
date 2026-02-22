@@ -232,7 +232,7 @@ def seed_users(session, companies: list[dict], dept_map: dict) -> dict:
         cid = company["id"]
         domain = company["domain"]
         depts = dept_map[cid]
-        company_users: dict[str, list] = {"admin": [], "technician": [], "employee": []}
+        company_users: dict[str, list] = {"admin": [], "procurement_manager": [], "technician": [], "employee": []}
 
         # Admin
         first, last = next_name()
@@ -247,6 +247,20 @@ def seed_users(session, companies: list[dict], dept_map: dict) -> dict:
         )
         session.add(admin)
         company_users["admin"].append({"id": admin.id, "email": admin.email, "name": admin.name})
+
+        # Procurement Manager
+        first, last = next_name()
+        pm = UserModel(
+            id=uid(),
+            email=f"{first.lower()}.{last.lower()}@{domain}",
+            name=f"{first} {last}",
+            role="procurement_manager",
+            company_id=cid,
+            department_id=depts[0]["id"],  # Engineering
+            is_active=True,
+        )
+        session.add(pm)
+        company_users["procurement_manager"].append({"id": pm.id, "email": pm.email, "name": pm.name})
 
         # Technicians (2)
         for _ in range(2):
@@ -280,7 +294,7 @@ def seed_users(session, companies: list[dict], dept_map: dict) -> dict:
             company_users["employee"].append({"id": emp.id, "email": emp.email, "name": emp.name})
 
         users[cid] = company_users
-        print(f"  Users for {company['name']}: 1 admin, 2 techs, 5 employees")
+        print(f"  Users for {company['name']}: 1 admin, 1 procurement mgr, 2 techs, 5 employees")
 
     session.commit()
     return users
@@ -514,7 +528,7 @@ def seed_notifications(session, companies: list[dict], users: dict):
     for company in companies:
         cid = company["id"]
         all_users = (
-            users[cid]["admin"] + users[cid]["technician"] + users[cid]["employee"]
+            users[cid]["admin"] + users[cid]["procurement_manager"] + users[cid]["technician"] + users[cid]["employee"]
         )
         for user in all_users:
             count = random.randint(2, 5)

@@ -81,7 +81,7 @@ class TestInviteUserEndpoint:
         response = admin_client.post("/api/v1/users/invite", json={"email": "employee@company.com"})
 
         assert response.status_code == 201
-        mock_user_repo.save.assert_not_called()
+        mock_user_repo.save.assert_called_once()
         MockHandler.return_value.handle.assert_called_once()
 
     @patch("adapters.http.api.users.routers.CreateMagicLinkCommandHandler")
@@ -104,7 +104,8 @@ class TestInviteUserEndpoint:
         MockHandler.return_value.handle.assert_called_once()
 
     @patch("adapters.http.api.users.routers.CreateMagicLinkCommandHandler")
-    def test_rejects_existing_non_employee(self, MockHandler, admin_client, mock_company_repo, mock_user_repo):
+    def test_reinvite_existing_admin_updates_role(self, MockHandler, admin_client, mock_company_repo, mock_user_repo):
+        """Re-inviting an existing user in the same company updates their role."""
         mock_company_repo.find_by_id.return_value = MagicMock(email_domains=["company.com"])
         existing_admin = User.create(
             email="existing.admin@company.com",
@@ -115,9 +116,8 @@ class TestInviteUserEndpoint:
 
         response = admin_client.post("/api/v1/users/invite", json={"email": "existing.admin@company.com"})
 
-        assert response.status_code == 409
-        payload = response.json()
-        message = payload.get("detail") or payload.get("error", {}).get("message")
-        assert message == "User with this email already exists"
-        mock_user_repo.save.assert_not_called()
-        MockHandler.return_value.handle.assert_not_called()
+        assert response.status_code == 201
+        mock_user_repo.save.assert_called_once()
+        saved_user = mock_user_repo.save.call_args[0][0]
+        assert saved_user.role == UserRole.EMPLOYEE
+        MockHandler.return_value.handle.assert_called_once()

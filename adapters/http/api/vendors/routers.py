@@ -90,11 +90,11 @@ def _require_technician(user: User) -> None:
         )
 
 
-def _require_admin(user: User) -> None:
-    if not user.role.has_access(UserRole.ADMIN):
+def _require_procurement_access(user: User) -> None:
+    if not user.role.has_access(UserRole.PROCUREMENT_MANAGER):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
+            detail="Procurement manager access required",
         )
 
 
@@ -282,7 +282,7 @@ def activate_vendor(
         get_vendor_repo,
     ),
 ):
-    _require_admin(current_user)
+    _require_procurement_access(current_user)
 
     handler = ActivateVendorCommandHandler(
         vendor_repo=vendor_repo,
@@ -324,7 +324,7 @@ def deactivate_vendor(
         get_vendor_repo,
     ),
 ):
-    _require_admin(current_user)
+    _require_procurement_access(current_user)
 
     handler = DeactivateVendorCommandHandler(
         vendor_repo=vendor_repo,

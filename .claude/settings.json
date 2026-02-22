@@ -1,15 +1,7 @@
 {
-  "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "Analyze the conversation to determine if implementation work was done that requires progress tracking updates. Check if code was implemented for any feature or task.\n\nIf NO implementation work was done (only research, discussion, or planning), respond with: {\"ok\": true}\n\nIf implementation work WAS done, check whether these progress tracking documents were updated:\n1. tasks.md: Were completed tasks marked as done (- [ ] → - [x]) in docs/epics/{epic}/features/{feature}/tasks.md?\n2. slicing.md: If ALL tasks of a feature are complete, was docs/epics/{epic}/slicing.md updated to mark the feature as Done?\n3. roadmap.md: If ALL features of an epic are complete, was docs/product/roadmap.md updated?\n\nIf all applicable tracking documents were updated, respond with: {\"ok\": true}\nIf tracking documents still need updating, respond with: {\"ok\": false, \"reason\": \"Update progress tracking: <specify which documents need updating and what changes are needed>\"}",
-            "timeout": 60
-          }
-        ]
-      }
-    ]
+  "enabledPlugins": {
+    "feature-dev@claude-code-plugins": true,
+    "frontend-design@claude-code-plugins": true,
+    "chrome-devtools-mcp@chrome-devtools-plugins": true
   }
 }

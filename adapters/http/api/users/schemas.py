@@ -16,6 +16,7 @@ class UpdateUserRequest(BaseModel):
     name: Optional[str] = None
     role: Optional[str] = None
     department_id: Optional[str] = None
+    employee_role_id: Optional[str] = None
 
 
 class InviteUserRequest(BaseModel):
@@ -42,6 +43,7 @@ class UserDetailResponse(BaseModel):
     role: str
     company_id: Optional[str] = None
     department_id: Optional[str] = None
+    employee_role_id: Optional[str] = None
     is_active: bool
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

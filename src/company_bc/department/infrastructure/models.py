@@ -24,6 +24,7 @@ class DepartmentModel(ULIDMixin, TimestampMixin, Base):
         nullable=True,
     )
     priority_weight: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    budget_enforcement_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
 
     __table_args__ = (
         UniqueConstraint("company_id", "name", name="uq_department_company_name"),

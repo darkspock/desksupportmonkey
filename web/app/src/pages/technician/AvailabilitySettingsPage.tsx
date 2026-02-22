@@ -147,10 +147,13 @@ export default function AvailabilitySettingsPage() {
       {/* Recurring Schedule */}
       <Card>
         <h3 className="text-sm font-semibold text-foreground mb-4">{t('page.availability.recurring')}</h3>
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {windows.map((w, i) => (
-            <div key={w.day_of_week} className="flex items-center gap-3">
-              <label className="flex items-center gap-2 w-32">
+            <div
+              key={w.day_of_week}
+              className="grid grid-cols-1 gap-2 md:grid-cols-[11rem_minmax(0,1fr)_1.5rem_minmax(0,1fr)] md:items-center md:gap-3"
+            >
+              <label className="flex min-h-9 items-center gap-2.5 whitespace-nowrap">
                 <input
                   type="checkbox"
                   checked={w.enabled}
@@ -173,9 +176,9 @@ export default function AvailabilitySettingsPage() {
                       updated[i] = { ...updated[i], start_time: e.target.value };
                       setWindows(updated);
                     }}
-                    className="text-sm"
+                    className="text-sm min-w-0"
                   />
-                  <span className="text-muted-foreground">—</span>
+                  <span className="hidden text-center text-muted-foreground md:block">—</span>
                   <input
                     type="time"
                     value={w.end_time}
@@ -184,7 +187,7 @@ export default function AvailabilitySettingsPage() {
                       updated[i] = { ...updated[i], end_time: e.target.value };
                       setWindows(updated);
                     }}
-                    className="text-sm"
+                    className="text-sm min-w-0"
                   />
                 </>
               )}

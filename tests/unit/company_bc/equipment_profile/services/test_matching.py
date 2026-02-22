@@ -6,7 +6,6 @@ from typing import Optional
 from unittest.mock import MagicMock
 
 from src.asset_bc.asset.domain.enums import AssetType
-from src.auth_bc.user.domain.enums import UserRole
 from src.company_bc.assignment_config.domain.enums import (
     FallbackReason,
 )
@@ -38,7 +37,7 @@ def _profile(items: list[EquipmentProfileItem]) -> EquipmentProfile:
     p = EquipmentProfile.create(
         company_id="c1",
         department_id="d1",
-        role=UserRole.EMPLOYEE,
+        employee_role_id="er1",
     )
     p.items = items
     return p
@@ -70,7 +69,7 @@ def _item(
 
 class TestNoStock:
     def test_no_stock_fallback(self):
-        """No in-stock assets → NO_STOCK_FOR_REQUIRED_TYPE."""
+        """No in-stock assets -> NO_STOCK_FOR_REQUIRED_TYPE."""
         lookup = MagicMock()
         lookup.find_in_stock_by_type.return_value = []
 
@@ -88,7 +87,7 @@ class TestNoStock:
 
 class TestSpecMismatch:
     def test_spec_mismatch_fallback(self):
-        """Candidates fail hard spec filters → SPEC_MISMATCH."""
+        """Candidates fail hard spec filters -> SPEC_MISMATCH."""
         asset = FakeAsset(
             id="a1", notes="4gb ram, 128gb ssd",
         )
@@ -108,7 +107,7 @@ class TestSpecMismatch:
 
 class TestSingleCandidate:
     def test_single_candidate_deterministic(self):
-        """Single qualifying candidate → match without AI."""
+        """Single qualifying candidate -> match without AI."""
         asset = FakeAsset(id="a1")
         lookup = MagicMock()
         lookup.find_in_stock_by_type.return_value = [asset]
@@ -123,7 +122,7 @@ class TestSingleCandidate:
 
 class TestMultipleCandidatesAI:
     def test_multiple_candidates_ai_tiebreak(self):
-        """Multiple candidates + AI → AI-chosen asset."""
+        """Multiple candidates + AI -> AI-chosen asset."""
         a1 = FakeAsset(id="a1", purchase_date=date(2023, 1, 1))
         a2 = FakeAsset(id="a2", purchase_date=date(2024, 1, 1))
         lookup = MagicMock()
@@ -144,7 +143,7 @@ class TestMultipleCandidatesAI:
         assert result.matched[0].ai_used
 
     def test_ai_unavailable_deterministic_fallback(self):
-        """AI returns None → fallback to oldest purchase_date."""
+        """AI returns None -> fallback to oldest purchase_date."""
         a1 = FakeAsset(id="a1", purchase_date=date(2023, 1, 1))
         a2 = FakeAsset(id="a2", purchase_date=date(2024, 1, 1))
         lookup = MagicMock()
@@ -170,7 +169,7 @@ class TestMultipleCandidatesAI:
 
 class TestMultipleCandidatesNoAI:
     def test_no_ai_deterministic(self):
-        """Multiple candidates, no AI → oldest purchase_date."""
+        """Multiple candidates, no AI -> oldest purchase_date."""
         a1 = FakeAsset(id="a1", purchase_date=date(2024, 6, 1))
         a2 = FakeAsset(id="a2", purchase_date=date(2023, 1, 1))
         lookup = MagicMock()
@@ -185,7 +184,7 @@ class TestMultipleCandidatesNoAI:
 
 class TestPartialMatch:
     def test_manual_review_partial_match(self):
-        """One item matched, one not → MANUAL_REVIEW_REQUIRED."""
+        """One item matched, one not -> MANUAL_REVIEW_REQUIRED."""
         laptop = FakeAsset(id="a1")
         lookup = MagicMock()
 
@@ -215,7 +214,7 @@ class TestPartialMatch:
 
 class TestFullMatchAllItems:
     def test_full_match_all_items(self):
-        """All items matched → fully_matched=True."""
+        """All items matched -> fully_matched=True."""
         laptop = FakeAsset(id="a1")
         monitor = FakeAsset(id="a2")
         lookup = MagicMock()
@@ -245,7 +244,7 @@ class TestFullMatchAllItems:
 
 class TestSoftFilters:
     def test_brand_filter_soft(self):
-        """Brand is a soft filter — keeps all if no match."""
+        """Brand is a soft filter -- keeps all if no match."""
         a1 = FakeAsset(id="a1", brand="HP")
         lookup = MagicMock()
         lookup.find_in_stock_by_type.return_value = [a1]

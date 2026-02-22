@@ -15,6 +15,7 @@ from adapters.http.api.auth.dependencies import (
 from adapters.http.api.dependencies import get_event_bus
 from adapters.http.api.purchase_orders.dependencies import (
     get_budget_checker,
+    get_department_repo,
     get_po_repo,
     get_procurement_config_repo,
 )
@@ -124,6 +125,9 @@ from src.procurement_bc.purchase_order.domain.enums import (
 from src.procurement_bc.purchase_order.infrastructure.repository import (  # noqa: E501
     PurchaseOrderRepository,
 )
+from src.company_bc.department.infrastructure.repository import (
+    DepartmentRepository,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -179,11 +183,11 @@ def _require_technician(user: User) -> None:
         )
 
 
-def _require_admin(user: User) -> None:
-    if not user.role.has_access(UserRole.ADMIN):
+def _require_procurement_access(user: User) -> None:
+    if not user.role.has_access(UserRole.PROCUREMENT_MANAGER):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
+            detail="Procurement manager access required",
         )
 
 
@@ -521,16 +525,20 @@ def approve_purchase_order(
     po_repo: PurchaseOrderRepository = Depends(
         get_po_repo,
     ),
+    dept_repo: DepartmentRepository = Depends(
+        get_department_repo,
+    ),
     budget_checker: BudgetChecker = Depends(
         get_budget_checker,
     ),
     event_bus: EventBus = Depends(get_event_bus),
 ):
-    _require_admin(current_user)
+    _require_procurement_access(current_user)
 
     handler = ApprovePurchaseOrderCommandHandler(
         po_repo=po_repo,
         budget_checker=budget_checker,
+        department_repo=dept_repo,
     )
     try:
         handler.handle(
@@ -612,7 +620,7 @@ def reject_purchase_order(
     ),
     event_bus: EventBus = Depends(get_event_bus),
 ):
-    _require_admin(current_user)
+    _require_procurement_access(current_user)
 
     handler = RejectPurchaseOrderCommandHandler(
         po_repo=po_repo,

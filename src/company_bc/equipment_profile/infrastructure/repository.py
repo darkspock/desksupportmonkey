@@ -5,7 +5,6 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from src.asset_bc.asset.domain.enums import AssetType
-from src.auth_bc.user.domain.enums import UserRole
 from src.company_bc.equipment_profile.domain.entities import (
     EquipmentProfile,
     EquipmentProfileItem,
@@ -49,6 +48,7 @@ class EquipmentProfileRepository(
                         preferred_model=item.preferred_model,
                         min_ram_gb=item.min_ram_gb,
                         min_storage_gb=item.min_storage_gb,
+                        budget_cents=item.budget_cents,
                     )
                 )
         else:
@@ -56,7 +56,7 @@ class EquipmentProfileRepository(
                 id=profile.id,
                 company_id=profile.company_id,
                 department_id=profile.department_id,
-                role=profile.role.value,
+                employee_role_id=profile.employee_role_id,
                 is_active=profile.is_active,
                 items=[
                     EquipmentProfileItemModel(
@@ -68,6 +68,7 @@ class EquipmentProfileRepository(
                         preferred_model=i.preferred_model,
                         min_ram_gb=i.min_ram_gb,
                         min_storage_gb=i.min_storage_gb,
+                        budget_cents=i.budget_cents,
                     )
                     for i in profile.items
                 ],
@@ -93,7 +94,7 @@ class EquipmentProfileRepository(
         self,
         company_id: str,
         department_id: str,
-        role: str,
+        employee_role_id: Optional[str],
     ) -> Optional[EquipmentProfile]:
         model = self.session.execute(
             select(EquipmentProfileModel).where(
@@ -101,7 +102,7 @@ class EquipmentProfileRepository(
                 == company_id,
                 EquipmentProfileModel.department_id
                 == department_id,
-                EquipmentProfileModel.role == role,
+                EquipmentProfileModel.employee_role_id == employee_role_id,
                 EquipmentProfileModel.is_active.is_(True),
             )
         ).unique().scalar_one_or_none()
@@ -113,7 +114,7 @@ class EquipmentProfileRepository(
         page: int,
         page_size: int,
         department_id: Optional[str] = None,
-        role: Optional[str] = None,
+        employee_role_id: Optional[str] = None,
         is_active: Optional[bool] = None,
     ) -> tuple[list[EquipmentProfile], int]:
         stmt = select(EquipmentProfileModel).where(
@@ -124,9 +125,9 @@ class EquipmentProfileRepository(
                 EquipmentProfileModel.department_id
                 == department_id,
             )
-        if role:
+        if employee_role_id:
             stmt = stmt.where(
-                EquipmentProfileModel.role == role,
+                EquipmentProfileModel.employee_role_id == employee_role_id,
             )
         if is_active is not None:
             stmt = stmt.where(
@@ -172,7 +173,7 @@ class EquipmentProfileRepository(
             id=model.id,
             company_id=model.company_id,
             department_id=model.department_id,
-            role=UserRole(model.role),
+            employee_role_id=model.employee_role_id,
             is_active=model.is_active,
             items=[
                 EquipmentProfileItem(
@@ -184,6 +185,7 @@ class EquipmentProfileRepository(
                     preferred_model=i.preferred_model,
                     min_ram_gb=i.min_ram_gb,
                     min_storage_gb=i.min_storage_gb,
+                    budget_cents=i.budget_cents,
                 )
                 for i in model.items
             ],

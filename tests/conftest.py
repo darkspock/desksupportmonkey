@@ -58,6 +58,7 @@ def tables(test_engine):
     import src.notification_bc.notification.infrastructure.models  # noqa: F401
     import src.report_bc.report.infrastructure.models  # noqa: F401
     import src.mcp_bc.server.infrastructure.models  # noqa: F401
+    import src.company_bc.employee_role.infrastructure.models  # noqa: F401
     import src.company_bc.equipment_profile.infrastructure.models  # noqa: F401
     import src.company_bc.assignment_config.infrastructure.models  # noqa: F401
     import src.company_bc.classification_config.infrastructure.models  # noqa: F401
@@ -236,8 +237,10 @@ def make_user(db_session):
     from src.auth_bc.user.domain.enums import UserRole
     from src.auth_bc.user.infrastructure.repository import UserRepository
 
-    def _make(email, role=UserRole.EMPLOYEE, company_id=None, name=None, department_id=None):
+    def _make(email, role=UserRole.EMPLOYEE, company_id=None, name=None, department_id=None, employee_role_id=None):
         u = User.create(email=email, role=role, company_id=company_id, name=name, department_id=department_id)
+        if employee_role_id:
+            u.assign_employee_role(employee_role_id)
         UserRepository(db_session).save(u)
         db_session.flush()
         return u

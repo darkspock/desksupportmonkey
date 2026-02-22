@@ -3,7 +3,6 @@ from unittest.mock import MagicMock
 import pytest
 
 from src.asset_bc.asset.domain.enums import AssetType
-from src.auth_bc.user.domain.enums import UserRole
 from src.company_bc.equipment_profile.application.commands.update_profile import (  # noqa: E501
     ProfileItemInput,
     ProfileNotFoundError,
@@ -22,7 +21,7 @@ class TestUpdateEquipmentProfile:
             id="prof1",
             company_id="comp1",
             department_id="dept1",
-            role=UserRole.EMPLOYEE,
+            employee_role_id="er1",
         )
         profile.items = [
             EquipmentProfileItem(

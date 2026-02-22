@@ -37,10 +37,10 @@ class AutoAssignService:
         self,
         company_id: str,
         department_id: Optional[str],
-        role: Optional[str],
+        employee_role_id: Optional[str],
     ) -> dict:
         """Attempt auto-assignment. Returns metadata."""
-        if not department_id or not role:
+        if not department_id or not employee_role_id:
             return {
                 "status": "skipped",
                 "reason": "no_department_or_role",
@@ -50,7 +50,7 @@ class AutoAssignService:
         profile = self.profile_repo.find_active(
             company_id=company_id,
             department_id=department_id,
-            role=role,
+            employee_role_id=employee_role_id,
         )
         if not profile:
             return {

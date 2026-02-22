@@ -23,6 +23,7 @@ class UserRepository(UserRepositoryInterface):
             existing.role = user.role.value
             existing.company_id = user.company_id
             existing.department_id = user.department_id
+            existing.employee_role_id = user.employee_role_id
             existing.is_active = user.is_active
             existing.password_hash = user.password_hash
         else:
@@ -33,6 +34,7 @@ class UserRepository(UserRepositoryInterface):
                 role=user.role.value,
                 company_id=user.company_id,
                 department_id=user.department_id,
+                employee_role_id=user.employee_role_id,
                 is_active=user.is_active,
                 password_hash=user.password_hash,
             )
@@ -168,6 +170,7 @@ class UserRepository(UserRepositoryInterface):
             role=UserRole(model.role),
             company_id=model.company_id,
             department_id=model.department_id,
+            employee_role_id=model.employee_role_id,
             is_active=model.is_active,
             password_hash=model.password_hash,
             created_at=model.created_at,

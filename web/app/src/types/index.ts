@@ -1,5 +1,5 @@
 // Auth
-export type UserRole = 'super_admin' | 'admin' | 'technician' | 'employee';
+export type UserRole = 'super_admin' | 'admin' | 'procurement_manager' | 'technician' | 'employee';
 
 export interface User {
   id: string;
@@ -9,6 +9,7 @@ export interface User {
   company_id: string | null;
   company_name?: string | null;
   department_id: string | null;
+  employee_role_id?: string | null;
   is_active: boolean;
   password_set?: boolean;
   created_at: string;
@@ -60,12 +61,13 @@ export interface Department {
   manager_email?: string | null;
   manager_name?: string | null;
   priority_weight?: number;
+  budget_enforcement_enabled?: boolean;
   user_count?: number;
   created_at: string;
 }
 
 // Asset
-export type AssetType = 'laptop' | 'desktop' | 'phone' | 'tablet' | 'monitor' | 'printer' | 'other';
+export type AssetType = 'laptop' | 'monitor' | 'keyboard' | 'mouse' | 'headset' | 'phone' | 'docking_station' | 'other';
 export type AssetStatus = 'in_stock' | 'assigned' | 'in_repair' | 'decommissioned';
 
 export interface Asset {
@@ -269,15 +271,27 @@ export interface EquipmentProfileItem {
   preferred_model?: string | null;
   min_ram_gb?: number | null;
   min_storage_gb?: number | null;
+  budget_cents?: number | null;
 }
 
 export interface EquipmentProfile {
   id: string;
   company_id: string;
   department_id: string;
-  role: string;
+  employee_role_id: string;
   is_active: boolean;
   items: EquipmentProfileItem[];
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+// Employee Role
+export interface EmployeeRole {
+  id: string;
+  company_id: string;
+  name: string;
+  description: string | null;
+  is_active: boolean;
   created_at: string | null;
   updated_at: string | null;
 }

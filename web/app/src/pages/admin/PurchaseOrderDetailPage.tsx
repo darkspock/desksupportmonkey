@@ -44,7 +44,7 @@ export default function PurchaseOrderDetailPage() {
   const { showToast } = useToast();
   const { t } = useI18n();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'procurement_manager';
 
   const [rejectReason, setRejectReason] = useState('');
   const [cancelReason, setCancelReason] = useState('');

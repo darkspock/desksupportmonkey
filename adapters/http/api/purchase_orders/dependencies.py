@@ -5,6 +5,9 @@ from core.database import get_db
 from src.procurement_bc.budget.application.services.budget_checker import (  # noqa: E501
     BudgetChecker,
 )
+from src.company_bc.department.infrastructure.repository import (
+    DepartmentRepository,
+)
 from src.procurement_bc.budget.infrastructure.repository import (  # noqa: E501
     CompanyProcurementConfigRepository,
     DepartmentBudgetRepository,
@@ -43,3 +46,9 @@ def get_budget_checker(
         po_repo=PurchaseOrderRepository(db),
         config_repo=CompanyProcurementConfigRepository(db),
     )
+
+
+def get_department_repo(
+    db: Session = Depends(get_db),
+) -> DepartmentRepository:
+    return DepartmentRepository(db)

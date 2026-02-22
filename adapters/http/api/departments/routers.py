@@ -97,6 +97,7 @@ def _to_response(
         manager_email=manager_email,
         manager_name=manager_name,
         priority_weight=dept.priority_weight,
+        budget_enforcement_enabled=dept.budget_enforcement_enabled,
         created_at=dept.created_at,
         updated_at=dept.updated_at,
     )
@@ -226,6 +227,7 @@ def get_department(
             manager_email=mgr_email,
             manager_name=mgr_name,
             priority_weight=detail.department.priority_weight,
+            budget_enforcement_enabled=detail.department.budget_enforcement_enabled,
             created_at=detail.department.created_at,
             updated_at=detail.department.updated_at,
             user_count=detail.user_count,
@@ -254,6 +256,7 @@ def update_department(
                 company_id=current_user.company_id,
                 name=body.name,
                 priority_weight=body.priority_weight,
+                budget_enforcement_enabled=body.budget_enforcement_enabled,
             )
         )
     except UpdateDeptNotFoundError:

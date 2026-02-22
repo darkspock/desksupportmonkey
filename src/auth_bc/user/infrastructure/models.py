@@ -15,5 +15,11 @@ class UserModel(ULIDMixin, TimestampMixin, Base):
     role: Mapped[str] = mapped_column(String(20))
     company_id: Mapped[Optional[str]] = mapped_column(String(26), ForeignKey("companies.id"), index=True)
     department_id: Mapped[Optional[str]] = mapped_column(String(26), ForeignKey("departments.id"), index=True)
+    employee_role_id: Mapped[Optional[str]] = mapped_column(
+        String(26),
+        ForeignKey("employee_roles.id", ondelete="SET NULL", name="fk_users_employee_role_id"),
+        nullable=True,
+        index=True,
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     password_hash: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)

@@ -32,6 +32,7 @@ def can_manage_department(
     """Check if user is admin or manager of the dept."""
     if user.role.has_access(UserRole.ADMIN):
         return True
+    assert user.company_id is not None
     dept = dept_repo.find_by_id(
         department_id, user.company_id,
     )

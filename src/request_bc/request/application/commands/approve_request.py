@@ -41,7 +41,7 @@ class ApproveRequestCommandHandler(CommandHandler[ApproveRequestCommand]):
                 f"Request is not pending approval (current status: {request.status.value})"
             )
 
-        is_admin = command.performed_by_role in ("admin", "super_admin")
+        is_admin = command.performed_by_role in ("admin", "super_admin", "procurement_manager")
         is_manager = (
             command.department_manager_id is not None
             and command.performed_by == command.department_manager_id

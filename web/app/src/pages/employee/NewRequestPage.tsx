@@ -1,11 +1,20 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
 import { useI18n } from '../../lib/i18n';
 import { useToast } from '../../hooks/useToast';
 import type { RequestType } from '../../types';
 import { VALID_SUBTYPES } from '../../types';
+
+// Map request subtypes to equipment profile asset types
+const SUBTYPE_ASSET_MAP: Record<string, string[]> = {
+  computer: ['laptop'],
+  mobile: [],
+  peripheral: ['keyboard', 'mouse', 'headset', 'docking_station'],
+  monitor: ['monitor'],
+  software_license: [],
+};
 
 const TYPE_CONFIG: { key: RequestType; icon: React.ReactNode; descKey: string }[] = [
   {
@@ -86,6 +95,22 @@ export default function NewRequestPage() {
   });
 
   const subtypeOptions = form.type ? (VALID_SUBTYPES[form.type] ?? []) : [];
+
+  const budgetQuery = useQuery({
+    queryKey: ['my-budget'],
+    queryFn: async () => {
+      const { data } = await api.get('/equipment-profiles/my-budget');
+      return data.data as { items: { asset_type: string; budget_cents: number }[] };
+    },
+    enabled: form.type === 'new_equipment',
+  });
+
+  const matchingBudgets = (() => {
+    if (!budgetQuery.data?.items?.length || !form.subtype) return [];
+    const assetTypes = SUBTYPE_ASSET_MAP[form.subtype] ?? [];
+    if (!assetTypes.length) return [];
+    return budgetQuery.data.items.filter((b) => assetTypes.includes(b.asset_type));
+  })();
 
   const showError = (msg: string) => {
     showToast({ title: msg, variant: 'error', durationMs: 5000 });
@@ -207,6 +232,28 @@ export default function NewRequestPage() {
               </div>
             )}
           </div>
+
+          {/* Budget indicator for new_equipment */}
+          {form.type === 'new_equipment' && form.subtype && (
+            <div className="flex items-center gap-2 rounded-md border border-border bg-muted/50 px-3 py-2 text-sm">
+              <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+              </svg>
+              {matchingBudgets.length > 0 ? (
+                <span className="text-foreground">
+                  {matchingBudgets.map((b) => (
+                    <span key={b.asset_type}>
+                      {t('page.new_request.budget_amount', { amount: (b.budget_cents / 100).toLocaleString() })}
+                      {' '}
+                      <span className="text-muted-foreground">({t(`enum.${b.asset_type}`)})</span>
+                    </span>
+                  ))}
+                </span>
+              ) : (
+                <span className="text-muted-foreground">{t('page.new_request.no_budget_set')}</span>
+              )}
+            </div>
+          )}
 
           {/* Description */}
           <div className="space-y-2">

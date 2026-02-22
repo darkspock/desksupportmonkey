@@ -106,6 +106,19 @@ class TestBudgetCheckerCheckApproval:
         assert result.allowed is True
         assert result.warning is None
 
+    def test_enforcement_disabled_skips_budget_check(self):
+        """When budget_enforcement_enabled=False, always allow."""
+        result = self.checker.check_approval(
+            "c1", "d1", 999999,
+            budget_enforcement_enabled=False,
+        )
+
+        assert result.allowed is True
+        assert result.warning is None
+        # Should not even look up config or budget
+        self.config_repo.find_by_company_id.assert_not_called()
+        self.budget_repo.find_by_department_year.assert_not_called()
+
 
 class TestBudgetCheckerGetFiscalYear:
     @patch("src.procurement_bc.budget.application.services.budget_checker.date")

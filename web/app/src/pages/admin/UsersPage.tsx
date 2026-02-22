@@ -10,7 +10,7 @@ import { EmptyState, ErrorState } from '../../components/ui/StateBlock';
 import { Tooltip } from '../../components/ui/Tooltip';
 import { useToast } from '../../hooks/useToast';
 import { useI18n } from '../../lib/i18n';
-import type { User, UserRole, Department, PaginatedResponse } from '../../types';
+import type { User, UserRole, Department, EmployeeRole, PaginatedResponse } from '../../types';
 
 interface EditModalState {
   userId: string;
@@ -18,6 +18,7 @@ interface EditModalState {
   name: string;
   role: UserRole;
   departmentId: string;
+  employeeRoleId: string;
 }
 
 interface StatusConfirmState {
@@ -26,7 +27,7 @@ interface StatusConfirmState {
   active: boolean;
 }
 
-const ROLE_OPTIONS: UserRole[] = ['employee', 'technician', 'admin'];
+const ROLE_OPTIONS: UserRole[] = ['employee', 'technician', 'procurement_manager', 'admin'];
 
 export default function UsersPage() {
   const { t } = useI18n();
@@ -64,10 +65,23 @@ export default function UsersPage() {
     },
   });
 
+  const { data: employeeRoles } = useQuery({
+    queryKey: ['users-employee-roles-options'],
+    queryFn: async () => {
+      const { data } = await api.get('/employee-roles', { params: { page: 1, page_size: 100 } });
+      return data.data as EmployeeRole[];
+    },
+  });
+
   const departmentOptions = useMemo(() => departments ?? [], [departments]);
+  const employeeRoleOptions = useMemo(() => employeeRoles ?? [], [employeeRoles]);
   const departmentNameById = useMemo(
     () => new Map((departmentOptions ?? []).map((d) => [d.id, d.name])),
     [departmentOptions],
+  );
+  const employeeRoleNameById = useMemo(
+    () => new Map((employeeRoleOptions ?? []).map((r) => [r.id, r.name])),
+    [employeeRoleOptions],
   );
 
   const inviteUser = useMutation({
@@ -96,6 +110,7 @@ export default function UsersPage() {
         name: payload.name || null,
         role: payload.role,
         department_id: payload.departmentId || null,
+        employee_role_id: payload.employeeRoleId || null,
       });
     },
     onSuccess: () => {
@@ -247,6 +262,7 @@ export default function UsersPage() {
                 <Th>{t('table.name')}</Th>
                 <Th>{t('table.role')}</Th>
                 <Th className="hidden md:table-cell">{t('table.department')}</Th>
+                <Th className="hidden lg:table-cell">{t('nav.employee_roles')}</Th>
                 <Th>{t('table.status')}</Th>
                 <Th className="pr-4 text-right">{t('table.actions')}</Th>
               </tr>
@@ -260,6 +276,7 @@ export default function UsersPage() {
                   <Td><span className="text-sm text-foreground">{u.name || '—'}</span></Td>
                   <Td>{t(`enum.${u.role}`)}</Td>
                   <Td className="hidden md:table-cell">{u.department_id ? (departmentNameById.get(u.department_id) ?? t('common.unassigned')) : t('common.unassigned')}</Td>
+                  <Td className="hidden lg:table-cell">{u.employee_role_id ? (employeeRoleNameById.get(u.employee_role_id) ?? t('common.unassigned')) : t('common.unassigned')}</Td>
                   <Td>{u.is_active ? <Badge variant="success">{t('page.users.active')}</Badge> : <Badge variant="danger">{t('page.users.inactive')}</Badge>}</Td>
                   <Td className="pr-4">
                     <div className="flex items-center justify-end gap-2">
@@ -274,6 +291,7 @@ export default function UsersPage() {
                               name: u.name || '',
                               role: u.role,
                               departmentId: u.department_id ?? '',
+                              employeeRoleId: u.employee_role_id ?? '',
                             });
                           }}
                           aria-label={t('common.edit')}
@@ -393,7 +411,7 @@ export default function UsersPage() {
               <div>
                 <label className="mb-1.5 block text-muted-foreground">{t('table.role')}</label>
                 <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value)} className="w-full bg-card">
-                  {['employee', 'technician', 'admin'].map((r) => <option key={r} value={r}>{t(`enum.${r}`)}</option>)}
+                  {['employee', 'technician', 'procurement_manager', 'admin'].map((r) => <option key={r} value={r}>{t(`enum.${r}`)}</option>)}
                 </select>
               </div>
               <div className="flex justify-end gap-2">
@@ -483,6 +501,19 @@ export default function UsersPage() {
                   <option value="">{t('common.unassigned')}</option>
                   {departmentOptions.map((d) => (
                     <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-muted-foreground">{t('page.employee_roles.select_role')}</label>
+                <select
+                  value={editModal.employeeRoleId}
+                  onChange={(e) => setEditModal({ ...editModal, employeeRoleId: e.target.value })}
+                  className="w-full bg-card"
+                >
+                  <option value="">{t('common.unassigned')}</option>
+                  {employeeRoleOptions.map((r) => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
                   ))}
                 </select>
               </div>

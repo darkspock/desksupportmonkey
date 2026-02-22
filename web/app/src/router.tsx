@@ -29,6 +29,7 @@ const ReportsPage = lazy(() => import('./pages/admin/ReportsPage'));
 const CompanySettingsPage = lazy(() => import('./pages/admin/CompanySettingsPage'));
 const ApiKeysPage = lazy(() => import('./pages/admin/ApiKeysPage'));
 const EquipmentProfilesPage = lazy(() => import('./pages/admin/EquipmentProfilesPage'));
+const EmployeeRolesPage = lazy(() => import('./pages/admin/EmployeeRolesPage'));
 const AssignmentAISettingsPage = lazy(() => import('./pages/admin/AssignmentAISettingsPage'));
 const ClassificationSettingsPage = lazy(() => import('./pages/admin/ClassificationSettingsPage'));
 const ProcurementSettingsPage = lazy(() => import('./pages/admin/ProcurementSettingsPage'));
@@ -81,94 +82,94 @@ export const router = createBrowserRouter([
       { path: 'my/shipments', element: <S><MyShipmentsPage /></S> },
       {
         path: 'my/maintenance',
-        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><MyMaintenancePage /></S></RequireRole>,
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><MyMaintenancePage /></S></RequireRole>,
       },
       {
         path: 'my/tasks/appointments',
-        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><MyTaskAppointmentsPage /></S></RequireRole>,
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><MyTaskAppointmentsPage /></S></RequireRole>,
       },
       // Shared detail route (ownership validated by backend)
       { path: 'requests/:id', element: <S><RequestDetailPage /></S> },
       // Technician+
       {
         path: 'requests',
-        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><RequestQueuePage /></S></RequireRole>,
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><RequestQueuePage /></S></RequireRole>,
       },
       {
         path: 'vendors',
-        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><VendorListPage /></S></RequireRole>,
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><VendorListPage /></S></RequireRole>,
       },
       {
         path: 'purchase-orders',
-        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><PurchaseOrderListPage /></S></RequireRole>,
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><PurchaseOrderListPage /></S></RequireRole>,
       },
       {
         path: 'purchase-orders/new',
-        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><PurchaseOrderFormPage /></S></RequireRole>,
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><PurchaseOrderFormPage /></S></RequireRole>,
       },
       {
         path: 'purchase-orders/:id',
-        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><PurchaseOrderDetailPage /></S></RequireRole>,
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><PurchaseOrderDetailPage /></S></RequireRole>,
       },
       {
         path: 'purchase-orders/:id/edit',
-        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><PurchaseOrderFormPage /></S></RequireRole>,
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><PurchaseOrderFormPage /></S></RequireRole>,
       },
       {
         path: 'calendar',
-        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><CalendarPage /></S></RequireRole>,
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><CalendarPage /></S></RequireRole>,
       },
       {
         path: 'settings/availability',
-        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><AvailabilitySettingsPage /></S></RequireRole>,
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><AvailabilitySettingsPage /></S></RequireRole>,
       },
       {
         path: 'shipments',
-        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><ShipmentsPage /></S></RequireRole>,
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><ShipmentsPage /></S></RequireRole>,
       },
       {
         path: 'shipments/new',
-        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><ShipmentCreatePage /></S></RequireRole>,
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><ShipmentCreatePage /></S></RequireRole>,
       },
       {
         path: 'shipments/:id',
-        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><ShipmentDetailPage /></S></RequireRole>,
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><ShipmentDetailPage /></S></RequireRole>,
       },
       {
         path: 'addresses',
-        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><AddressesPage /></S></RequireRole>,
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><AddressesPage /></S></RequireRole>,
       },
       {
         path: 'maintenance',
-        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><MaintenancePage /></S></RequireRole>,
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><MaintenancePage /></S></RequireRole>,
       },
       {
         path: 'maintenance/new',
-        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><MaintenanceFormPage /></S></RequireRole>,
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><MaintenanceFormPage /></S></RequireRole>,
       },
       {
         path: 'maintenance/:id',
-        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><MaintenanceDetailPage /></S></RequireRole>,
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><MaintenanceDetailPage /></S></RequireRole>,
       },
       {
         path: 'maintenance/:id/edit',
-        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><MaintenanceFormPage /></S></RequireRole>,
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><MaintenanceFormPage /></S></RequireRole>,
       },
       {
         path: 'assets',
-        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><AssetListPage /></S></RequireRole>,
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><AssetListPage /></S></RequireRole>,
       },
       {
         path: 'assets/new',
-        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><AssetFormPage /></S></RequireRole>,
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><AssetFormPage /></S></RequireRole>,
       },
       {
         path: 'assets/import',
-        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><AssetImportPage /></S></RequireRole>,
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><AssetImportPage /></S></RequireRole>,
       },
       {
         path: 'assets/:id',
-        element: <RequireRole roles={['technician', 'admin', 'super_admin']}><S><AssetDetailPage /></S></RequireRole>,
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><AssetDetailPage /></S></RequireRole>,
       },
       // Admin+
       {
@@ -194,6 +195,10 @@ export const router = createBrowserRouter([
       {
         path: 'settings/api-keys',
         element: <RequireRole roles={['admin', 'super_admin']}><S><ApiKeysPage /></S></RequireRole>,
+      },
+      {
+        path: 'settings/employee-roles',
+        element: <RequireRole roles={['admin', 'super_admin']}><S><EmployeeRolesPage /></S></RequireRole>,
       },
       {
         path: 'settings/equipment-profiles',

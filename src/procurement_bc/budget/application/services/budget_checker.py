@@ -53,7 +53,16 @@ class BudgetChecker:
         company_id: str,
         department_id: str,
         po_total_cents: int,
+        budget_enforcement_enabled: bool = True,
     ) -> BudgetCheckResult:
+        if not budget_enforcement_enabled:
+            return BudgetCheckResult(
+                allowed=True,
+                warning=None,
+                remaining_cents=0,
+                spent_cents=0,
+                allocated_cents=0,
+            )
         config = self.config_repo.find_by_company_id(
             company_id,
         )

@@ -87,7 +87,7 @@ export default function PurchaseOrderListPage() {
   const { showToast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'procurement_manager';
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');

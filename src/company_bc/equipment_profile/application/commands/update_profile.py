@@ -31,6 +31,7 @@ class ProfileItemInput:
     preferred_model: Optional[str] = None
     min_ram_gb: Optional[int] = None
     min_storage_gb: Optional[int] = None
+    budget_cents: Optional[int] = None
 
 
 @dataclass
@@ -73,6 +74,7 @@ class UpdateEquipmentProfileCommandHandler(
                 preferred_model=item.preferred_model,
                 min_ram_gb=item.min_ram_gb,
                 min_storage_gb=item.min_storage_gb,
+                budget_cents=item.budget_cents,
             )
             for item in command.items
         ]

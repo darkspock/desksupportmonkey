@@ -340,7 +340,7 @@ def _attempt_auto_assign(
         metadata = svc.attempt_assignment(
             company_id=current_user.company_id,
             department_id=current_user.department_id,
-            role=current_user.role.value,
+            employee_role_id=current_user.employee_role_id,
         )
         data = dict(request.data) if request.data else {}
         data["auto_assignment"] = metadata

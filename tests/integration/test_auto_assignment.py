@@ -6,7 +6,7 @@ class TestAutoAssignment:
         self, client, auth_as, db_session, company,
         make_user,
     ):
-        """new_equipment request with profile → auto_assignment."""
+        """new_equipment request with profile -> auto_assignment."""
         from src.asset_bc.asset.domain.entities import Asset
         from src.asset_bc.asset.domain.enums import (
             AssetType,
@@ -20,6 +20,12 @@ class TestAutoAssignment:
         )
         from src.company_bc.department.infrastructure.repository import (  # noqa: E501
             DepartmentRepository,
+        )
+        from src.company_bc.employee_role.domain.entities import (
+            EmployeeRole,
+        )
+        from src.company_bc.employee_role.infrastructure.repository import (  # noqa: E501
+            EmployeeRoleRepository,
         )
         from src.company_bc.equipment_profile.domain.entities import (  # noqa: E501
             EquipmentProfile,
@@ -36,19 +42,28 @@ class TestAutoAssignment:
         DepartmentRepository(db_session).save(dept)
         db_session.flush()
 
+        # Create employee role
+        emp_role = EmployeeRole.create(
+            company_id=company.id,
+            name="Software Engineer",
+        )
+        EmployeeRoleRepository(db_session).save(emp_role)
+        db_session.flush()
+
         # Create employee in that department
         user = make_user(
             email="autoassign@testco.com",
             role=UserRole.EMPLOYEE,
             company_id=company.id,
             department_id=dept.id,
+            employee_role_id=emp_role.id,
         )
 
         # Create equipment profile
         profile = EquipmentProfile.create(
             company_id=company.id,
             department_id=dept.id,
-            role=UserRole.EMPLOYEE,
+            employee_role_id=emp_role.id,
         )
         profile.items = [
             EquipmentProfileItem(
@@ -95,13 +110,19 @@ class TestAutoAssignment:
         self, client, auth_as, db_session, company,
         make_user,
     ):
-        """new_equipment request with no profile → fallback metadata."""
+        """new_equipment request with no profile -> fallback metadata."""
         from src.auth_bc.user.domain.enums import UserRole
         from src.company_bc.department.domain.entities import (
             Department,
         )
         from src.company_bc.department.infrastructure.repository import (  # noqa: E501
             DepartmentRepository,
+        )
+        from src.company_bc.employee_role.domain.entities import (
+            EmployeeRole,
+        )
+        from src.company_bc.employee_role.infrastructure.repository import (  # noqa: E501
+            EmployeeRoleRepository,
         )
 
         dept = Department.create(
@@ -110,11 +131,19 @@ class TestAutoAssignment:
         DepartmentRepository(db_session).save(dept)
         db_session.flush()
 
+        emp_role = EmployeeRole.create(
+            company_id=company.id,
+            name="No Profile Role",
+        )
+        EmployeeRoleRepository(db_session).save(emp_role)
+        db_session.flush()
+
         user = make_user(
             email="noauto@testco.com",
             role=UserRole.EMPLOYEE,
             company_id=company.id,
             department_id=dept.id,
+            employee_role_id=emp_role.id,
         )
 
         auth_as(user)

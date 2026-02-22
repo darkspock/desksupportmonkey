@@ -15,6 +15,7 @@ class User:
     company_id: Optional[str] = None
     name: Optional[str] = None
     department_id: Optional[str] = None
+    employee_role_id: Optional[str] = None
     is_active: bool = True
     password_hash: Optional[str] = None
     created_at: Optional[datetime] = None
@@ -54,6 +55,9 @@ class User:
 
     def assign_department(self, department_id: Optional[str]) -> None:
         self.department_id = department_id
+
+    def assign_employee_role(self, employee_role_id: Optional[str]) -> None:
+        self.employee_role_id = employee_role_id
 
     def set_password_hash(self, hashed: str) -> None:
         self.password_hash = hashed

@@ -27,7 +27,6 @@ from adapters.http.api.equipment_profiles.schemas import (
 from adapters.http.schemas.responses import PaginationMeta
 from src.asset_bc.asset.domain.enums import AssetType
 from src.auth_bc.user.domain.entities import User
-from src.auth_bc.user.domain.enums import UserRole
 from src.company_bc.department.infrastructure.repository import (
     DepartmentRepository,
 )
@@ -63,6 +62,10 @@ from src.company_bc.equipment_profile.application.queries.get_profile import (  
     GetEquipmentProfileQueryHandler,
     ProfileNotFoundError as GetNotFoundError,
 )
+from src.company_bc.equipment_profile.application.queries.get_my_budget import (  # noqa: E501
+    GetMyBudgetQuery,
+    GetMyBudgetQueryHandler,
+)
 from src.company_bc.equipment_profile.application.queries.list_profiles import (  # noqa: E501
     ListEquipmentProfilesQuery,
     ListEquipmentProfilesQueryHandler,
@@ -89,7 +92,7 @@ def _to_response(
         id=profile.id,
         company_id=profile.company_id,
         department_id=profile.department_id,
-        role=profile.role.value,
+        employee_role_id=profile.employee_role_id,
         is_active=profile.is_active,
         items=[
             ProfileItemResponse(
@@ -100,6 +103,7 @@ def _to_response(
                 preferred_model=item.preferred_model,
                 min_ram_gb=item.min_ram_gb,
                 min_storage_gb=item.min_storage_gb,
+                budget_cents=item.budget_cents,
             )
             for item in profile.items
         ],
@@ -109,7 +113,7 @@ def _to_response(
 
 
 def _validate_items(items):
-    """Validate asset_type and role values."""
+    """Validate asset_type values."""
     for item in items:
         try:
             AssetType(item.asset_type)
@@ -118,23 +122,6 @@ def _validate_items(items):
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail=f"Invalid asset type: {item.asset_type}",
             )
-
-
-def _validate_role(role_str: str) -> UserRole:
-    try:
-        role = UserRole(role_str)
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Invalid role: {role_str}",
-        )
-    if role not in (UserRole.EMPLOYEE, UserRole.TECHNICIAN):
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Profile role must be employee "
-            "or technician",
-        )
-    return role
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -148,10 +135,10 @@ def create_profile(
         get_dept_repo,
     ),
 ):
+    assert current_user.company_id is not None
     require_department_access(
         current_user, body.department_id, dept_repo,
     )
-    role = _validate_role(body.role)
     _validate_items(body.items)
 
     profile_id = str(ulid.new())
@@ -164,7 +151,7 @@ def create_profile(
                 id=profile_id,
                 company_id=current_user.company_id,
                 department_id=body.department_id,
-                role=role,
+                employee_role_id=body.employee_role_id,
                 items=[
                     ProfileItemInput(
                         asset_type=AssetType(i.asset_type),
@@ -173,6 +160,7 @@ def create_profile(
                         preferred_model=i.preferred_model,
                         min_ram_gb=i.min_ram_gb,
                         min_storage_gb=i.min_storage_gb,
+                        budget_cents=i.budget_cents,
                     )
                     for i in body.items
                 ],
@@ -183,7 +171,7 @@ def create_profile(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="An active profile already exists "
-            "for this department and role",
+            "for this department and employee role",
         )
 
     query_handler = GetEquipmentProfileQueryHandler(
@@ -207,7 +195,7 @@ def list_profiles(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     department_id: str = Query(None),
-    role: str = Query(None),
+    employee_role_id: str = Query(None),
     is_active: bool = Query(None),
     current_user: User = Depends(get_current_user),
     profile_repo: EquipmentProfileRepository = Depends(
@@ -229,7 +217,7 @@ def list_profiles(
             page=page,
             page_size=page_size,
             department_id=department_id,
-            role=role,
+            employee_role_id=employee_role_id,
             is_active=is_active,
         )
     )
@@ -246,6 +234,39 @@ def list_profiles(
     }
 
 
+@router.get("/my-budget")
+def my_budget(
+    current_user: User = Depends(get_current_user),
+    profile_repo: EquipmentProfileRepository = Depends(
+        get_profile_repo,
+    ),
+):
+    """Return budget items from the current user's active
+    equipment profile. Used for informational budget
+    indicators on the new-equipment request form."""
+    budget = GetMyBudgetQueryHandler(
+        profile_repo=profile_repo,
+    ).handle(
+        GetMyBudgetQuery(
+            company_id=current_user.company_id,
+            department_id=current_user.department_id,
+            employee_role_id=current_user.employee_role_id,
+        ),
+    )
+
+    return {
+        "data": {
+            "items": [
+                {
+                    "asset_type": item.asset_type,
+                    "budget_cents": item.budget_cents,
+                }
+                for item in budget.items
+            ],
+        },
+    }
+
+
 @router.get("/{profile_id}")
 def get_profile(
     profile_id: str,
@@ -254,11 +275,7 @@ def get_profile(
         get_profile_repo,
     ),
 ):
-    if not current_user.company_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="No company context",
-        )
+    assert current_user.company_id is not None
     handler = GetEquipmentProfileQueryHandler(
         profile_repo=profile_repo,
     )
@@ -293,6 +310,7 @@ def update_profile(
         get_dept_repo,
     ),
 ):
+    assert current_user.company_id is not None
     # Look up profile to get department_id for auth
     try:
         profile = GetEquipmentProfileQueryHandler(
@@ -330,6 +348,7 @@ def update_profile(
                         preferred_model=i.preferred_model,
                         min_ram_gb=i.min_ram_gb,
                         min_storage_gb=i.min_storage_gb,
+                        budget_cents=i.budget_cents,
                     )
                     for i in body.items
                 ],
@@ -368,6 +387,7 @@ def activate_profile(
         get_dept_repo,
     ),
 ):
+    assert current_user.company_id is not None
     try:
         profile = GetEquipmentProfileQueryHandler(
             profile_repo=profile_repo,
@@ -430,6 +450,7 @@ def deactivate_profile(
         get_dept_repo,
     ),
 ):
+    assert current_user.company_id is not None
     try:
         profile = GetEquipmentProfileQueryHandler(
             profile_repo=profile_repo,
@@ -495,6 +516,7 @@ def delete_profile(
         get_dept_repo,
     ),
 ):
+    assert current_user.company_id is not None
     try:
         profile = GetEquipmentProfileQueryHandler(
             profile_repo=profile_repo,

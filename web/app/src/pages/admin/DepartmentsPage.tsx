@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
 import { Loading } from '../../components/ui/Loading';
-import { Table, Th, Td } from '../../components/ui/Table';
+import { Table, Th, Td, Tr } from '../../components/ui/Table';
 import { Card } from '../../components/ui/Card';
 import { Pagination } from '../../components/ui/Pagination';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
@@ -33,6 +33,7 @@ interface EditModalState {
   managerUserId: string;
   priorityWeight: number;
   allocatedAmount: number;
+  budgetEnforcementEnabled: boolean;
   originalManagerUserId: string | null;
 }
 
@@ -111,7 +112,7 @@ export default function DepartmentsPage() {
   const saveEdit = useMutation({
     mutationFn: async (payload: EditModalState) => {
       const name = payload.deptName.trim();
-      await api.put(`/departments/${payload.deptId}`, { name, priority_weight: payload.priorityWeight });
+      await api.put(`/departments/${payload.deptId}`, { name, priority_weight: payload.priorityWeight, budget_enforcement_enabled: payload.budgetEnforcementEnabled });
 
       const nextManager = payload.managerUserId || null;
       const previousManager = payload.originalManagerUserId;
@@ -179,7 +180,10 @@ export default function DepartmentsPage() {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-2xl font-semibold tracking-tight text-foreground">{t('page.departments.title')}</h2>
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">{t('page.departments.title')}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t('page.departments.subtitle')}</p>
+        </div>
         <button
           type="button"
           onClick={() => {
@@ -193,15 +197,17 @@ export default function DepartmentsPage() {
         </button>
       </div>
 
-      <Card>
-        {isLoading ? <Loading /> : isError ? (
+      {isLoading ? <Card><Loading /></Card> : isError ? (
+        <Card>
           <ErrorState
             message={(listError as { response?: { data?: { detail?: string } } })?.response?.data?.detail}
             onRetry={() => {
               void refetch();
             }}
           />
-        ) : !data?.data.length ? (
+        </Card>
+      ) : !data?.data.length ? (
+        <Card>
           <EmptyState
             message={t('page.departments.empty')}
             action={(
@@ -218,9 +224,10 @@ export default function DepartmentsPage() {
               </button>
             )}
           />
-        ) : (
-          <>
-            <Table>
+        </Card>
+      ) : (
+        <>
+          <Table>
               <thead>
                 <tr>
                   <Th>{t('table.name')}</Th>
@@ -236,7 +243,7 @@ export default function DepartmentsPage() {
                 {data.data.map((d) => {
                   const budget = budgetByDept.get(d.id);
                   return (
-                    <tr key={d.id}>
+                    <Tr key={d.id}>
                       <Td>{d.name}</Td>
                       <Td>{d.manager_name || d.manager_email || t('common.unassigned')}</Td>
                       <Td>{d.priority_weight ?? 0}</Td>
@@ -272,6 +279,7 @@ export default function DepartmentsPage() {
                                   managerUserId: d.manager_user_id ?? '',
                                   priorityWeight: d.priority_weight ?? 0,
                                   allocatedAmount: budget ? budget.allocated_amount_cents / 100 : 0,
+                                  budgetEnforcementEnabled: d.budget_enforcement_enabled ?? false,
                                   originalManagerUserId: d.manager_user_id ?? null,
                                 });
                               }}
@@ -301,15 +309,14 @@ export default function DepartmentsPage() {
                           </Tooltip>
                         </div>
                       </Td>
-                    </tr>
+                    </Tr>
                   );
                 })}
               </tbody>
-            </Table>
-            <Pagination page={page} pageSize={20} total={data.meta.total} onChange={setPage} />
-          </>
-        )}
-      </Card>
+          </Table>
+          <Pagination page={page} pageSize={20} total={data.meta.total} onChange={setPage} />
+        </>
+      )}
 
       <ConfirmDialog
         open={Boolean(pendingDelete)}
@@ -353,7 +360,7 @@ export default function DepartmentsPage() {
               className="mt-4 space-y-4"
             >
               <div>
-                {createError && <p className="mb-2 text-sm text-destructive">{createError}</p>}
+                {createError && <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">{createError}</div>}
                 <label className="mb-1.5 block text-muted-foreground">{t('table.name')}</label>
                 <input
                   type="text"
@@ -421,7 +428,7 @@ export default function DepartmentsPage() {
               className="mt-4 space-y-4"
             >
               <div>
-                {editError && <p className="mb-2 text-sm text-destructive">{editError}</p>}
+                {editError && <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">{editError}</div>}
                 <label className="mb-1.5 block text-muted-foreground">{t('table.name')}</label>
                 <input
                   type="text"
@@ -467,6 +474,21 @@ export default function DepartmentsPage() {
                   onChange={(e) => setEditModal({ ...editModal, allocatedAmount: parseFloat(e.target.value) || 0 })}
                   className="w-full bg-card"
                 />
+              </div>
+              <div className="flex items-center gap-3">
+                <label className="relative inline-flex cursor-pointer items-center">
+                  <input
+                    type="checkbox"
+                    checked={editModal.budgetEnforcementEnabled}
+                    onChange={(e) => setEditModal({ ...editModal, budgetEnforcementEnabled: e.target.checked })}
+                    className="peer sr-only"
+                  />
+                  <div className="h-5 w-9 rounded-full bg-muted peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/50 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all peer-checked:after:translate-x-full" />
+                </label>
+                <div>
+                  <span className="text-sm text-foreground">{t('page.departments.budget_enforcement')}</span>
+                  <p className="text-xs text-muted-foreground">{t('page.departments.budget_enforcement_help')}</p>
+                </div>
               </div>
               <div className="flex justify-end gap-2">
                 <button

@@ -2,7 +2,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.auth_bc.user.domain.enums import UserRole
 from src.company_bc.equipment_profile.application.commands.delete_profile import (  # noqa: E501
     DeleteEquipmentProfileCommand,
     DeleteEquipmentProfileCommandHandler,
@@ -19,7 +18,7 @@ class TestDeleteEquipmentProfile:
             id="prof1",
             company_id="comp1",
             department_id="dept1",
-            role=UserRole.EMPLOYEE,
+            employee_role_id="er1",
         )
         repo = MagicMock()
         repo.find_by_id.return_value = profile

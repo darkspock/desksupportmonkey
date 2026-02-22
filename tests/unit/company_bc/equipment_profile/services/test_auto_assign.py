@@ -6,7 +6,6 @@ from typing import Optional
 from unittest.mock import MagicMock
 
 from src.asset_bc.asset.domain.enums import AssetType
-from src.auth_bc.user.domain.enums import UserRole
 from src.company_bc.assignment_config.domain.enums import (
     FallbackReason,
 )
@@ -73,7 +72,7 @@ class TestAutoAssignSuccess:
         profile = EquipmentProfile.create(
             company_id="c1",
             department_id="d1",
-            role=UserRole.EMPLOYEE,
+            employee_role_id="er1",
         )
         profile.items = [
             EquipmentProfileItem(
@@ -91,7 +90,7 @@ class TestAutoAssignSuccess:
         result = svc.attempt_assignment(
             company_id="c1",
             department_id="d1",
-            role="employee",
+            employee_role_id="er1",
         )
 
         assert result["status"] == "matched"
@@ -103,12 +102,12 @@ class TestAutoAssignSuccess:
 
 class TestAutoAssignFallback:
     def test_auto_assign_fallback_stores_reasons(self):
-        """No profile → fallback with reasons."""
+        """No profile -> fallback with reasons."""
         svc = _build_service(profile=None)
         result = svc.attempt_assignment(
             company_id="c1",
             department_id="d1",
-            role="employee",
+            employee_role_id="er1",
         )
 
         assert result["status"] == "fallback"
@@ -120,24 +119,24 @@ class TestAutoAssignFallback:
 
 class TestAutoAssignSkips:
     def test_auto_assign_skips_no_department(self):
-        """No department → skip."""
+        """No department -> skip."""
         svc = _build_service()
         result = svc.attempt_assignment(
             company_id="c1",
             department_id=None,
-            role="employee",
+            employee_role_id="er1",
         )
 
         assert result["status"] == "skipped"
         assert result["reason"] == "no_department_or_role"
 
-    def test_auto_assign_skips_no_role(self):
-        """No role → skip."""
+    def test_auto_assign_skips_no_employee_role(self):
+        """No employee_role_id -> skip."""
         svc = _build_service()
         result = svc.attempt_assignment(
             company_id="c1",
             department_id="d1",
-            role=None,
+            employee_role_id=None,
         )
 
         assert result["status"] == "skipped"

@@ -36,5 +36,6 @@ class UserResponse(BaseModel):
     role: str
     company_id: Optional[str] = None
     company_name: Optional[str] = None
+    employee_role_id: Optional[str] = None
     is_active: bool
     password_set: bool = False

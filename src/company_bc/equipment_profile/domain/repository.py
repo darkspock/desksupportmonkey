@@ -23,7 +23,7 @@ class EquipmentProfileRepositoryInterface(ABC):
         self,
         company_id: str,
         department_id: str,
-        role: str,
+        employee_role_id: Optional[str],
     ) -> Optional[EquipmentProfile]: ...
 
     @abstractmethod
@@ -33,7 +33,7 @@ class EquipmentProfileRepositoryInterface(ABC):
         page: int,
         page_size: int,
         department_id: Optional[str] = None,
-        role: Optional[str] = None,
+        employee_role_id: Optional[str] = None,
         is_active: Optional[bool] = None,
     ) -> tuple[list[EquipmentProfile], int]: ...
 

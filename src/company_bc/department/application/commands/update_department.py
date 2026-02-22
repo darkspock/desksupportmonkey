@@ -23,6 +23,7 @@ class UpdateDepartmentCommand(Command):
     company_id: str
     name: str
     priority_weight: Optional[int] = None
+    budget_enforcement_enabled: Optional[bool] = None
 
 
 class UpdateDepartmentCommandHandler(CommandHandler[UpdateDepartmentCommand]):
@@ -41,5 +42,7 @@ class UpdateDepartmentCommandHandler(CommandHandler[UpdateDepartmentCommand]):
         department.update_name(command.name)
         if command.priority_weight is not None:
             department.set_priority_weight(command.priority_weight)
+        if command.budget_enforcement_enabled is not None:
+            department.set_budget_enforcement_enabled(command.budget_enforcement_enabled)
         self.department_repo.save(department)
         logger.info("Department updated: %s", department.id)

@@ -837,11 +837,11 @@ export default function ShipmentCreatePage() {
                 <div className="max-h-72 overflow-auto">
                   <table className="w-full min-w-[680px] text-sm">
                     <thead>
-                      <tr className="bg-secondary/40">
-                        <th className="w-10 px-4 py-2.5 text-left font-medium text-muted-foreground" />
-                        <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">{t('table.asset')}</th>
-                        <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">{t('table.serial')}</th>
-                        <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">{t('table.status')}</th>
+                      <tr className="border-b border-border bg-secondary/40">
+                        <th className="w-10 px-4 py-2 text-left font-medium text-foreground" />
+                        <th className="px-4 py-2 text-left font-medium text-foreground">{t('table.asset')}</th>
+                        <th className="px-4 py-2 text-left font-medium text-foreground">{t('table.serial')}</th>
+                        <th className="px-4 py-2 text-left font-medium text-foreground">{t('table.status')}</th>
                       </tr>
                     </thead>
                     <tbody>

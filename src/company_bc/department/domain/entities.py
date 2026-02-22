@@ -13,6 +13,7 @@ class Department:
     is_active: bool = True
     manager_user_id: Optional[str] = None
     priority_weight: int = 0
+    budget_enforcement_enabled: bool = False
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -45,3 +46,6 @@ class Department:
         if weight < -1 or weight > 2:
             raise ValueError("priority_weight must be between -1 and 2")
         self.priority_weight = weight
+
+    def set_budget_enforcement_enabled(self, enabled: bool) -> None:
+        self.budget_enforcement_enabled = enabled

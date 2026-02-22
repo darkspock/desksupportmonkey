@@ -26,7 +26,12 @@ class EquipmentProfileModel(ULIDMixin, TimestampMixin, Base):
         ForeignKey("departments.id"),
         index=True,
     )
-    role: Mapped[str] = mapped_column(String(20))
+    employee_role_id: Mapped[Optional[str]] = mapped_column(
+        String(26),
+        ForeignKey("employee_roles.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     is_active: Mapped[bool] = mapped_column(
         Boolean, default=True,
     )
@@ -44,7 +49,7 @@ class EquipmentProfileModel(ULIDMixin, TimestampMixin, Base):
             "ix_equipment_profile_active_unique",
             "company_id",
             "department_id",
-            "role",
+            "employee_role_id",
             unique=True,
             postgresql_where=(is_active.is_(True)),
         ),
@@ -75,5 +80,8 @@ class EquipmentProfileItemModel(ULIDMixin, Base):
         Integer, nullable=True,
     )
     min_storage_gb: Mapped[Optional[int]] = mapped_column(
+        Integer, nullable=True,
+    )
+    budget_cents: Mapped[Optional[int]] = mapped_column(
         Integer, nullable=True,
     )
