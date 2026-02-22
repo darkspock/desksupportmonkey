@@ -57,22 +57,32 @@ class ImportRowErrorResponse(BaseModel):
     error: str
 
 
-class ImportDepartmentResponse(BaseModel):
+class ImportNameIdResponse(BaseModel):
     id: str
     name: str
+
+
+# Keep backward-compatible alias
+ImportDepartmentResponse = ImportNameIdResponse
 
 
 class ImportPreviewResponse(BaseModel):
     total_rows: int
     valid_rows: int
+    new_users: int
+    existing_users: int
     errors: list[ImportRowErrorResponse]
     unknown_departments: list[str]
-    existing_departments: list[ImportDepartmentResponse]
+    existing_departments: list[ImportNameIdResponse]
+    unknown_employee_roles: list[str]
+    existing_employee_roles: list[ImportNameIdResponse]
 
 
 class ImportConfirmResponse(BaseModel):
     total: int
     successful: int
+    updated: int
     failed: list[ImportRowErrorResponse]
     departments_created: list[str]
+    employee_roles_created: list[str]
     invitations_sent: int

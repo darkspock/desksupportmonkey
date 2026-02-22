@@ -649,3 +649,36 @@ export interface MaintenanceDashboard {
   in_progress: number;
   completed_30d: number;
 }
+
+// User Import
+export interface ImportRowError {
+  row: number;
+  error: string;
+}
+
+export interface ImportDepartment {
+  id: string;
+  name: string;
+}
+
+export interface ImportPreviewResult {
+  total_rows: number;
+  valid_rows: number;
+  new_users: number;
+  existing_users: number;
+  errors: ImportRowError[];
+  unknown_departments: string[];
+  existing_departments: ImportDepartment[];
+  unknown_employee_roles: string[];
+  existing_employee_roles: ImportDepartment[];
+}
+
+export interface ImportConfirmResult {
+  total: number;
+  successful: number;
+  updated: number;
+  failed: ImportRowError[];
+  departments_created: string[];
+  employee_roles_created: string[];
+  invitations_sent: number;
+}

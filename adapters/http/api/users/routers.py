@@ -8,6 +8,7 @@ from adapters.http.api.auth.dependencies import require_role
 from adapters.http.api.users.dependencies import (
     get_company_repo,
     get_department_repo,
+    get_employee_role_repo,
     get_magic_link_repo,
     get_user_repo,
 )
@@ -15,7 +16,7 @@ from adapters.http.api.users.schemas import (
     AssignDepartmentRequest,
     ChangeRoleRequest,
     ImportConfirmResponse,
-    ImportDepartmentResponse,
+    ImportNameIdResponse,
     ImportPreviewResponse,
     ImportRowErrorResponse,
     InviteUserRequest,
@@ -100,6 +101,12 @@ def _to_response(user: User) -> UserDetailResponse:
     )
 
 
+def _require_company_id(user: User) -> str:
+    if not user.company_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid company context")
+    return user.company_id
+
+
 def _get_user_response(user_repo: UserRepository, user_id: str, company_id: str) -> dict:
     query_handler = GetUserDetailQueryHandler(user_repo=user_repo)
     user = query_handler.handle(GetUserDetailQuery(user_id=user_id, company_id=company_id))
@@ -117,7 +124,7 @@ def list_users(
     current_user: User = Depends(require_role(UserRole.ADMIN)),
     user_repo: UserRepository = Depends(get_user_repo),
 ):
-    company_id = current_user.company_id
+    company_id = _require_company_id(current_user)
     handler = ListUsersQueryHandler(user_repo=user_repo)
     users, total = handler.handle(
         ListUsersQuery(
@@ -188,9 +195,7 @@ def invite_user(
     company_repo: CompanyRepository = Depends(get_company_repo),
     magic_link_repo: MagicLinkRepository = Depends(get_magic_link_repo),
 ):
-    company_id = current_user.company_id
-    if not company_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid company context")
+    company_id = _require_company_id(current_user)
     email = body.email.lower().strip()
     invite_role = UserRole.EMPLOYEE
     if body.role:
@@ -224,16 +229,16 @@ async def import_users_preview(
     user_repo: UserRepository = Depends(get_user_repo),
     department_repo: DepartmentRepository = Depends(get_department_repo),
     company_repo: CompanyRepository = Depends(get_company_repo),
+    employee_role_repo=Depends(get_employee_role_repo),
 ):
-    company_id = current_user.company_id
-    if not company_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid company context")
+    company_id = _require_company_id(current_user)
     if file.size and file.size > 1_048_576:
         raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="File size exceeds 1MB limit")
     csv_content = _parse_csv_upload(await file.read())
     try:
         result = ImportUsersService(
             user_repo=user_repo, department_repo=department_repo, company_repo=company_repo,
+            employee_role_repo=employee_role_repo,
         ).preview(csv_content=csv_content, company_id=company_id)
     except InvalidCSVError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
@@ -241,10 +246,16 @@ async def import_users_preview(
         "data": ImportPreviewResponse(
             total_rows=result.total_rows,
             valid_rows=result.valid_rows,
+            new_users=result.new_users,
+            existing_users=result.existing_users,
             errors=[ImportRowErrorResponse(row=e.row, error=e.error) for e in result.errors],
             unknown_departments=result.unknown_departments,
             existing_departments=[
-                ImportDepartmentResponse(id=d.id, name=d.name) for d in result.existing_departments
+                ImportNameIdResponse(id=d.id, name=d.name) for d in result.existing_departments
+            ],
+            unknown_employee_roles=result.unknown_employee_roles,
+            existing_employee_roles=[
+                ImportNameIdResponse(id=r.id, name=r.name) for r in result.existing_employee_roles
             ],
         ).model_dump()
     }
@@ -254,15 +265,15 @@ async def import_users_preview(
 async def import_users_confirm(
     file: UploadFile,
     department_mapping: str = Form("{}"),
+    employee_role_mapping: str = Form("{}"),
     current_user: User = Depends(require_role(UserRole.ADMIN)),
     user_repo: UserRepository = Depends(get_user_repo),
     department_repo: DepartmentRepository = Depends(get_department_repo),
     company_repo: CompanyRepository = Depends(get_company_repo),
     magic_link_repo: MagicLinkRepository = Depends(get_magic_link_repo),
+    employee_role_repo=Depends(get_employee_role_repo),
 ):
-    company_id = current_user.company_id
-    if not company_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid company context")
+    company_id = _require_company_id(current_user)
     if file.size and file.size > 1_048_576:
         raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="File size exceeds 1MB limit")
 
@@ -270,6 +281,11 @@ async def import_users_confirm(
         mapping = json.loads(department_mapping)
     except (json.JSONDecodeError, TypeError):
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid department_mapping JSON")
+
+    try:
+        role_mapping = json.loads(employee_role_mapping)
+    except (json.JSONDecodeError, TypeError):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid employee_role_mapping JSON")
 
     csv_content = _parse_csv_upload(await file.read())
 
@@ -285,11 +301,13 @@ async def import_users_confirm(
     try:
         result = ImportUsersService(
             user_repo=user_repo, department_repo=department_repo, company_repo=company_repo,
+            employee_role_repo=employee_role_repo,
         ).confirm(
             csv_content=csv_content,
             company_id=company_id,
             performed_by=current_user.id,
             department_mapping=mapping,
+            employee_role_mapping=role_mapping,
             magic_link_sender=send_magic_link,
         )
     except InvalidCSVError as e:
@@ -298,8 +316,10 @@ async def import_users_confirm(
         "data": ImportConfirmResponse(
             total=result.total,
             successful=result.successful,
+            updated=result.updated,
             failed=[ImportRowErrorResponse(row=e.row, error=e.error) for e in result.failed],
             departments_created=result.departments_created,
+            employee_roles_created=result.employee_roles_created,
             invitations_sent=result.invitations_sent,
         ).model_dump()
     }
@@ -312,11 +332,12 @@ def quick_create_employee(
     user_repo: UserRepository = Depends(get_user_repo),
     company_repo: CompanyRepository = Depends(get_company_repo),
 ):
+    company_id = _require_company_id(current_user)
     email = body.email.lower().strip()
-    _validate_invite_email(email, current_user.company_id, company_repo)
+    _validate_invite_email(email, company_id, company_repo)
     existing = user_repo.find_by_email(email)
     if existing:
-        if existing.company_id != current_user.company_id:
+        if existing.company_id != company_id:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="User with this email already exists in another company",
@@ -329,7 +350,7 @@ def quick_create_employee(
     new_user = User.create(
         email=email,
         role=UserRole.EMPLOYEE,
-        company_id=current_user.company_id,
+        company_id=company_id,
         name=body.name.strip() if body.name else None,
     )
     new_user.is_active = False
@@ -347,7 +368,7 @@ def get_user(
     current_user: User = Depends(require_role(UserRole.ADMIN)),
     user_repo: UserRepository = Depends(get_user_repo),
 ):
-    company_id = current_user.company_id
+    company_id = _require_company_id(current_user)
     handler = GetUserDetailQueryHandler(user_repo=user_repo)
     try:
         user = handler.handle(GetUserDetailQuery(user_id=user_id, company_id=company_id))
@@ -380,7 +401,7 @@ def update_user(
     user_repo: UserRepository = Depends(get_user_repo),
     department_repo: DepartmentRepository = Depends(get_department_repo),
 ):
-    company_id = current_user.company_id
+    company_id = _require_company_id(current_user)
     provided = body.model_fields_set
 
     if "name" in provided:
@@ -399,7 +420,7 @@ def update_user(
             ))
 
     if "department_id" in provided:
-        dept_handler = AssignDepartmentCommandHandler(user_repo=user_repo, department_repo=department_repo)
+        dept_handler = AssignDepartmentCommandHandler(user_repo=user_repo, department_repo=department_repo)  # type: ignore[arg-type]
         try:
             dept_handler.handle(AssignDepartmentCommand(user_id=user_id, company_id=company_id, department_id=body.department_id))
         except AssignUserNotFoundError:
@@ -426,7 +447,7 @@ def change_role(
     current_user: User = Depends(require_role(UserRole.ADMIN)),
     user_repo: UserRepository = Depends(get_user_repo),
 ):
-    company_id = current_user.company_id
+    company_id = _require_company_id(current_user)
     handler = ChangeUserRoleCommandHandler(user_repo=user_repo, email_service=get_email_service())
     _handle_change_role_errors(lambda: handler.handle(
         ChangeUserRoleCommand(user_id=user_id, company_id=company_id, current_user_id=current_user.id, new_role=body.role)
@@ -440,7 +461,7 @@ def deactivate_user(
     current_user: User = Depends(require_role(UserRole.ADMIN)),
     user_repo: UserRepository = Depends(get_user_repo),
 ):
-    company_id = current_user.company_id
+    company_id = _require_company_id(current_user)
     handler = DeactivateUserCommandHandler(user_repo=user_repo)
     try:
         handler.handle(
@@ -465,7 +486,7 @@ def activate_user(
     current_user: User = Depends(require_role(UserRole.ADMIN)),
     user_repo: UserRepository = Depends(get_user_repo),
 ):
-    company_id = current_user.company_id
+    company_id = _require_company_id(current_user)
     handler = ActivateUserCommandHandler(user_repo=user_repo)
     try:
         handler.handle(
@@ -484,8 +505,8 @@ def assign_department(
     user_repo: UserRepository = Depends(get_user_repo),
     department_repo: DepartmentRepository = Depends(get_department_repo),
 ):
-    company_id = current_user.company_id
-    handler = AssignDepartmentCommandHandler(user_repo=user_repo, department_repo=department_repo)
+    company_id = _require_company_id(current_user)
+    handler = AssignDepartmentCommandHandler(user_repo=user_repo, department_repo=department_repo)  # type: ignore[arg-type]
     try:
         handler.handle(AssignDepartmentCommand(user_id=user_id, company_id=company_id, department_id=body.department_id))
     except AssignUserNotFoundError:

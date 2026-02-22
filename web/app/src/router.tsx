@@ -51,6 +51,7 @@ const MaintenanceFormPage = lazy(() => import('./pages/technician/MaintenanceFor
 const MyMaintenancePage = lazy(() => import('./pages/technician/MyMaintenancePage'));
 const MyTaskAppointmentsPage = lazy(() => import('./pages/technician/MyTaskAppointmentsPage'));
 const MaintenanceTemplatesPage = lazy(() => import('./pages/admin/MaintenanceTemplatesPage'));
+const UserImportPage = lazy(() => import('./pages/admin/UserImportPage'));
 const CompaniesPage = lazy(() => import('./pages/superadmin/CompaniesPage'));
 
 function S({ children }: { children: React.ReactNode }) {
@@ -175,6 +176,10 @@ export const router = createBrowserRouter([
       {
         path: 'dashboard',
         element: <RequireRole roles={['admin', 'super_admin']}><S><DashboardPage /></S></RequireRole>,
+      },
+      {
+        path: 'users/import',
+        element: <RequireRole roles={['admin', 'super_admin']}><S><UserImportPage /></S></RequireRole>,
       },
       {
         path: 'users',

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
 import { Loading } from '../../components/ui/Loading';
@@ -31,6 +32,7 @@ const ROLE_OPTIONS: UserRole[] = ['employee', 'technician', 'procurement_manager
 
 export default function UsersPage() {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
@@ -185,19 +187,28 @@ export default function UsersPage() {
           <h2 className="text-2xl font-semibold tracking-tight text-foreground">{t('page.users.title')}</h2>
           <p className="mt-1 text-sm text-muted-foreground">{t('page.users.subtitle')}</p>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setInviteEmail('');
-            setInviteName('');
-            setInviteRole('employee');
-            setInviteError('');
-            setShowInviteModal(true);
-          }}
-          className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
-        >
-          {t('page.users.invite_user')}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate('/users/import')}
+            className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all"
+          >
+            {t('page.user_import.import_csv')}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setInviteEmail('');
+              setInviteName('');
+              setInviteRole('employee');
+              setInviteError('');
+              setShowInviteModal(true);
+            }}
+            className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+          >
+            {t('page.users.invite_user')}
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
