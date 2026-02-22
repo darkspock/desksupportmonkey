@@ -1,0 +1,30 @@
+#!/bin/bash
+set -e
+TARGET="/opt/dsm-staging/app"
+GIT_DIR="/opt/dsm-staging/repo.git"
+BRANCH="main"
+
+while read oldrev newrev ref; do
+  if [ "$ref" = "refs/heads/$BRANCH" ]; then
+    echo ">>> Deploying STAGING $BRANCH..."
+    git --work-tree=$TARGET --git-dir=$GIT_DIR checkout -f $BRANCH
+
+    cd $TARGET
+
+    # Backend deps
+    /root/.local/bin/uv sync --python python3.13
+
+    # Symlink .env if not present
+    [ -L .env ] || ln -s /opt/dsm-staging/.env.staging .env
+
+    # Migrations
+    PYTHONPATH=src /root/.local/bin/uv run alembic upgrade head
+
+    # API-only: no Astro or React builds
+
+    # Restart services
+    systemctl restart dsm-staging-api dsm-staging-celery
+
+    echo ">>> Staging deploy complete!"
+  fi
+done

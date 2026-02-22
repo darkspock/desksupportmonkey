@@ -1,0 +1,17 @@
+[Unit]
+Description=DeskSupportMonkey Staging Celery Worker
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/dsm-staging/app
+EnvironmentFile=/opt/dsm-staging/.env.staging
+Environment=PYTHONPATH=/opt/dsm-staging/app/src
+ExecStart=/root/.local/bin/uv run --python python3.13 celery -A core.celery:celery_app worker -Q reports -l INFO
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

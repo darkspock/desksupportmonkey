@@ -1,0 +1,17 @@
+[Unit]
+Description=DeskSupportMonkey Staging API
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/dsm-staging/app
+EnvironmentFile=/opt/dsm-staging/.env.staging
+Environment=PYTHONPATH=/opt/dsm-staging/app/src
+ExecStart=/root/.local/bin/uv run --python python3.13 uvicorn app:app --host 127.0.0.1 --port 8003
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
