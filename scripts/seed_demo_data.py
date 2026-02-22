@@ -35,6 +35,7 @@ from src.request_bc.request.infrastructure.models import (
 )
 from src.notification_bc.notification.infrastructure.models import NotificationModel
 from src.report_bc.report.infrastructure.models import ReportModel
+from src.company_bc.employee_role.infrastructure.models import EmployeeRoleModel  # noqa: F401 — needed for FK resolution
 
 
 # ---------------------------------------------------------------------------
