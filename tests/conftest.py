@@ -115,11 +115,15 @@ def client(db_session):
     Overrides:
     - get_db  -> yields the test db_session
     - get_event_bus -> returns a no-op EventBus (no subscribers)
+    - get_stripe_client (all routers) -> returns a no-op MagicMock (no real Stripe calls)
     """
+    from unittest.mock import MagicMock
     from starlette.testclient import TestClient
     from app import create_app
     from core.database import get_db
     from adapters.http.api.dependencies import get_event_bus
+    from adapters.http.api.companies.dependencies import get_stripe_client as get_stripe_client_companies
+    from adapters.http.api.registration.dependencies import get_stripe_client as get_stripe_client_registration
     from src.notification_bc.notification.application.services.event_bus import EventBus
 
     application = create_app()
@@ -127,8 +131,13 @@ def client(db_session):
     def _override_get_db():
         yield db_session
 
+    mock_stripe = MagicMock()
+    mock_stripe.create_customer.return_value = "cus_test_mock"
+
     application.dependency_overrides[get_db] = _override_get_db
     application.dependency_overrides[get_event_bus] = lambda: EventBus()  # no subscribers
+    application.dependency_overrides[get_stripe_client_companies] = lambda: mock_stripe
+    application.dependency_overrides[get_stripe_client_registration] = lambda: mock_stripe
 
     with TestClient(application, raise_server_exceptions=False) as c:
         yield c

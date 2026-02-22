@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from core.email import EmailServiceInterface, send_magic_link_email
+from core.stripe_client import StripeClient
 from src.auth_bc.magic_link.domain.entities import MagicLink
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
@@ -43,11 +44,13 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
         user_repo: UserWriter,
         magic_link_repo: MagicLinkWriter,
         email_service: EmailServiceInterface,
+        stripe_client: StripeClient,
     ):
         self.company_repo = company_repo
         self.user_repo = user_repo
         self.magic_link_repo = magic_link_repo
         self.email_service = email_service
+        self.stripe_client = stripe_client
 
     def handle(self, command: CreateCompanyCommand) -> None:
         # Check name uniqueness
@@ -75,6 +78,15 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
 
         self.company_repo.save(company)
         self.company_repo.save_domains(company.id, company.email_domains)
+
+        # Create Stripe customer (no-op if open_source_mode=True)
+        customer_id = self.stripe_client.create_customer(
+            name=company.name,
+            email=command.admin_email or "",
+            metadata={"company_id": company.id},
+        )
+        company.stripe_customer_id = customer_id
+        self.company_repo.save(company)
 
         # Handle initial admin
         if command.admin_email:

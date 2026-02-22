@@ -3,6 +3,8 @@
 import pytest
 from unittest.mock import patch, MagicMock
 
+from core.stripe_client import StripeUnavailableError
+
 
 class TestCreateCompany:
     @patch("core.email.get_email_service")
@@ -21,6 +23,48 @@ class TestCreateCompany:
         assert data["name"] == "Acme Corp"
         assert data["status"] == "active"
         assert "acme.com" in data["email_domains"]
+
+    @patch("core.email.get_email_service")
+    def test_create_company_stripe_saves_customer_id(self, mock_email, client, auth_as, super_admin_user, db_session):
+        mock_email.return_value = MagicMock()
+        auth_as(super_admin_user)
+
+        # Override the stripe mock to return a known customer ID
+        from adapters.http.api.companies.dependencies import get_stripe_client
+        mock_stripe = MagicMock()
+        mock_stripe.create_customer.return_value = "cus_saved_test"
+        client.app.dependency_overrides[get_stripe_client] = lambda: mock_stripe
+
+        resp = client.post("/api/v1/companies", json={
+            "name": "Stripe Test Corp",
+            "email_domains": ["stripecorp.io"],
+        })
+
+        assert resp.status_code == 201
+        from src.company_bc.company.infrastructure.repository import CompanyRepository
+        repo = CompanyRepository(db_session)
+        company = repo.find_by_stripe_customer_id("cus_saved_test")
+        assert company is not None
+        assert company.name == "Stripe Test Corp"
+
+    @patch("core.email.get_email_service")
+    def test_create_company_stripe_unavailable_returns_503(self, mock_email, client, auth_as, super_admin_user):
+        mock_email.return_value = MagicMock()
+        auth_as(super_admin_user)
+
+        # Override the stripe mock to raise StripeUnavailableError
+        from adapters.http.api.companies.dependencies import get_stripe_client
+        mock_stripe = MagicMock()
+        mock_stripe.create_customer.side_effect = StripeUnavailableError("down")
+        client.app.dependency_overrides[get_stripe_client] = lambda: mock_stripe
+
+        resp = client.post("/api/v1/companies", json={
+            "name": "Fail Corp",
+            "email_domains": ["failcorp.io"],
+        })
+
+        assert resp.status_code == 503
+        assert resp.json()["error"]["message"] == "stripe_unavailable"
 
     @patch("core.email.get_email_service")
     def test_create_company_duplicate_name(self, mock_email, client, auth_as, super_admin_user, company):

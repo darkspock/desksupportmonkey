@@ -9,7 +9,7 @@
 ## Phase 1: Stripe Client
 
 ### T1.1: Create StripeClient
-- [ ] **File:** `core/stripe_client.py` (NEW)
+- [x] **File:** `core/stripe_client.py` (NEW)
 - Define `StripeUnavailableError(Exception)` and `InvalidStripeSignatureError(Exception)`
 - Class `StripeClient`:
   - Constructor: `__init__(self, secret_key: str, open_source_mode: bool = False)`
@@ -25,7 +25,7 @@
 - Add `stripe` to backend dependencies: `uv add stripe`
 
 ### T1.2: Wire StripeClient into dependency injection
-- [ ] **File:** `adapters/http/dependencies.py` (MODIFY — or wherever DI factories live)
+- [x] **File:** `adapters/http/api/companies/dependencies.py` and `adapters/http/api/registration/dependencies.py` (MODIFY)
 - Add `get_stripe_client() -> StripeClient` factory reading `settings.STRIPE_SECRET_KEY` and `settings.OPEN_SOURCE_MODE`
 
 ---
@@ -33,7 +33,7 @@
 ## Phase 2: Application Layer
 
 ### T2.1: Extend CreateCompanyCommandHandler
-- [ ] **File:** `src/company_bc/company/application/commands/create_company.py` (MODIFY)
+- [x] **File:** `src/company_bc/company/application/commands/create_company.py` (MODIFY)
 - Add `stripe_client: StripeClient` as a dependency
 - After saving company:
   1. Call `stripe_client.create_customer(name=company.name, email=command.admin_email or "", metadata={"company_id": company.id})`
@@ -47,7 +47,7 @@
 ## Phase 3: HTTP Layer
 
 ### T3.1: Map StripeUnavailableError → HTTP 503 in companies router
-- [ ] **File:** `adapters/http/api/companies/routers.py` (MODIFY)
+- [x] **File:** `adapters/http/api/companies/routers.py` (MODIFY)
 - In `POST /api/v1/companies` handler, catch `StripeUnavailableError`:
   ```python
   raise HTTPException(status_code=503, detail="stripe_unavailable")
@@ -58,19 +58,19 @@
 ## Phase 4: Tests
 
 ### T4.1: Unit tests — StripeClient
-- [ ] **File:** `tests/unit/core/test_stripe_client.py` (NEW)
+- [x] **File:** `tests/unit/core/test_stripe_client.py` (NEW)
 - Test `create_customer` success — returns customer ID
 - Test `create_customer` with `open_source_mode=True` — returns `""` without calling Stripe SDK
 - Test `create_customer` on `stripe.error.StripeError` — raises `StripeUnavailableError`
 - Test `cancel_subscription` with `open_source_mode=True` — no-op, no exception
 
 ### T4.2: Unit tests — CreateCompanyCommandHandler (billing extension)
-- [ ] **File:** `tests/unit/company_bc/company/application/commands/test_create_company.py` (MODIFY)
+- [x] **File:** `tests/unit/company_bc/company/application/commands/test_create_company.py` (MODIFY)
 - Test: `stripe_customer_id` persisted on company after successful creation
 - Test: `StripeUnavailableError` from Stripe propagates out of handler
 
 ### T4.3: Integration test — registration with Stripe
-- [ ] **File:** `tests/integration/test_companies_endpoints.py` (MODIFY)
+- [x] **File:** `tests/integration/test_companies_endpoints.py` (MODIFY)
 - Test: `POST /api/v1/companies` with mocked `StripeClient` — response 201, `stripe_customer_id` saved in DB
 - Test: `POST /api/v1/companies` when Stripe raises `StripeUnavailableError` — response 503
 
@@ -79,10 +79,11 @@
 ## Phase 5: Verification
 
 ### T5.1: Run linter
-- [ ] `make lint` — no errors
+- [x] `make lint` — no new errors (4 pre-existing mypy errors in OAuth verifiers only)
 
 ### T5.2: Run all tests
-- [ ] `make test` + `make test-integration`
+- [x] `make test` — 1158 passed, 0 failed
+- [x] `make test-integration` — 319 passed, 7 pre-existing failures (no regressions)
 
 ---
 

@@ -576,6 +576,7 @@ dependencies = [
     { name = "redis" },
     { name = "requests" },
     { name = "sentry-sdk", extra = ["fastapi"] },
+    { name = "stripe" },
     { name = "ulid-py" },
     { name = "uvicorn" },
     { name = "uvloop" },
@@ -630,6 +631,7 @@ requires-dist = [
     { name = "redis", specifier = ">=5.0.0" },
     { name = "requests", specifier = ">=2.32.5" },
     { name = "sentry-sdk", extras = ["fastapi"], specifier = ">=2.0.0" },
+    { name = "stripe", specifier = ">=14.3.0" },
     { name = "ulid-py", specifier = ">=1.1.0" },
     { name = "uvicorn", specifier = ">=0.35.0" },
     { name = "uvloop", specifier = ">=0.21.0" },
@@ -1754,6 +1756,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/c4/68/79977123bb7be889ad680d79a40f339082c1978b5cfcf62c2d8d196873ac/starlette-0.52.1.tar.gz", hash = "sha256:834edd1b0a23167694292e94f597773bc3f89f362be6effee198165a35d62933", size = 2653702, upload-time = "2026-01-18T13:34:11.062Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/81/0d/13d1d239a25cbfb19e740db83143e95c772a1fe10202dda4b76792b114dd/starlette-0.52.1-py3-none-any.whl", hash = "sha256:0029d43eb3d273bc4f83a08720b4912ea4b071087a3b48db01b7c839f7954d74", size = 74272, upload-time = "2026-01-18T13:34:09.188Z" },
+]
+
+[[package]]
+name = "stripe"
+version = "14.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/49/67/8a38222a57fc2ba359c4dcb66528d94c00d803c7fde8f8d8470ad6bdccbb/stripe-14.3.0.tar.gz", hash = "sha256:4c76137d741bd43e8bb433a596c198ca20f4cdf17a8fe04604faf37c74b01978", size = 1463618, upload-time = "2026-01-28T21:20:29.856Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9e/4b/0b7d5920f2be5e42d72bdfc44a9fae57b422668bfc8dacdf2f74886f6daa/stripe-14.3.0-py3-none-any.whl", hash = "sha256:3e36b68b256c8970e99b703e195d947e2a2919095758788c7074ac4485ac255e", size = 2106980, upload-time = "2026-01-28T21:20:27.566Z" },
 ]
 
 [[package]]

@@ -9,6 +9,7 @@ from adapters.http.api.auth.dependencies import require_role
 from adapters.http.api.companies.dependencies import (
     get_company_repo,
     get_magic_link_repo,
+    get_stripe_client,
     get_user_repo,
 )
 from adapters.http.api.companies.schemas import (
@@ -24,6 +25,7 @@ from src.auth_bc.magic_link.infrastructure.repository import MagicLinkRepository
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
 from src.auth_bc.user.infrastructure.repository import UserRepository
+from core.stripe_client import StripeClient, StripeUnavailableError
 from src.company_bc.company.application.commands.create_company import (
     CompanyNameExistsError,
     CreateCompanyCommand,
@@ -99,6 +101,11 @@ def _handle_create_company_errors(handler: CreateCompanyCommandHandler, command:
             status_code=status.HTTP_409_CONFLICT,
             detail="User with this email already exists",
         )
+    except StripeUnavailableError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="stripe_unavailable",
+        )
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -108,6 +115,7 @@ def create_company(
     company_repo: CompanyRepository = Depends(get_company_repo),
     user_repo: UserRepository = Depends(get_user_repo),
     magic_link_repo: MagicLinkRepository = Depends(get_magic_link_repo),
+    stripe_client: StripeClient = Depends(get_stripe_client),
 ):
     company_id = str(ulid.new())
     handler = CreateCompanyCommandHandler(
@@ -115,6 +123,7 @@ def create_company(
         user_repo=user_repo,
         magic_link_repo=magic_link_repo,
         email_service=get_email_service(),
+        stripe_client=stripe_client,
     )
     command = CreateCompanyCommand(
         name=body.name,
