@@ -15,6 +15,7 @@ class BillingOverviewResponse(BaseModel):
     grace_days_remaining: Optional[int]
     current_period_end: Optional[datetime]
     pending_downgrade_plan: Optional[str]
+    trial_days_remaining: Optional[int]
 
 
 class CheckoutRequest(BaseModel):

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import ulid
@@ -53,6 +53,16 @@ class Company:
     current_period_end: Optional[datetime] = None
     pending_downgrade_plan: Optional[PlanTier] = None
     complimentary: bool = False
+    trial_ends_at: Optional[datetime] = None
+
+    def is_in_trial(self) -> bool:
+        if self.trial_ends_at is None:
+            return False
+        if self.trial_ends_at.tzinfo is None:
+            trial_end = self.trial_ends_at.replace(tzinfo=timezone.utc)
+        else:
+            trial_end = self.trial_ends_at
+        return datetime.now(timezone.utc) < trial_end
 
     @classmethod
     def create(cls, name: str, email_domains: list[str], id: Optional[str] = None) -> "Company":
@@ -66,6 +76,7 @@ class Company:
             status=CompanyStatus.ACTIVE,
             email_domains=[_normalize_domain(d) for d in email_domains],
             is_active=True,
+            trial_ends_at=datetime.now(timezone.utc) + timedelta(days=15),
         )
 
     def update(

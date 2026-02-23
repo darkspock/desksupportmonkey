@@ -14,6 +14,7 @@ interface BillingStatus {
   billing_status: string;
   complimentary: boolean;
   grace_days_remaining: number | null;
+  trial_days_remaining: number | null;
 }
 
 function BillingBanner({ role }: { role: string }) {
@@ -32,6 +33,18 @@ function BillingBanner({ role }: { role: string }) {
   });
 
   if (!data || data.complimentary) return null;
+
+  if (data.trial_days_remaining !== null && data.trial_days_remaining > 0) {
+    return (
+      <div className="w-full bg-blue-500 px-4 py-2 text-center text-sm font-medium text-white">
+        {t('page.billing.banner_trial', { days: String(data.trial_days_remaining) })}{' '}
+        <Link to="/billing" className="underline hover:no-underline">
+          {t('page.billing.banner_action')}
+        </Link>
+      </div>
+    );
+  }
+
   if (data.billing_status === 'grace_period') {
     const days = data.grace_days_remaining ?? 0;
     return (

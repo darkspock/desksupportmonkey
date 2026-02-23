@@ -24,6 +24,7 @@ class BillingOverviewDto:
     grace_days_remaining: Optional[int]
     current_period_end: Optional[datetime]
     pending_downgrade_plan: Optional[PlanTier]
+    trial_days_remaining: Optional[int]
 
 
 @dataclass
@@ -51,15 +52,25 @@ class GetBillingOverviewQueryHandler(QueryHandler[GetBillingOverviewQuery, Billi
             elapsed_days = (datetime.now(timezone.utc) - started).days
             grace_days_remaining = max(0, 15 - elapsed_days)
 
+        trial_days_remaining: Optional[int] = None
+        if company.trial_ends_at:
+            trial_end = company.trial_ends_at
+            if trial_end.tzinfo is None:
+                trial_end = trial_end.replace(tzinfo=timezone.utc)
+            remaining = (trial_end - datetime.now(timezone.utc)).days
+            trial_days_remaining = max(0, remaining)
+
+        in_trial = company.is_in_trial()
         return BillingOverviewDto(
             plan=company.plan,
             billing_status=company.billing_status,
             complimentary=company.complimentary,
             user_count=user_count,
-            user_limit=PlanGate.get_user_limit(company.plan),
+            user_limit=PlanGate.get_user_limit(company.plan, in_trial=in_trial),
             asset_count=asset_count,
-            asset_limit=PlanGate.get_asset_limit(company.plan),
+            asset_limit=PlanGate.get_asset_limit(company.plan, in_trial=in_trial),
             grace_days_remaining=grace_days_remaining,
             current_period_end=company.current_period_end,
             pending_downgrade_plan=company.pending_downgrade_plan,
+            trial_days_remaining=trial_days_remaining,
         )

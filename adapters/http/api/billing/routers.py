@@ -90,6 +90,7 @@ def get_billing_overview(
         grace_days_remaining=dto.grace_days_remaining,
         current_period_end=dto.current_period_end,
         pending_downgrade_plan=dto.pending_downgrade_plan.value if dto.pending_downgrade_plan else None,
+        trial_days_remaining=dto.trial_days_remaining,
     )
 
 

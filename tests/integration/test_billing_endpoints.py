@@ -96,7 +96,7 @@ class TestBillingOverviewEndpoint:
     def test_unauthenticated_gets_401(self, client):
         resp = client.get("/api/v1/billing/")
 
-        assert resp.status_code == 403  # HTTPBearer raises 403 when no token
+        assert resp.status_code == 401
 
 
 class TestCheckoutEndpoint:
@@ -165,6 +165,7 @@ class TestLazySuspension:
 
         repo = CompanyRepository(db_session)
         company = repo.find_by_id(admin_user.company_id)
+        company.trial_ends_at = None  # post-trial: grace period check must run
         company.enter_grace_period()
         company.grace_period_started_at = datetime.now(timezone.utc) - timedelta(days=16)
         repo.save(company)

@@ -1,10 +1,9 @@
 """Integration tests for /api/v1/companies/{id}/billing endpoints (SUPER_ADMIN)."""
 
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from adapters.http.api.companies.dependencies import get_stripe_client
-from app import app
 from core.stripe_client import StripeUnavailableError
 from src.company_bc.company.domain.billing_enums import BillingStatus, PlanTier
 from src.company_bc.company.infrastructure.repository import CompanyRepository
@@ -82,7 +81,7 @@ class TestGrantComplimentaryPlan:
     def test_grants_complimentary_no_stripe_sub(self, client, auth_as, super_admin_user, company, db_session):
         auth_as(super_admin_user)
         mock_stripe = MagicMock()
-        app.dependency_overrides[get_stripe_client] = lambda: mock_stripe
+        client.app.dependency_overrides[get_stripe_client] = lambda: mock_stripe
 
         try:
             resp = client.post(
@@ -90,7 +89,7 @@ class TestGrantComplimentaryPlan:
                 json={"plan": "enterprise"},
             )
         finally:
-            app.dependency_overrides.pop(get_stripe_client, None)
+            client.app.dependency_overrides.pop(get_stripe_client, None)
 
         assert resp.status_code == 200
         data = resp.json()["data"]
@@ -107,7 +106,7 @@ class TestGrantComplimentaryPlan:
 
         auth_as(super_admin_user)
         mock_stripe = MagicMock()
-        app.dependency_overrides[get_stripe_client] = lambda: mock_stripe
+        client.app.dependency_overrides[get_stripe_client] = lambda: mock_stripe
 
         try:
             resp = client.post(
@@ -115,28 +114,30 @@ class TestGrantComplimentaryPlan:
                 json={"plan": "enterprise"},
             )
         finally:
-            app.dependency_overrides.pop(get_stripe_client, None)
+            client.app.dependency_overrides.pop(get_stripe_client, None)
 
         assert resp.status_code == 200
         mock_stripe.cancel_subscription.assert_called_once_with("sub_test_123")
 
-    def test_stripe_failure_returns_503(self, client, auth_as, super_admin_user, company):
+    def test_stripe_failure_returns_503(self, client, auth_as, super_admin_user, company, db_session):
+        from src.company_bc.company.infrastructure.repository import CompanyRepository as CR
+        repo = CR(db_session)
+        company.stripe_subscription_id = "sub_fail"
+        repo.save(company)
+        db_session.flush()
+
         auth_as(super_admin_user)
         mock_stripe = MagicMock()
         mock_stripe.cancel_subscription.side_effect = StripeUnavailableError()
-        app.dependency_overrides[get_stripe_client] = lambda: mock_stripe
+        client.app.dependency_overrides[get_stripe_client] = lambda: mock_stripe
 
-        from src.company_bc.company.infrastructure.repository import CompanyRepository as CR
-        # give company a subscription so the cancel path is hit
-        with pytest.MonkeyPatch().context() as m:
-            m.setattr(company, "stripe_subscription_id", "sub_fail")
-            try:
-                resp = client.post(
-                    f"/api/v1/companies/{company.id}/billing/complimentary",
-                    json={"plan": "enterprise"},
-                )
-            finally:
-                app.dependency_overrides.pop(get_stripe_client, None)
+        try:
+            resp = client.post(
+                f"/api/v1/companies/{company.id}/billing/complimentary",
+                json={"plan": "enterprise"},
+            )
+        finally:
+            client.app.dependency_overrides.pop(get_stripe_client, None)
 
         assert resp.status_code == 503
 

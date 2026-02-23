@@ -93,7 +93,7 @@ def _check_user_limit_not_reached(company_id: str, company_repo: CompanyReposito
         return
     from src.company_bc.company.domain.plan_gate import PlanGate
     company = company_repo.find_by_id(company_id)
-    if not company or company.complimentary:
+    if not company or company.complimentary or company.is_in_trial():
         return
     limit = PlanGate.get_user_limit(company.plan)
     if limit is None:

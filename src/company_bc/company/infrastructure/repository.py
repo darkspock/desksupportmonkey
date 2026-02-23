@@ -39,6 +39,7 @@ class CompanyRepository(CompanyRepositoryInterface):
                 if company.pending_downgrade_plan else None
             )
             existing.complimentary = company.complimentary
+            existing.trial_ends_at = company.trial_ends_at
         else:
             model = CompanyModel(
                 id=company.id,
@@ -56,6 +57,7 @@ class CompanyRepository(CompanyRepositoryInterface):
                     if company.pending_downgrade_plan else None
                 ),
                 complimentary=company.complimentary,
+                trial_ends_at=company.trial_ends_at,
             )
             self.session.add(model)
         self.session.flush()
@@ -212,4 +214,5 @@ class CompanyRepository(CompanyRepositoryInterface):
                 if model.pending_downgrade_plan else None
             ),
             complimentary=model.complimentary,
+            trial_ends_at=model.trial_ends_at,
         )

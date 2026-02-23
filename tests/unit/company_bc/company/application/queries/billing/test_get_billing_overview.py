@@ -16,6 +16,7 @@ from src.company_bc.company.domain.entities import Company
 def _make_company(plan: PlanTier = PlanTier.FREE) -> Company:
     c = Company.create(name="Acme", email_domains=["acme.com"])
     c.plan = plan
+    c.trial_ends_at = None  # post-trial company for limit tests
     return c
 
 
@@ -93,6 +94,19 @@ class TestGetBillingOverview:
         dto = handler.handle(GetBillingOverviewQuery(company_id="c1"))
 
         assert dto.grace_days_remaining == 0
+
+    def test_trial_company_has_unlimited_limits(self, handler):
+        company = Company.create(name="Acme", email_domains=["acme.com"])
+        company.plan = PlanTier.FREE
+        # trial_ends_at is already set by Company.create() — company is in trial
+        handler.company_repo.find_by_id.return_value = company
+
+        dto = handler.handle(GetBillingOverviewQuery(company_id="c1"))
+
+        assert dto.user_limit is None
+        assert dto.asset_limit is None
+        assert dto.trial_days_remaining is not None
+        assert dto.trial_days_remaining > 0
 
     def test_company_not_found_raises(self, handler):
         handler.company_repo.find_by_id.return_value = None

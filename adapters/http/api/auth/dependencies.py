@@ -64,6 +64,7 @@ def get_current_user(
         if (
             company
             and not _settings.stripe.OPEN_SOURCE_MODE
+            and not company.is_in_trial()
             and company.billing_status == BillingStatus.GRACE_PERIOD
             and company.grace_period_started_at
         ):

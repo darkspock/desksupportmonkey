@@ -25,6 +25,7 @@ class CompanyModel(ULIDMixin, TimestampMixin, Base):
     current_period_end: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     pending_downgrade_plan: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     complimentary: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    trial_ends_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     email_domains = relationship(
         "CompanyEmailDomainModel", backref="company", cascade="all, delete-orphan"

@@ -46,23 +46,32 @@ class PlanGate:
         complimentary: bool,
         open_source_mode: bool,
         feature: str,
+        in_trial: bool = False,
     ) -> bool:
-        if open_source_mode or complimentary:
+        if open_source_mode or complimentary or in_trial:
             return True
         if billing_status == BillingStatus.SUSPENDED:
             return False
         return feature in PLAN_FEATURES.get(plan, set())
 
     @staticmethod
-    def is_write_allowed(billing_status: BillingStatus, open_source_mode: bool) -> bool:
-        if open_source_mode:
+    def is_write_allowed(
+        billing_status: BillingStatus,
+        open_source_mode: bool,
+        in_trial: bool = False,
+    ) -> bool:
+        if open_source_mode or in_trial:
             return True
         return billing_status not in (BillingStatus.SUSPENDED, BillingStatus.OVER_LIMIT)
 
     @staticmethod
-    def get_user_limit(plan: PlanTier) -> Optional[int]:
+    def get_user_limit(plan: PlanTier, in_trial: bool = False) -> Optional[int]:
+        if in_trial:
+            return None
         return PLAN_USER_LIMITS.get(plan)
 
     @staticmethod
-    def get_asset_limit(plan: PlanTier) -> Optional[int]:
+    def get_asset_limit(plan: PlanTier, in_trial: bool = False) -> Optional[int]:
+        if in_trial:
+            return None
         return PLAN_ASSET_LIMITS.get(plan)

@@ -18,6 +18,7 @@ interface BillingOverview {
   grace_days_remaining: number | null;
   current_period_end: string | null;
   pending_downgrade_plan: string | null;
+  trial_days_remaining: number | null;
 }
 
 const PLAN_VARIANT: Record<string, string> = {
@@ -115,6 +116,7 @@ export default function BillingPage() {
   const statusLabel = t(`page.billing.status.${data.billing_status}`) || data.billing_status;
   const isGrace = data.billing_status === 'grace_period';
   const isSuspended = data.billing_status === 'suspended';
+  const inTrial = data.trial_days_remaining !== null && data.trial_days_remaining > 0;
   const showStripeButtons = !data.complimentary && data.plan !== 'open_source';
   const isPlanUpgradable = data.plan === 'free' || data.plan === 'premium';
 
@@ -125,6 +127,13 @@ export default function BillingPage() {
         <h1 className="text-2xl font-semibold text-foreground">{t('page.billing.title')}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t('page.billing.subtitle')}</p>
       </div>
+
+      {/* Trial banner */}
+      {inTrial && (
+        <div className="rounded-lg border border-blue-300 bg-blue-50 p-4 text-sm text-blue-800 dark:border-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
+          {t('page.billing.trial_banner', { days: String(data.trial_days_remaining) })}
+        </div>
+      )}
 
       {/* Grace period warning */}
       {isGrace && (
@@ -158,6 +167,12 @@ export default function BillingPage() {
               <PillBadge
                 label={t('page.billing.complimentary')}
                 className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+              />
+            )}
+            {inTrial && (
+              <PillBadge
+                label={t('page.billing.trial_badge', { days: String(data.trial_days_remaining) })}
+                className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
               />
             )}
           </div>

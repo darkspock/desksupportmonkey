@@ -97,7 +97,7 @@ def _check_billing_not_suspended(user: Optional[User], db: Session) -> None:
     from src.company_bc.company.infrastructure.repository import CompanyRepository as _CompanyRepository
     from src.company_bc.company.domain.billing_enums import BillingStatus
     company = _CompanyRepository(db).find_by_id(user.company_id)
-    if company and not company.complimentary and company.billing_status == BillingStatus.SUSPENDED:
+    if company and not company.complimentary and not company.is_in_trial() and company.billing_status == BillingStatus.SUSPENDED:
         raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail="account_suspended")
 
 
