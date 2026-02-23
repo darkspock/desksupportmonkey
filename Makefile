@@ -1,4 +1,4 @@
-.PHONY: start stop start-docker start-backend start-frontend start-frontend-bg queue start-queue-bg install install-frontend logs db-migrate db-upgrade test test-integration test-all lint scan clean seed demo-reset
+.PHONY: start stop start-docker start-backend start-frontend start-frontend-bg queue start-queue-bg install install-frontend logs db-migrate db-upgrade test test-integration test-all lint scan clean seed demo-reset stripe-login stripe-listen
 
 # Colors for terminal output
 GREEN := \033[0;32m
@@ -162,6 +162,26 @@ demo-reset:
 	@echo "$(GREEN)Seeding demo data...$(NC)"
 	@PYTHONPATH=src uv run python scripts/seed_demo_data.py
 
+# =============================================================================
+# Stripe (local testing)
+# =============================================================================
+
+## Authenticate Stripe CLI (first-time setup)
+stripe-login:
+	@echo "$(GREEN)Authenticating with Stripe...$(NC)"
+	@stripe login
+
+## Forward Stripe webhooks to the local backend
+## The CLI prints the webhook signing secret — paste it into STRIPE_WEBHOOK_SECRET in .env
+stripe-listen:
+	@echo "$(GREEN)Forwarding Stripe webhooks → http://localhost:8001/api/v1/billing/webhook$(NC)"
+	@echo "$(YELLOW)Copy the printed 'whsec_test_...' secret into STRIPE_WEBHOOK_SECRET in .env, then restart the backend.$(NC)"
+	@stripe listen --forward-to http://localhost:8001/api/v1/billing/webhook
+
+# =============================================================================
+# Utilities
+# =============================================================================
+
 ## Show logs from Docker containers
 logs:
 	@docker-compose logs -f
@@ -203,6 +223,11 @@ help:
 	@echo "  $(GREEN)make demo-reset$(NC)     - Reset DB and seed fresh demo data"
 	@echo "  $(GREEN)make logs$(NC)           - Show Docker logs"
 	@echo "  $(GREEN)make clean$(NC)          - Clean generated files"
+	@echo ""
+	@echo "Stripe (local testing):"
+	@echo "  $(GREEN)make stripe-login$(NC)   - Authenticate Stripe CLI (first-time)"
+	@echo "  $(GREEN)make stripe-listen$(NC)  - Forward Stripe webhooks to local backend"
+	@echo "                       Copy the printed whsec_test_... into STRIPE_WEBHOOK_SECRET in .env"
 	@echo ""
 	@echo "Services:"
 	@echo "  - Frontend:       http://localhost:5173"
