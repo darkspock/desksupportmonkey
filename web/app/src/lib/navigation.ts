@@ -3,7 +3,7 @@ import type { UserRole } from '../types';
 export function getDefaultRouteForRole(role?: UserRole | null): string {
   switch (role) {
     case 'super_admin':
-      return '/companies';
+      return '/overview';
     case 'admin':
       return '/dashboard';
     case 'procurement_manager':

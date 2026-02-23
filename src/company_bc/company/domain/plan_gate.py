@@ -36,6 +36,20 @@ PLAN_ASSET_LIMITS: dict[PlanTier, Optional[int]] = {
     PlanTier.OPEN_SOURCE: None,
 }
 
+PLAN_PRICE_CENTS: dict[PlanTier, int] = {
+    PlanTier.FREE: 0,
+    PlanTier.PREMIUM: 4900,       # $49/month
+    PlanTier.ENTERPRISE: 14900,   # $149/month
+    PlanTier.OPEN_SOURCE: 0,
+}
+
+MILESTONE_TARGETS_CENTS: list[dict[str, object]] = [
+    {"label": "costs_covered", "amount_cents": 25900, "description": "Covers monthly fixed costs"},
+    {"label": "founder_salary", "amount_cents": 200000, "description": "Orchestrator draws salary"},
+    {"label": "first_advisor", "amount_cents": 300000, "description": "First advisor retainer"},
+    {"label": "head_of_growth", "amount_cents": 700000, "description": "Head of Growth hire"},
+]
+
 
 class PlanGate:
 

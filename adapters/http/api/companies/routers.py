@@ -12,12 +12,15 @@ from adapters.http.api.companies.dependencies import (
     get_stripe_client,
     get_user_repo,
 )
+import dataclasses
+
 from adapters.http.api.companies.schemas import (
     CompanyBillingResponse,
     CompanyDetailResponse,
     CompanyResponse,
     CreateCompanyRequest,
     GrantComplimentaryRequest,
+    InvoiceResponse,
     OverridePlanRequest,
     UpdateCompanyRequest,
     UpdateCompanyStatusRequest,
@@ -55,6 +58,7 @@ from src.company_bc.company.application.queries.get_company import (
     GetCompanyQueryHandler,
 )
 from src.company_bc.company.application.queries.list_companies import (
+    CompanyListItemDto,
     ListCompaniesQuery,
     ListCompaniesQueryHandler,
 )
@@ -83,6 +87,11 @@ from src.company_bc.company.application.queries.billing.get_company_billing impo
     GetCompanyBillingQuery,
     GetCompanyBillingQueryHandler,
 )
+from src.company_bc.company.application.queries.billing.get_company_invoices import (
+    CompanyNotFoundError as InvoiceCompanyNotFoundError,
+    GetCompanyInvoicesQuery,
+    GetCompanyInvoicesQueryHandler,
+)
 from src.company_bc.company.domain.billing_enums import PlanTier
 from src.company_bc.company.domain.entities import Company, InvalidStatusTransitionError
 from src.company_bc.company.infrastructure.repository import CompanyRepository
@@ -101,6 +110,23 @@ def _to_response(company: Company) -> CompanyResponse:
         is_active=company.is_active,
         created_at=company.created_at,
         updated_at=company.updated_at,
+    )
+
+
+def _list_item_to_response(item: CompanyListItemDto) -> CompanyResponse:
+    return CompanyResponse(
+        id=item.id,
+        name=item.name,
+        status=item.status.value,
+        email_domains=item.email_domains,
+        is_active=item.is_active,
+        created_at=item.created_at,
+        updated_at=item.updated_at,
+        plan=item.plan.value,
+        billing_status=item.billing_status.value,
+        user_count=item.user_count,
+        asset_count=item.asset_count,
+        trial_days_remaining=item.trial_days_remaining,
     )
 
 
@@ -164,15 +190,17 @@ def list_companies(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     search: Optional[str] = Query(None),
+    in_trial: Optional[bool] = Query(None),
+    plan: Optional[str] = Query(None),
     current_user: User = Depends(require_role(UserRole.SUPER_ADMIN)),
     company_repo: CompanyRepository = Depends(get_company_repo),
 ):
     handler = ListCompaniesQueryHandler(company_repo=company_repo)
     companies, total = handler.handle(
-        ListCompaniesQuery(page=page, page_size=page_size, search=search)
+        ListCompaniesQuery(page=page, page_size=page_size, search=search, in_trial=in_trial, plan=plan)
     )
     return {
-        "data": [_to_response(c).model_dump(mode="json") for c in companies],
+        "data": [_list_item_to_response(c).model_dump(mode="json") for c in companies],
         "meta": PaginationMeta(page=page, page_size=page_size, total=total).model_dump(),
     }
 
@@ -276,6 +304,8 @@ def _billing_response(company_id: str, company_repo: CompanyRepository) -> dict:
         current_period_end=dto.current_period_end,
         pending_downgrade_plan=dto.pending_downgrade_plan.value if dto.pending_downgrade_plan else None,
         grace_period_started_at=dto.grace_period_started_at,
+        trial_days_remaining=dto.trial_days_remaining,
+        trial_ends_at=dto.trial_ends_at,
     ).model_dump(mode="json")}
 
 
@@ -289,6 +319,39 @@ def get_company_billing(
         return _billing_response(company_id, company_repo)
     except BillingCompanyNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
+
+
+@router.get("/{company_id}/invoices")
+def get_company_invoices(
+    company_id: str,
+    limit: int = Query(20, ge=1, le=100),
+    current_user: User = Depends(require_role(UserRole.SUPER_ADMIN)),
+    company_repo: CompanyRepository = Depends(get_company_repo),
+    stripe_client: StripeClient = Depends(get_stripe_client),
+):
+    handler = GetCompanyInvoicesQueryHandler(
+        company_repo=company_repo,
+        stripe_client=stripe_client,
+    )
+    try:
+        invoices = handler.handle(
+            GetCompanyInvoicesQuery(company_id=company_id, limit=limit)
+        )
+    except InvoiceCompanyNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Company not found"
+        )
+    except StripeUnavailableError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Stripe unavailable",
+        )
+    return {
+        "data": [
+            InvoiceResponse(**dataclasses.asdict(inv)).model_dump(mode="json")
+            for inv in invoices
+        ]
+    }
 
 
 @router.patch("/{company_id}/billing/plan")

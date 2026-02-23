@@ -102,6 +102,7 @@ Rules:
 - Do not leave users guessing where “save” happens
 - Do not provide multiple edit entry points for the same setting
 - Never use inline editing. Use a modal or navigate to a dedicated edit page depending on screen complexity.
+- Action buttons in dialogs and forms must be right-aligned (`justify-end`). Primary action on the right, secondary (cancel) on the left.
 
 ---
 
@@ -183,6 +184,11 @@ Do not hardcode hostnames or stale base URLs.
 6. Confirm destructive or direct-change actions
 - Any list action that performs direct change (`POST`/`PUT`/`DELETE`) must require confirmation before execution.
 - Apply this to delete, approve/reject, activate/deactivate, set default, and similar state-changing actions.
+
+7. Row action limit
+- Maximum 3 icon-only action buttons visible per table row.
+- If more actions are needed, group the overflow into an ellipsis (⋯) dropdown menu.
+- Order: most-used actions visible; destructive/rare actions inside the overflow menu.
 
 ---
 

@@ -1,8 +1,8 @@
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import datetime, timedelta, timezone
+from typing import Any, Optional
 
 import ulid
-from sqlalchemy import delete, func, select
+from sqlalchemy import ColumnElement, and_, case, delete, func, select
 from sqlalchemy.orm import Session
 
 from src.company_bc.company.domain.billing_enums import BillingStatus, PlanTier
@@ -95,6 +95,64 @@ class CompanyRepository(CompanyRepositoryInterface):
         ).scalars().all()
         return [self._to_entity(m) for m in models], total or 0
 
+    def find_all_with_counts(
+        self,
+        page: int,
+        page_size: int,
+        search: Optional[str] = None,
+        in_trial: Optional[bool] = None,
+        plan: Optional[str] = None,
+    ) -> tuple[list[tuple[Company, int, int]], int]:
+        from src.auth_bc.user.infrastructure.models import UserModel
+        from src.asset_bc.asset.infrastructure.models import AssetModel
+
+        user_count_sq = (
+            select(func.count())
+            .where(UserModel.company_id == CompanyModel.id)
+            .where(UserModel.is_active.is_(True))
+            .correlate(CompanyModel)
+            .scalar_subquery()
+        )
+        asset_count_sq = (
+            select(func.count())
+            .where(AssetModel.company_id == CompanyModel.id)
+            .where(AssetModel.status != "decommissioned")
+            .correlate(CompanyModel)
+            .scalar_subquery()
+        )
+
+        filters: list[ColumnElement[bool]] = []
+        if search:
+            filters.append(CompanyModel.name.ilike(f"%{search}%"))
+        if in_trial is True:
+            filters.append(CompanyModel.trial_ends_at > func.now())  # type: ignore[operator]
+        if plan is not None:
+            filters.append(CompanyModel.plan == plan)
+
+        base_stmt = select(CompanyModel)
+        if filters:
+            base_stmt = base_stmt.where(*filters)
+
+        total = self.session.execute(
+            select(func.count()).select_from(base_stmt.subquery())
+        ).scalar() or 0
+
+        stmt = select(CompanyModel, user_count_sq.label("user_count"), asset_count_sq.label("asset_count"))
+        if filters:
+            stmt = stmt.where(*filters)
+
+        rows = self.session.execute(
+            stmt.order_by(CompanyModel.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        ).all()
+
+        result: list[tuple[Company, int, int]] = [
+            (self._to_entity(row.CompanyModel), row.user_count or 0, row.asset_count or 0)
+            for row in rows
+        ]
+        return result, total
+
     def find_domain(self, domain: str) -> Optional[str]:
         result = self.session.execute(
             select(CompanyEmailDomainModel.company_id)
@@ -157,6 +215,111 @@ class CompanyRepository(CompanyRepositoryInterface):
             ) or 0
         except Exception:
             return 0
+
+    def get_dashboard_stats(self, now: datetime) -> dict[str, Any]:
+        from src.company_bc.company.application.queries.get_founder_dashboard import (
+            UpcomingRenewalDto,
+        )
+
+        first_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        last_month_start = (first_of_month - timedelta(days=1)).replace(day=1)
+        seven_days_ago = now - timedelta(days=7)
+        thirty_days_ago = now - timedelta(days=30)
+        seven_days_ahead = now + timedelta(days=7)
+        thirty_days_ahead = now + timedelta(days=30)
+
+        stmt = select(
+            func.count().label("total"),
+            func.sum(case(
+                (and_(CompanyModel.plan == "premium", CompanyModel.billing_status == "active", CompanyModel.complimentary.is_(False)), 1),
+                else_=0,
+            )).label("premium_active"),
+            func.sum(case(
+                (and_(CompanyModel.plan == "enterprise", CompanyModel.billing_status == "active", CompanyModel.complimentary.is_(False)), 1),
+                else_=0,
+            )).label("enterprise_active"),
+            func.sum(case((CompanyModel.billing_status == "grace_period", 1), else_=0)).label("grace_period_count"),
+            func.sum(case((CompanyModel.billing_status == "suspended", 1), else_=0)).label("suspended_count"),
+            func.sum(case((CompanyModel.complimentary.is_(True), 1), else_=0)).label("complimentary_count"),
+            func.sum(case((CompanyModel.status == "active", 1), else_=0)).label("total_active"),
+            func.sum(case((CompanyModel.trial_ends_at > now, 1), else_=0)).label("trials_active"),
+            func.sum(case(
+                (and_(CompanyModel.trial_ends_at > now, CompanyModel.trial_ends_at <= seven_days_ahead), 1),
+                else_=0,
+            )).label("trials_expiring_7d"),
+            func.sum(case(
+                (and_(CompanyModel.trial_ends_at > now, CompanyModel.trial_ends_at <= thirty_days_ahead), 1),
+                else_=0,
+            )).label("trials_expiring_30d"),
+            func.sum(case((CompanyModel.created_at >= first_of_month, 1), else_=0)).label("trials_started_this_month"),
+            func.sum(case((CompanyModel.created_at >= seven_days_ago, 1), else_=0)).label("new_7d"),
+            func.sum(case((CompanyModel.created_at >= thirty_days_ago, 1), else_=0)).label("new_30d"),
+            func.sum(case(
+                (and_(CompanyModel.created_at >= last_month_start, CompanyModel.created_at < first_of_month), 1),
+                else_=0,
+            )).label("last_month_count"),
+            func.sum(case(
+                (and_(
+                    CompanyModel.stripe_subscription_id.isnot(None),
+                    CompanyModel.current_period_end >= first_of_month,
+                    CompanyModel.plan != "free",
+                ), 1),
+                else_=0,
+            )).label("new_paying_this_month"),
+        ).select_from(CompanyModel)
+        row = self.session.execute(stmt).one()
+
+        renewals_stmt = (
+            select(CompanyModel)
+            .where(CompanyModel.current_period_end.between(now, seven_days_ahead))
+            .where(CompanyModel.billing_status == "active")
+            .order_by(CompanyModel.current_period_end)
+            .limit(10)
+        )
+        renewals = [
+            UpcomingRenewalDto(
+                company_id=c.id,
+                company_name=c.name,
+                plan=c.plan,
+                period_end=c.current_period_end,
+            )
+            for c in self.session.scalars(renewals_stmt).all()
+            if c.current_period_end is not None
+        ]
+
+        at_risk_stmt = select(CompanyModel.stripe_customer_id).where(
+            and_(
+                CompanyModel.billing_status.in_(["grace_period", "suspended"]),
+                CompanyModel.stripe_customer_id.isnot(None),
+            )
+        )
+        at_risk_ids = [r for r in self.session.scalars(at_risk_stmt).all() if r]
+
+        last_month = row.last_month_count or 0
+        this_month_new = row.new_30d or 0
+        mom = round(((this_month_new - last_month) / last_month * 100), 1) if last_month > 0 else None
+
+        return {
+            "total_active": row.total_active or 0,
+            "plan_counts": {
+                PlanTier.PREMIUM: row.premium_active or 0,
+                PlanTier.ENTERPRISE: row.enterprise_active or 0,
+            },
+            "grace_period_count": row.grace_period_count or 0,
+            "suspended_count": row.suspended_count or 0,
+            "complimentary_count": row.complimentary_count or 0,
+            "trials_active": row.trials_active or 0,
+            "trials_expiring_7d": row.trials_expiring_7d or 0,
+            "trials_expiring_30d": row.trials_expiring_30d or 0,
+            "trials_started_this_month": row.trials_started_this_month or 0,
+            "new_7d": row.new_7d or 0,
+            "new_30d": row.new_30d or 0,
+            "new_paying_this_month": row.new_paying_this_month or 0,
+            "churned_this_month_cents": 0,
+            "mom_growth_pct": mom,
+            "upcoming_renewals_7d": renewals,
+            "at_risk_stripe_ids": at_risk_ids,
+        }
 
     def delete(self, company_id: str) -> None:
         self.session.execute(

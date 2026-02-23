@@ -53,6 +53,7 @@ const MyTaskAppointmentsPage = lazy(() => import('./pages/technician/MyTaskAppoi
 const MaintenanceTemplatesPage = lazy(() => import('./pages/admin/MaintenanceTemplatesPage'));
 const UserImportPage = lazy(() => import('./pages/admin/UserImportPage'));
 const CompaniesPage = lazy(() => import('./pages/superadmin/CompaniesPage'));
+const FounderDashboardPage = lazy(() => import('./pages/superadmin/FounderDashboardPage'));
 const BillingPage = lazy(() => import('./pages/admin/BillingPage'));
 const BillingProcessingPage = lazy(() => import('./pages/admin/BillingProcessingPage'));
 
@@ -237,6 +238,10 @@ export const router = createBrowserRouter([
         element: <RequireRole roles={['admin']}><S><BillingProcessingPage /></S></RequireRole>,
       },
       // Super Admin
+      {
+        path: 'overview',
+        element: <RequireRole roles={['super_admin']}><S><FounderDashboardPage /></S></RequireRole>,
+      },
       {
         path: 'companies',
         element: <RequireRole roles={['super_admin']}><S><CompaniesPage /></S></RequireRole>,

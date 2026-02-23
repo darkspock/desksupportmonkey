@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from datetime import datetime
+from typing import Any, Optional
 
 from src.company_bc.company.domain.entities import Company
 
@@ -26,6 +27,17 @@ class CompanyRepositoryInterface(ABC):
         ...
 
     @abstractmethod
+    def find_all_with_counts(
+        self,
+        page: int,
+        page_size: int,
+        search: Optional[str] = None,
+        in_trial: Optional[bool] = None,
+        plan: Optional[str] = None,
+    ) -> tuple[list[tuple["Company", int, int]], int]:
+        ...
+
+    @abstractmethod
     def find_domain(self, domain: str) -> Optional[str]:
         """Find company_id owning this domain, or None."""
         ...
@@ -49,6 +61,10 @@ class CompanyRepositoryInterface(ABC):
     @abstractmethod
     def delete(self, company_id: str) -> None:
         """Delete a company and its email domains."""
+        ...
+
+    @abstractmethod
+    def get_dashboard_stats(self, now: datetime) -> dict[str, Any]:
         ...
 
     @abstractmethod

@@ -21,14 +21,17 @@ class TestListCompaniesQuery:
             Company.create(name="B", email_domains=["b.com"]),
         ]
         handler = ListCompaniesQueryHandler(company_repo=MagicMock())
-        handler.company_repo.find_all.return_value = (companies, 2)
+        handler.company_repo.find_all_with_counts.return_value = (
+            [(c, 0, 0) for c in companies],
+            2,
+        )
 
         result, total = handler.handle(ListCompaniesQuery(page=1, page_size=20))
 
         assert len(result) == 2
         assert total == 2
-        handler.company_repo.find_all.assert_called_once_with(
-            page=1, page_size=20, search=None
+        handler.company_repo.find_all_with_counts.assert_called_once_with(
+            page=1, page_size=20, search=None, in_trial=None, plan=None
         )
 
 

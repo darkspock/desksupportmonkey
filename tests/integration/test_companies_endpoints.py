@@ -113,6 +113,101 @@ class TestListCompanies:
         assert resp.json()["meta"]["page"] == 1
         assert resp.json()["meta"]["page_size"] == 1
 
+    def test_list_companies_returns_enriched_fields(self, client, auth_as, super_admin_user, company):
+        auth_as(super_admin_user)
+
+        resp = client.get("/api/v1/companies")
+
+        assert resp.status_code == 200
+        item = next(d for d in resp.json()["data"] if d["id"] == company.id)
+        assert "user_count" in item
+        assert "asset_count" in item
+        assert "plan" in item
+        assert "billing_status" in item
+        assert "trial_days_remaining" in item
+
+    def test_list_companies_filter_in_trial_returns_only_trial_companies(
+        self, client, auth_as, super_admin_user, company, db_session
+    ):
+        from datetime import datetime, timedelta, timezone
+        from src.company_bc.company.infrastructure.repository import CompanyRepository
+
+        # give the company an active trial
+        company.trial_ends_at = datetime.now(timezone.utc) + timedelta(days=5)
+        CompanyRepository(db_session).save(company)
+        db_session.flush()
+
+        auth_as(super_admin_user)
+        resp = client.get("/api/v1/companies?in_trial=true")
+
+        assert resp.status_code == 200
+        ids = [d["id"] for d in resp.json()["data"]]
+        assert company.id in ids
+
+    def test_list_companies_filter_plan_returns_only_matching(
+        self, client, auth_as, super_admin_user, company
+    ):
+        auth_as(super_admin_user)
+
+        resp = client.get("/api/v1/companies?plan=free")
+
+        assert resp.status_code == 200
+        # The default company fixture creates a free-plan company
+        ids = [d["id"] for d in resp.json()["data"]]
+        assert company.id in ids
+
+    def test_list_companies_filter_plan_premium_excludes_free(
+        self, client, auth_as, super_admin_user, company
+    ):
+        auth_as(super_admin_user)
+
+        resp = client.get("/api/v1/companies?plan=premium")
+
+        assert resp.status_code == 200
+        ids = [d["id"] for d in resp.json()["data"]]
+        # Default company is free-plan, should not appear in premium filter
+        assert company.id not in ids
+
+
+class TestGetCompanyBillingEnrichment:
+    def test_billing_response_includes_trial_fields(
+        self, client, auth_as, super_admin_user, company, db_session
+    ):
+        from datetime import datetime, timedelta, timezone
+        from src.company_bc.company.infrastructure.repository import CompanyRepository
+
+        trial_end = datetime.now(timezone.utc) + timedelta(days=8)
+        company.trial_ends_at = trial_end
+        CompanyRepository(db_session).save(company)
+        db_session.flush()
+
+        auth_as(super_admin_user)
+        resp = client.get(f"/api/v1/companies/{company.id}/billing")
+
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert "trial_days_remaining" in data
+        assert "trial_ends_at" in data
+        assert data["trial_days_remaining"] is not None
+        assert data["trial_days_remaining"] >= 7
+
+    def test_billing_response_no_trial_has_null_trial_fields(
+        self, client, auth_as, super_admin_user, company, db_session
+    ):
+        from src.company_bc.company.infrastructure.repository import CompanyRepository
+
+        company.trial_ends_at = None
+        CompanyRepository(db_session).save(company)
+        db_session.flush()
+
+        auth_as(super_admin_user)
+        resp = client.get(f"/api/v1/companies/{company.id}/billing")
+
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert data["trial_days_remaining"] is None
+        assert data["trial_ends_at"] is None
+
 
 class TestGetCompany:
     def test_get_company(self, client, auth_as, super_admin_user, company):
@@ -182,3 +277,55 @@ class TestUpdateCompanyStatus:
         resp = client.patch("/api/v1/companies/nonexistent/status", json={"status": "suspended"})
 
         assert resp.status_code == 404
+
+
+class TestGetCompanyInvoices:
+    def test_invoices_returns_list(self, client, auth_as, super_admin_user, company):
+        auth_as(super_admin_user)
+
+        resp = client.get(f"/api/v1/companies/{company.id}/invoices")
+
+        assert resp.status_code == 200
+        assert "data" in resp.json()
+        assert isinstance(resp.json()["data"], list)
+
+    def test_invoices_not_found(self, client, auth_as, super_admin_user):
+        auth_as(super_admin_user)
+
+        resp = client.get("/api/v1/companies/nonexistent/invoices")
+
+        assert resp.status_code == 404
+
+
+class TestFounderDashboard:
+    def test_dashboard_returns_all_sections(self, client, auth_as, super_admin_user):
+        auth_as(super_admin_user)
+
+        resp = client.get("/api/v1/super-admin/dashboard")
+
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert "revenue" in data
+        assert "trials" in data
+        assert "health" in data
+        assert "growth" in data
+        assert "next_milestone" in data
+        assert "upcoming_renewals_7d" in data
+        assert "as_of" in data
+
+    def test_dashboard_revenue_structure(self, client, auth_as, super_admin_user):
+        auth_as(super_admin_user)
+
+        resp = client.get("/api/v1/super-admin/dashboard")
+
+        revenue = resp.json()["data"]["revenue"]
+        assert "mrr_cents" in revenue
+        assert "mrr_formatted" in revenue
+        assert "by_plan" in revenue
+
+    def test_dashboard_403_for_non_super_admin(self, client, auth_as, admin_user):
+        auth_as(admin_user)
+
+        resp = client.get("/api/v1/super-admin/dashboard")
+
+        assert resp.status_code == 403

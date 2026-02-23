@@ -38,6 +38,16 @@ class StripeClient:
             logger.error("Stripe error cancelling subscription %s: %s", subscription_id, exc)
             raise StripeUnavailableError("Stripe is unavailable") from exc
 
+    def list_invoices(self, stripe_customer_id: str, limit: int = 20) -> list[dict]:
+        if self._open_source_mode:
+            return []
+        try:
+            response = stripe.Invoice.list(customer=stripe_customer_id, limit=limit)
+            return response.get("data", [])
+        except stripe.error.StripeError as exc:
+            logger.error("Stripe error listing invoices for %s: %s", stripe_customer_id, exc)
+            raise StripeUnavailableError("Stripe is unavailable") from exc
+
     def verify_webhook_signature(
         self, payload: bytes, sig_header: str, webhook_secret: str
     ) -> dict:

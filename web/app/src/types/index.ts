@@ -41,8 +41,12 @@ export interface Company {
   status: CompanyStatus;
   email_domains: string[];
   is_active: boolean;
+  plan?: string;
+  billing_status?: string;
   user_count?: number;
+  asset_count?: number;
   department_count?: number;
+  trial_days_remaining?: number | null;
   created_at: string;
 }
 

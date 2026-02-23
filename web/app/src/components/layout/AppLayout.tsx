@@ -91,9 +91,9 @@ export function AppLayout() {
     return <Navigate to="/auth/set-password" replace />;
   }
 
-  // Super admin workspace is restricted to companies list.
-  if (user.role === 'super_admin' && !location.pathname.startsWith('/companies')) {
-    return <Navigate to="/companies" replace />;
+  // Super admin workspace is restricted to overview + companies.
+  if (user.role === 'super_admin' && !location.pathname.startsWith('/companies') && !location.pathname.startsWith('/overview')) {
+    return <Navigate to="/overview" replace />;
   }
 
   if (location.pathname === '/') {

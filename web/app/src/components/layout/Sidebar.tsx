@@ -50,6 +50,7 @@ const icons: Record<string, ReactNode> = {
   '/billing':                        icon('M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z'),
 
   // Platform
+  '/overview':        icon('M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z M13.5 3.5a7.5 7.5 0 0 1 7 7.5h-7V3.5Z'),
   '/companies':       icon('M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z'),
 };
 
@@ -136,6 +137,7 @@ const sections: NavSection[] = [
   {
     labelKey: 'nav.section_platform',
     items: [
+      { to: '/overview', labelKey: 'nav.overview', roles: ['super_admin'] },
       { to: '/companies', labelKey: 'nav.companies', roles: ['super_admin'] },
     ],
   },
@@ -185,7 +187,7 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
       .map((section) => ({
         ...section,
         items: normalizeSectionEntries(
-          section.items.filter((item) => !isSeparator(item) && (item.to === '/companies' || item.to === '/settings/api-keys')),
+          section.items.filter((item) => !isSeparator(item) && (item.to === '/overview' || item.to === '/companies' || item.to === '/settings/api-keys')),
         ),
       }))
       .filter((section) => section.items.length > 0)
