@@ -61,6 +61,10 @@ const es: Record<string, string> = {
   'nav.section_operations': 'Operaciones',
   'nav.section_management': 'Gestión',
   'nav.section_platform': 'Plataforma',
+  'nav.subgroup_people': 'Personas',
+  'nav.subgroup_configuration': 'Configuración',
+  'nav.subgroup_procurement': 'Compras',
+  'nav.subgroup_advanced': 'Avanzado',
 
   'auth.brand_tagline': 'Operaciones IT, mesa de ayuda e inventario en un solo lugar.',
   'auth.brand_subtitle':

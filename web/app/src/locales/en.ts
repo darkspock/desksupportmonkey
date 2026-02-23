@@ -61,6 +61,10 @@ const en: Record<string, string> = {
   'nav.section_operations': 'Operations',
   'nav.section_management': 'Management',
   'nav.section_platform': 'Platform',
+  'nav.subgroup_people': 'People',
+  'nav.subgroup_configuration': 'Configuration',
+  'nav.subgroup_procurement': 'Procurement',
+  'nav.subgroup_advanced': 'Advanced',
 
   'auth.brand_tagline': 'IT operations, service desk, and inventory in one place.',
   'auth.brand_subtitle':

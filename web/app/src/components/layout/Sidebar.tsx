@@ -70,7 +70,14 @@ interface NavSeparator {
   roles?: string[];
 }
 
-type NavEntry = NavItem | NavSeparator;
+interface NavSubGroup {
+  type: 'subgroup';
+  labelKey: string;
+  roles?: string[];
+  items: NavItem[];
+}
+
+type NavEntry = NavItem | NavSeparator | NavSubGroup;
 
 interface NavSection {
   labelKey?: string;
@@ -116,21 +123,38 @@ const sections: NavSection[] = [
   {
     labelKey: 'nav.section_management',
     items: [
-      { to: '/users', labelKey: 'nav.users', roles: ['admin', 'super_admin'] },
-      { to: '/departments', labelKey: 'nav.departments', roles: ['admin', 'super_admin'] },
-      { to: '/settings/availability', labelKey: 'nav.availability_settings', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
-      { type: 'separator', roles: ['admin', 'super_admin'] },
+      {
+        type: 'subgroup', labelKey: 'nav.subgroup_people', roles: ['admin', 'super_admin'],
+        items: [
+          { to: '/users', labelKey: 'nav.users', roles: ['admin', 'super_admin'] },
+          { to: '/departments', labelKey: 'nav.departments', roles: ['admin', 'super_admin'] },
+          { to: '/settings/employee-roles', labelKey: 'nav.employee_roles', roles: ['admin', 'super_admin'] },
+        ],
+      },
+      {
+        type: 'subgroup', labelKey: 'nav.subgroup_configuration', roles: ['admin'],
+        items: [
+          { to: '/settings/company', labelKey: 'nav.company_settings', roles: ['admin'] },
+          { to: '/settings/request-classification', labelKey: 'nav.request_classification', roles: ['admin'] },
+          { to: '/maintenance-templates', labelKey: 'nav.maintenance_templates', roles: ['admin', 'super_admin'] },
+          { to: '/settings/assignment-ai', labelKey: 'nav.assignment_ai', roles: ['admin'] },
+          { to: '/settings/availability', labelKey: 'nav.availability_settings', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
+        ],
+      },
+      {
+        type: 'subgroup', labelKey: 'nav.subgroup_procurement', roles: ['admin'],
+        items: [
+          { to: '/settings/equipment-profiles', labelKey: 'nav.equipment_profiles', roles: ['admin', 'super_admin'] },
+          { to: '/settings/procurement', labelKey: 'nav.procurement_settings', roles: ['admin'] },
+        ],
+      },
+      {
+        type: 'subgroup', labelKey: 'nav.subgroup_advanced', roles: ['admin', 'super_admin'],
+        items: [
+          { to: '/settings/api-keys', labelKey: 'nav.api_keys', roles: ['admin', 'super_admin'] },
+        ],
+      },
       { to: '/reports', labelKey: 'nav.reports', roles: ['admin', 'super_admin'] },
-      { type: 'separator', roles: ['admin', 'super_admin'] },
-      { to: '/settings/company', labelKey: 'nav.company_settings', roles: ['admin'] },
-      { to: '/settings/employee-roles', labelKey: 'nav.employee_roles', roles: ['admin', 'super_admin'] },
-      { to: '/settings/equipment-profiles', labelKey: 'nav.equipment_profiles', roles: ['admin', 'super_admin'] },
-      { to: '/settings/request-classification', labelKey: 'nav.request_classification', roles: ['admin'] },
-      { to: '/settings/procurement', labelKey: 'nav.procurement_settings', roles: ['admin'] },
-      { to: '/maintenance-templates', labelKey: 'nav.maintenance_templates', roles: ['admin', 'super_admin'] },
-      { to: '/settings/assignment-ai', labelKey: 'nav.assignment_ai', roles: ['admin'] },
-      { to: '/settings/api-keys', labelKey: 'nav.api_keys', roles: ['admin', 'super_admin'] },
-      { type: 'separator', roles: ['admin'] },
       { to: '/billing', labelKey: 'nav.billing', roles: ['admin'] },
     ],
   },
@@ -154,40 +178,45 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const companyName = user?.company_name?.trim() || user?.email || 'DeskSupportMonkey';
 
   const isSeparator = (entry: NavEntry): entry is NavSeparator => entry.type === 'separator';
+  const isSubGroup = (entry: NavEntry): entry is NavSubGroup => entry.type === 'subgroup';
+  const isNavItem = (entry: NavEntry): entry is NavItem => !entry.type;
 
-  const normalizeSectionEntries = useCallback((items: NavEntry[]): NavEntry[] => {
-    const normalized: NavEntry[] = [];
+  const roleVisible = (entry: { roles?: string[] }) => !entry.roles || (role && entry.roles.includes(role));
 
+  const filterEntries = useCallback((items: NavEntry[]): NavEntry[] => {
+    const filtered: NavEntry[] = [];
     for (const item of items) {
-      if (isSeparator(item)) {
-        if (normalized.length === 0 || isSeparator(normalized[normalized.length - 1])) continue;
-        normalized.push(item);
+      if (!roleVisible(item)) continue;
+      if (isSubGroup(item)) {
+        const visibleChildren = item.items.filter(roleVisible);
+        if (visibleChildren.length > 0) {
+          filtered.push({ ...item, items: visibleChildren });
+        }
         continue;
       }
-      normalized.push(item);
+      if (isSeparator(item)) {
+        if (filtered.length === 0 || isSeparator(filtered[filtered.length - 1])) continue;
+        filtered.push(item);
+        continue;
+      }
+      filtered.push(item);
     }
-
-    while (normalized[0] && isSeparator(normalized[0])) normalized.shift();
-    while (normalized[normalized.length - 1] && isSeparator(normalized[normalized.length - 1])) normalized.pop();
-
-    return normalized;
-  }, []);
+    while (filtered[0] && isSeparator(filtered[0])) filtered.shift();
+    while (filtered[filtered.length - 1] && isSeparator(filtered[filtered.length - 1])) filtered.pop();
+    return filtered;
+  }, [role]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const baseSections = sections
-    .map((section) => ({
-      ...section,
-      items: normalizeSectionEntries(
-        section.items.filter((item) => !item.roles || (role && item.roles.includes(role))),
-      ),
-    }))
+    .map((section) => ({ ...section, items: filterEntries(section.items) }))
     .filter((section) => section.items.length > 0);
 
+  const superAdminAllowed = new Set(['/overview', '/companies', '/settings/api-keys']);
   const visibleSections = role === 'super_admin'
     ? baseSections
       .map((section) => ({
         ...section,
-        items: normalizeSectionEntries(
-          section.items.filter((item) => !isSeparator(item) && (item.to === '/overview' || item.to === '/companies' || item.to === '/settings/api-keys')),
+        items: filterEntries(
+          section.items.filter((item) => isNavItem(item) && superAdminAllowed.has(item.to)),
         ),
       }))
       .filter((section) => section.items.length > 0)
@@ -212,29 +241,50 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
 
   const location = useLocation();
 
+  const hasActivePath = (items: NavEntry[]): boolean =>
+    items.some((item) => {
+      if (isSubGroup(item)) return hasActivePath(item.items);
+      if (isNavItem(item)) return location.pathname.startsWith(item.to);
+      return false;
+    });
+
   const getInitialCollapsed = useCallback(() => {
-    const collapsed: Record<number, boolean> = {};
+    const result: Record<number, boolean> = {};
     visibleSections.forEach((section, i) => {
       if (!section.labelKey) return;
-      const hasActiveItem = section.items.some((item) => !isSeparator(item) && location.pathname.startsWith(item.to));
-      collapsed[i] = !hasActiveItem;
+      result[i] = !hasActivePath(section.items);
     });
-    return collapsed;
+    return result;
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const getInitialSubGroupCollapsed = useCallback(() => {
+    const result: Record<string, boolean> = {};
+    visibleSections.forEach((section) => {
+      section.items.forEach((item) => {
+        if (isSubGroup(item)) {
+          result[item.labelKey] = !hasActivePath(item.items);
+        }
+      });
+    });
+    return result;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [collapsed, setCollapsed] = useState<Record<number, boolean>>(getInitialCollapsed);
+  const [subGroupCollapsed, setSubGroupCollapsed] = useState<Record<string, boolean>>(getInitialSubGroupCollapsed);
 
   const toggleSection = (index: number) => {
     setCollapsed((prev) => {
       const next: Record<number, boolean> = {};
-
       visibleSections.forEach((section, i) => {
         if (!section.labelKey) return;
         next[i] = i === index ? !prev[i] : true;
       });
-
       return next;
     });
+  };
+
+  const toggleSubGroup = (key: string) => {
+    setSubGroupCollapsed((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const navContent = (closeFn?: () => void) => (
@@ -277,12 +327,60 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
               )}
               {isOpen && (
                 <div className="space-y-0.5">
-                  {section.items.map((item, itemIndex) => (
-                    isSeparator(item) ? (
-                      <div key={`${section.labelKey ?? 'section'}-sep-${itemIndex}`} className="my-1 px-3">
-                        <div className="h-px bg-sidebar-border/70" />
-                      </div>
-                    ) : (
+                  {section.items.map((item, itemIndex) => {
+                    if (isSeparator(item)) {
+                      return (
+                        <div key={`${section.labelKey ?? 'section'}-sep-${itemIndex}`} className="my-1 px-3">
+                          <div className="h-px bg-sidebar-border/70" />
+                        </div>
+                      );
+                    }
+                    if (isSubGroup(item)) {
+                      const sgOpen = !subGroupCollapsed[item.labelKey];
+                      return (
+                        <div key={item.labelKey}>
+                          <button
+                            type="button"
+                            onClick={() => toggleSubGroup(item.labelKey)}
+                            className="flex w-full items-center gap-2.5 px-3 py-2 text-sm font-medium text-sidebar-foreground/50 hover:text-sidebar-foreground/70 transition-colors"
+                          >
+                            <svg
+                              viewBox="0 0 24 24"
+                              className={cn('h-3.5 w-3.5 shrink-0 transition-transform duration-200', sgOpen ? 'rotate-0' : '-rotate-90')}
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                            </svg>
+                            {t(item.labelKey)}
+                          </button>
+                          {sgOpen && (
+                            <div className="space-y-0.5 ml-2">
+                              {item.items.map((child) => (
+                                <NavLink
+                                  key={child.to}
+                                  to={child.to}
+                                  onClick={closeFn}
+                                  className={({ isActive }) =>
+                                    cn(
+                                      'flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                                      isActive
+                                        ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                                        : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                                    )
+                                  }
+                                >
+                                  {icons[child.to]}
+                                  {t(child.labelKey)}
+                                </NavLink>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+                    return (
                       <NavLink
                         key={item.to}
                         to={item.to}
@@ -299,8 +397,8 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                         {icons[item.to]}
                         {t(item.labelKey)}
                       </NavLink>
-                    )
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
