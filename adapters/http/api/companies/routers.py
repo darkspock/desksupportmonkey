@@ -13,9 +13,12 @@ from adapters.http.api.companies.dependencies import (
     get_user_repo,
 )
 from adapters.http.api.companies.schemas import (
+    CompanyBillingResponse,
     CompanyDetailResponse,
     CompanyResponse,
     CreateCompanyRequest,
+    GrantComplimentaryRequest,
+    OverridePlanRequest,
     UpdateCompanyRequest,
     UpdateCompanyStatusRequest,
 )
@@ -60,6 +63,27 @@ from src.company_bc.company.application.commands.update_company_status import (
     UpdateCompanyStatusCommand,
     UpdateCompanyStatusCommandHandler,
 )
+from src.company_bc.company.application.commands.billing.grant_complimentary_plan import (
+    CompanyNotFoundError as GrantCompanyNotFoundError,
+    GrantComplimentaryPlanCommand,
+    GrantComplimentaryPlanCommandHandler,
+)
+from src.company_bc.company.application.commands.billing.override_company_plan import (
+    CompanyNotFoundError as OverrideCompanyNotFoundError,
+    OverrideCompanyPlanCommand,
+    OverrideCompanyPlanCommandHandler,
+)
+from src.company_bc.company.application.commands.billing.revoke_complimentary_plan import (
+    CompanyNotFoundError as RevokeCompanyNotFoundError,
+    RevokeComplimentaryPlanCommand,
+    RevokeComplimentaryPlanCommandHandler,
+)
+from src.company_bc.company.application.queries.billing.get_company_billing import (
+    CompanyNotFoundError as BillingCompanyNotFoundError,
+    GetCompanyBillingQuery,
+    GetCompanyBillingQueryHandler,
+)
+from src.company_bc.company.domain.billing_enums import PlanTier
 from src.company_bc.company.domain.entities import Company, InvalidStatusTransitionError
 from src.company_bc.company.infrastructure.repository import CompanyRepository
 
@@ -235,3 +259,102 @@ def update_company_status(
             detail="Invalid status value. Must be: active, suspended, or deactivated",
         )
     return _get_company_response(company_repo, company_id)
+
+
+def _billing_response(company_id: str, company_repo: CompanyRepository) -> dict:
+    dto = GetCompanyBillingQueryHandler(company_repo=company_repo).handle(
+        GetCompanyBillingQuery(company_id=company_id)
+    )
+    return {"data": CompanyBillingResponse(
+        company_id=dto.company_id,
+        company_name=dto.company_name,
+        plan=dto.plan.value,
+        billing_status=dto.billing_status.value,
+        complimentary=dto.complimentary,
+        stripe_customer_id=dto.stripe_customer_id,
+        stripe_subscription_id=dto.stripe_subscription_id,
+        current_period_end=dto.current_period_end,
+        pending_downgrade_plan=dto.pending_downgrade_plan.value if dto.pending_downgrade_plan else None,
+        grace_period_started_at=dto.grace_period_started_at,
+    ).model_dump(mode="json")}
+
+
+@router.get("/{company_id}/billing")
+def get_company_billing(
+    company_id: str,
+    current_user: User = Depends(require_role(UserRole.SUPER_ADMIN)),
+    company_repo: CompanyRepository = Depends(get_company_repo),
+):
+    try:
+        return _billing_response(company_id, company_repo)
+    except BillingCompanyNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
+
+
+@router.patch("/{company_id}/billing/plan")
+def override_company_billing_plan(
+    company_id: str,
+    body: OverridePlanRequest,
+    current_user: User = Depends(require_role(UserRole.SUPER_ADMIN)),
+    company_repo: CompanyRepository = Depends(get_company_repo),
+):
+    try:
+        new_plan = PlanTier(body.new_plan)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Invalid plan. Must be: free, premium, enterprise, or open_source",
+        )
+    handler = OverrideCompanyPlanCommandHandler(company_repo=company_repo)
+    try:
+        handler.handle(OverrideCompanyPlanCommand(company_id=company_id, new_plan=new_plan))
+    except OverrideCompanyNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
+    return _billing_response(company_id, company_repo)
+
+
+@router.post("/{company_id}/billing/complimentary", status_code=status.HTTP_200_OK)
+def grant_complimentary_plan(
+    company_id: str,
+    body: GrantComplimentaryRequest,
+    current_user: User = Depends(require_role(UserRole.SUPER_ADMIN)),
+    company_repo: CompanyRepository = Depends(get_company_repo),
+    stripe_client: StripeClient = Depends(get_stripe_client),
+):
+    try:
+        plan = PlanTier(body.plan)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Invalid plan. Must be: free, premium, enterprise, or open_source",
+        )
+    handler = GrantComplimentaryPlanCommandHandler(
+        company_repo=company_repo, stripe_client=stripe_client
+    )
+    try:
+        handler.handle(GrantComplimentaryPlanCommand(company_id=company_id, plan=plan))
+    except GrantCompanyNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
+    except StripeUnavailableError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="stripe_unavailable"
+        )
+    return _billing_response(company_id, company_repo)
+
+
+@router.delete("/{company_id}/billing/complimentary", status_code=status.HTTP_200_OK)
+def revoke_complimentary_plan(
+    company_id: str,
+    current_user: User = Depends(require_role(UserRole.SUPER_ADMIN)),
+    company_repo: CompanyRepository = Depends(get_company_repo),
+):
+    handler = RevokeComplimentaryPlanCommandHandler(company_repo=company_repo)
+    try:
+        handler.handle(RevokeComplimentaryPlanCommand(company_id=company_id))
+    except RevokeCompanyNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
+        )
+    return _billing_response(company_id, company_repo)

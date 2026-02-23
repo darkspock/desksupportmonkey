@@ -1450,6 +1450,21 @@ const es: Record<string, string> = {
   'page.billing.processing.back': 'Volver a Facturación',
   'page.billing.error_checkout': 'Error al iniciar el proceso de pago',
   'page.billing.error_portal': 'Error al abrir el portal de facturación',
+
+  // E43-F5: Super Admin Billing Management
+  'page.companies.billing_action': 'Facturación',
+  'page.companies.billing_modal_title': 'Gestión de Facturación',
+  'page.companies.plan_column': 'Plan',
+  'page.companies.billing_status_column': 'Facturación',
+  'page.companies.override_plan': 'Cambiar Plan',
+  'page.companies.grant_complimentary': 'Otorgar Cortesía',
+  'page.companies.revoke_complimentary': 'Revocar Cortesía',
+  'page.companies.billing_apply': 'Aplicar',
+  'page.companies.billing_grant': 'Otorgar',
+  'page.companies.toast_plan_overridden': 'Plan actualizado correctamente',
+  'page.companies.toast_complimentary_granted': 'Plan de cortesía otorgado',
+  'page.companies.toast_complimentary_revoked': 'Plan de cortesía revocado',
+  'page.companies.error_billing': 'Error al actualizar la facturación',
 };
 
 export default es;

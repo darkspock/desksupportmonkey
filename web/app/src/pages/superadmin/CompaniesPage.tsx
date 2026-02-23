@@ -11,6 +11,7 @@ import { EmptyState, ErrorState } from '../../components/ui/StateBlock';
 import { useToast } from '../../hooks/useToast';
 import { useI18n } from '../../lib/i18n';
 import type { Company, CompanyStatus, PaginatedResponse } from '../../types';
+import { CompanyBillingModal } from './CompanyBillingModal';
 
 export default function CompaniesPage() {
   const { t } = useI18n();
@@ -21,6 +22,7 @@ export default function CompaniesPage() {
   const [error, setError] = useState('');
   const [pendingStatusChange, setPendingStatusChange] = useState<{ id: string; name: string; status: CompanyStatus } | null>(null);
   const [editingCompany, setEditingCompany] = useState<{ id: string; name: string; email_domains: string } | null>(null);
+  const [billingCompany, setBillingCompany] = useState<{ id: string; name: string } | null>(null);
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
@@ -188,12 +190,13 @@ export default function CompaniesPage() {
         ) : (
           <>
             <Table>
-              <thead><tr><Th>{t('table.name')}</Th><Th>{t('table.status')}</Th><Th>{t('table.users')}</Th><Th>{t('table.departments')}</Th><Th>{t('table.actions')}</Th></tr></thead>
+              <thead><tr><Th>{t('table.name')}</Th><Th>{t('table.status')}</Th><Th>{t('page.companies.plan_column')}</Th><Th>{t('table.users')}</Th><Th>{t('table.departments')}</Th><Th>{t('table.actions')}</Th></tr></thead>
               <tbody>
                 {data.data.map((c) => (
                   <tr key={c.id}>
                     <Td>{c.name}</Td>
                     <Td><StatusBadge status={c.status} /></Td>
+                    <Td><span className="text-xs capitalize">{(c as { plan?: string }).plan ?? '—'}</span></Td>
                     <Td>{c.user_count ?? '-'}</Td>
                     <Td>{c.department_count ?? '-'}</Td>
                     <Td>
@@ -213,6 +216,12 @@ export default function CompaniesPage() {
                           <option value="suspended">{t('enum.suspended')}</option>
                           <option value="deactivated">{t('enum.deactivated')}</option>
                         </select>
+                        <button
+                          onClick={() => setBillingCompany({ id: c.id, name: c.name })}
+                          className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+                        >
+                          {t('page.companies.billing_action')}
+                        </button>
                       </div>
                     </Td>
                   </tr>
@@ -223,6 +232,14 @@ export default function CompaniesPage() {
           </>
         )}
       </Card>
+
+      {billingCompany && (
+        <CompanyBillingModal
+          companyId={billingCompany.id}
+          companyName={billingCompany.name}
+          onClose={() => setBillingCompany(null)}
+        />
+      )}
 
       <ConfirmDialog
         open={Boolean(pendingStatusChange)}

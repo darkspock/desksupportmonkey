@@ -1450,6 +1450,21 @@ const en: Record<string, string> = {
   'page.billing.processing.back': 'Back to Billing',
   'page.billing.error_checkout': 'Failed to start checkout',
   'page.billing.error_portal': 'Failed to open billing portal',
+
+  // E43-F5: Super Admin Billing Management
+  'page.companies.billing_action': 'Billing',
+  'page.companies.billing_modal_title': 'Billing Management',
+  'page.companies.plan_column': 'Plan',
+  'page.companies.billing_status_column': 'Billing',
+  'page.companies.override_plan': 'Override Plan',
+  'page.companies.grant_complimentary': 'Grant Complimentary',
+  'page.companies.revoke_complimentary': 'Revoke Complimentary',
+  'page.companies.billing_apply': 'Apply',
+  'page.companies.billing_grant': 'Grant',
+  'page.companies.toast_plan_overridden': 'Plan overridden successfully',
+  'page.companies.toast_complimentary_granted': 'Complimentary plan granted',
+  'page.companies.toast_complimentary_revoked': 'Complimentary plan revoked',
+  'page.companies.error_billing': 'Billing update failed',
 };
 
 export default en;

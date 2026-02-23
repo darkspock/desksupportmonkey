@@ -41,7 +41,7 @@ F0 and F1 may be implemented in parallel since F1 only needs F0's Company entity
 | F2 | Webhook Listener | F1 | Platform stays in sync with Stripe — plan changes, payment failures, grace period, restoration | L | Done |
 | F3 | Company Admin Billing UI | F2 | Admin can view plan/usage, upgrade via Checkout, manage via Portal; grace period banner; processing page | L | Done |
 | F4 | Plan Enforcement | F3 | Login blocked for suspended companies; user limit checked on employee add | L | Done |
-| F5 | Super Admin Billing Management | F4 | Super admin can view, override, grant complimentary and revoke plans per company | M | Pending |
+| F5 | Super Admin Billing Management | F4 | Super admin can view, override, grant complimentary and revoke plans per company | M | Done |
 
 ---
 

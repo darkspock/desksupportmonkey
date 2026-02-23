@@ -9,7 +9,7 @@
 ## Phase 1: Application Layer — Queries & Commands
 
 ### T1.1: CompanyBillingDto + GetCompanyBillingQuery + Handler
-- [ ] **File:** `src/company_bc/company/application/queries/billing/get_company_billing.py` (NEW)
+- [x] **File:** `src/company_bc/company/application/queries/billing/get_company_billing.py` (NEW)
 - `CompanyBillingDto`:
   - `company_id: str`, `company_name: str`, `plan: PlanTier`, `billing_status: BillingStatus`
   - `complimentary: bool`, `stripe_customer_id: Optional[str]`, `stripe_subscription_id: Optional[str]`
@@ -17,7 +17,7 @@
 - Handler: find company by id → raise `CompanyNotFoundError` if not found → return `CompanyBillingDto`
 
 ### T1.2: OverrideCompanyPlanCommand + Handler
-- [ ] **File:** `src/company_bc/company/application/commands/billing/override_company_plan.py` (NEW)
+- [x] **File:** `src/company_bc/company/application/commands/billing/override_company_plan.py` (NEW)
 - `@dataclass class OverrideCompanyPlanCommand(Command):`
   - `company_id: str`, `new_plan: PlanTier`
 - Handler:
@@ -26,7 +26,7 @@
   3. Save company
 
 ### T1.3: GrantComplimentaryPlanCommand + Handler
-- [ ] **File:** `src/company_bc/company/application/commands/billing/grant_complimentary_plan.py` (NEW)
+- [x] **File:** `src/company_bc/company/application/commands/billing/grant_complimentary_plan.py` (NEW)
 - `@dataclass class GrantComplimentaryPlanCommand(Command):`
   - `company_id: str`, `plan: PlanTier`
 - Handler:
@@ -36,7 +36,7 @@
   4. Save company
 
 ### T1.4: RevokeComplimentaryPlanCommand + Handler
-- [ ] **File:** `src/company_bc/company/application/commands/billing/revoke_complimentary_plan.py` (NEW)
+- [x] **File:** `src/company_bc/company/application/commands/billing/revoke_complimentary_plan.py` (NEW)
 - `@dataclass class RevokeComplimentaryPlanCommand(Command):`
   - `company_id: str`
 - Handler:
@@ -50,13 +50,13 @@
 ## Phase 2: HTTP Layer
 
 ### T2.1: Add billing schemas to companies schemas
-- [ ] **File:** `adapters/http/api/companies/schemas.py` (MODIFY)
+- [x] **File:** `adapters/http/api/companies/schemas.py` (MODIFY)
 - `CompanyBillingResponse`: mirrors `CompanyBillingDto`
 - `OverridePlanRequest`: `new_plan: str` (validated against PlanTier values)
 - `GrantComplimentaryRequest`: `plan: str` (validated against PlanTier values)
 
 ### T2.2: Add billing endpoints to companies router
-- [ ] **File:** `adapters/http/api/companies/routers.py` (MODIFY)
+- [x] **File:** `adapters/http/api/companies/routers.py` (MODIFY)
 - `GET /api/v1/companies/{id}/billing` (super_admin): returns `CompanyBillingResponse`
   - Map `CompanyNotFoundError` → 404
 - `PATCH /api/v1/companies/{id}/billing/plan` (super_admin): overrides plan
@@ -75,14 +75,14 @@
 ## Phase 3: Frontend
 
 ### T3.1: Extend CompaniesPage with billing columns
-- [ ] **File:** `web/app/src/pages/CompaniesPage.tsx` (MODIFY)
+- [x] **File:** `web/app/src/pages/CompaniesPage.tsx` (MODIFY)
 - Add "Plan" column: plan badge per row
 - Add "Billing Status" column: status badge per row
 - Add "Billing" action button per row → opens `CompanyBillingModal`
 - Fetch billing data via `GET /api/v1/companies/{id}/billing` (per row, on demand or batch)
 
 ### T3.2: Create CompanyBillingModal
-- [ ] **File:** `web/app/src/pages/companies/CompanyBillingModal.tsx` (NEW)
+- [x] **File:** `web/app/src/pages/companies/CompanyBillingModal.tsx` (NEW)
 - Displays: current plan, billing status, complimentary badge, Stripe IDs, period end, pending downgrade
 - "Override Plan" section: plan dropdown + "Apply" → `PATCH /companies/{id}/billing/plan`
 - "Grant Complimentary" section: plan dropdown + "Grant" → `POST /companies/{id}/billing/complimentary`
@@ -90,7 +90,7 @@
 - All mutations invalidate company list + billing queries on success
 
 ### T3.3: Add i18n strings
-- [ ] **Files:** `web/app/src/lib/i18n/en.ts`, `es.ts` (MODIFY)
+- [x] **Files:** `web/app/src/lib/i18n/en.ts`, `es.ts` (MODIFY)
 - Keys: `companies.billing_modal_title`, `companies.plan_column`, `companies.billing_status_column`
 - Keys: `companies.override_plan`, `companies.grant_complimentary`, `companies.revoke_complimentary`, `companies.billing_action`
 
@@ -99,25 +99,25 @@
 ## Phase 4: Tests
 
 ### T4.1: Unit tests — OverrideCompanyPlanCommand
-- [ ] **File:** `tests/unit/company_bc/company/application/commands/billing/test_override_company_plan.py` (NEW)
+- [x] **File:** `tests/unit/company_bc/company/application/commands/billing/test_override_company_plan.py` (NEW)
 - Test: plan overridden, billing_status = ACTIVE
 - Test: company not found → CompanyNotFoundError
 
 ### T4.2: Unit tests — GrantComplimentaryPlanCommand
-- [ ] **File:** `tests/unit/company_bc/company/application/commands/billing/test_grant_complimentary_plan.py` (NEW)
+- [x] **File:** `tests/unit/company_bc/company/application/commands/billing/test_grant_complimentary_plan.py` (NEW)
 - Test: complimentary granted, plan set, billing_status = ACTIVE
 - Test: active Stripe subscription → `cancel_subscription` called
 - Test: no Stripe subscription → no cancel call
 - Test: company not found → CompanyNotFoundError
 
 ### T4.3: Unit tests — RevokeComplimentaryPlanCommand
-- [ ] **File:** `tests/unit/company_bc/company/application/commands/billing/test_revoke_complimentary_plan.py` (NEW)
+- [x] **File:** `tests/unit/company_bc/company/application/commands/billing/test_revoke_complimentary_plan.py` (NEW)
 - Test: complimentary revoked → plan = FREE, billing_status = OVER_LIMIT
 - Test: company not on complimentary → ValueError
 - Test: company not found → CompanyNotFoundError
 
 ### T4.4: Integration tests — super admin billing endpoints
-- [ ] **File:** `tests/integration/test_companies_billing_endpoints.py` (NEW)
+- [x] **File:** `tests/integration/test_companies_billing_endpoints.py` (NEW)
 - Test: `GET /companies/{id}/billing` → 200 for super_admin, 403 for non-super_admin
 - Test: `PATCH .../billing/plan` → plan overridden
 - Test: `POST .../billing/complimentary` → complimentary granted, Stripe sub cancelled (mocked)
@@ -130,10 +130,10 @@
 ## Phase 5: Verification & Progress Tracking
 
 ### T5.1: Run linter
-- [ ] `make lint`
+- [x] `make lint`
 
 ### T5.2: Run all tests
-- [ ] `make test` + `make test-integration`
+- [x] `make test` + `make test-integration`
 
 ### T5.3: Update slicing.md — mark all features Done
 - [ ] Update `docs/epics/e43-billing/slicing.md` — set Status = "Done" for all F0-F5 rows (only when all tasks complete)

@@ -3,6 +3,8 @@ from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
+from src.company_bc.company.domain.billing_enums import BillingStatus, PlanTier
+
 
 class CreateCompanyRequest(BaseModel):
     name: str = Field(min_length=1, max_length=255)
@@ -32,3 +34,24 @@ class CompanyDetailResponse(CompanyResponse):
 
 class UpdateCompanyStatusRequest(BaseModel):
     status: str
+
+
+class CompanyBillingResponse(BaseModel):
+    company_id: str
+    company_name: str
+    plan: str
+    billing_status: str
+    complimentary: bool
+    stripe_customer_id: Optional[str] = None
+    stripe_subscription_id: Optional[str] = None
+    current_period_end: Optional[datetime] = None
+    pending_downgrade_plan: Optional[str] = None
+    grace_period_started_at: Optional[datetime] = None
+
+
+class OverridePlanRequest(BaseModel):
+    new_plan: str = Field(description="Plan tier: free, premium, enterprise, or open_source")
+
+
+class GrantComplimentaryRequest(BaseModel):
+    plan: str = Field(description="Plan tier: free, premium, enterprise, or open_source")
