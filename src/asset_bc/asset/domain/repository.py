@@ -1,13 +1,34 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from src.asset_bc.asset.domain.entities import Asset, AssetEvent
+from src.asset_bc.asset.domain.entities import Asset, AssetEvent, AssetLocation
 
 
 class AssetRepositoryInterface(ABC):
 
     @abstractmethod
     def save(self, asset: Asset) -> Asset: ...
+
+    @abstractmethod
+    def save_location(self, location: AssetLocation) -> AssetLocation: ...
+
+    @abstractmethod
+    def find_location_by_id(self, location_id: str, company_id: str) -> Optional[AssetLocation]: ...
+
+    @abstractmethod
+    def find_locations_by_company(self, company_id: str) -> list[AssetLocation]: ...
+
+    @abstractmethod
+    def find_system_location(self, company_id: str, system_key: str) -> Optional[AssetLocation]: ...
+
+    @abstractmethod
+    def delete_location(self, location_id: str) -> None: ...
+
+    @abstractmethod
+    def count_assets_at_location(self, location_id: str) -> int: ...
+
+    @abstractmethod
+    def find_location_by_name(self, name: str, company_id: str) -> Optional[AssetLocation]: ...
 
     @abstractmethod
     def find_by_id(self, asset_id: str, company_id: str) -> Optional[Asset]: ...
@@ -26,6 +47,7 @@ class AssetRepositoryInterface(ABC):
         status: Optional[str] = None,
         department_id: Optional[str] = None,
         assigned_to: Optional[str] = None,
+        location_id: Optional[str] = None,
         sort_by: str = "created_at",
         sort_order: str = "desc",
     ) -> tuple[list[Asset], int]: ...

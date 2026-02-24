@@ -380,11 +380,15 @@ def dispatch_shipment(
     shipment_repo: ShipmentRepository = Depends(
         get_shipment_repo,
     ),
+    delivery_service: DeliveryAssetService = Depends(
+        get_delivery_asset_service,
+    ),
     db: Session = Depends(get_db),
     event_bus: EventBus = Depends(get_event_bus),
 ):
     handler = DispatchShipmentCommandHandler(
         shipment_repo=shipment_repo,
+        delivery_asset_service=delivery_service,
     )
     try:
         handler.handle(

@@ -4,6 +4,9 @@ from typing import Optional
 
 from core.email import EmailServiceInterface, send_magic_link_email
 from core.stripe_client import StripeClient
+from src.asset_bc.asset.domain.entities import AssetLocation
+from src.asset_bc.asset.domain.enums import SystemLocation
+from src.asset_bc.asset.domain.repository import AssetRepositoryInterface
 from src.auth_bc.magic_link.domain.entities import MagicLink
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
@@ -37,6 +40,13 @@ class CreateCompanyCommand(Command):
     id: Optional[str] = None
 
 
+SYSTEM_LOCATION_NAMES: dict[str, str] = {
+    SystemLocation.EMPLOYEE.value: "Empleado",
+    SystemLocation.IN_TRANSIT.value: "En Tránsito",
+    SystemLocation.MAIN_WAREHOUSE.value: "Almacén Principal",
+}
+
+
 class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
     def __init__(
         self,
@@ -45,12 +55,14 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
         magic_link_repo: MagicLinkWriter,
         email_service: EmailServiceInterface,
         stripe_client: StripeClient,
+        asset_repo: Optional[AssetRepositoryInterface] = None,
     ):
         self.company_repo = company_repo
         self.user_repo = user_repo
         self.magic_link_repo = magic_link_repo
         self.email_service = email_service
         self.stripe_client = stripe_client
+        self.asset_repo = asset_repo
 
     def handle(self, command: CreateCompanyCommand) -> None:
         # Check name uniqueness
@@ -106,5 +118,17 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
             self.magic_link_repo.save(magic_link)
             send_magic_link_email(self.email_service, email, magic_link.token)
             logger.info("Initial admin %s created for company %s", email, company.name)
+
+        # Seed system asset locations for the new company
+        if self.asset_repo:
+            for key, name in SYSTEM_LOCATION_NAMES.items():
+                loc = AssetLocation.create(
+                    company_id=company.id,
+                    name=name,
+                    is_system=True,
+                    system_key=key,
+                )
+                self.asset_repo.save_location(loc)
+            logger.info("Seeded system locations for company %s", company.id)
 
         logger.info("Company created: %s (id=%s)", company.name, company.id)

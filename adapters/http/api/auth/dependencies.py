@@ -90,6 +90,41 @@ def get_current_user(
     return user
 
 
+def require_plan_feature(feature: str) -> Callable:
+    """Factory returning a dependency that raises 402 if feature not available."""
+
+    def checker(
+        current_user: User = Depends(get_current_user),
+        db: Session = Depends(get_db),
+    ) -> User:
+        from src.company_bc.company.domain.plan_gate import PlanGate
+        from core.config import settings as _settings
+
+        if not current_user.company_id:
+            return current_user
+        company = CompanyRepository(db).find_by_id(current_user.company_id)
+        if not company:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Company not found",
+            )
+        if not PlanGate.is_feature_available(
+            plan=company.plan,
+            billing_status=company.billing_status,
+            complimentary=company.complimentary,
+            open_source_mode=_settings.stripe.OPEN_SOURCE_MODE,
+            feature=feature,
+            in_trial=company.is_in_trial(),
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail=f"Feature '{feature}' requires an upgrade",
+            )
+        return current_user
+
+    return checker
+
+
 def require_role(minimum_role: UserRole) -> Callable:
     """Factory that returns a dependency checking minimum role level."""
 

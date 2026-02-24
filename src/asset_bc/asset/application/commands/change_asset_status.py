@@ -30,6 +30,7 @@ class ChangeAssetStatusCommandHandler(CommandHandler[ChangeAssetStatusCommand]):
         old_status = asset.status
         new_status = AssetStatus(command.new_status)
         was_assigned = asset.assigned_to is not None
+        old_location_id = asset.location_id
 
         asset.change_status(new_status)
         self.asset_repo.save(asset)
@@ -50,3 +51,20 @@ class ChangeAssetStatusCommandHandler(CommandHandler[ChangeAssetStatusCommand]):
                 performed_by=command.performed_by,
             )
             self.asset_repo.save_event(unassign_event)
+
+        # Emit location_changed event if location was cleared on decommission
+        if new_status == AssetStatus.DECOMMISSIONED and old_location_id:
+            old_loc = self.asset_repo.find_location_by_id(old_location_id, command.company_id)
+            loc_event = AssetEvent.create(
+                asset_id=asset.id,
+                event_type="location_changed",
+                data={
+                    "old_location_id": old_location_id,
+                    "old_location_name": old_loc.name if old_loc else None,
+                    "new_location_id": None,
+                    "new_location_name": None,
+                    "reason": "decommissioned",
+                },
+                performed_by=command.performed_by,
+            )
+            self.asset_repo.save_event(loc_event)

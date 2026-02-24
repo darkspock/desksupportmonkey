@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 
 import jwt
-import requests
+import requests  # type: ignore[import-untyped]
 
 logger = logging.getLogger(__name__)
 
@@ -83,11 +83,11 @@ class MicrosoftTokenVerifier:
         try:
             resp = requests.get(url, timeout=5)
             resp.raise_for_status()
-            return resp.json()
+            return dict(resp.json())
         except Exception as exc:
             raise MicrosoftTokenVerificationError(f"Failed to fetch JWKS: {exc}") from exc
 
-    def _find_key(self, jwks: dict, kid: str | None) -> object:
+    def _find_key(self, jwks: dict, kid: str | None):  # type: ignore[no-untyped-def]
         keys = jwks.get("keys", [])
         for key in keys:
             if kid is None or key.get("kid") == kid:

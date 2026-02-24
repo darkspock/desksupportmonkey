@@ -1,0 +1,16 @@
+{
+  "name": "dsmcontrol-site",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev --port 4322",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "^5.3.0",
+    "@tailwindcss/vite": "^4.0.6",
+    "tailwindcss": "^4.0.6"
+  }
+}

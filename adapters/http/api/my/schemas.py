@@ -63,6 +63,23 @@ class MyProfileResponse(BaseModel):
     name: Optional[str] = None
 
 
+class ReportIncidentRequest(BaseModel):
+    """Simplified form for employees."""
+
+    title: str = Field(min_length=1, max_length=200)
+    description: str = Field(min_length=1)
+    incident_type: str
+
+
+class MyIncidentResponse(BaseModel):
+    id: str
+    title: str
+    incident_type: str
+    severity: str
+    status: str
+    created_at: Optional[datetime] = None
+
+
 class MyMaintenanceResponse(BaseModel):
     id: str
     asset_id: str

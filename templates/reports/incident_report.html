@@ -1,0 +1,108 @@
+{% extends "reports/base.html" %}
+
+{% block content %}
+<div class="section">
+    <h2>NIS2 Regulatory Report — {{ report_type_label }}</h2>
+
+    <div class="cards">
+        <div class="card">
+            <div class="value">{{ severity }}</div>
+            <div class="label">Severity</div>
+        </div>
+        <div class="card">
+            <div class="value">{{ status }}</div>
+            <div class="label">Current Status</div>
+        </div>
+        <div class="card">
+            <div class="value">{{ incident_type }}</div>
+            <div class="label">Type</div>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <h2>Incident Details</h2>
+    <table>
+        <tr><td style="width:160px;font-weight:600;">Incident ID</td><td>{{ incident_id }}</td></tr>
+        <tr><td style="font-weight:600;">Title</td><td>{{ incident_title }}</td></tr>
+        <tr><td style="font-weight:600;">Detected At</td><td>{{ detected_at }}</td></tr>
+        <tr><td style="font-weight:600;">Report Deadline</td><td>{{ deadline_at }}</td></tr>
+        <tr><td style="font-weight:600;">Severity</td><td><span class="badge {% if severity == 'P1' %}badge-red{% elif severity == 'P2' %}badge-yellow{% elif severity == 'P3' %}badge-blue{% else %}badge-gray{% endif %}">{{ severity }}</span></td></tr>
+        <tr><td style="font-weight:600;">Status</td><td>{{ status }}</td></tr>
+        <tr><td style="font-weight:600;">Reported By</td><td>{{ reported_by }}</td></tr>
+        {% if assigned_to %}
+        <tr><td style="font-weight:600;">Assigned To</td><td>{{ assigned_to }}</td></tr>
+        {% endif %}
+    </table>
+</div>
+
+<div class="section">
+    <h2>Description</h2>
+    <p style="white-space:pre-wrap;line-height:1.5;">{{ description }}</p>
+</div>
+
+{% if attack_vector %}
+<div class="section">
+    <h2>Attack Vector</h2>
+    <p style="white-space:pre-wrap;line-height:1.5;">{{ attack_vector }}</p>
+</div>
+{% endif %}
+
+{% if data_breach_scope %}
+<div class="section">
+    <h2>Data Breach Scope</h2>
+    <div class="alert">
+        <div class="alert-title">Personal Data Affected</div>
+        <p style="white-space:pre-wrap;">{{ data_breach_scope }}</p>
+    </div>
+</div>
+{% endif %}
+
+{% if report_type != 'early_warning_24h' and timeline %}
+<div class="section">
+    <h2>Event Timeline</h2>
+    <table>
+        <thead>
+            <tr>
+                <th style="width:140px;">Date/Time</th>
+                <th style="width:140px;">Event</th>
+                <th>Description</th>
+                <th style="width:120px;">Actor</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in timeline %}
+            <tr>
+                <td>{{ entry.created_at }}</td>
+                <td><span class="badge badge-blue">{{ entry.event_type }}</span></td>
+                <td>{{ entry.description }}</td>
+                <td>{{ entry.actor_name or entry.actor_id }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if report_type == 'final_30d' %}
+<div class="section">
+    <h2>Resolution Summary</h2>
+    <table>
+        <tr><td style="width:160px;font-weight:600;">Final Status</td><td>{{ status }}</td></tr>
+        {% if closed_at %}
+        <tr><td style="font-weight:600;">Closed At</td><td>{{ closed_at }}</td></tr>
+        {% endif %}
+        {% if close_reason %}
+        <tr><td style="font-weight:600;">Close Reason</td><td>{{ close_reason }}</td></tr>
+        {% endif %}
+    </table>
+</div>
+{% endif %}
+
+<div class="section" style="margin-top:30px;padding:12px;background:#f1f5f9;border-radius:6px;">
+    <p style="font-size:9px;color:#666;text-align:center;">
+        This report has been generated in compliance with the NIS2 Directive (EU 2022/2555)
+        reporting obligations. Report type: {{ report_type_label }}.
+    </p>
+</div>
+{% endblock %}

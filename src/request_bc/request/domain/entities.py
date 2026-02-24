@@ -29,6 +29,7 @@ class ServiceRequest:
     subtype: Optional[str] = None
     data: Optional[dict] = field(default=None)
     resolved_at: Optional[datetime] = None
+    first_response_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -78,6 +79,10 @@ class ServiceRequest:
         self.status = new_status
         if new_status in (RequestStatus.RESOLVED, RequestStatus.REJECTED):
             self.resolved_at = datetime.now(timezone.utc)
+
+    def record_first_response(self) -> None:
+        if self.first_response_at is None:
+            self.first_response_at = datetime.now(timezone.utc)
 
     def change_priority(self, new_priority: RequestPriority) -> None:
         self.priority = new_priority

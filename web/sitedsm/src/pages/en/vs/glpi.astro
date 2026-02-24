@@ -1,0 +1,14 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ComparisonPage from '../../../components/ComparisonPage.astro';
+import { translations } from '../../../i18n/translations';
+import { comparisons } from '../../../data/comparisons';
+
+const lang = 'en';
+const t = translations[lang];
+const data = comparisons.find(c => c.slug === 'glpi')!;
+---
+
+<BaseLayout title={`${data.headline[lang]} — Comparison`} lang={lang} t={t}>
+  <ComparisonPage lang={lang} data={data} />
+</BaseLayout>

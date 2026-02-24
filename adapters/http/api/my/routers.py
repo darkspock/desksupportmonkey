@@ -5,10 +5,13 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from adapters.http.api.auth.dependencies import get_current_user, require_role
+from adapters.http.api.dependencies import get_event_bus
+from core.database import get_db
 from adapters.http.api.my.dependencies import (
     get_appointment_repo,
     get_asset_repo,
     get_company_repo,
+    get_incident_repo,
     get_maintenance_record_repo,
     get_notification_repo,
     get_request_repo,
@@ -18,11 +21,13 @@ from adapters.http.api.my.dependencies import (
 from adapters.http.api.my.schemas import (
     MyEquipmentResponse,
     MyCompanySettingsResponse,
+    MyIncidentResponse,
     MyMaintenanceResponse,
     MyProfileResponse,
     MyRequestResponse,
     NotificationListMeta,
     NotificationResponse,
+    ReportIncidentRequest,
     UpdateMyCompanySettingsRequest,
     UpdateMyProfileRequest,
 )
@@ -484,4 +489,78 @@ def my_maintenance(
             for r in records
         ],
         "meta": PaginationMeta(page=page, page_size=page_size, total=total).model_dump(),
+    }
+
+
+# ---------------------------------------------------------------------------
+# F3: Employee Incident Reporting
+# ---------------------------------------------------------------------------
+
+
+@router.post("/report-incident", status_code=status.HTTP_201_CREATED)
+def report_incident(
+    body: ReportIncidentRequest,
+    current_user: User = Depends(get_current_user),
+    incident_repo: "IncidentRepository" = Depends(get_incident_repo),
+    event_bus: "EventBus" = Depends(get_event_bus),
+    db: "Session" = Depends(get_db),
+):
+    from src.incident_bc.incident.application.commands.report_incident_employee import (
+        ReportIncidentCommand,
+        ReportIncidentCommandHandler,
+    )
+
+    import ulid as _ulid
+
+    incident_id = str(_ulid.new())
+    handler = ReportIncidentCommandHandler(
+        incident_repo=incident_repo, event_bus=event_bus, db=db
+    )
+    try:
+        handler.handle(
+            ReportIncidentCommand(
+                company_id=current_user.company_id,
+                title=body.title,
+                description=body.description,
+                incident_type=body.incident_type,
+                reported_by=current_user.id,
+                id=incident_id,
+            )
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
+        )
+    return {"data": {"id": incident_id}}
+
+
+@router.get("/incidents")
+def my_incidents(
+    current_user: User = Depends(get_current_user),
+    incident_repo: "IncidentRepository" = Depends(get_incident_repo),
+):
+    from src.incident_bc.incident.application.queries.list_my_incidents import (
+        ListMyIncidentsQuery,
+        ListMyIncidentsQueryHandler,
+    )
+
+    handler = ListMyIncidentsQueryHandler(incident_repo=incident_repo)
+    items = handler.handle(
+        ListMyIncidentsQuery(
+            user_id=current_user.id,
+            company_id=current_user.company_id,
+        )
+    )
+    return {
+        "data": [
+            MyIncidentResponse(
+                id=i.id,
+                title=i.title,
+                incident_type=i.incident_type,
+                severity=i.severity,
+                status=i.status,
+                created_at=i.created_at,
+            ).model_dump(mode="json")
+            for i in items
+        ]
     }

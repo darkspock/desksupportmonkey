@@ -62,6 +62,24 @@ celery_app.conf.update(
             "task": "core.tasks.maintenance.generate_recurring_maintenance",
             "schedule": crontab(minute=0, hour=2),  # Daily 02:00 UTC
         },
+        "check-regulatory-deadlines": {
+            "task": "core.tasks.incidents.check_regulatory_deadlines",
+            "schedule": crontab(minute="*/15"),  # Every 15 minutes
+        },
+        "check-risk-overdue-reviews": {
+            "task": "core.tasks.risks.check_overdue_reviews",
+            "schedule": crontab(minute=0, hour="*/6"),  # Every 6 hours
+        },
+        "check-sla-breaches": {
+            "task": "core.tasks.sla.check_sla_breaches",
+            "schedule": crontab(minute="*/5"),  # Every 5 minutes
+        },
+        "audit-retention-purge": {
+            "task": "core.tasks.audit.retention_purge",
+            "schedule": crontab(
+                hour=3, minute=0, day_of_week="sunday"
+            ),  # Weekly Sunday 03:00 UTC
+        },
     },
 )
 

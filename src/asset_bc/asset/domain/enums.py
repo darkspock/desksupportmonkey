@@ -1,6 +1,12 @@
 from enum import Enum
 
 
+class SystemLocation(str, Enum):
+    EMPLOYEE = "employee"
+    IN_TRANSIT = "in_transit"
+    MAIN_WAREHOUSE = "main_warehouse"
+
+
 class AssetType(str, Enum):
     LAPTOP = "laptop"
     MONITOR = "monitor"

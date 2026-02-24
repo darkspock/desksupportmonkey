@@ -3,6 +3,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from adapters.http.api.registration.dependencies import (
+    get_asset_repo,
     get_company_repo,
     get_magic_link_repo,
     get_stripe_client,
@@ -11,6 +12,7 @@ from adapters.http.api.registration.dependencies import (
 from adapters.http.api.registration.schemas import RegisterCompanyRequest
 from core.email import get_email_service
 from core.stripe_client import StripeClient, StripeUnavailableError
+from src.asset_bc.asset.infrastructure.repository import AssetRepository
 from src.auth_bc.magic_link.infrastructure.repository import MagicLinkRepository
 from src.auth_bc.user.infrastructure.repository import UserRepository
 from src.company_bc.company.application.commands.create_company import (
@@ -34,6 +36,7 @@ def register_company(
     user_repo: UserRepository = Depends(get_user_repo),
     magic_link_repo: MagicLinkRepository = Depends(get_magic_link_repo),
     stripe_client: StripeClient = Depends(get_stripe_client),
+    asset_repo: AssetRepository = Depends(get_asset_repo),
 ):
     """Public endpoint for self-service company registration."""
     handler = CreateCompanyCommandHandler(
@@ -42,6 +45,7 @@ def register_company(
         magic_link_repo=magic_link_repo,
         email_service=get_email_service(),
         stripe_client=stripe_client,
+        asset_repo=asset_repo,
     )
     cmd = CreateCompanyCommand(
         name=body.name, email_domains=body.email_domains, admin_email=body.admin_email,

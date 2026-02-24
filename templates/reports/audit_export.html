@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{ title }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 10px; margin: 20px; color: #333; }
+        h1 { font-size: 18px; margin-bottom: 4px; }
+        .meta { font-size: 11px; color: #666; margin-bottom: 16px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        th { background: #f5f5f5; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; }
+        th, td { border: 1px solid #ddd; padding: 4px 6px; text-align: left; }
+        tr:nth-child(even) { background: #fafafa; }
+        .hash { font-family: monospace; font-size: 9px; color: #888; }
+        .footer { margin-top: 16px; font-size: 9px; color: #999; text-align: center; }
+    </style>
+</head>
+<body>
+    <h1>{{ title }}</h1>
+    <div class="meta">
+        Generated: {{ generated_at }} | Total entries: {{ total_entries }}
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Actor</th>
+                <th>Action</th>
+                <th>Resource Type</th>
+                <th>Resource ID</th>
+                <th>Method</th>
+                <th>Status</th>
+                <th>IP</th>
+                <th>Hash</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in entries %}
+            <tr>
+                <td>{{ entry.timestamp }}</td>
+                <td>{{ entry.actor_email }}</td>
+                <td>{{ entry.action }}</td>
+                <td>{{ entry.resource_type }}</td>
+                <td>{{ entry.resource_id }}</td>
+                <td>{{ entry.http_method }}</td>
+                <td>{{ entry.response_status }}</td>
+                <td>{{ entry.ip_address }}</td>
+                <td class="hash">{{ entry.hash }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        DeskSupportMonkey Audit Trail — Compliance Evidence Report
+    </div>
+</body>
+</html>

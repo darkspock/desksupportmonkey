@@ -1,0 +1,32 @@
+from fastapi import Depends
+from sqlalchemy.orm import Session
+
+from core.database import get_db
+from src.asset_bc.asset.infrastructure.repository import AssetRepository
+from src.auth_bc.user.infrastructure.repository import UserRepository
+from src.incident_bc.incident.infrastructure.repository import IncidentRepository
+from src.procurement_bc.vendor.infrastructure.repository import VendorRepository
+
+
+def get_incident_repo(
+    db: Session = Depends(get_db),
+) -> IncidentRepository:
+    return IncidentRepository(db)
+
+
+def get_user_repo(
+    db: Session = Depends(get_db),
+) -> UserRepository:
+    return UserRepository(db)
+
+
+def get_asset_repo(
+    db: Session = Depends(get_db),
+) -> AssetRepository:
+    return AssetRepository(db)
+
+
+def get_vendor_repo(
+    db: Session = Depends(get_db),
+) -> VendorRepository:
+    return VendorRepository(db)

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-import requests
+import requests  # type: ignore[import-untyped]
 
 
 class GoogleTokenVerificationError(Exception):

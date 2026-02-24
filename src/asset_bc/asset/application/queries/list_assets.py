@@ -16,6 +16,7 @@ class ListAssetsQuery(Query):
     status: Optional[str] = None
     department_id: Optional[str] = None
     assigned_to: Optional[str] = None
+    location_id: Optional[str] = None
     sort_by: str = "created_at"
     sort_order: str = "desc"
 
@@ -34,6 +35,7 @@ class ListAssetsQueryHandler(QueryHandler[ListAssetsQuery, tuple[list[Asset], in
             status=query.status,
             department_id=query.department_id,
             assigned_to=query.assigned_to,
+            location_id=query.location_id,
             sort_by=query.sort_by,
             sort_order=query.sort_order,
         )

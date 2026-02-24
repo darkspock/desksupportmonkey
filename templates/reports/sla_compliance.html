@@ -1,0 +1,127 @@
+{% extends "reports/base.html" %}
+
+{% block content %}
+<div class="section">
+    <h2>Overall SLA Compliance</h2>
+    <div class="cards">
+        <div class="card">
+            <div class="value">{{ compliance_pct }}%</div>
+            <div class="label">Compliance Rate</div>
+        </div>
+        <div class="card">
+            <div class="value">{{ total_resolved }}</div>
+            <div class="label">Total Resolved</div>
+        </div>
+        <div class="card">
+            <div class="value">{{ met }}</div>
+            <div class="label">SLA Met</div>
+        </div>
+        <div class="card">
+            <div class="value">{{ breached }}</div>
+            <div class="label">SLA Breached</div>
+        </div>
+    </div>
+</div>
+
+{% if by_priority %}
+<div class="section">
+    <h2>Compliance by Priority</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Priority</th>
+                <th>Total</th>
+                <th>Met</th>
+                <th>Breached</th>
+                <th>Compliance</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in by_priority %}
+            <tr>
+                <td>{{ row.priority | title }}</td>
+                <td>{{ row.total }}</td>
+                <td><span class="badge badge-green">{{ row.met }}</span></td>
+                <td>
+                    {% if row.breached > 0 %}
+                    <span class="badge badge-red">{{ row.breached }}</span>
+                    {% else %}
+                    <span class="badge badge-gray">0</span>
+                    {% endif %}
+                </td>
+                <td>{{ row.compliance_pct }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if by_type %}
+<div class="section">
+    <h2>Compliance by Request Type</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Total</th>
+                <th>Met</th>
+                <th>Breached</th>
+                <th>Compliance</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in by_type %}
+            <tr>
+                <td>{{ row.type | replace("_", " ") | title }}</td>
+                <td>{{ row.total }}</td>
+                <td><span class="badge badge-green">{{ row.met }}</span></td>
+                <td>
+                    {% if row.breached > 0 %}
+                    <span class="badge badge-red">{{ row.breached }}</span>
+                    {% else %}
+                    <span class="badge badge-gray">0</span>
+                    {% endif %}
+                </td>
+                <td>{{ row.compliance_pct }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if breach_trend %}
+<div class="section">
+    <h2>Breach Trend (Weekly)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Period</th>
+                <th>Breaches</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for point in breach_trend %}
+            <tr>
+                <td>{{ point.period }}</td>
+                <td>
+                    {% if point.count > 0 %}
+                    <span class="badge badge-red">{{ point.count }}</span>
+                    {% else %}
+                    <span class="badge badge-green">0</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if date_range %}
+<div class="section" style="font-size: 9px; color: #888;">
+    Date range: {{ date_range.from_date }} to {{ date_range.to_date }}
+</div>
+{% endif %}
+{% endblock %}

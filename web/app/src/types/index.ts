@@ -86,11 +86,23 @@ export interface Asset {
   assigned_to: string | null;
   assigned_to_email?: string | null;
   department_id: string | null;
+  location_id: string | null;
+  location_name?: string | null;
   purchase_date: string | null;
   warranty_expiration: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface AssetLocation {
+  id: string;
+  name: string;
+  is_system: boolean;
+  system_key: string | null;
+  in_use: boolean;
+  asset_count: number;
+  created_at: string;
 }
 
 export interface AssetEvent {
@@ -686,4 +698,375 @@ export interface ImportConfirmResult {
   departments_created: string[];
   employee_roles_created: string[];
   invitations_sent: number;
+}
+
+// Security Incident
+export type IncidentType = 'phishing' | 'malware' | 'ransomware' | 'data_breach' | 'unauthorized_access' | 'ddos' | 'social_engineering' | 'insider_threat' | 'other';
+export type IncidentSeverity = 'P1' | 'P2' | 'P3' | 'P4';
+export type IncidentStatus = 'detected' | 'triaged' | 'contained' | 'eradicated' | 'recovered' | 'closed';
+
+export interface IncidentTimelineEntry {
+  id: string;
+  event_type: string;
+  description: string;
+  actor_id: string;
+  actor_name?: string | null;
+  created_at?: string | null;
+  metadata?: Record<string, unknown> | null;
+}
+
+export interface IncidentListItem {
+  id: string;
+  title: string;
+  incident_type: IncidentType;
+  severity: IncidentSeverity;
+  status: IncidentStatus;
+  assigned_to?: string | null;
+  assigned_to_name?: string | null;
+  detected_at?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface IncidentDetail {
+  id: string;
+  title: string;
+  description: string;
+  incident_type: IncidentType;
+  severity: IncidentSeverity;
+  status: IncidentStatus;
+  attack_vector?: string | null;
+  data_breach_scope?: string | null;
+  reported_by: string;
+  reported_by_name?: string | null;
+  assigned_to?: string | null;
+  assigned_to_name?: string | null;
+  detected_at?: string | null;
+  close_reason?: string | null;
+  closed_at?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  timeline: IncidentTimelineEntry[];
+  reports: RegulatoryReport[];
+  assets: IncidentAsset[];
+  vendors: IncidentVendor[];
+  postmortem?: PostMortem | null;
+}
+
+export interface PostMortem {
+  id: string;
+  root_cause: string;
+  lessons_learned: string;
+  corrective_actions: string;
+  created_by_name?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface MyIncident {
+  id: string;
+  title: string;
+  incident_type: string;
+  severity: string;
+  status: string;
+  created_at?: string | null;
+}
+
+export interface UpcomingDeadline {
+  incident_id: string;
+  incident_title: string;
+  report_type: string;
+  deadline_at: string;
+  time_remaining_seconds: number;
+}
+
+export interface RecentIncident {
+  id: string;
+  title: string;
+  incident_type: string;
+  severity: string;
+  status: string;
+  detected_at?: string | null;
+  created_at?: string | null;
+}
+
+export interface IncidentDashboard {
+  total_active: number;
+  total_closed: number;
+  active_by_severity: Record<string, number>;
+  by_type: Record<string, number>;
+  mttc_hours: number | null;
+  mttr_hours: number | null;
+  upcoming_deadlines: UpcomingDeadline[];
+  recent_incidents: RecentIncident[];
+}
+
+export interface IncidentAsset {
+  asset_id: string;
+  asset_name: string;
+  asset_type?: string | null;
+  impact_description?: string | null;
+}
+
+export interface IncidentVendor {
+  vendor_id: string;
+  vendor_name: string;
+  involvement_description?: string | null;
+}
+
+export interface RegulatoryReport {
+  id: string;
+  report_type: string;
+  status: string;
+  deadline_at?: string | null;
+  generated_at?: string | null;
+  submitted_at?: string | null;
+  time_remaining_seconds?: number | null;
+  elapsed_percentage?: number | null;
+}
+
+// Risk Register
+export interface RiskListItem {
+  id: string;
+  title: string;
+  category: string;
+  status: string;
+  risk_level?: string | null;
+  likelihood?: number | null;
+  impact?: number | null;
+  treatment?: string | null;
+  owner_id?: string | null;
+  owner_name?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface MitigationPlan {
+  id: string;
+  description: string;
+  status: string;
+  owner_id?: string | null;
+  owner_name?: string | null;
+  target_date?: string | null;
+  created_at?: string | null;
+}
+
+export interface RiskLink {
+  id: string;
+  link_type: string;
+  link_id: string;
+  link_name?: string | null;
+}
+
+export interface RiskHistoryEntry {
+  id: string;
+  event_type: string;
+  description: string;
+  actor_id: string;
+  actor_name?: string | null;
+  metadata?: Record<string, unknown> | null;
+  created_at?: string | null;
+}
+
+export interface RiskDetail {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  status: string;
+  likelihood?: number | null;
+  impact?: number | null;
+  risk_level?: string | null;
+  treatment?: string | null;
+  review_cadence?: string | null;
+  next_review_at?: string | null;
+  owner_id?: string | null;
+  owner_name?: string | null;
+  created_by: string;
+  created_by_name?: string | null;
+  mitigations: MitigationPlan[];
+  links: RiskLink[];
+  history: RiskHistoryEntry[];
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+// Audit Trail
+export interface AuditEntry {
+  id: string;
+  actor_email: string;
+  action: string;
+  resource_type: string;
+  resource_id: string | null;
+  http_method: string;
+  response_status: number;
+  ip_address: string | null;
+  tag_count: number;
+  created_at: string;
+}
+
+export interface AuditTag {
+  id: string;
+  control_id: string;
+  control_code: string;
+  control_name: string;
+  framework: string;
+  tagged_by: string;
+  tagged_at: string | null;
+}
+
+export interface AuditEntryDetail {
+  id: string;
+  actor_id: string | null;
+  actor_email: string;
+  action: string;
+  resource_type: string;
+  resource_id: string | null;
+  http_method: string;
+  http_path: string;
+  response_status: number;
+  ip_address: string | null;
+  user_agent: string | null;
+  request_data: Record<string, unknown> | null;
+  response_summary: Record<string, unknown> | null;
+  hash: string;
+  tags: AuditTag[];
+  created_at: string;
+}
+
+export interface ComplianceControl {
+  id: string;
+  code: string;
+  name: string;
+  framework: string;
+  description: string | null;
+  is_predefined: boolean;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface AuditExportStatus {
+  task_id: string;
+  status: string;
+  download_url: string | null;
+}
+
+export interface GdprRequest {
+  id: string;
+  target_user_email: string;
+  request_type: string;
+  status: string;
+  reason: string | null;
+  error_message: string | null;
+  download_url: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+}
+
+// Compliance Dashboard
+export type ComplianceStatusType = 'compliant' | 'partial' | 'non_compliant' | 'not_assessed';
+export type EvidenceTypeValue = 'audit_log' | 'incident' | 'risk' | 'sla' | 'manual';
+
+export interface ControlAssessment {
+  control_id: string;
+  control_code: string;
+  control_name: string;
+  framework: string;
+  description: string | null;
+  is_predefined: boolean;
+  status: ComplianceStatusType;
+  notes: string | null;
+  assessed_by: string | null;
+  assessed_at: string | null;
+  evidence_count: number;
+}
+
+export interface ComplianceEvidence {
+  id: string;
+  control_id: string;
+  evidence_type: EvidenceTypeValue;
+  reference_id: string | null;
+  title: string;
+  description: string | null;
+  url: string | null;
+  added_by: string;
+  created_at: string | null;
+}
+
+export interface FrameworkSummary {
+  framework: string;
+  total_controls: number;
+  compliant: number;
+  partial: number;
+  non_compliant: number;
+  not_assessed: number;
+  compliance_pct: number;
+  evidence_coverage_pct: number;
+}
+
+export interface ComplianceDashboard {
+  overall_compliance_pct: number;
+  total_controls: number;
+  compliant: number;
+  partial: number;
+  non_compliant: number;
+  not_assessed: number;
+  controls_with_evidence: number;
+  controls_without_evidence: number;
+  frameworks: FrameworkSummary[];
+  gap_controls: ControlAssessment[];
+}
+
+// Knowledge Base
+export interface ArticleListItem {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt?: string | null;
+  category_id?: string | null;
+  category_name?: string | null;
+  status: string;
+  author_id: string;
+  author_name?: string | null;
+  view_count: number;
+  published_at?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface ArticleDetail {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  excerpt?: string | null;
+  category_id?: string | null;
+  category_name?: string | null;
+  status: string;
+  author_id: string;
+  author_name?: string | null;
+  view_count: number;
+  published_at?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface ArticleCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  sort_order: number;
+  article_count: number;
+}
+
+export interface ArticleVersion {
+  id: string;
+  version_number: number;
+  title: string;
+  content: string;
+  edited_by: string;
+  editor_name?: string | null;
+  created_at?: string | null;
 }

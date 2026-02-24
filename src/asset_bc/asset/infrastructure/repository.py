@@ -4,10 +4,10 @@ from typing import Optional
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
-from src.asset_bc.asset.domain.entities import Asset, AssetEvent
+from src.asset_bc.asset.domain.entities import Asset, AssetEvent, AssetLocation
 from src.asset_bc.asset.domain.enums import AssetStatus, AssetType
 from src.asset_bc.asset.domain.repository import AssetRepositoryInterface
-from src.asset_bc.asset.infrastructure.models import AssetModel, AssetEventModel
+from src.asset_bc.asset.infrastructure.models import AssetLocationModel, AssetModel, AssetEventModel
 
 
 class AssetRepository(AssetRepositoryInterface):
@@ -26,6 +26,7 @@ class AssetRepository(AssetRepositoryInterface):
             existing.status = asset.status.value
             existing.assigned_to = asset.assigned_to
             existing.department_id = asset.department_id
+            existing.location_id = asset.location_id
             existing.purchase_date = asset.purchase_date
             existing.warranty_expiration = asset.warranty_expiration
             existing.notes = asset.notes
@@ -40,6 +41,7 @@ class AssetRepository(AssetRepositoryInterface):
                 status=asset.status.value,
                 assigned_to=asset.assigned_to,
                 department_id=asset.department_id,
+                location_id=asset.location_id,
                 purchase_date=asset.purchase_date,
                 warranty_expiration=asset.warranty_expiration,
                 notes=asset.notes,
@@ -83,6 +85,7 @@ class AssetRepository(AssetRepositoryInterface):
         status: Optional[str] = None,
         department_id: Optional[str] = None,
         assigned_to: Optional[str] = None,
+        location_id: Optional[str] = None,
         sort_by: str = "created_at",
         sort_order: str = "desc",
     ) -> tuple[list[Asset], int]:
@@ -108,6 +111,8 @@ class AssetRepository(AssetRepositoryInterface):
                 stmt = stmt.where(AssetModel.assigned_to.is_(None))
             else:
                 stmt = stmt.where(AssetModel.assigned_to == assigned_to)
+        if location_id is not None:
+            stmt = stmt.where(AssetModel.location_id == location_id)
 
         total = self.session.execute(
             select(func.count()).select_from(stmt.subquery())
@@ -264,6 +269,94 @@ class AssetRepository(AssetRepositoryInterface):
         ).scalars().all()
         return [self._to_entity(m) for m in models]
 
+    # --- Location methods ---
+
+    def save_location(self, location: AssetLocation) -> AssetLocation:
+        existing = self.session.execute(
+            select(AssetLocationModel).where(AssetLocationModel.id == location.id)
+        ).scalar_one_or_none()
+        if existing:
+            existing.name = location.name
+            existing.in_use = location.in_use
+        else:
+            model = AssetLocationModel(
+                id=location.id,
+                company_id=location.company_id,
+                name=location.name,
+                is_system=location.is_system,
+                system_key=location.system_key,
+                in_use=location.in_use,
+            )
+            self.session.add(model)
+            existing = model
+        self.session.flush()
+        self.session.refresh(existing)
+        return self._location_to_entity(existing)
+
+    def find_location_by_id(self, location_id: str, company_id: str) -> Optional[AssetLocation]:
+        model = self.session.execute(
+            select(AssetLocationModel).where(
+                AssetLocationModel.id == location_id,
+                AssetLocationModel.company_id == company_id,
+            )
+        ).scalar_one_or_none()
+        return self._location_to_entity(model) if model else None
+
+    def find_locations_by_company(self, company_id: str) -> list[AssetLocation]:
+        models = self.session.execute(
+            select(AssetLocationModel)
+            .where(AssetLocationModel.company_id == company_id)
+            .order_by(
+                AssetLocationModel.is_system.desc(),
+                AssetLocationModel.name.asc(),
+            )
+        ).scalars().all()
+        return [self._location_to_entity(m) for m in models]
+
+    def find_system_location(self, company_id: str, system_key: str) -> Optional[AssetLocation]:
+        model = self.session.execute(
+            select(AssetLocationModel).where(
+                AssetLocationModel.company_id == company_id,
+                AssetLocationModel.system_key == system_key,
+            )
+        ).scalar_one_or_none()
+        return self._location_to_entity(model) if model else None
+
+    def delete_location(self, location_id: str) -> None:
+        model = self.session.execute(
+            select(AssetLocationModel).where(AssetLocationModel.id == location_id)
+        ).scalar_one_or_none()
+        if model:
+            self.session.delete(model)
+            self.session.flush()
+
+    def count_assets_at_location(self, location_id: str) -> int:
+        result = self.session.execute(
+            select(func.count()).where(AssetModel.location_id == location_id)
+        ).scalar()
+        return result or 0
+
+    def find_location_by_name(self, name: str, company_id: str) -> Optional[AssetLocation]:
+        model = self.session.execute(
+            select(AssetLocationModel).where(
+                func.lower(AssetLocationModel.name) == name.lower().strip(),
+                AssetLocationModel.company_id == company_id,
+            )
+        ).scalar_one_or_none()
+        return self._location_to_entity(model) if model else None
+
+    @staticmethod
+    def _location_to_entity(model: AssetLocationModel) -> AssetLocation:
+        return AssetLocation(
+            id=model.id,
+            company_id=model.company_id,
+            name=model.name,
+            is_system=model.is_system,
+            system_key=model.system_key,
+            in_use=model.in_use,
+            created_at=model.created_at,
+        )
+
     @staticmethod
     def _to_entity(model: AssetModel) -> Asset:
         return Asset(
@@ -276,6 +369,7 @@ class AssetRepository(AssetRepositoryInterface):
             status=AssetStatus(model.status),
             assigned_to=model.assigned_to,
             department_id=model.department_id,
+            location_id=model.location_id,
             purchase_date=model.purchase_date,
             warranty_expiration=model.warranty_expiration,
             notes=model.notes,

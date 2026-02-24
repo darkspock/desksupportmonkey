@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import LandingPage from '../../components/LandingPage.astro';
+import { translations } from '../../i18n/translations';
+
+const lang = 'en';
+const t = translations[lang];
+---
+
+<BaseLayout title="DSM Control — Total control over your IT assets" lang={lang} t={t}>
+  <LandingPage lang={lang} t={t} />
+</BaseLayout>

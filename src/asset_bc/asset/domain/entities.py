@@ -17,6 +17,40 @@ class InvalidAssignmentError(Exception):
 
 
 @dataclass
+class AssetLocation:
+    id: str
+    company_id: str
+    name: str
+    is_system: bool
+    system_key: Optional[str] = None
+    in_use: bool = True
+    created_at: Optional[datetime] = None
+
+    @classmethod
+    def create(
+        cls,
+        company_id: str,
+        name: str,
+        is_system: bool = False,
+        system_key: Optional[str] = None,
+        in_use: bool = True,
+        id: Optional[str] = None,
+    ) -> "AssetLocation":
+        if not name or not name.strip():
+            raise ValueError("Location name is required")
+        if is_system and not system_key:
+            raise ValueError("System locations require a system_key")
+        return cls(
+            id=id or str(ulid.new()),
+            company_id=company_id,
+            name=name.strip(),
+            is_system=is_system,
+            system_key=system_key,
+            in_use=in_use,
+        )
+
+
+@dataclass
 class Asset:
     id: str
     company_id: str
@@ -31,6 +65,7 @@ class Asset:
     warranty_expiration: Optional[date] = None
     notes: Optional[str] = None
     purchase_cost_cents: Optional[int] = None
+    location_id: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -98,12 +133,14 @@ class Asset:
             old_purchase = self.purchase_date
             self.purchase_date = purchase_date
             if old_purchase != self.purchase_date:
-                changes["purchase_date"] = {"old": str(old_purchase) if old_purchase else "", "new": str(self.purchase_date)}
+                old_str = str(old_purchase) if old_purchase else ""
+                changes["purchase_date"] = {"old": old_str, "new": str(self.purchase_date)}
         if warranty_expiration is not None:
             old_warranty = self.warranty_expiration
             self.warranty_expiration = warranty_expiration
             if old_warranty != self.warranty_expiration:
-                changes["warranty_expiration"] = {"old": str(old_warranty) if old_warranty else "", "new": str(self.warranty_expiration)}
+                old_str = str(old_warranty) if old_warranty else ""
+                changes["warranty_expiration"] = {"old": old_str, "new": str(self.warranty_expiration)}
         return changes
 
     def assign(self, user_id: str, department_id: Optional[str] = None) -> None:
@@ -120,6 +157,13 @@ class Asset:
         self.department_id = None
         self.status = AssetStatus.IN_STOCK
 
+    def move_to(self, location_id: str) -> dict:
+        if self.location_id == location_id:
+            return {}
+        old_location_id = self.location_id
+        self.location_id = location_id
+        return {"old_location_id": old_location_id, "new_location_id": location_id}
+
     def change_status(self, new_status: AssetStatus) -> None:
         allowed = VALID_TRANSITIONS.get(self.status, [])
         if new_status not in allowed:
@@ -128,6 +172,7 @@ class Asset:
         if new_status == AssetStatus.DECOMMISSIONED:
             self.assigned_to = None
             self.department_id = None
+            self.location_id = None
 
 
 @dataclass

@@ -16,11 +16,15 @@ from src.asset_bc.asset.application.queries.get_asset_history import (
     GetAssetHistoryQuery,
     GetAssetHistoryQueryHandler,
 )
+from src.asset_bc.asset.application.queries.list_locations import (
+    ListLocationsQuery,
+    ListLocationsQueryHandler,
+)
 from src.asset_bc.asset.application.queries.my_equipment import (
     MyEquipmentQuery,
     MyEquipmentQueryHandler,
 )
-from src.asset_bc.asset.domain.entities import Asset, AssetEvent
+from src.asset_bc.asset.domain.entities import Asset, AssetEvent, AssetLocation
 from src.asset_bc.asset.domain.enums import AssetStatus, AssetType
 
 
@@ -53,6 +57,7 @@ class TestListAssetsQuery:
             company_id="comp1", page=1, page_size=20,
             search=None, type=None, status=None,
             department_id=None, assigned_to=None,
+            location_id=None,
             sort_by="created_at", sort_order="desc",
         )
 
@@ -136,6 +141,31 @@ class TestGetAssetHistoryQuery:
 
         with pytest.raises(HistoryNotFoundError):
             handler.handle(GetAssetHistoryQuery(asset_id="bad", company_id="comp1"))
+
+
+class TestListLocationsQuery:
+    def test_returns_locations(self):
+        locations = [
+            AssetLocation.create(company_id="comp1", name="Warehouse", is_system=True, system_key="main_warehouse"),
+            AssetLocation.create(company_id="comp1", name="Room 4"),
+        ]
+        repo = MagicMock()
+        repo.find_locations_by_company.return_value = locations
+        handler = ListLocationsQueryHandler(asset_repo=repo)
+
+        result = handler.handle(ListLocationsQuery(company_id="comp1"))
+
+        assert len(result) == 2
+        repo.find_locations_by_company.assert_called_once_with("comp1")
+
+    def test_empty_result(self):
+        repo = MagicMock()
+        repo.find_locations_by_company.return_value = []
+        handler = ListLocationsQueryHandler(asset_repo=repo)
+
+        result = handler.handle(ListLocationsQuery(company_id="comp1"))
+
+        assert result == []
 
 
 class TestMyEquipmentQuery:

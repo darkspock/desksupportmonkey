@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{ title }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 10px; margin: 20px; color: #333; }
+        h1 { font-size: 18px; margin-bottom: 4px; }
+        h2 { font-size: 14px; margin-top: 20px; margin-bottom: 8px; color: #444; }
+        .meta { font-size: 11px; color: #666; margin-bottom: 16px; }
+        .summary-cards { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+        .card { border: 1px solid #ddd; border-radius: 4px; padding: 8px 12px; min-width: 100px; }
+        .card-label { font-size: 9px; text-transform: uppercase; color: #888; }
+        .card-value { font-size: 16px; font-weight: bold; margin-top: 2px; }
+        .card-value.green { color: #16a34a; }
+        .card-value.yellow { color: #ca8a04; }
+        .card-value.red { color: #dc2626; }
+        .card-value.gray { color: #6b7280; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        th { background: #f5f5f5; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; }
+        th, td { border: 1px solid #ddd; padding: 4px 6px; text-align: left; }
+        tr:nth-child(even) { background: #fafafa; }
+        .badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 9px; font-weight: bold; }
+        .badge-compliant { background: #dcfce7; color: #166534; }
+        .badge-partial { background: #fef9c3; color: #854d0e; }
+        .badge-non_compliant { background: #fecaca; color: #991b1b; }
+        .badge-not_assessed { background: #f3f4f6; color: #6b7280; }
+        .gap-callout { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 4px; padding: 8px 12px; margin-top: 12px; }
+        .gap-callout h3 { font-size: 11px; color: #9a3412; margin: 0 0 6px 0; }
+        .footer { margin-top: 16px; font-size: 9px; color: #999; text-align: center; }
+    </style>
+</head>
+<body>
+    <h1>{{ title }}</h1>
+    <div class="meta">
+        Generated: {{ generated_at }}{% if framework_filter %} | Framework: {{ framework_filter }}{% endif %}
+    </div>
+
+    <div class="summary-cards">
+        <div class="card">
+            <div class="card-label">Overall Compliance</div>
+            <div class="card-value {% if overall_compliance_pct >= 80 %}green{% elif overall_compliance_pct >= 50 %}yellow{% else %}red{% endif %}">{{ overall_compliance_pct }}%</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Total Controls</div>
+            <div class="card-value">{{ total_controls }}</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Compliant</div>
+            <div class="card-value green">{{ compliant }}</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Partial</div>
+            <div class="card-value yellow">{{ partial }}</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Non-Compliant</div>
+            <div class="card-value red">{{ non_compliant }}</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Not Assessed</div>
+            <div class="card-value gray">{{ not_assessed }}</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Evidence Coverage</div>
+            <div class="card-value">{{ controls_with_evidence }}/{{ total_controls }}</div>
+        </div>
+    </div>
+
+    {% for fw in frameworks %}
+    <h2>{{ fw.framework }}</h2>
+    <div class="meta">
+        {{ fw.total_controls }} controls | Compliance: {{ fw.compliance_pct }}% | Evidence coverage: {{ fw.evidence_coverage_pct }}%
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Control Name</th>
+                <th>Status</th>
+                <th>Evidence</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in gap_controls if c.framework == fw.framework %}
+            <tr>
+                <td>{{ c.control_code }}</td>
+                <td>{{ c.control_name }}</td>
+                <td><span class="badge badge-{{ c.status }}">{{ c.status | replace('_', ' ') | title }}</span></td>
+                <td>{{ c.evidence_count }}</td>
+                <td>{{ c.notes or '' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endfor %}
+
+    {% if gap_controls %}
+    <div class="gap-callout">
+        <h3>Gap Analysis — {{ gap_controls | length }} controls require attention</h3>
+        <ul>
+            {% for g in gap_controls %}
+            <li><strong>{{ g.control_code }}</strong> ({{ g.framework }}): {{ g.control_name }} — <span class="badge badge-{{ g.status }}">{{ g.status | replace('_', ' ') | title }}</span></li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        DeskSupportMonkey — Compliance Posture Report
+    </div>
+</body>
+</html>

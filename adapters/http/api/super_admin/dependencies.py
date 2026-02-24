@@ -4,11 +4,16 @@ from sqlalchemy.orm import Session
 from core.config import settings
 from core.database import get_db
 from core.stripe_client import StripeClient
+from src.audit_bc.audit.infrastructure.repository import AuditRepository
 from src.company_bc.company.infrastructure.repository import CompanyRepository
 
 
 def get_company_repo(db: Session = Depends(get_db)) -> CompanyRepository:
     return CompanyRepository(db)
+
+
+def get_audit_repo(db: Session = Depends(get_db)) -> AuditRepository:
+    return AuditRepository(db)
 
 
 def get_stripe_client() -> StripeClient:

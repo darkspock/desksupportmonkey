@@ -5,14 +5,14 @@ Transport: stdio (local development). SSE deferred to F6.
 """
 import logging
 import os
-from typing import Any, Sequence
+from typing import Any, Optional, Sequence
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import TextContent, Tool
 
 from core.database import SessionLocal
-from core.tenant import get_tenant
+from core.tenant import TenantContext, get_tenant
 from src.auth_bc.user.domain.enums import UserRole
 
 from adapters.mcp.auth import authenticate_api_key, AuthenticationError
@@ -20,6 +20,11 @@ from adapters.mcp.registry import tool_registry
 import adapters.mcp.tools  # noqa: F401 — triggers tool registration
 
 logger = logging.getLogger(__name__)
+
+_WRITE_PREFIXES = (
+    "create_", "update_", "delete_", "assign_", "unassign_",
+    "dispatch_", "deliver_", "change_", "add_", "remove_", "move_",
+)
 
 
 def create_mcp_server() -> Server:
@@ -74,6 +79,13 @@ def create_mcp_server() -> Server:
         logger.info("Calling tool '%s' for user_id=%s", name, tenant.user_id)
 
         result: Sequence[TextContent] = await tool.handler(arguments)
+
+        # Audit capture for write tools
+        try:
+            _record_mcp_audit(tenant, name, arguments)
+        except Exception:
+            logger.exception("MCP audit recording failed for tool %s", name)
+
         return result
 
     logger.info(
@@ -123,3 +135,69 @@ async def run_stdio_server() -> None:
     async with stdio_server() as (read_stream, write_stream):
         init_options = server.create_initialization_options()
         await server.run(read_stream, write_stream, init_options)
+
+
+# ------------------------------------------------------------------
+# MCP audit helpers
+# ------------------------------------------------------------------
+
+
+def _record_mcp_audit(
+    tenant: TenantContext, tool_name: str, arguments: dict[str, Any]
+) -> None:
+    """Record an audit entry for MCP write tool calls."""
+    if not any(tool_name.startswith(p) for p in _WRITE_PREFIXES):
+        return
+
+    from src.audit_bc.audit.application.services.audit_service import (
+        AuditService,
+    )
+    from src.audit_bc.audit.infrastructure.repository import AuditRepository
+
+    resource_type = _extract_mcp_resource_type(tool_name)
+    resource_id = _extract_mcp_resource_id(arguments)
+
+    db = SessionLocal()
+    try:
+        repo = AuditRepository(db)
+        service = AuditService(repo)
+        service.record(
+            company_id=tenant.company_id,
+            actor_id=tenant.user_id,
+            actor_email="",
+            action=f"mcp.{tool_name}",
+            resource_type=resource_type,
+            resource_id=resource_id,
+            http_method="MCP",
+            http_path=tool_name,
+            ip_address=None,
+            user_agent=None,
+            request_data=arguments,
+            response_status=0,
+            changes=None,
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+def _extract_mcp_resource_type(tool_name: str) -> str:
+    """Extract resource type from tool name (e.g. 'create_asset' -> 'asset')."""
+    for prefix in _WRITE_PREFIXES:
+        if tool_name.startswith(prefix):
+            return tool_name[len(prefix):]
+    return tool_name
+
+
+def _extract_mcp_resource_id(
+    arguments: dict[str, Any],
+) -> Optional[str]:
+    """Extract resource ID from tool arguments."""
+    for key in ("id", "asset_id", "request_id", "user_id", "risk_id",
+                "incident_id", "shipment_id", "article_id"):
+        if key in arguments:
+            return str(arguments[key])
+    return None

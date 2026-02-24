@@ -56,9 +56,10 @@ class TestAssignAssetCommand:
         )
 
         asset_repo.save.assert_called_once()
-        asset_repo.save_event.assert_called_once()
-        event = asset_repo.save_event.call_args[0][0]
-        assert event.event_type == "assigned"
+        # assign emits 'assigned' event + optionally 'location_changed' event
+        assert asset_repo.save_event.call_count >= 1
+        event_types = [call[0][0].event_type for call in asset_repo.save_event.call_args_list]
+        assert "assigned" in event_types
 
     def test_asset_not_found_raises(self):
         asset_repo = MagicMock()
@@ -146,10 +147,15 @@ class TestUnassignAssetCommand:
         )
 
         repo.save.assert_called_once()
-        repo.save_event.assert_called_once()
-        event = repo.save_event.call_args[0][0]
-        assert event.event_type == "unassigned"
-        assert event.data["previous_user_id"] == "user1"
+        # unassign emits 'unassigned' event + optionally 'location_changed' event
+        assert repo.save_event.call_count >= 1
+        event_types = [call[0][0].event_type for call in repo.save_event.call_args_list]
+        assert "unassigned" in event_types
+        unassigned_event = next(
+            call[0][0] for call in repo.save_event.call_args_list
+            if call[0][0].event_type == "unassigned"
+        )
+        assert unassigned_event.data["previous_user_id"] == "user1"
 
     def test_asset_not_found_raises(self):
         repo = MagicMock()

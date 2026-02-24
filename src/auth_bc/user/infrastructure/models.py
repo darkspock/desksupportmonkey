@@ -23,6 +23,7 @@ class UserModel(ULIDMixin, TimestampMixin, Base):
         index=True,
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_anonymized: Mapped[bool] = mapped_column(Boolean, default=False)
     password_hash: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     email_verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     google_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, unique=True, index=True)

@@ -41,6 +41,8 @@ class AssetResponse(BaseModel):
     assigned_to: Optional[str] = None
     assigned_to_email: Optional[str] = None
     department_id: Optional[str] = None
+    location_id: Optional[str] = None
+    location_name: Optional[str] = None
     purchase_date: Optional[date] = None
     warranty_expiration: Optional[date] = None
     notes: Optional[str] = None
@@ -73,3 +75,28 @@ class ImportResponse(BaseModel):
     total: int
     successful: int
     failed: list[ImportRowErrorResponse]
+
+
+class CreateLocationRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+    in_use: bool = True
+
+
+class UpdateLocationRequest(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=255)
+    in_use: Optional[bool] = None
+
+
+class AssetLocationResponse(BaseModel):
+    id: str
+    name: str
+    is_system: bool
+    system_key: Optional[str] = None
+    in_use: bool
+    asset_count: int = 0
+    created_at: Optional[datetime] = None
+
+
+class MoveAssetRequest(BaseModel):
+    location_id: str = Field(min_length=1)
+    notes: Optional[str] = None

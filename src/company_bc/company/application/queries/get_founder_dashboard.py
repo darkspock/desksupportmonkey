@@ -89,7 +89,7 @@ class GetFounderDashboardQuery(Query):
 
 def _compute_next_milestone(mrr_cents: int) -> MilestoneDto:
     for m in MILESTONE_TARGETS_CENTS:
-        target = int(m["amount_cents"])  # type: ignore[arg-type]
+        target = int(m["amount_cents"])  # type: ignore[call-overload]
         if mrr_cents < target:
             pct = min(100, int(mrr_cents * 100 / target)) if target > 0 else 100
             return MilestoneDto(
@@ -104,7 +104,7 @@ def _compute_next_milestone(mrr_cents: int) -> MilestoneDto:
     return MilestoneDto(
         label=str(last["label"]),
         description=str(last["description"]),
-        target_cents=int(last["amount_cents"]),  # type: ignore[arg-type]
+        target_cents=int(last["amount_cents"]),  # type: ignore[call-overload]
         current_cents=mrr_cents,
         pct=100,
         achieved=True,

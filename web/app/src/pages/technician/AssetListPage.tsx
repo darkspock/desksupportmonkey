@@ -10,7 +10,7 @@ import { Pagination } from '../../components/ui/Pagination';
 import { Tooltip } from '../../components/ui/Tooltip';
 import { EmployeeSearchSelect } from '../../components/ui/EmployeeSearchSelect';
 import { useI18n } from '../../lib/i18n';
-import type { Asset, AssignableUser, PaginatedResponse } from '../../types';
+import type { Asset, AssetLocation, AssignableUser, PaginatedResponse } from '../../types';
 
 export default function AssetListPage() {
   const { t } = useI18n();
@@ -19,17 +19,27 @@ export default function AssetListPage() {
   const [type, setType] = useState('');
   const [status, setStatus] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
+  const [locationId, setLocationId] = useState('');
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['assets', page, search, type, status, assignedTo],
+    queryKey: ['assets', page, search, type, status, assignedTo, locationId],
     queryFn: async () => {
       const params: Record<string, unknown> = { page, page_size: 20 };
       if (search) params.search = search;
       if (type) params.type = type;
       if (status) params.status = status;
       if (assignedTo) params.assigned_to = assignedTo;
+      if (locationId) params.location_id = locationId;
       const { data } = await api.get('/assets', { params });
       return data as PaginatedResponse<Asset>;
+    },
+  });
+
+  const { data: locations } = useQuery({
+    queryKey: ['locations-filter'],
+    queryFn: async () => {
+      const { data } = await api.get('/assets/locations');
+      return data.data as AssetLocation[];
     },
   });
 
@@ -116,6 +126,16 @@ export default function AssetListPage() {
             allLabel={t('page.asset_list.all_assignees')}
             noResultsLabel={t('page.asset_list.no_assignee_results')}
           />
+          <select
+            value={locationId}
+            onChange={(e) => { setLocationId(e.target.value); setPage(1); }}
+            className="w-[180px] bg-card"
+          >
+            <option value="">{t('page.asset_list.all_locations')}</option>
+            {(locations ?? []).map((loc) => (
+              <option key={loc.id} value={loc.id}>{loc.name}</option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -136,6 +156,7 @@ export default function AssetListPage() {
                 <Th className="hidden sm:table-cell">{t('table.serial')}</Th>
                 <Th>{t('table.type')}</Th>
                 <Th>{t('table.status')}</Th>
+                <Th className="hidden lg:table-cell">{t('table.location')}</Th>
                 <Th className="hidden lg:table-cell">{t('table.assigned')}</Th>
                 <Th className="w-[88px] pr-4">
                   <span className="sr-only">{t('table.actions')}</span>
@@ -154,6 +175,9 @@ export default function AssetListPage() {
                   <Td className="hidden sm:table-cell"><span className="text-sm font-mono text-muted-foreground">{a.serial_number}</span></Td>
                   <Td><span className="text-sm text-muted-foreground">{t(`enum.${a.type}`)}</span></Td>
                   <Td><StatusBadge status={a.status} /></Td>
+                  <Td className="hidden lg:table-cell">
+                    <span className="text-sm text-muted-foreground">{a.location_name || '—'}</span>
+                  </Td>
                   <Td className="hidden lg:table-cell">
                     <span className="text-sm text-muted-foreground">{a.assigned_to_email || a.assigned_to || '—'}</span>
                   </Td>

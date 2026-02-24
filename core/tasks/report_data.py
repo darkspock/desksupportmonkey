@@ -10,6 +10,8 @@ from typing import Any, Optional
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from datetime import timedelta
+
 from src.asset_bc.asset.infrastructure.repository import AssetRepository
 from src.company_bc.company.infrastructure.repository import CompanyRepository
 from src.request_bc.request.domain.constants import SLA_THRESHOLDS_HOURS
@@ -270,4 +272,51 @@ def collect_department_spending(
         "departments": dept_rows,
         "top_vendors": top_vendors,
         "top_asset_types": top_asset_types,
+    }
+
+
+def collect_sla_compliance(
+    company_id: str, params: Optional[dict], session: Session
+) -> dict[str, Any]:
+    from src.sla_bc.sla.infrastructure.repository import SlaRepository
+
+    company_repo = CompanyRepository(session)
+    sla_repo = SlaRepository(session)
+
+    company = company_repo.find_by_id(company_id)
+
+    now = datetime.now()
+    from_date_str = params.get("from_date") if params else None
+    to_date_str = params.get("to_date") if params else None
+
+    if from_date_str:
+        from_date = datetime.fromisoformat(from_date_str) if isinstance(from_date_str, str) else from_date_str
+    else:
+        from_date = now - timedelta(days=30)
+
+    if to_date_str:
+        to_date = datetime.fromisoformat(to_date_str) if isinstance(to_date_str, str) else to_date_str
+    else:
+        to_date = now
+
+    stats = sla_repo.compliance_stats(company_id, from_date, to_date)
+    by_priority = sla_repo.compliance_by_priority(company_id, from_date, to_date)
+    by_type = sla_repo.compliance_by_type(company_id, from_date, to_date)
+    trend = sla_repo.breach_trend(company_id, from_date, to_date, bucket="week")
+
+    date_range = {
+        "from_date": from_date.strftime("%Y-%m-%d"),
+        "to_date": to_date.strftime("%Y-%m-%d"),
+    }
+
+    return {
+        "company_name": company.name if company else "Unknown",
+        "total_resolved": stats.get("total_resolved", 0),
+        "met": stats.get("met", 0),
+        "breached": stats.get("breached", 0),
+        "compliance_pct": stats.get("compliance_pct", 0.0),
+        "by_priority": by_priority,
+        "by_type": by_type,
+        "breach_trend": trend,
+        "date_range": date_range,
     }

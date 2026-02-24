@@ -22,6 +22,7 @@ class ServiceRequestModel(ULIDMixin, TimestampMixin, Base):
     priority: Mapped[str] = mapped_column(String(10))
     data: Mapped[Optional[Any]] = mapped_column(JSON)
     resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    first_response_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     __table_args__ = (
         Index("ix_service_requests_company_status", "company_id", "status"),

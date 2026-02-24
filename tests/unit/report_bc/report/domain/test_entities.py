@@ -53,7 +53,7 @@ class TestReportEntity:
         assert report.parameters == params
 
     def test_report_type_values(self):
-        assert len(ReportType) == 4
+        assert len(ReportType) == 5
         assert ReportType.ASSET_INVENTORY.value == "asset_inventory"
         assert ReportType.REQUEST_SUMMARY.value == "request_summary"
         assert ReportType.TECHNICIAN_PERFORMANCE.value == "technician_performance"

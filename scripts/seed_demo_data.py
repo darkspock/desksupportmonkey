@@ -29,7 +29,7 @@ from core.base import Base
 from src.company_bc.company.infrastructure.models import CompanyModel, CompanyEmailDomainModel
 from src.company_bc.department.infrastructure.models import DepartmentModel
 from src.auth_bc.user.infrastructure.models import UserModel
-from src.asset_bc.asset.infrastructure.models import AssetModel, AssetEventModel
+from src.asset_bc.asset.infrastructure.models import AssetModel, AssetEventModel, AssetLocationModel
 from src.request_bc.request.infrastructure.models import (
     ServiceRequestModel, RequestEventModel, RequestCommentModel, RequestNoteModel,
 )
@@ -141,7 +141,7 @@ def clear_all(session):
     for model in [
         NotificationModel, ReportModel,
         RequestNoteModel, RequestCommentModel, RequestEventModel, ServiceRequestModel,
-        AssetEventModel, AssetModel,
+        AssetEventModel, AssetModel, AssetLocationModel,
         UserModel, DepartmentModel,
         CompanyEmailDomainModel, CompanyModel,
     ]:
@@ -201,6 +201,50 @@ def seed_departments(session, companies: list[dict]) -> dict[str, list[dict]]:
     session.commit()
     print(f"  Departments: {len(DEPARTMENTS)} per company ({len(DEPARTMENTS) * len(companies)} total)")
     return dept_map
+
+
+SYSTEM_LOCATIONS = [
+    ("employee", "Empleado"),
+    ("in_transit", "En Tránsito"),
+    ("main_warehouse", "Almacén Principal"),
+]
+
+CUSTOM_LOCATIONS = [
+    "Sala de Servidores",
+    "Recepción",
+    "Sala de Reuniones A",
+]
+
+
+def seed_locations(session, companies: list[dict]) -> dict[str, dict]:
+    """Create asset locations per company. Returns {company_id: {system_key: id, ...}}."""
+    loc_map = {}
+    for company in companies:
+        cid = company["id"]
+        locs: dict[str, str] = {}
+        # System locations
+        for system_key, name in SYSTEM_LOCATIONS:
+            loc = AssetLocationModel(
+                id=uid(), company_id=cid, name=name,
+                is_system=True, system_key=system_key, in_use=True,
+            )
+            session.add(loc)
+            session.flush()
+            locs[system_key] = loc.id
+        # Custom locations
+        for name in CUSTOM_LOCATIONS:
+            loc = AssetLocationModel(
+                id=uid(), company_id=cid, name=name,
+                is_system=False, in_use=True,
+            )
+            session.add(loc)
+            session.flush()
+            locs[name] = loc.id
+        loc_map[cid] = locs
+    session.commit()
+    total = len(SYSTEM_LOCATIONS) + len(CUSTOM_LOCATIONS)
+    print(f"  Locations: {total} per company ({total * len(companies)} total)")
+    return loc_map
 
 
 def seed_users(session, companies: list[dict], dept_map: dict) -> dict:
@@ -301,7 +345,7 @@ def seed_users(session, companies: list[dict], dept_map: dict) -> dict:
     return users
 
 
-def seed_assets(session, companies: list[dict], users: dict, dept_map: dict) -> dict[str, list[str]]:
+def seed_assets(session, companies: list[dict], users: dict, dept_map: dict, loc_map: dict) -> dict[str, list[str]]:
     """Create assets per company. Returns {company_id: [asset_ids]}."""
     asset_map = {}
     serial_counter = 1000
@@ -309,9 +353,11 @@ def seed_assets(session, companies: list[dict], users: dict, dept_map: dict) -> 
     for company in companies:
         cid = company["id"]
         depts = dept_map[cid]
+        locs = loc_map[cid]
         employees = users[cid]["employee"]
         technicians = users[cid]["technician"]
         all_assignable = employees + technicians
+        custom_loc_ids = [v for k, v in locs.items() if k not in ("employee", "in_transit", "main_warehouse")]
         asset_ids = []
 
         # Pick ~18 items from the catalog (some repeated types)
@@ -321,20 +367,28 @@ def seed_assets(session, companies: list[dict], users: dict, dept_map: dict) -> 
             serial_counter += 1
             serial = f"{serial_prefix}-{serial_counter:06d}"
 
-            # Decide status and assignment
+            # Decide status, assignment, and location
             rand = random.random()
             if rand < 0.55:
                 status = "assigned"
                 assigned_to = all_assignable[i % len(all_assignable)]["id"]
+                location_id = locs["employee"]
             elif rand < 0.80:
                 status = "in_stock"
                 assigned_to = None
+                # Some in-stock assets in warehouse, some in custom locations
+                if random.random() < 0.7:
+                    location_id = locs["main_warehouse"]
+                else:
+                    location_id = random.choice(custom_loc_ids)
             elif rand < 0.93:
                 status = "in_repair"
                 assigned_to = None
+                location_id = locs["main_warehouse"]
             else:
                 status = "decommissioned"
                 assigned_to = None
+                location_id = None
 
             days_ago = random.randint(30, 365)
             purchase = past_date_only(days_ago)
@@ -356,6 +410,7 @@ def seed_assets(session, companies: list[dict], users: dict, dept_map: dict) -> 
                 status=status,
                 assigned_to=assigned_to,
                 department_id=depts[i % len(depts)]["id"],
+                location_id=location_id,
                 purchase_date=purchase,
                 warranty_expiration=warranty,
                 notes=f"Demo asset #{i+1}" if i < 3 else None,
@@ -608,12 +663,16 @@ def main():
         dept_map = seed_departments(session, companies)
         print()
 
+        print("Creating asset locations...")
+        loc_map = seed_locations(session, companies)
+        print()
+
         print("Creating users...")
         users = seed_users(session, companies, dept_map)
         print()
 
         print("Creating assets...")
-        seed_assets(session, companies, users, dept_map)
+        seed_assets(session, companies, users, dept_map, loc_map)
         print()
 
         print("Creating service requests...")

@@ -10,13 +10,17 @@ from adapters.http.api.assets.dependencies import get_asset_repo, get_user_repo
 from adapters.http.api.assets.schemas import (
     AssignableUserResponse,
     AssetEventResponse,
+    AssetLocationResponse,
     AssetResponse,
     AssignAssetRequest,
     ChangeStatusRequest,
     CreateAssetRequest,
+    CreateLocationRequest,
     ImportResponse,
     ImportRowErrorResponse,
+    MoveAssetRequest,
     UpdateAssetRequest,
+    UpdateLocationRequest,
 )
 from adapters.http.schemas.responses import PaginationMeta
 from src.auth_bc.user.domain.entities import User
@@ -67,8 +71,34 @@ from src.asset_bc.asset.application.commands.import_assets import (
     ImportAssetsService,
     InvalidCSVError,
 )
-from src.asset_bc.asset.domain.entities import Asset, AssetEvent, InvalidAssignmentError
-from src.asset_bc.asset.domain.enums import InvalidStatusTransitionError
+from src.asset_bc.asset.application.commands.create_location import (
+    CreateLocationCommand,
+    CreateLocationCommandHandler,
+)
+from src.asset_bc.asset.application.commands.update_location import (
+    UpdateLocationCommand,
+    UpdateLocationCommandHandler,
+)
+from src.asset_bc.asset.application.commands.delete_location import (
+    DeleteLocationCommand,
+    DeleteLocationCommandHandler,
+)
+from src.asset_bc.asset.application.commands.move_asset import (
+    MoveAssetCommand,
+    MoveAssetCommandHandler,
+)
+from src.asset_bc.asset.application.queries.list_locations import (
+    ListLocationsQuery,
+    ListLocationsQueryHandler,
+)
+from src.asset_bc.asset.domain.entities import Asset, AssetEvent, AssetLocation, InvalidAssignmentError
+from src.asset_bc.asset.domain.enums import AssetStatus as AssetStatusEnum, InvalidStatusTransitionError
+from src.asset_bc.asset.domain.exceptions import (
+    LocationHasAssetsError,
+    LocationNameExistsError,
+    LocationNotFoundError,
+    SystemLocationError,
+)
 from src.asset_bc.asset.infrastructure.repository import AssetRepository
 from src.auth_bc.user.infrastructure.repository import UserRepository
 
@@ -77,7 +107,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/assets", tags=["assets"])
 
 
-def _to_response(asset: Asset, assigned_to_email: str | None = None) -> AssetResponse:
+def _to_response(
+    asset: Asset,
+    assigned_to_email: str | None = None,
+    location_name: str | None = None,
+) -> AssetResponse:
     return AssetResponse(
         id=asset.id,
         company_id=asset.company_id,
@@ -89,6 +123,8 @@ def _to_response(asset: Asset, assigned_to_email: str | None = None) -> AssetRes
         assigned_to=asset.assigned_to,
         assigned_to_email=assigned_to_email,
         department_id=asset.department_id,
+        location_id=asset.location_id,
+        location_name=location_name,
         purchase_date=asset.purchase_date,
         warranty_expiration=asset.warranty_expiration,
         notes=asset.notes,
@@ -109,20 +145,37 @@ def _event_to_response(event: AssetEvent, performed_by_email: str | None = None)
     )
 
 
+def _resolve_location_names(
+    asset_repo: AssetRepository,
+    company_id: str,
+    assets: list[Asset],
+) -> dict[str, str]:
+    """Build a map of location_id -> name for all locations referenced by assets."""
+    location_ids = {a.location_id for a in assets if a.location_id}
+    if not location_ids:
+        return {}
+    locations = asset_repo.find_locations_by_company(company_id)
+    return {loc.id: loc.name for loc in locations if loc.id in location_ids}
+
+
 def _fetch_asset_response(
     asset_repo: AssetRepository,
     user_repo: UserRepository,
     asset_id: str,
     company_id: str,
 ) -> dict:
-    """Fetch an asset by ID and resolve assigned_to_email, returning a JSON-ready dict."""
+    """Fetch an asset by ID and resolve assigned_to_email + location_name, returning a JSON-ready dict."""
     query_handler = GetAssetQueryHandler(asset_repo=asset_repo)
     asset = query_handler.handle(GetAssetQuery(asset_id=asset_id, company_id=company_id))
     assigned_to_email = None
     if asset.assigned_to:
         assigned_user = user_repo.find_by_id(asset.assigned_to)
         assigned_to_email = assigned_user.email if assigned_user else None
-    return {"data": _to_response(asset, assigned_to_email=assigned_to_email).model_dump(mode="json")}
+    location_name = None
+    if asset.location_id:
+        loc = asset_repo.find_location_by_id(asset.location_id, company_id)
+        location_name = loc.name if loc else None
+    return {"data": _to_response(asset, assigned_to_email=assigned_to_email, location_name=location_name).model_dump(mode="json")}
 
 
 def _resolve_assigned_emails(
@@ -191,6 +244,7 @@ def list_assets(
     status: Optional[str] = Query(None),
     department_id: Optional[str] = Query(None),
     assigned_to: Optional[str] = Query(None),
+    location_id: Optional[str] = Query(None),
     sort_by: str = Query("created_at"),
     sort_order: str = Query("desc"),
     current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
@@ -203,13 +257,19 @@ def list_assets(
             company_id=current_user.company_id,
             page=page, page_size=page_size, search=search,
             type=type, status=status, department_id=department_id,
-            assigned_to=assigned_to, sort_by=sort_by, sort_order=sort_order,
+            assigned_to=assigned_to, location_id=location_id,
+            sort_by=sort_by, sort_order=sort_order,
         )
     )
     email_map = _resolve_assigned_emails(user_repo, assets)
+    location_map = _resolve_location_names(asset_repo, current_user.company_id, assets)
     return {
         "data": [
-            _to_response(a, assigned_to_email=email_map.get(a.assigned_to)).model_dump(mode="json")
+            _to_response(
+                a,
+                assigned_to_email=email_map.get(a.assigned_to),
+                location_name=location_map.get(a.location_id),
+            ).model_dump(mode="json")
             for a in assets
         ],
         "meta": PaginationMeta(page=page, page_size=page_size, total=total).model_dump(),
@@ -262,6 +322,127 @@ def list_assignable_users(
     }
 
 
+@router.get("/locations")
+def list_locations(
+    current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
+    asset_repo: AssetRepository = Depends(get_asset_repo),
+):
+    handler = ListLocationsQueryHandler(asset_repo=asset_repo)
+    locations = handler.handle(
+        ListLocationsQuery(company_id=current_user.company_id)
+    )
+    return {
+        "data": [
+            AssetLocationResponse(
+                id=loc.id,
+                name=loc.name,
+                is_system=loc.is_system,
+                system_key=loc.system_key,
+                in_use=loc.in_use,
+                asset_count=asset_repo.count_assets_at_location(loc.id),
+                created_at=loc.created_at,
+            ).model_dump(mode="json")
+            for loc in locations
+        ]
+    }
+
+
+@router.post("/locations", status_code=status.HTTP_201_CREATED)
+def create_location(
+    body: CreateLocationRequest,
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
+    asset_repo: AssetRepository = Depends(get_asset_repo),
+):
+    loc_id = str(ulid.new())
+    handler = CreateLocationCommandHandler(asset_repo=asset_repo)
+    try:
+        handler.handle(
+            CreateLocationCommand(
+                company_id=current_user.company_id,
+                name=body.name,
+                in_use=body.in_use,
+                id=loc_id,
+            )
+        )
+    except LocationNameExistsError:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Location with this name already exists")
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+    loc = asset_repo.find_location_by_id(loc_id, current_user.company_id)
+    return {
+        "data": AssetLocationResponse(
+            id=loc.id,
+            name=loc.name,
+            is_system=loc.is_system,
+            system_key=loc.system_key,
+            in_use=loc.in_use,
+            asset_count=0,
+            created_at=loc.created_at,
+        ).model_dump(mode="json")
+    }
+
+
+@router.put("/locations/{location_id}")
+def update_location(
+    location_id: str,
+    body: UpdateLocationRequest,
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
+    asset_repo: AssetRepository = Depends(get_asset_repo),
+):
+    handler = UpdateLocationCommandHandler(asset_repo=asset_repo)
+    try:
+        handler.handle(
+            UpdateLocationCommand(
+                location_id=location_id,
+                company_id=current_user.company_id,
+                name=body.name,
+                in_use=body.in_use,
+            )
+        )
+    except LocationNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Location not found")
+    except SystemLocationError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except LocationNameExistsError:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Location with this name already exists")
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+    loc = asset_repo.find_location_by_id(location_id, current_user.company_id)
+    return {
+        "data": AssetLocationResponse(
+            id=loc.id,
+            name=loc.name,
+            is_system=loc.is_system,
+            system_key=loc.system_key,
+            in_use=loc.in_use,
+            asset_count=asset_repo.count_assets_at_location(loc.id),
+            created_at=loc.created_at,
+        ).model_dump(mode="json")
+    }
+
+
+@router.delete("/locations/{location_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_location(
+    location_id: str,
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
+    asset_repo: AssetRepository = Depends(get_asset_repo),
+):
+    handler = DeleteLocationCommandHandler(asset_repo=asset_repo)
+    try:
+        handler.handle(
+            DeleteLocationCommand(
+                location_id=location_id,
+                company_id=current_user.company_id,
+            )
+        )
+    except LocationNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Location not found")
+    except SystemLocationError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except LocationHasAssetsError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+
+
 @router.get("/{asset_id}")
 def get_asset(
     asset_id: str,
@@ -280,7 +461,11 @@ def get_asset(
     if asset.assigned_to:
         assigned_user = user_repo.find_by_id(asset.assigned_to)
         assigned_to_email = assigned_user.email if assigned_user else None
-    return {"data": _to_response(asset, assigned_to_email=assigned_to_email).model_dump(mode="json")}
+    location_name = None
+    if asset.location_id:
+        loc = asset_repo.find_location_by_id(asset.location_id, current_user.company_id)
+        location_name = loc.name if loc else None
+    return {"data": _to_response(asset, assigned_to_email=assigned_to_email, location_name=location_name).model_dump(mode="json")}
 
 
 @router.put("/{asset_id}")
@@ -363,6 +548,38 @@ def get_asset_history(
             for e in events
         ]
     }
+
+
+@router.patch("/{asset_id}/move")
+def move_asset(
+    asset_id: str,
+    body: MoveAssetRequest,
+    current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
+    asset_repo: AssetRepository = Depends(get_asset_repo),
+    user_repo: UserRepository = Depends(get_user_repo),
+):
+    from src.asset_bc.asset.application.commands.move_asset import (
+        AssetNotFoundError as MoveAssetNotFoundError,
+        AssetDecommissionedError,
+    )
+    handler = MoveAssetCommandHandler(asset_repo=asset_repo)
+    try:
+        handler.handle(
+            MoveAssetCommand(
+                asset_id=asset_id,
+                company_id=current_user.company_id,
+                location_id=body.location_id,
+                performed_by=current_user.id,
+                notes=body.notes,
+            )
+        )
+    except MoveAssetNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+    except AssetDecommissionedError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except LocationNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Location not found")
+    return _fetch_asset_response(asset_repo, user_repo, asset_id, current_user.company_id)
 
 
 @router.patch("/{asset_id}/assign")

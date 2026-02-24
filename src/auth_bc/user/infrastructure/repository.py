@@ -25,6 +25,7 @@ class UserRepository(UserRepositoryInterface):
             existing.department_id = user.department_id
             existing.employee_role_id = user.employee_role_id
             existing.is_active = user.is_active
+            existing.is_anonymized = user.is_anonymized
             existing.password_hash = user.password_hash
             existing.email_verified_at = user.email_verified_at
             existing.google_id = user.google_id
@@ -39,6 +40,7 @@ class UserRepository(UserRepositoryInterface):
                 department_id=user.department_id,
                 employee_role_id=user.employee_role_id,
                 is_active=user.is_active,
+                is_anonymized=user.is_anonymized,
                 password_hash=user.password_hash,
                 email_verified_at=user.email_verified_at,
                 google_id=user.google_id,
@@ -206,6 +208,7 @@ class UserRepository(UserRepositoryInterface):
             department_id=model.department_id,
             employee_role_id=model.employee_role_id,
             is_active=model.is_active,
+            is_anonymized=model.is_anonymized,
             password_hash=model.password_hash,
             email_verified_at=model.email_verified_at,
             google_id=model.google_id,

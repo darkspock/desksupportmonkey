@@ -15,6 +15,7 @@ import { AssetLabel } from '../../components/AssetLabel';
 import type {
   Asset,
   AssetEvent,
+  AssetLocation,
   AssignableUser,
   AssetStatus,
   MaintenanceRecord,
@@ -49,6 +50,8 @@ function eventSummary(event: AssetEvent, t: (key: string, params?: Record<string
       return t('page.asset_detail.event_assigned');
     case 'unassigned':
       return t('page.asset_detail.event_unassigned');
+    case 'location_changed':
+      return t('page.asset_detail.event_location_changed');
     case 'status_changed': {
       const oldStatus = typeof event.data.old_status === 'string' ? event.data.old_status : null;
       const newStatus = typeof event.data.new_status === 'string' ? event.data.new_status : null;
@@ -96,6 +99,16 @@ function eventDetails(
     return t('page.asset_detail.unassigned_detail');
   }
 
+  if (event.event_type === 'location_changed') {
+    const oldLoc = typeof event.data.old_location_name === 'string' ? event.data.old_location_name : null;
+    const newLoc = typeof event.data.new_location_name === 'string' ? event.data.new_location_name : null;
+    const notes = typeof event.data.notes === 'string' ? event.data.notes : null;
+    const parts: string[] = [];
+    if (oldLoc || newLoc) parts.push(`${oldLoc || '-'} -> ${newLoc || '-'}`);
+    if (notes) parts.push(notes);
+    return parts.length ? parts.join(' | ') : t('page.asset_detail.event_location_changed');
+  }
+
   if (event.event_type === 'created') {
     const type = typeof event.data.type === 'string' ? event.data.type : null;
     const serial = typeof event.data.serial_number === 'string' ? event.data.serial_number : null;
@@ -124,6 +137,8 @@ export default function AssetDetailPage() {
   const canInviteUsers = isRole('admin', 'super_admin');
 
   const [assignUserId, setAssignUserId] = useState('');
+  const [moveLocationId, setMoveLocationId] = useState('');
+  const [moveNotes, setMoveNotes] = useState('');
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [isEditing, setIsEditing] = useState(false);
@@ -172,6 +187,14 @@ export default function AssetDetailPage() {
       return data as PaginatedResponse<MaintenanceRecord>;
     },
     enabled: Boolean(id),
+  });
+
+  const { data: locations } = useQuery({
+    queryKey: ['locations'],
+    queryFn: async () => {
+      const { data } = await api.get('/assets/locations');
+      return data.data as AssetLocation[];
+    },
   });
 
   const {
@@ -255,6 +278,20 @@ export default function AssetDetailPage() {
     onError: (err: unknown) => {
       const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('page.asset_detail.error_unassign');
       showToast({ title: t('page.asset_detail.error_unassign_failed'), description: detail, variant: 'error' });
+    },
+  });
+
+  const moveAsset = useMutation({
+    mutationFn: (payload: { location_id: string; notes?: string }) => api.patch(`/assets/${id}/move`, payload),
+    onSuccess: () => {
+      refreshAssetQueries();
+      setMoveLocationId('');
+      setMoveNotes('');
+      showToast({ title: t('page.asset_detail.toast_moved'), variant: 'success' });
+    },
+    onError: (err: unknown) => {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('page.asset_detail.error_move');
+      showToast({ title: t('page.asset_detail.error_move_failed'), description: detail, variant: 'error' });
     },
   });
 
@@ -351,6 +388,7 @@ export default function AssetDetailPage() {
             <StatusBadge status={asset.status} />
           </div>
           <div><span className="text-muted-foreground">{t('table.assigned_to')}:</span> {assignedLabel || '-'}</div>
+          <div><span className="text-muted-foreground">{t('page.asset_detail.location')}:</span> {asset.location_name || '-'}</div>
           <div><span className="text-muted-foreground">{t('table.purchase_date')}:</span> {formatDate(asset.purchase_date)}</div>
           <div><span className="text-muted-foreground">{t('table.warranty')}:</span> {formatDate(asset.warranty_expiration)}</div>
           <div><span className="text-muted-foreground">{t('table.updated')}:</span> {formatDateTime(asset.updated_at)}</div>
@@ -441,6 +479,44 @@ export default function AssetDetailPage() {
           </div>
         )}
       </Card>
+
+      {asset.status !== 'decommissioned' && (
+        <Card>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">{t('page.asset_detail.move_asset')}</h3>
+          <div className="flex flex-col items-start gap-2">
+            <div>
+              <label className="block mb-1.5 text-muted-foreground">{t('page.asset_detail.move_to_location')}</label>
+              <select
+                value={moveLocationId}
+                onChange={(e) => setMoveLocationId(e.target.value)}
+                className="min-w-64 text-sm"
+              >
+                <option value="">{t('page.asset_detail.select_location')}</option>
+                {(locations ?? []).map((loc) => (
+                  <option key={loc.id} value={loc.id}>{loc.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="w-full max-w-sm">
+              <label className="block mb-1.5 text-muted-foreground">{t('page.asset_detail.move_notes')}</label>
+              <input
+                type="text"
+                value={moveNotes}
+                onChange={(e) => setMoveNotes(e.target.value)}
+                className="w-full text-sm"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => moveAsset.mutate({ location_id: moveLocationId, ...(moveNotes.trim() ? { notes: moveNotes.trim() } : {}) })}
+              disabled={!moveLocationId || moveLocationId === asset.location_id || moveAsset.isPending}
+              className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+            >
+              {moveAsset.isPending ? t('page.asset_detail.moving') : t('page.asset_detail.move')}
+            </button>
+          </div>
+        </Card>
+      )}
 
       {isEditing && (
         <Card>

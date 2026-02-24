@@ -35,8 +35,14 @@ from adapters.http.api.maintenance_templates.routers import (
     router as maintenance_templates_router,
 )
 from adapters.http.api.billing.routers import router as billing_router
+from adapters.http.api.incidents.routers import router as incidents_router
+from adapters.http.api.risks.routers import router as risks_router
+from adapters.http.api.kb.routers import router as kb_router
+from adapters.http.api.sla.routers import router as sla_router
+from adapters.http.api.audit.routers import router as audit_router
 from adapters.http.api.super_admin.routers import router as super_admin_router
 from adapters.http.ws.websocket import router as ws_router
+from adapters.http.middleware.audit import AuditMiddleware
 from adapters.http.middleware.error_handler import register_error_handlers
 from core.config import settings
 
@@ -69,6 +75,9 @@ def create_app() -> FastAPI:
             return response
 
     application.add_middleware(SecurityHeadersMiddleware)
+
+    # Audit trail
+    application.add_middleware(AuditMiddleware)
 
     # CORS
     application.add_middleware(
@@ -110,6 +119,11 @@ def create_app() -> FastAPI:
     application.include_router(maintenance_router)
     application.include_router(maintenance_templates_router)
     application.include_router(billing_router)
+    application.include_router(incidents_router)
+    application.include_router(risks_router)
+    application.include_router(kb_router)
+    application.include_router(sla_router)
+    application.include_router(audit_router)
     application.include_router(super_admin_router)
     application.include_router(ws_router)
 

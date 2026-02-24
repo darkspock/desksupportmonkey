@@ -9,6 +9,7 @@ from src.company_bc.company.infrastructure.repository import CompanyRepository
 from src.notification_bc.notification.infrastructure.repository import NotificationRepository
 from src.request_bc.request.infrastructure.repository import RequestRepository
 from src.shipping_bc.shipment.infrastructure.repository import ShipmentRepository
+from src.incident_bc.incident.infrastructure.repository import IncidentRepository
 from src.maintenance_bc.maintenance_record.infrastructure.repository import (
     MaintenanceRecordRepository,
 )
@@ -40,6 +41,10 @@ def get_appointment_repo(db: Session = Depends(get_db)) -> AppointmentRepository
 
 def get_shipment_repo(db: Session = Depends(get_db)) -> ShipmentRepository:
     return ShipmentRepository(db)
+
+
+def get_incident_repo(db: Session = Depends(get_db)) -> IncidentRepository:
+    return IncidentRepository(db)
 
 
 def get_maintenance_record_repo(

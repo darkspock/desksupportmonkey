@@ -5,6 +5,9 @@ from src.framework.application.command_bus import (
     Command,
     CommandHandler,
 )
+from src.shipping_bc.shipment.application.services.delivery_asset_service import (
+    DeliveryAssetService,
+)
 from src.shipping_bc.shipment.domain.repository import (
     ShipmentRepositoryInterface,
 )
@@ -30,8 +33,10 @@ class DispatchShipmentCommandHandler(
     def __init__(
         self,
         shipment_repo: ShipmentRepositoryInterface,
+        delivery_asset_service: Optional[DeliveryAssetService] = None,
     ):
         self.shipment_repo = shipment_repo
+        self.delivery_asset_service = delivery_asset_service
 
     def handle(
         self, command: DispatchShipmentCommand,
@@ -55,3 +60,7 @@ class DispatchShipmentCommandHandler(
 
         shipment.dispatch()
         self.shipment_repo.save(shipment)
+
+        if self.delivery_asset_service:
+            self.delivery_asset_service \
+                .update_assets_on_dispatch(shipment)

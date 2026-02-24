@@ -34,6 +34,7 @@ class RequestRepository(RequestRepositoryInterface):
             existing.status = request.status.value
             existing.priority = request.priority.value
             existing.resolved_at = request.resolved_at
+            existing.first_response_at = request.first_response_at
         else:
             model = ServiceRequestModel(
                 id=request.id,
@@ -396,6 +397,7 @@ class RequestRepository(RequestRepositoryInterface):
             subtype=model.subtype,
             data=model.data,
             resolved_at=model.resolved_at,
+            first_response_at=model.first_response_at,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )

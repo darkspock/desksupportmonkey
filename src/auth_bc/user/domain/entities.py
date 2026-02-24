@@ -17,6 +17,7 @@ class User:
     department_id: Optional[str] = None
     employee_role_id: Optional[str] = None
     is_active: bool = True
+    is_anonymized: bool = False
     password_hash: Optional[str] = None
     email_verified_at: Optional[datetime] = None
     google_id: Optional[str] = None

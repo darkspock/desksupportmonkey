@@ -1,11 +1,26 @@
 from datetime import date, datetime
 from typing import Any, Optional
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, JSON, String, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, JSON, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.base import Base
 from core.mixins import ULIDMixin, TimestampMixin
+
+
+class AssetLocationModel(ULIDMixin, Base):
+    __tablename__ = "asset_locations"
+
+    company_id: Mapped[str] = mapped_column(String(26), ForeignKey("companies.id"), index=True)
+    name: Mapped[str] = mapped_column(String(255))
+    is_system: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    system_key: Mapped[Optional[str]] = mapped_column(String(50))
+    in_use: Mapped[bool] = mapped_column(Boolean, server_default="true")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("company_id", "name", name="uq_location_company_name"),
+    )
 
 
 class AssetModel(ULIDMixin, TimestampMixin, Base):
@@ -19,6 +34,7 @@ class AssetModel(ULIDMixin, TimestampMixin, Base):
     status: Mapped[str] = mapped_column(String(20), server_default="in_stock")
     assigned_to: Mapped[Optional[str]] = mapped_column(String(26), ForeignKey("users.id"), index=True)
     department_id: Mapped[Optional[str]] = mapped_column(String(26), ForeignKey("departments.id"), index=True)
+    location_id: Mapped[Optional[str]] = mapped_column(String(26), ForeignKey("asset_locations.id"), index=True)
     purchase_date: Mapped[Optional[date]] = mapped_column(Date)
     warranty_expiration: Mapped[Optional[date]] = mapped_column(Date)
     notes: Mapped[Optional[str]] = mapped_column(Text)

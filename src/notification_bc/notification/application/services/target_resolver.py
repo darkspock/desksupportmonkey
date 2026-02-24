@@ -38,6 +38,18 @@ class TargetResolver:
             EventType.MAINTENANCE_OVERDUE: self._resolve_maintenance_overdue,
             EventType.MAINTENANCE_COMPLETED: self._resolve_maintenance_completed,
             EventType.MAINTENANCE_CANCELLED: self._resolve_maintenance_cancelled,
+            EventType.INCIDENT_CREATED: self._resolve_incident_created,
+            EventType.INCIDENT_STATUS_CHANGED: self._resolve_incident_status_changed,
+            EventType.INCIDENT_SEVERITY_CHANGED: self._resolve_incident_severity_changed,
+            EventType.INCIDENT_ASSIGNED: self._resolve_incident_assigned,
+            EventType.INCIDENT_EMPLOYEE_REPORTED: self._resolve_incident_employee_reported,
+            EventType.INCIDENT_DEADLINE_WARNING: self._resolve_incident_deadline_warning,
+            EventType.INCIDENT_DEADLINE_URGENT: self._resolve_incident_deadline_admins,
+            EventType.INCIDENT_DEADLINE_PASSED: self._resolve_incident_deadline_admins,
+            EventType.RISK_REVIEW_OVERDUE: self._resolve_risk_review_overdue,
+            EventType.SLA_WARNING: self._resolve_sla_warning,
+            EventType.SLA_RESPONSE_BREACHED: self._resolve_sla_breach,
+            EventType.SLA_RESOLUTION_BREACHED: self._resolve_sla_breach,
         }
         resolver = resolvers.get(event.event_type)  # type: ignore[call-overload]
         if resolver is None:
@@ -245,4 +257,74 @@ class TargetResolver:
             targets.add(technician_id)
         if created_by:
             targets.add(created_by)
+        return targets
+
+    # --- Incident events ---
+
+    def _resolve_incident_created(self, event: DomainEvent) -> set[str]:
+        tech_ids = self.user_repo.find_technician_ids_by_company(event.company_id)
+        return set(tech_ids)
+
+    def _resolve_incident_status_changed(self, event: DomainEvent) -> set[str]:
+        targets: set[str] = set()
+        assigned_to = event.payload.get("assigned_to")
+        if assigned_to:
+            targets.add(assigned_to)
+        admin_ids = self.user_repo.find_admin_ids_by_company(event.company_id)
+        targets.update(admin_ids)
+        return targets
+
+    def _resolve_incident_severity_changed(self, event: DomainEvent) -> set[str]:
+        targets: set[str] = set()
+        assigned_to = event.payload.get("assigned_to")
+        if assigned_to:
+            targets.add(assigned_to)
+        admin_ids = self.user_repo.find_admin_ids_by_company(event.company_id)
+        targets.update(admin_ids)
+        return targets
+
+    def _resolve_incident_assigned(self, event: DomainEvent) -> set[str]:
+        assigned_to = event.payload.get("assigned_to")
+        return {assigned_to} if assigned_to else set()
+
+    def _resolve_incident_employee_reported(self, event: DomainEvent) -> set[str]:
+        tech_ids = self.user_repo.find_technician_ids_by_company(event.company_id)
+        return set(tech_ids)
+
+    def _resolve_incident_deadline_warning(self, event: DomainEvent) -> set[str]:
+        admin_ids = self.user_repo.find_admin_ids_by_company(event.company_id)
+        targets = set(admin_ids)
+        assigned_to = event.payload.get("assigned_to") if event.payload else None
+        if assigned_to:
+            targets.add(assigned_to)
+        return targets
+
+    def _resolve_incident_deadline_admins(self, event: DomainEvent) -> set[str]:
+        admin_ids = self.user_repo.find_admin_ids_by_company(event.company_id)
+        return set(admin_ids)
+
+    # --- Risk events ---
+
+    def _resolve_risk_review_overdue(self, event: DomainEvent) -> set[str]:
+        targets: set[str] = set()
+        owner_id = event.payload.get("owner_id") if event.payload else None
+        if owner_id:
+            targets.add(owner_id)
+        admin_ids = self.user_repo.find_admin_ids_by_company(event.company_id)
+        targets.update(admin_ids)
+        return targets
+
+    # --- SLA events ---
+
+    def _resolve_sla_warning(self, event: DomainEvent) -> set[str]:
+        assigned_to = event.payload.get("assigned_to") if event.payload else None
+        return {assigned_to} if assigned_to else set()
+
+    def _resolve_sla_breach(self, event: DomainEvent) -> set[str]:
+        targets: set[str] = set()
+        assigned_to = event.payload.get("assigned_to") if event.payload else None
+        if assigned_to:
+            targets.add(assigned_to)
+        admin_ids = self.user_repo.find_admin_ids_by_company(event.company_id)
+        targets.update(admin_ids)
         return targets

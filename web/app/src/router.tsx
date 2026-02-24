@@ -51,11 +51,37 @@ const MaintenanceFormPage = lazy(() => import('./pages/technician/MaintenanceFor
 const MyMaintenancePage = lazy(() => import('./pages/technician/MyMaintenancePage'));
 const MyTaskAppointmentsPage = lazy(() => import('./pages/technician/MyTaskAppointmentsPage'));
 const MaintenanceTemplatesPage = lazy(() => import('./pages/admin/MaintenanceTemplatesPage'));
+const ReportIncidentPage = lazy(() => import('./pages/employee/ReportIncidentPage'));
+const MyIncidentsPage = lazy(() => import('./pages/employee/MyIncidentsPage'));
+const IncidentDashboardPage = lazy(() => import('./pages/technician/IncidentDashboardPage'));
+const IncidentsListPage = lazy(() => import('./pages/technician/IncidentsList'));
+const IncidentDetailPage = lazy(() => import('./pages/technician/IncidentDetail'));
+const CreateIncidentPage = lazy(() => import('./pages/technician/CreateIncidentPage'));
+const RiskListPage = lazy(() => import('./pages/technician/RiskListPage'));
+const RiskDetailPage = lazy(() => import('./pages/technician/RiskDetailPage'));
+const CreateRiskPage = lazy(() => import('./pages/technician/CreateRiskPage'));
+const EditRiskPage = lazy(() => import('./pages/technician/EditRiskPage'));
+const RiskDashboardPage = lazy(() => import('./pages/technician/RiskDashboardPage'));
+const KBArticleListPage = lazy(() => import('./pages/technician/KBArticleListPage'));
+const KBArticleDetailPage = lazy(() => import('./pages/technician/KBArticleDetailPage'));
+const CreateArticlePage = lazy(() => import('./pages/technician/CreateArticlePage'));
+const EditArticlePage = lazy(() => import('./pages/technician/EditArticlePage'));
+const KBArticleVersionsPage = lazy(() => import('./pages/technician/KBArticleVersionsPage'));
+const KnowledgeBasePage = lazy(() => import('./pages/employee/KnowledgeBasePage'));
 const UserImportPage = lazy(() => import('./pages/admin/UserImportPage'));
 const CompaniesPage = lazy(() => import('./pages/superadmin/CompaniesPage'));
 const FounderDashboardPage = lazy(() => import('./pages/superadmin/FounderDashboardPage'));
 const BillingPage = lazy(() => import('./pages/admin/BillingPage'));
 const BillingProcessingPage = lazy(() => import('./pages/admin/BillingProcessingPage'));
+const SlaPoliciesPage = lazy(() => import('./pages/admin/SlaPoliciesPage'));
+const SlaDashboardPage = lazy(() => import('./pages/admin/SlaDashboardPage'));
+const LocationsPage = lazy(() => import('./pages/admin/LocationsPage'));
+const AuditLogPage = lazy(() => import('./pages/admin/AuditLogPage'));
+const AuditEntryDetailPage = lazy(() => import('./pages/admin/AuditEntryDetailPage'));
+const ComplianceControlsPage = lazy(() => import('./pages/admin/ComplianceControlsPage'));
+const CrossCompanyAuditPage = lazy(() => import('./pages/superadmin/CrossCompanyAuditPage'));
+const GdprRequestsPage = lazy(() => import('./pages/admin/GdprRequestsPage'));
+const ComplianceDashboardPage = lazy(() => import('./pages/admin/ComplianceDashboardPage'));
 
 function S({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoading />}>{children}</Suspense>;
@@ -84,6 +110,9 @@ export const router = createBrowserRouter([
       { path: 'my/notifications', element: <S><NotificationsPage /></S> },
       { path: 'my/appointments', element: <S><MyAppointmentsPage /></S> },
       { path: 'my/shipments', element: <S><MyShipmentsPage /></S> },
+      { path: 'my/incidents', element: <S><MyIncidentsPage /></S> },
+      { path: 'knowledge-base', element: <S><KnowledgeBasePage /></S> },
+      { path: 'my/report-incident', element: <S><ReportIncidentPage /></S> },
       {
         path: 'my/maintenance',
         element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><MyMaintenancePage /></S></RequireRole>,
@@ -158,6 +187,62 @@ export const router = createBrowserRouter([
       {
         path: 'maintenance/:id/edit',
         element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><MaintenanceFormPage /></S></RequireRole>,
+      },
+      {
+        path: 'incidents',
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><IncidentsListPage /></S></RequireRole>,
+      },
+      {
+        path: 'incidents/dashboard',
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><IncidentDashboardPage /></S></RequireRole>,
+      },
+      {
+        path: 'incidents/new',
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><CreateIncidentPage /></S></RequireRole>,
+      },
+      {
+        path: 'incidents/:id',
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><IncidentDetailPage /></S></RequireRole>,
+      },
+      {
+        path: 'kb',
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><KBArticleListPage /></S></RequireRole>,
+      },
+      {
+        path: 'kb/articles/new',
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><CreateArticlePage /></S></RequireRole>,
+      },
+      {
+        path: 'kb/articles/:id',
+        element: <S><KBArticleDetailPage /></S>,
+      },
+      {
+        path: 'kb/articles/:id/edit',
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><EditArticlePage /></S></RequireRole>,
+      },
+      {
+        path: 'kb/articles/:id/versions',
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><KBArticleVersionsPage /></S></RequireRole>,
+      },
+      {
+        path: 'risks',
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><RiskListPage /></S></RequireRole>,
+      },
+      {
+        path: 'risks/dashboard',
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><RiskDashboardPage /></S></RequireRole>,
+      },
+      {
+        path: 'risks/new',
+        element: <RequireRole roles={['admin', 'super_admin']}><S><CreateRiskPage /></S></RequireRole>,
+      },
+      {
+        path: 'risks/:id',
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><RiskDetailPage /></S></RequireRole>,
+      },
+      {
+        path: 'risks/:id/edit',
+        element: <RequireRole roles={['admin', 'super_admin']}><S><EditRiskPage /></S></RequireRole>,
       },
       {
         path: 'assets',
@@ -237,6 +322,38 @@ export const router = createBrowserRouter([
         path: 'billing/processing',
         element: <RequireRole roles={['admin']}><S><BillingProcessingPage /></S></RequireRole>,
       },
+      {
+        path: 'sla/policies',
+        element: <RequireRole roles={['admin', 'super_admin']}><S><SlaPoliciesPage /></S></RequireRole>,
+      },
+      {
+        path: 'sla/dashboard',
+        element: <RequireRole roles={['admin', 'super_admin']}><S><SlaDashboardPage /></S></RequireRole>,
+      },
+      {
+        path: 'settings/locations',
+        element: <RequireRole roles={['admin']}><S><LocationsPage /></S></RequireRole>,
+      },
+      {
+        path: 'audit',
+        element: <RequireRole roles={['admin', 'super_admin']}><S><AuditLogPage /></S></RequireRole>,
+      },
+      {
+        path: 'audit/:id',
+        element: <RequireRole roles={['admin', 'super_admin']}><S><AuditEntryDetailPage /></S></RequireRole>,
+      },
+      {
+        path: 'settings/compliance',
+        element: <RequireRole roles={['admin']}><S><ComplianceControlsPage /></S></RequireRole>,
+      },
+      {
+        path: 'settings/gdpr',
+        element: <RequireRole roles={['admin']}><S><GdprRequestsPage /></S></RequireRole>,
+      },
+      {
+        path: 'compliance/dashboard',
+        element: <RequireRole roles={['admin', 'super_admin']}><S><ComplianceDashboardPage /></S></RequireRole>,
+      },
       // Super Admin
       {
         path: 'overview',
@@ -245,6 +362,10 @@ export const router = createBrowserRouter([
       {
         path: 'companies',
         element: <RequireRole roles={['super_admin']}><S><CompaniesPage /></S></RequireRole>,
+      },
+      {
+        path: 'super-admin/audit',
+        element: <RequireRole roles={['super_admin']}><S><CrossCompanyAuditPage /></S></RequireRole>,
       },
     ],
   },

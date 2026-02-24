@@ -3,7 +3,7 @@ from datetime import date
 from typing import Optional
 
 from src.asset_bc.asset.domain.entities import Asset, AssetEvent
-from src.asset_bc.asset.domain.enums import AssetType
+from src.asset_bc.asset.domain.enums import AssetType, SystemLocation
 from src.asset_bc.asset.domain.repository import AssetRepositoryInterface
 from src.framework.application.command_bus import Command, CommandHandler
 
@@ -50,6 +50,13 @@ class CreateAssetCommandHandler(CommandHandler[CreateAssetCommand]):
             notes=command.notes,
             id=command.id,
         )
+
+        # Default location: Almacén Principal
+        warehouse = self.asset_repo.find_system_location(
+            command.company_id, SystemLocation.MAIN_WAREHOUSE.value,
+        )
+        if warehouse:
+            asset.location_id = warehouse.id
 
         self.asset_repo.save(asset)
 

@@ -16,6 +16,7 @@ TEMPLATE_MAP = {
     "request_summary": "reports/request_summary.html",
     "technician_performance": "reports/technician_performance.html",
     "department_spending": "reports/department_spending.html",
+    "sla_compliance": "reports/sla_compliance.html",
 }
 
 _jinja_env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
@@ -54,6 +55,7 @@ def generate_report(self, report_id: str):
         collect_asset_inventory,
         collect_department_spending,
         collect_request_summary,
+        collect_sla_compliance,
         collect_technician_performance,
     )
     from src.report_bc.report.domain.enums import ReportStatus
@@ -64,6 +66,7 @@ def generate_report(self, report_id: str):
         "request_summary": collect_request_summary,
         "technician_performance": collect_technician_performance,
         "department_spending": collect_department_spending,
+        "sla_compliance": collect_sla_compliance,
     }
 
     session = SessionLocal()

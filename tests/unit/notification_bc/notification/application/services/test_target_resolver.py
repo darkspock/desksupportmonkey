@@ -311,3 +311,91 @@ class TestTargetResolver:
             body="Done",
         )
         assert resolver.resolve(event) == ["admin1"]
+
+    # --- SLA events ---
+
+    def test_sla_warning_targets_assigned_technician(self):
+        repo = MagicMock()
+        resolver = TargetResolver(user_repo=repo)
+        event = DomainEvent(
+            event_type=EventType.SLA_WARNING,
+            company_id="comp1",
+            actor_id="system",
+            payload={"assigned_to": "tech1", "request_id": "req1"},
+            title="SLA warning",
+            body="Approaching limit",
+        )
+        assert resolver.resolve(event) == ["tech1"]
+
+    def test_sla_warning_no_assigned_returns_empty(self):
+        repo = MagicMock()
+        resolver = TargetResolver(user_repo=repo)
+        event = DomainEvent(
+            event_type=EventType.SLA_WARNING,
+            company_id="comp1",
+            actor_id="system",
+            payload={"request_id": "req1"},
+            title="SLA warning",
+            body="Approaching limit",
+        )
+        assert resolver.resolve(event) == []
+
+    def test_sla_response_breached_targets_assigned_and_admins(self):
+        repo = MagicMock()
+        repo.find_admin_ids_by_company.return_value = ["admin1", "admin2"]
+        resolver = TargetResolver(user_repo=repo)
+        event = DomainEvent(
+            event_type=EventType.SLA_RESPONSE_BREACHED,
+            company_id="comp1",
+            actor_id="system",
+            payload={"assigned_to": "tech1", "request_id": "req1"},
+            title="SLA breached",
+            body="Response time exceeded",
+        )
+        targets = resolver.resolve(event)
+        assert set(targets) == {"tech1", "admin1", "admin2"}
+
+    def test_sla_resolution_breached_targets_assigned_and_admins(self):
+        repo = MagicMock()
+        repo.find_admin_ids_by_company.return_value = ["admin1"]
+        resolver = TargetResolver(user_repo=repo)
+        event = DomainEvent(
+            event_type=EventType.SLA_RESOLUTION_BREACHED,
+            company_id="comp1",
+            actor_id="system",
+            payload={"assigned_to": "tech1", "request_id": "req1"},
+            title="SLA breached",
+            body="Resolution time exceeded",
+        )
+        targets = resolver.resolve(event)
+        assert set(targets) == {"tech1", "admin1"}
+
+    def test_sla_breach_no_assigned_targets_admins_only(self):
+        repo = MagicMock()
+        repo.find_admin_ids_by_company.return_value = ["admin1"]
+        resolver = TargetResolver(user_repo=repo)
+        event = DomainEvent(
+            event_type=EventType.SLA_RESPONSE_BREACHED,
+            company_id="comp1",
+            actor_id="system",
+            payload={"request_id": "req1"},
+            title="SLA breached",
+            body="Response time exceeded",
+        )
+        targets = resolver.resolve(event)
+        assert targets == ["admin1"]
+
+    def test_sla_breach_excludes_actor(self):
+        repo = MagicMock()
+        repo.find_admin_ids_by_company.return_value = ["admin1"]
+        resolver = TargetResolver(user_repo=repo)
+        event = DomainEvent(
+            event_type=EventType.SLA_RESPONSE_BREACHED,
+            company_id="comp1",
+            actor_id="admin1",
+            payload={"assigned_to": "tech1", "request_id": "req1"},
+            title="SLA breached",
+            body="Response time exceeded",
+        )
+        targets = resolver.resolve(event)
+        assert targets == ["tech1"]

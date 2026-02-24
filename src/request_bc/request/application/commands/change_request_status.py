@@ -32,6 +32,12 @@ class ChangeRequestStatusCommandHandler(CommandHandler[ChangeRequestStatusComman
 
         request.change_status(new_status)
 
+        # Track first response time for SLA measurement
+        if old_status == RequestStatus.SUBMITTED and new_status not in (
+            RequestStatus.REJECTED,
+        ):
+            request.record_first_response()
+
         # Auto-assign side effect: if moving to in_review and unassigned,
         # assign to the acting technician
         auto_assigned = False

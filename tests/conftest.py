@@ -70,6 +70,9 @@ def tables(test_engine):
     import src.shipping_bc.address.infrastructure.models  # noqa: F401
     import src.maintenance_bc.maintenance_template.infrastructure.models  # noqa: F401
     import src.maintenance_bc.maintenance_record.infrastructure.models  # noqa: F401
+    import src.incident_bc.incident.infrastructure.models  # noqa: F401
+    import src.risk_bc.risk.infrastructure.models  # noqa: F401
+    import src.audit_bc.audit.infrastructure.models  # noqa: F401
 
     Base.metadata.create_all(test_engine)
     yield

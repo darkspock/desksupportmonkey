@@ -300,6 +300,25 @@ export default function RequestDetailPage() {
     enabled: !!id,
   });
 
+  const { data: slaStatus } = useQuery({
+    queryKey: ['request-sla-status', id],
+    queryFn: async () => {
+      const { data } = await api.get(`/sla/requests/${id}/status`);
+      return data.data as {
+        policy_name: string;
+        response_target_hours: number;
+        resolution_target_hours: number;
+        response_elapsed_hours: number;
+        resolution_elapsed_hours: number;
+        response_status: string;
+        resolution_status: string;
+        response_remaining_hours: number | null;
+        resolution_remaining_hours: number | null;
+      } | null;
+    },
+    enabled: isTech && !!id,
+  });
+
   const { data: techniciansData } = useQuery({
     queryKey: ['request-detail-technicians-options'],
     queryFn: async () => {
@@ -688,6 +707,49 @@ export default function RequestDetailPage() {
               <StatusBadge status={request.priority} />
             </div>
             <div className="h-px bg-border" />
+
+            {/* SLA Status */}
+            {slaStatus && (
+              <>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">{t('page.sla.status_title')}</h3>
+                  <p className="text-xs text-muted-foreground mb-2">{slaStatus.policy_name}</p>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">{t('page.sla.response_label')}</span>
+                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                        slaStatus.response_status === 'met' || slaStatus.response_status === 'on_track' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                        slaStatus.response_status === 'warning' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                        'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                      }`}>
+                        {t(`page.sla.status_${slaStatus.response_status}`)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">{t('page.sla.resolution_label')}</span>
+                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                        slaStatus.resolution_status === 'met' || slaStatus.resolution_status === 'on_track' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                        slaStatus.resolution_status === 'warning' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                        'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                      }`}>
+                        {t(`page.sla.status_${slaStatus.resolution_status}`)}
+                      </span>
+                    </div>
+                    {slaStatus.response_remaining_hours !== null && (
+                      <p className="text-xs text-muted-foreground">
+                        {t('page.sla.response_remaining', { hours: Math.max(0, slaStatus.response_remaining_hours).toFixed(1) })}
+                      </p>
+                    )}
+                    {slaStatus.resolution_remaining_hours !== null && (
+                      <p className="text-xs text-muted-foreground">
+                        {t('page.sla.resolution_remaining', { hours: Math.max(0, slaStatus.resolution_remaining_hours).toFixed(1) })}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="h-px bg-border" />
+              </>
+            )}
 
             {/* Requester */}
             <div>
