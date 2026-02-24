@@ -58,6 +58,7 @@ class TestListRequestsQuery:
             company_id="comp1", page=1, page_size=20,
             search=None, status=None, type=None,
             priority=None, assigned_to=None, subtype=None,
+            custom_field_filters=None, custom_field_search_keys=None,
         )
 
     def test_passes_filter_params(self):

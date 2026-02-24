@@ -8,7 +8,7 @@ import { Loading } from '../../components/ui/Loading';
 import { EmptyState, ErrorState } from '../../components/ui/StateBlock';
 import { formatDateTime } from '../../lib/date';
 import { useI18n } from '../../lib/i18n';
-import { useAuthStore } from '../../stores/authStore';
+import { useAuth } from '../../contexts/AuthContext';
 import type { RiskListItem, PaginatedResponse } from '../../types';
 
 const levelVariant: Record<string, 'default' | 'info' | 'success' | 'warning' | 'danger'> = {
@@ -28,7 +28,7 @@ const statusVariant: Record<string, 'default' | 'info' | 'success' | 'warning' |
 
 export default function RiskListPage() {
   const { t } = useI18n();
-  const { user } = useAuthStore();
+  const { user } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   const [page, setPage] = useState(1);
   const [category, setCategory] = useState('');

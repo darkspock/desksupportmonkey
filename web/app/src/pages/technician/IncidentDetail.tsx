@@ -10,6 +10,7 @@ import { useI18n } from '../../lib/i18n';
 import { formatDateTime } from '../../lib/date';
 import { useToast } from '../../hooks/useToast';
 import { useAuth } from '../../contexts/AuthContext';
+import { CustomFieldsDisplay } from '../../components/custom-fields/CustomFieldsDisplay';
 import type { Asset, IncidentDetail as IncidentDetailType, PaginatedResponse, SingleResponse, User, Vendor } from '../../types';
 
 const severityVariant: Record<string, 'default' | 'info' | 'success' | 'warning' | 'danger'> = {
@@ -332,6 +333,12 @@ export default function IncidentDetailPage() {
                 </div>
               )}
             </div>
+            {incident.custom_fields && incident.custom_fields.length > 0 && (
+              <div className="mt-4">
+                <h3 className="mb-2 text-sm font-semibold text-foreground">{t('page.custom_fields.section_title')}</h3>
+                <CustomFieldsDisplay customFields={incident.custom_fields} />
+              </div>
+            )}
           </Card>
 
           {/* NIS2 Regulatory Reports */}

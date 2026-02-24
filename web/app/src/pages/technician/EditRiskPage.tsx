@@ -5,7 +5,7 @@ import api from '../../lib/api';
 import { Loading } from '../../components/ui/Loading';
 import { ErrorState } from '../../components/ui/StateBlock';
 import { useI18n } from '../../lib/i18n';
-import toast from 'react-hot-toast';
+import { useToast } from '../../components/ui/Toast';
 import type { RiskDetail } from '../../types';
 
 export default function EditRiskPage() {
@@ -13,6 +13,7 @@ export default function EditRiskPage() {
   const navigate = useNavigate();
   const { t } = useI18n();
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');

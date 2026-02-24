@@ -20,6 +20,8 @@ class IncidentFilters:
     search: Optional[str] = None
     date_from: Optional[datetime] = None
     date_to: Optional[datetime] = None
+    custom_field_filters: Optional[dict[str, str]] = None
+    custom_field_search_keys: Optional[list[str]] = None
 
 
 class IncidentRepositoryInterface(ABC):

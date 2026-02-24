@@ -39,6 +39,8 @@ class RequestRepositoryInterface(ABC):
         priority: Optional[str] = None,
         assigned_to: Optional[str] = None,
         subtype: Optional[str] = None,
+        custom_field_filters: Optional[dict[str, str]] = None,
+        custom_field_search_keys: Optional[list[str]] = None,
     ) -> tuple[list[ServiceRequest], int]: ...
 
     @abstractmethod

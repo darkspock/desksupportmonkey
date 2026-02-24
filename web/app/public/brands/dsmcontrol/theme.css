@@ -1,0 +1,14 @@
+/* DSM Control — corporate/formal theme */
+/* Dark slate sidebar with sky blue accents */
+:root {
+  --primary: oklch(0.55 0.15 230);
+  --primary-foreground: oklch(0.98 0 0);
+  --sidebar: oklch(0.15 0.015 250);
+  --sidebar-foreground: oklch(0.90 0.005 230);
+  --sidebar-primary: oklch(0.60 0.14 230);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.22 0.02 250);
+  --sidebar-accent-foreground: oklch(0.90 0.005 230);
+  --sidebar-border: oklch(0.26 0.02 250);
+  --sidebar-ring: oklch(0.60 0.14 230);
+}

@@ -66,6 +66,7 @@ class Asset:
     notes: Optional[str] = None
     purchase_cost_cents: Optional[int] = None
     location_id: Optional[str] = None
+    custom_fields_data: Optional[dict] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -81,6 +82,7 @@ class Asset:
         warranty_expiration: Optional[date] = None,
         notes: Optional[str] = None,
         id: Optional[str] = None,
+        custom_fields_data: Optional[dict] = None,
     ) -> "Asset":
         if not brand or not brand.strip():
             raise ValueError("Brand is required")
@@ -99,6 +101,7 @@ class Asset:
             purchase_date=purchase_date,
             warranty_expiration=warranty_expiration,
             notes=notes.strip() if notes else None,
+            custom_fields_data=custom_fields_data or {},
         )
 
     def update(
@@ -108,8 +111,11 @@ class Asset:
         notes: Optional[str] = None,
         purchase_date: Optional[date] = None,
         warranty_expiration: Optional[date] = None,
+        custom_fields_data: Optional[dict] = None,
     ) -> dict:
         changes = {}
+        if custom_fields_data is not None:
+            self.custom_fields_data = custom_fields_data
         if brand is not None:
             if not brand.strip():
                 raise ValueError("Brand cannot be empty")

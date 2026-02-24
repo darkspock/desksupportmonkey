@@ -23,6 +23,7 @@ class CreateRequestCommand(Command):
     department_has_manager: bool = False
     ai_priority_hint: int = 0
     ai_classification: Optional[dict] = None
+    custom_fields_data: Optional[dict] = None
 
 
 class CreateRequestCommandHandler(CommandHandler[CreateRequestCommand]):
@@ -60,6 +61,7 @@ class CreateRequestCommandHandler(CommandHandler[CreateRequestCommand]):
             id=command.id,
             subtype=command.subtype,
             requires_approval=requires_approval,
+            custom_fields_data=command.custom_fields_data,
         )
         request.priority = priority
 

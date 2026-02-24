@@ -28,6 +28,7 @@ class CreateIncidentCommand(Command):
     attack_vector: Optional[str] = None
     data_breach_scope: Optional[str] = None
     id: Optional[str] = None
+    custom_fields_data: Optional[dict] = None
 
 
 class CreateIncidentCommandHandler(CommandHandler[CreateIncidentCommand]):
@@ -56,6 +57,7 @@ class CreateIncidentCommandHandler(CommandHandler[CreateIncidentCommand]):
             attack_vector=command.attack_vector,
             data_breach_scope=command.data_breach_scope,
             id=command.id,
+            custom_fields_data=command.custom_fields_data,
         )
 
         self.incident_repo.save(incident)

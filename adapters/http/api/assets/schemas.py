@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -12,6 +12,7 @@ class CreateAssetRequest(BaseModel):
     purchase_date: Optional[date] = None
     warranty_expiration: Optional[date] = None
     notes: Optional[str] = None
+    custom_fields_data: Optional[dict[str, Any]] = None
 
 
 class UpdateAssetRequest(BaseModel):
@@ -20,6 +21,7 @@ class UpdateAssetRequest(BaseModel):
     purchase_date: Optional[date] = None
     warranty_expiration: Optional[date] = None
     notes: Optional[str] = None
+    custom_fields_data: Optional[dict[str, Any]] = None
 
 
 class AssignAssetRequest(BaseModel):
@@ -46,6 +48,7 @@ class AssetResponse(BaseModel):
     purchase_date: Optional[date] = None
     warranty_expiration: Optional[date] = None
     notes: Optional[str] = None
+    custom_fields: Optional[list[dict[str, Any]]] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

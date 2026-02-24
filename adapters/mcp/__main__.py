@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 def main() -> None:
-    parser = ArgumentParser(description="DeskSupportMonkey MCP Server")
+    parser = ArgumentParser(description=f"{settings.BRAND_NAME} MCP Server")
     parser.add_argument(
         "--transport",
         choices=["stdio", "sse"],

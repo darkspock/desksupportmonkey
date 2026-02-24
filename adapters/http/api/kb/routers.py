@@ -215,6 +215,10 @@ def list_public_articles(
     user_ids = list({a.author_id for a in articles})
     name_map = name_resolver(user_ids) if user_ids else {}
 
+    cat_resolver = _category_name_resolver_factory(article_repo)
+    cat_ids = list({a.category_id for a in articles if a.category_id})
+    cat_map = cat_resolver(cat_ids) if cat_ids else {}
+
     return {
         "data": [
             ArticleListItemResponse(
@@ -223,6 +227,7 @@ def list_public_articles(
                 slug=a.slug,
                 excerpt=a.excerpt,
                 category_id=a.category_id,
+                category_name=cat_map.get(a.category_id) if a.category_id else None,
                 status=a.status.value,
                 author_id=a.author_id,
                 author_name=name_map.get(a.author_id),

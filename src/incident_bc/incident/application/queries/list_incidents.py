@@ -21,6 +21,7 @@ class IncidentListDto:
     detected_at: Optional[datetime]
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
+    custom_fields_data: Optional[dict] = None
 
 
 @dataclass
@@ -34,6 +35,8 @@ class ListIncidentsQuery(Query):
     search: Optional[str] = None
     date_from: Optional[datetime] = None
     date_to: Optional[datetime] = None
+    custom_field_filters: Optional[dict[str, str]] = None
+    custom_field_search_keys: Optional[list[str]] = None
 
 
 class ListIncidentsQueryHandler(
@@ -59,6 +62,8 @@ class ListIncidentsQueryHandler(
             search=query.search,
             date_from=query.date_from,
             date_to=query.date_to,
+            custom_field_filters=query.custom_field_filters,
+            custom_field_search_keys=query.custom_field_search_keys,
         )
         incidents, total = self.incident_repo.find_all(
             query.company_id, filters
@@ -85,6 +90,7 @@ class ListIncidentsQueryHandler(
                 detected_at=i.detected_at,
                 created_at=i.created_at,
                 updated_at=i.updated_at,
+                custom_fields_data=i.custom_fields_data,
             )
             for i in incidents
         ]

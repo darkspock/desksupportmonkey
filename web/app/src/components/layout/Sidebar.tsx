@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { cn } from '../../lib/cn';
 import { useI18n } from '../../lib/i18n';
+import { brand } from '../../config/brand';
 
 /* ------------------------------------------------------------------ */
 /* Icons – Heroicons-style outline SVGs (24×24, strokeWidth 1.5)      */
@@ -38,6 +39,7 @@ const icons: Record<string, ReactNode> = {
   // Knowledge Base
   '/knowledge-base':  icon('M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25'),
   '/kb':              icon('M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25'),
+  '/kb/categories':   icon('M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z M6 6h.008v.008H6V6Z'),
 
   // SLA
   '/sla/policies':  icon('M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z'),
@@ -68,6 +70,7 @@ const icons: Record<string, ReactNode> = {
   '/settings/locations':             icon('M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z'),
   '/settings/compliance':            icon('M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.745 3.745 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z'),
   '/settings/gdpr':                  icon('M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z'),
+  '/settings/custom-fields':         icon('M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75'),
   '/super-admin/audit':              icon('M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Zm3.75 11.625a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z'),
 
   // Platform
@@ -147,6 +150,7 @@ const sections: NavSection[] = [
     items: [
       { to: '/knowledge-base', labelKey: 'nav.knowledge_base' },
       { to: '/kb', labelKey: 'nav.kb_management', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
+      { to: '/kb/categories', labelKey: 'nav.kb_categories', roles: ['admin', 'super_admin'] },
     ],
   },
   {
@@ -169,6 +173,7 @@ const sections: NavSection[] = [
           { to: '/users', labelKey: 'nav.users', roles: ['admin', 'super_admin'] },
           { to: '/departments', labelKey: 'nav.departments', roles: ['admin', 'super_admin'] },
           { to: '/settings/employee-roles', labelKey: 'nav.employee_roles', roles: ['admin', 'super_admin'] },
+          { to: '/settings/gdpr', labelKey: 'nav.gdpr_requests', roles: ['admin'] },
         ],
       },
       {
@@ -177,7 +182,6 @@ const sections: NavSection[] = [
           { to: '/settings/company', labelKey: 'nav.company_settings', roles: ['admin'] },
           { to: '/settings/locations', labelKey: 'nav.locations', roles: ['admin'] },
           { to: '/settings/compliance', labelKey: 'nav.compliance_controls', roles: ['admin'] },
-          { to: '/settings/gdpr', labelKey: 'nav.gdpr_requests', roles: ['admin'] },
           { to: '/settings/request-classification', labelKey: 'nav.request_classification', roles: ['admin'] },
           { to: '/maintenance-templates', labelKey: 'nav.maintenance_templates', roles: ['admin', 'super_admin'] },
           { to: '/settings/assignment-ai', labelKey: 'nav.assignment_ai', roles: ['admin'] },
@@ -192,15 +196,26 @@ const sections: NavSection[] = [
         ],
       },
       {
+        type: 'subgroup', labelKey: 'nav.subgroup_customization', roles: ['admin', 'super_admin'],
+        items: [
+          { to: '/settings/custom-fields', labelKey: 'nav.custom_fields', roles: ['admin', 'super_admin'] },
+        ],
+      },
+      {
         type: 'subgroup', labelKey: 'nav.subgroup_advanced', roles: ['admin', 'super_admin'],
         items: [
           { to: '/settings/api-keys', labelKey: 'nav.api_keys', roles: ['admin', 'super_admin'] },
         ],
       },
-      { to: '/reports', labelKey: 'nav.reports', roles: ['admin', 'super_admin'] },
-      { to: '/sla/policies', labelKey: 'nav.sla_policies', roles: ['admin', 'super_admin'] },
-      { to: '/sla/dashboard', labelKey: 'nav.sla_dashboard', roles: ['admin', 'super_admin'] },
+      {
+        type: 'subgroup', labelKey: 'nav.subgroup_sla', roles: ['admin', 'super_admin'],
+        items: [
+          { to: '/sla/policies', labelKey: 'nav.sla_policies', roles: ['admin', 'super_admin'] },
+          { to: '/sla/dashboard', labelKey: 'nav.sla_dashboard', roles: ['admin', 'super_admin'] },
+        ],
+      },
       { to: '/billing', labelKey: 'nav.billing', roles: ['admin'] },
+      { to: '/reports', labelKey: 'nav.reports', roles: ['admin', 'super_admin'] },
     ],
   },
   {
@@ -221,7 +236,7 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const { user } = useAuth();
   const { t } = useI18n();
   const role = user?.role;
-  const companyName = user?.company_name?.trim() || user?.email || 'DeskSupportMonkey';
+  const companyName = user?.company_name?.trim() || user?.email || brand.name;
 
   const isSeparator = (entry: NavEntry): entry is NavSeparator => entry.type === 'separator';
   const isSubGroup = (entry: NavEntry): entry is NavSubGroup => entry.type === 'subgroup';
@@ -337,10 +352,10 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
     <>
       <div className="p-4 border-b border-sidebar-border flex items-center gap-3">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary">
-          <img src="/logo.png" alt="DeskSupportMonkey" className="w-5 h-5" />
+          <img src={brand.logoPath} alt={brand.name} className="w-5 h-5" />
         </div>
         <div className="flex flex-col">
-          <span className="text-sm font-semibold leading-none text-sidebar-foreground">DS Monkey</span>
+          <span className="text-sm font-semibold leading-none text-sidebar-foreground">{brand.shortName}</span>
           <span className="max-w-[140px] truncate text-[10px] text-sidebar-foreground/60 leading-none mt-0.5" title={companyName}>
             {companyName}
           </span>
@@ -407,6 +422,7 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                                 <NavLink
                                   key={child.to}
                                   to={child.to}
+                                  end
                                   onClick={closeFn}
                                   className={({ isActive }) =>
                                     cn(
@@ -430,6 +446,7 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                       <NavLink
                         key={item.to}
                         to={item.to}
+                        end
                         onClick={closeFn}
                         className={({ isActive }) =>
                           cn(

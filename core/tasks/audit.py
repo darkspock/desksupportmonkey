@@ -14,6 +14,9 @@ TEMPLATE_DIR = os.path.join(
 )
 _jinja_env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
 
+from core.config import settings  # noqa: E402
+_jinja_env.globals["brand_name"] = settings.BRAND_NAME
+
 
 @celery_app.task(
     name="core.tasks.audit.export_audit_log",

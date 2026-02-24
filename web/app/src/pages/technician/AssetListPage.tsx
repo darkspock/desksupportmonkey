@@ -9,6 +9,7 @@ import { Table, Th, Td, Tr } from '../../components/ui/Table';
 import { Pagination } from '../../components/ui/Pagination';
 import { Tooltip } from '../../components/ui/Tooltip';
 import { EmployeeSearchSelect } from '../../components/ui/EmployeeSearchSelect';
+import { CustomFieldFilters } from '../../components/custom-fields/CustomFieldFilters';
 import { useI18n } from '../../lib/i18n';
 import type { Asset, AssetLocation, AssignableUser, PaginatedResponse } from '../../types';
 
@@ -20,9 +21,10 @@ export default function AssetListPage() {
   const [status, setStatus] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
   const [locationId, setLocationId] = useState('');
+  const [cfFilters, setCfFilters] = useState<Record<string, string>>({});
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['assets', page, search, type, status, assignedTo, locationId],
+    queryKey: ['assets', page, search, type, status, assignedTo, locationId, cfFilters],
     queryFn: async () => {
       const params: Record<string, unknown> = { page, page_size: 20 };
       if (search) params.search = search;
@@ -30,6 +32,7 @@ export default function AssetListPage() {
       if (status) params.status = status;
       if (assignedTo) params.assigned_to = assignedTo;
       if (locationId) params.location_id = locationId;
+      Object.entries(cfFilters).forEach(([k, v]) => { if (v) params[k] = v; });
       const { data } = await api.get('/assets', { params });
       return data as PaginatedResponse<Asset>;
     },
@@ -50,6 +53,19 @@ export default function AssetListPage() {
       return data.data as AssignableUser[];
     },
   });
+
+  const handleCfFilterChange = (key: string, value: string) => {
+    setCfFilters((prev) => {
+      const next = { ...prev };
+      if (value) {
+        next[key] = value;
+      } else {
+        delete next[key];
+      }
+      return next;
+    });
+    setPage(1);
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -136,6 +152,11 @@ export default function AssetListPage() {
               <option key={loc.id} value={loc.id}>{loc.name}</option>
             ))}
           </select>
+          <CustomFieldFilters
+            entityType="asset"
+            filters={cfFilters}
+            onFilterChange={handleCfFilterChange}
+          />
         </div>
       </div>
 

@@ -21,6 +21,7 @@ class ServiceRequestModel(ULIDMixin, TimestampMixin, Base):
     status: Mapped[str] = mapped_column(String(20), server_default="submitted")
     priority: Mapped[str] = mapped_column(String(10))
     data: Mapped[Optional[Any]] = mapped_column(JSON)
+    custom_fields_data: Mapped[Any] = mapped_column(JSON, server_default="{}", nullable=False)
     resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     first_response_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 

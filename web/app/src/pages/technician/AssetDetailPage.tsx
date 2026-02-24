@@ -12,18 +12,19 @@ import { formatDate, formatDateTime } from '../../lib/date';
 import { useToast } from '../../hooks/useToast';
 import { useI18n } from '../../lib/i18n';
 import { AssetLabel } from '../../components/AssetLabel';
+import { CustomFieldsDisplay } from '../../components/custom-fields/CustomFieldsDisplay';
+import { CustomFieldsForm } from '../../components/custom-fields/CustomFieldsForm';
 import type {
   Asset,
   AssetEvent,
   AssetLocation,
   AssignableUser,
   AssetStatus,
+  CustomFieldValue,
   MaintenanceRecord,
   PaginatedResponse,
   Shipment,
 } from '../../types';
-
-const STATUS_OPTIONS: AssetStatus[] = ['in_stock', 'assigned', 'in_repair', 'decommissioned'];
 
 function toTitle(value: string): string {
   return value
@@ -127,6 +128,15 @@ function eventDetails(
   return t('page.asset_detail.no_extra_details');
 }
 
+function cfToDict(fields: CustomFieldValue[] | null | undefined): Record<string, unknown> {
+  if (!fields) return {};
+  const dict: Record<string, unknown> = {};
+  for (const f of fields) {
+    if (f.value != null) dict[f.key] = f.value;
+  }
+  return dict;
+}
+
 export default function AssetDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
@@ -139,10 +149,11 @@ export default function AssetDetailPage() {
   const [assignUserId, setAssignUserId] = useState('');
   const [moveLocationId, setMoveLocationId] = useState('');
   const [moveNotes, setMoveNotes] = useState('');
+  const [unassignModalOpen, setUnassignModalOpen] = useState(false);
+  const [unassignLocationId, setUnassignLocationId] = useState('');
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const [statusValue, setStatusValue] = useState<AssetStatus | null>(null);
   const [editForm, setEditForm] = useState({
     brand: '',
     model: '',
@@ -150,6 +161,7 @@ export default function AssetDetailPage() {
     warranty_expiration: '',
     notes: '',
   });
+  const [editCustomFields, setEditCustomFields] = useState<Record<string, unknown>>({});
 
   const { data: asset, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['asset', id],
@@ -224,12 +236,13 @@ export default function AssetDetailPage() {
 
   const updateAsset = useMutation({
     mutationFn: () => {
-      const payload: Record<string, string | null> = {
+      const payload: Record<string, unknown> = {
         brand: editForm.brand.trim(),
         model: editForm.model.trim(),
         purchase_date: editForm.purchase_date || null,
         warranty_expiration: editForm.warranty_expiration || null,
         notes: editForm.notes.trim() || null,
+        custom_fields_data: Object.keys(editCustomFields).length ? editCustomFields : undefined,
       };
       return api.put(`/assets/${id}`, payload);
     },
@@ -253,7 +266,6 @@ export default function AssetDetailPage() {
     onError: (err: unknown) => {
       const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('page.asset_detail.error_update_status');
       showToast({ title: t('page.asset_detail.error_status_failed'), description: detail, variant: 'error' });
-      if (asset) setStatusValue(asset.status);
     },
   });
 
@@ -270,9 +282,16 @@ export default function AssetDetailPage() {
   });
 
   const unassignAsset = useMutation({
-    mutationFn: () => api.patch(`/assets/${id}/unassign`),
+    mutationFn: async () => {
+      await api.patch(`/assets/${id}/unassign`);
+      if (unassignLocationId) {
+        await api.patch(`/assets/${id}/move`, { location_id: unassignLocationId });
+      }
+    },
     onSuccess: () => {
       refreshAssetQueries();
+      setUnassignModalOpen(false);
+      setUnassignLocationId('');
       showToast({ title: t('page.asset_detail.toast_unassigned'), variant: 'success' });
     },
     onError: (err: unknown) => {
@@ -347,8 +366,6 @@ export default function AssetDetailPage() {
   if (!asset) return <ErrorState message={t('page.asset_detail.not_found')} />;
 
   const assignedLabel = asset.assigned_to_email || (asset.assigned_to ? userEmailById.get(asset.assigned_to) || asset.assigned_to : null);
-  const selectedStatus = statusValue ?? asset.status;
-
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <Card>
@@ -361,10 +378,6 @@ export default function AssetDetailPage() {
             <button
               type="button"
               onClick={() => {
-                if (isEditing) {
-                  setIsEditing(false);
-                  return;
-                }
                 setEditForm({
                   brand: asset.brand,
                   model: asset.model,
@@ -372,11 +385,12 @@ export default function AssetDetailPage() {
                   warranty_expiration: asset.warranty_expiration ?? '',
                   notes: asset.notes ?? '',
                 });
+                setEditCustomFields(cfToDict(asset.custom_fields));
                 setIsEditing(true);
               }}
               className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50"
             >
-              {isEditing ? t('common.cancel') : t('page.asset_detail.edit_asset')}
+              {t('page.asset_detail.edit_asset')}
             </button>
           </div>
         </div>
@@ -395,6 +409,13 @@ export default function AssetDetailPage() {
         </div>
 
         {asset.notes && <p className="mt-4 rounded bg-secondary p-3 text-sm text-muted-foreground">{asset.notes}</p>}
+
+        {asset.custom_fields && asset.custom_fields.length > 0 && (
+          <div className="mt-4">
+            <h3 className="mb-2 text-sm font-semibold text-foreground">{t('page.custom_fields.section_title')}</h3>
+            <CustomFieldsDisplay customFields={asset.custom_fields} />
+          </div>
+        )}
       </Card>
 
       <AssetLabel
@@ -405,47 +426,31 @@ export default function AssetDetailPage() {
       />
 
       <Card>
-        <h3 className="mb-3 text-sm font-semibold text-foreground">{t('table.status')}</h3>
-        <div className="flex flex-wrap items-end gap-2">
-          <div>
-            <label className="block mb-1.5 text-muted-foreground">{t('page.asset_detail.change_status')}</label>
-            <select
-              value={selectedStatus}
-              onChange={(e) => setStatusValue(e.target.value as AssetStatus)}
-              className="text-sm"
-            >
-              {STATUS_OPTIONS.map((status) => (
-                <option key={status} value={status}>{t(`enum.${status}`)}</option>
-              ))}
-            </select>
-          </div>
-          <button
-            type="button"
-            onClick={() => changeStatus.mutate(selectedStatus)}
-            disabled={changeStatus.isPending || selectedStatus === asset.status}
-            className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
-          >
-            {changeStatus.isPending ? t('auth.set_password.saving') : t('page.asset_detail.update_status')}
-          </button>
-        </div>
-      </Card>
-
-      <Card>
         <h3 className="mb-3 text-sm font-semibold text-foreground">{t('page.asset_detail.assignment')}</h3>
         {asset.assigned_to ? (
-          <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <p className="text-sm text-foreground">{t('table.assigned_to')} <span className="font-medium">{assignedLabel || asset.assigned_to}</span></p>
             <button
               type="button"
-              onClick={() => unassignAsset.mutate()}
+              onClick={() => setUnassignModalOpen(true)}
               disabled={unassignAsset.isPending}
               className="rounded-md h-9 px-4 text-sm font-medium bg-destructive text-white shadow-xs hover:bg-destructive/90 disabled:opacity-50"
             >
               {unassignAsset.isPending ? t('page.asset_detail.unassigning') : t('page.asset_detail.unassign')}
             </button>
+            {asset.status !== 'decommissioned' && (
+              <button
+                type="button"
+                onClick={() => changeStatus.mutate('decommissioned')}
+                disabled={changeStatus.isPending}
+                className="rounded-md h-9 px-4 text-sm font-medium border border-border bg-background text-foreground shadow-xs hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+              >
+                {changeStatus.isPending ? t('auth.set_password.saving') : t('page.asset_detail.decommission')}
+              </button>
+            )}
           </div>
         ) : (
-          <div className="flex flex-col items-start gap-2">
+          <div className="flex flex-wrap items-end gap-3">
             <div>
               <label className="block mb-1.5 text-muted-foreground">{t('page.asset_detail.assign_to_user')}</label>
               <select
@@ -476,6 +481,16 @@ export default function AssetDetailPage() {
             >
               {assignAsset.isPending ? t('page.asset_detail.assigning') : t('page.asset_detail.assign')}
             </button>
+            {asset.status !== 'decommissioned' && (
+              <button
+                type="button"
+                onClick={() => changeStatus.mutate('decommissioned')}
+                disabled={changeStatus.isPending}
+                className="rounded-md h-9 px-4 text-sm font-medium border border-border bg-background text-foreground shadow-xs hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+              >
+                {changeStatus.isPending ? t('auth.set_password.saving') : t('page.asset_detail.decommission')}
+              </button>
+            )}
           </div>
         )}
       </Card>
@@ -483,7 +498,12 @@ export default function AssetDetailPage() {
       {asset.status !== 'decommissioned' && (
         <Card>
           <h3 className="mb-3 text-sm font-semibold text-foreground">{t('page.asset_detail.move_asset')}</h3>
-          <div className="flex flex-col items-start gap-2">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="flex items-center gap-2 self-center text-sm text-foreground">
+              <span className="text-muted-foreground">{t('page.asset_detail.location')}:</span>
+              <span className="font-medium">{asset.location_name || '—'}</span>
+              <span className="text-muted-foreground">→</span>
+            </div>
             <div>
               <label className="block mb-1.5 text-muted-foreground">{t('page.asset_detail.move_to_location')}</label>
               <select
@@ -497,13 +517,13 @@ export default function AssetDetailPage() {
                 ))}
               </select>
             </div>
-            <div className="w-full max-w-sm">
+            <div>
               <label className="block mb-1.5 text-muted-foreground">{t('page.asset_detail.move_notes')}</label>
               <input
                 type="text"
                 value={moveNotes}
                 onChange={(e) => setMoveNotes(e.target.value)}
-                className="w-full text-sm"
+                className="min-w-64 text-sm"
               />
             </div>
             <button
@@ -515,83 +535,6 @@ export default function AssetDetailPage() {
               {moveAsset.isPending ? t('page.asset_detail.moving') : t('page.asset_detail.move')}
             </button>
           </div>
-        </Card>
-      )}
-
-      {isEditing && (
-        <Card>
-          <h3 className="mb-3 text-sm font-semibold text-foreground">{t('page.asset_detail.edit_asset')}</h3>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              updateAsset.mutate();
-            }}
-            className="space-y-3"
-          >
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
-                <label className="block mb-1.5 text-muted-foreground">{t('table.brand')}</label>
-                <input
-                  value={editForm.brand}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, brand: e.target.value }))}
-                  required
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="block mb-1.5 text-muted-foreground">{t('table.model')}</label>
-                <input
-                  value={editForm.model}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, model: e.target.value }))}
-                  required
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="block mb-1.5 text-muted-foreground">{t('table.purchase_date')}</label>
-                <input
-                  type="date"
-                  value={editForm.purchase_date}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, purchase_date: e.target.value }))}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="block mb-1.5 text-muted-foreground">{t('table.warranty_expiration')}</label>
-                <input
-                  type="date"
-                  value={editForm.warranty_expiration}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, warranty_expiration: e.target.value }))}
-                  className="w-full"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block mb-1.5 text-muted-foreground">{t('table.notes')}</label>
-              <textarea
-                rows={3}
-                value={editForm.notes}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, notes: e.target.value }))}
-                className="w-full"
-              />
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                disabled={updateAsset.isPending || !editForm.brand.trim() || !editForm.model.trim()}
-                className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
-              >
-                {updateAsset.isPending ? t('auth.set_password.saving') : t('page.asset_detail.save_changes')}
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsEditing(false)}
-                className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50"
-              >
-                {t('common.cancel')}
-              </button>
-            </div>
-          </form>
         </Card>
       )}
 
@@ -688,6 +631,169 @@ export default function AssetDetailPage() {
           </Table>
         )}
       </Card>
+
+      {isEditing && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/40"
+            onClick={() => {
+              if (!updateAsset.isPending) setIsEditing(false);
+            }}
+            aria-label={t('errors.close_confirmation_dialog')}
+          />
+          <div className="relative z-[91] w-full max-w-lg max-h-[90vh] flex flex-col rounded-xl border border-border bg-card shadow-lg">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <h3 className="text-lg font-semibold text-foreground">{t('page.asset_detail.edit_asset')}</h3>
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                disabled={updateAsset.isPending}
+                className="text-muted-foreground hover:text-foreground text-xl leading-none"
+              >
+                &times;
+              </button>
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                updateAsset.mutate();
+              }}
+              className="flex flex-col overflow-hidden"
+            >
+              <div className="overflow-y-auto px-6 py-4 space-y-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="block mb-1.5 text-muted-foreground">{t('table.brand')}</label>
+                    <input
+                      value={editForm.brand}
+                      onChange={(e) => setEditForm((prev) => ({ ...prev, brand: e.target.value }))}
+                      required
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-1.5 text-muted-foreground">{t('table.model')}</label>
+                    <input
+                      value={editForm.model}
+                      onChange={(e) => setEditForm((prev) => ({ ...prev, model: e.target.value }))}
+                      required
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-1.5 text-muted-foreground">{t('table.purchase_date')}</label>
+                    <input
+                      type="date"
+                      value={editForm.purchase_date}
+                      onChange={(e) => setEditForm((prev) => ({ ...prev, purchase_date: e.target.value }))}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-1.5 text-muted-foreground">{t('table.warranty_expiration')}</label>
+                    <input
+                      type="date"
+                      value={editForm.warranty_expiration}
+                      onChange={(e) => setEditForm((prev) => ({ ...prev, warranty_expiration: e.target.value }))}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block mb-1.5 text-muted-foreground">{t('table.notes')}</label>
+                  <textarea
+                    rows={3}
+                    value={editForm.notes}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, notes: e.target.value }))}
+                    className="w-full"
+                  />
+                </div>
+                <CustomFieldsForm
+                  entityType="asset"
+                  values={editCustomFields}
+                  onChange={setEditCustomFields}
+                />
+              </div>
+              <div className="flex justify-end gap-2 border-t border-border px-6 py-4">
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  disabled={updateAsset.isPending}
+                  className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  type="submit"
+                  disabled={updateAsset.isPending || !editForm.brand.trim() || !editForm.model.trim()}
+                  className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+                >
+                  {updateAsset.isPending ? t('auth.set_password.saving') : t('page.asset_detail.save_changes')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {unassignModalOpen && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/40"
+            onClick={() => {
+              if (!unassignAsset.isPending) {
+                setUnassignModalOpen(false);
+                setUnassignLocationId('');
+              }
+            }}
+            aria-label={t('errors.close_confirmation_dialog')}
+          />
+          <div className="relative z-[91] w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lg">
+            <h3 className="text-lg font-semibold text-foreground">{t('page.asset_detail.unassign')}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{t('page.asset_detail.unassign_modal_desc')}</p>
+
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="block mb-1.5 text-muted-foreground">{t('page.asset_detail.new_location')}</label>
+                <select
+                  value={unassignLocationId}
+                  onChange={(e) => setUnassignLocationId(e.target.value)}
+                  className="w-full text-sm"
+                >
+                  <option value="">{t('page.asset_detail.no_location_change')}</option>
+                  {(locations ?? []).map((loc) => (
+                    <option key={loc.id} value={loc.id}>{loc.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUnassignModalOpen(false);
+                    setUnassignLocationId('');
+                  }}
+                  disabled={unassignAsset.isPending}
+                  className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => unassignAsset.mutate()}
+                  disabled={unassignAsset.isPending}
+                  className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-destructive text-white shadow-xs hover:bg-destructive/90 disabled:pointer-events-none disabled:opacity-50"
+                >
+                  {unassignAsset.isPending ? t('page.asset_detail.unassigning') : t('page.asset_detail.confirm_unassign')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {inviteModalOpen && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">

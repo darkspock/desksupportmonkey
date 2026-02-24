@@ -2,6 +2,7 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 import en from '../locales/en';
 import es from '../locales/es';
+import { brand } from '../config/brand';
 
 export type AppLanguage = 'en' | 'es';
 
@@ -17,7 +18,7 @@ interface I18nContextValue {
   t: (key: string, params?: TranslateParams, options?: TranslateOptions) => string;
 }
 
-const STORAGE_KEY = 'dsm.language';
+const STORAGE_KEY = `${brand.slug}.language`;
 const dictionaries: Record<AppLanguage, Record<string, string>> = { en, es };
 
 const I18nContext = createContext<I18nContextValue | undefined>(undefined);

@@ -37,6 +37,11 @@ from src.notification_bc.notification.infrastructure.models import NotificationM
 from src.report_bc.report.infrastructure.models import ReportModel
 from src.company_bc.employee_role.infrastructure.models import EmployeeRoleModel  # noqa: F401 — needed for FK resolution
 
+# Custom field definitions
+from src.custom_field_bc.definition.domain.entities import CustomFieldDefinition
+from src.custom_field_bc.definition.infrastructure.repository import CustomFieldDefinitionRepository
+from src.custom_field_bc.definition.infrastructure.models import CustomFieldDefinitionModel
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -139,6 +144,7 @@ def clear_all(session):
     """Delete all data in reverse FK order."""
     print("Clearing existing data...")
     for model in [
+        CustomFieldDefinitionModel,
         NotificationModel, ReportModel,
         RequestNoteModel, RequestCommentModel, RequestEventModel, ServiceRequestModel,
         AssetEventModel, AssetModel, AssetLocationModel,
@@ -641,6 +647,96 @@ def seed_reports(session, companies: list[dict], users: dict):
 
 
 # ---------------------------------------------------------------------------
+# Custom Field Definitions
+# ---------------------------------------------------------------------------
+
+CUSTOM_FIELD_SPECS = {
+    "asset": [
+        {"label": "Cost Center", "field_type": "text", "required": True, "sort_order": 0},
+        {"label": "Insurance Policy", "field_type": "text", "required": False, "sort_order": 1},
+        {"label": "Building", "field_type": "select", "options": ["HQ", "Branch A", "Branch B", "Remote"], "sort_order": 2},
+        {"label": "Is Leased", "field_type": "boolean", "sort_order": 3},
+        {"label": "Floor", "field_type": "number", "sort_order": 4},
+    ],
+    "request": [
+        {"label": "Budget Code", "field_type": "text", "sort_order": 0},
+        {"label": "Urgency Reason", "field_type": "select", "options": ["Business Critical", "Standard", "Low Priority"], "sort_order": 1},
+    ],
+    "incident": [
+        {"label": "Affected Systems", "field_type": "multi_select", "options": ["Email", "VPN", "CRM", "ERP", "Network"], "sort_order": 0},
+        {"label": "External Vendor", "field_type": "text", "sort_order": 1},
+    ],
+}
+
+
+def seed_custom_field_definitions(session, companies: list[dict]) -> None:
+    """Create custom field definitions for each company."""
+    cf_repo = CustomFieldDefinitionRepository(session)
+    total = 0
+
+    for company in companies:
+        cid = company["id"]
+        for entity_type, specs in CUSTOM_FIELD_SPECS.items():
+            for spec in specs:
+                defn = CustomFieldDefinition.create(
+                    company_id=cid,
+                    entity_type=entity_type,
+                    label=spec["label"],
+                    field_type=spec["field_type"],
+                    required=spec.get("required", False),
+                    options=spec.get("options"),
+                    sort_order=spec.get("sort_order", 0),
+                )
+                cf_repo.save(defn)
+                total += 1
+
+    session.commit()
+    per_company = sum(len(specs) for specs in CUSTOM_FIELD_SPECS.values())
+    print(f"  Custom field definitions: {per_company} per company ({total} total)")
+
+
+# Sample custom field values keyed by entity type
+ASSET_CUSTOM_FIELD_SAMPLES = [
+    {"cost_center": "IT-001", "insurance_policy": "POL-2024-A1", "building": "HQ", "is_leased": False, "floor": 3},
+    {"cost_center": "IT-002", "building": "Branch A", "is_leased": True, "floor": 1},
+    {"cost_center": "ENG-010", "building": "Remote", "is_leased": False},
+]
+
+REQUEST_CUSTOM_FIELD_SAMPLES = [
+    {"budget_code": "BUD-2025-Q1", "urgency_reason": "Business Critical"},
+    {"budget_code": "BUD-2025-Q2", "urgency_reason": "Standard"},
+    {"budget_code": "BUD-2025-Q3", "urgency_reason": "Low Priority"},
+]
+
+
+def seed_custom_field_values(session, asset_map: dict[str, list[str]], request_map: dict[str, list[str]]) -> None:
+    """Assign sample custom field values to some demo assets and requests."""
+    asset_count = 0
+    request_count = 0
+
+    for cid, asset_ids in asset_map.items():
+        # Update first 3 assets (or fewer if company has less)
+        for i, sample in enumerate(ASSET_CUSTOM_FIELD_SAMPLES):
+            if i >= len(asset_ids):
+                break
+            asset = session.query(AssetModel).filter_by(id=asset_ids[i]).one()
+            asset.custom_fields_data = sample
+            asset_count += 1
+
+    for cid, request_ids in request_map.items():
+        # Update first 3 requests (or fewer if company has less)
+        for i, sample in enumerate(REQUEST_CUSTOM_FIELD_SAMPLES):
+            if i >= len(request_ids):
+                break
+            request = session.query(ServiceRequestModel).filter_by(id=request_ids[i]).one()
+            request.custom_fields_data = sample
+            request_count += 1
+
+    session.commit()
+    print(f"  Custom field values: {asset_count} assets, {request_count} requests updated")
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -672,11 +768,11 @@ def main():
         print()
 
         print("Creating assets...")
-        seed_assets(session, companies, users, dept_map, loc_map)
+        asset_map = seed_assets(session, companies, users, dept_map, loc_map)
         print()
 
         print("Creating service requests...")
-        seed_requests(session, companies, users)
+        request_map = seed_requests(session, companies, users)
         print()
 
         print("Creating notifications...")
@@ -685,6 +781,15 @@ def main():
 
         print("Creating reports...")
         seed_reports(session, companies, users)
+        print()
+
+        # --- Custom Field Definitions ---
+        print("Creating custom field definitions...")
+        seed_custom_field_definitions(session, companies)
+        print()
+
+        print("Assigning custom field values...")
+        seed_custom_field_values(session, asset_map, request_map)
         print()
 
         print("=" * 60)

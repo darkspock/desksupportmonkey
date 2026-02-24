@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useI18n } from '../../lib/i18n';
+import { brand } from '../../config/brand';
 import api from '../../lib/api';
 
 interface HeaderProps {
@@ -66,7 +67,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <p className="text-sm font-semibold text-foreground md:hidden">DeskSupportMonkey</p>
+        <p className="text-sm font-semibold text-foreground md:hidden">{brand.name}</p>
         {companyName && (
           <div className="hidden max-w-[280px] items-center gap-2 rounded-md border border-border bg-secondary px-3 py-1.5 md:flex">
             <svg className="h-4 w-4 shrink-0 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

@@ -204,13 +204,13 @@ export default function SlaPoliciesPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('page.sla.response_time')} *</label>
               <input type="number" value={form.response_time_hours} onChange={(e) => setForm({ ...form, response_time_hours: e.target.value })}
-                min={0.1} step={0.5} required
+                min={0.1} step="any" required
                 className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('page.sla.resolution_time')} *</label>
               <input type="number" value={form.resolution_time_hours} onChange={(e) => setForm({ ...form, resolution_time_hours: e.target.value })}
-                min={0.1} step={0.5} required
+                min={0.1} step="any" required
                 className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm" />
             </div>
           </div>

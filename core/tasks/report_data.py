@@ -14,6 +14,7 @@ from datetime import timedelta
 
 from src.asset_bc.asset.infrastructure.repository import AssetRepository
 from src.company_bc.company.infrastructure.repository import CompanyRepository
+from src.custom_field_bc.definition.infrastructure.repository import CustomFieldDefinitionRepository
 from src.request_bc.request.domain.constants import SLA_THRESHOLDS_HOURS
 from src.request_bc.request.infrastructure.repository import RequestRepository
 
@@ -30,6 +31,9 @@ def collect_asset_inventory(
     by_type = asset_repo.count_by_type(company_id)
     expiring = asset_repo.find_expiring_warranties(company_id, 90)
 
+    cf_def_repo = CustomFieldDefinitionRepository(session)
+    cf_definitions = cf_def_repo.find_active_by_entity_type(company_id, "asset")
+
     return {
         "company_name": company.name if company else "Unknown",
         "total_assets": sum(by_status.values()),
@@ -37,6 +41,10 @@ def collect_asset_inventory(
         "by_type": by_type,
         "assets": assets,
         "expiring_warranties": expiring,
+        "cf_definitions": [
+            {"key": d.field_key, "label": d.label, "field_type": d.field_type}
+            for d in cf_definitions
+        ],
     }
 
 

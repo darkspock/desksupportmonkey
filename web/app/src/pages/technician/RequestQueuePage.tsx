@@ -9,6 +9,7 @@ import { StatusBadge } from '../../components/ui/Badge';
 import { Table, Th, Td, Tr } from '../../components/ui/Table';
 import { Pagination } from '../../components/ui/Pagination';
 import { Tooltip } from '../../components/ui/Tooltip';
+import { CustomFieldFilters } from '../../components/custom-fields/CustomFieldFilters';
 import { formatDate } from '../../lib/date';
 import { useI18n } from '../../lib/i18n';
 import { useToast } from '../../hooks/useToast';
@@ -65,6 +66,7 @@ export default function RequestQueuePage() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [draggedRequestId, setDraggedRequestId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<KanbanColumnKey | null>(null);
+  const [cfFilters, setCfFilters] = useState<Record<string, string>>({});
 
   // Employee selection modal state
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
@@ -142,14 +144,24 @@ export default function RequestQueuePage() {
     navigate(`/my/requests/new?on_behalf_of=${u.id}&on_behalf_of_label=${encodeURIComponent(label)}`);
   };
 
+  const handleCfFilterChange = (key: string, value: string) => {
+    setCfFilters((prev) => {
+      const next = { ...prev };
+      if (value) { next[key] = value; } else { delete next[key]; }
+      return next;
+    });
+    setPage(1);
+  };
+
   const listQuery = useQuery({
-    queryKey: ['requests', page, status, type, subtype, search],
+    queryKey: ['requests', page, status, type, subtype, search, cfFilters],
     queryFn: async () => {
       const params: Record<string, unknown> = { page, page_size: 20 };
       if (status) params.status = status;
       if (type) params.type = type;
       if (subtype) params.subtype = subtype;
       if (search) params.search = search;
+      Object.entries(cfFilters).forEach(([k, v]) => { if (v) params[k] = v; });
       const { data } = await api.get('/requests', { params });
       return data as PaginatedResponse<ServiceRequest>;
     },
@@ -157,12 +169,13 @@ export default function RequestQueuePage() {
   });
 
   const kanbanQuery = useQuery({
-    queryKey: ['requests-kanban', type, subtype, search],
+    queryKey: ['requests-kanban', type, subtype, search, cfFilters],
     queryFn: async () => {
       const params: Record<string, unknown> = { page: 1, page_size: 100 };
       if (type) params.type = type;
       if (subtype) params.subtype = subtype;
       if (search) params.search = search;
+      Object.entries(cfFilters).forEach(([k, v]) => { if (v) params[k] = v; });
       const { data } = await api.get('/requests', { params });
       return data as PaginatedResponse<ServiceRequest>;
     },
@@ -536,6 +549,7 @@ export default function RequestQueuePage() {
           )}
         </div>
       </div>
+      <CustomFieldFilters entityType="request" filters={cfFilters} onFilterChange={handleCfFilterChange} />
 
       {/* Content */}
       {activeLoading ? <Loading /> : activeError ? (

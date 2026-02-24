@@ -35,6 +35,7 @@ class RequestRepository(RequestRepositoryInterface):
             existing.priority = request.priority.value
             existing.resolved_at = request.resolved_at
             existing.first_response_at = request.first_response_at
+            existing.custom_fields_data = request.custom_fields_data or {}
         else:
             model = ServiceRequestModel(
                 id=request.id,
@@ -48,6 +49,7 @@ class RequestRepository(RequestRepositoryInterface):
                 status=request.status.value,
                 priority=request.priority.value,
                 data=request.data,
+                custom_fields_data=request.custom_fields_data or {},
                 resolved_at=request.resolved_at,
             )
             self.session.add(model)
@@ -115,6 +117,8 @@ class RequestRepository(RequestRepositoryInterface):
         priority: Optional[str] = None,
         assigned_to: Optional[str] = None,
         subtype: Optional[str] = None,
+        custom_field_filters: Optional[dict[str, str]] = None,
+        custom_field_search_keys: Optional[list[str]] = None,
     ) -> tuple[list[ServiceRequest], int]:
         stmt = select(ServiceRequestModel).where(
             ServiceRequestModel.company_id == company_id
@@ -123,17 +127,28 @@ class RequestRepository(RequestRepositoryInterface):
         if search:
             pattern = f"%{search}%"
             creator = UserModel.__table__.alias("creator")
+            or_conditions = [
+                ServiceRequestModel.title.ilike(pattern),
+                ServiceRequestModel.description.ilike(pattern),
+                ServiceRequestModel.id.ilike(pattern),
+                creator.c.name.ilike(pattern),
+                creator.c.email.ilike(pattern),
+            ]
+            if custom_field_search_keys:
+                for cf_key in custom_field_search_keys:
+                    or_conditions.append(
+                        ServiceRequestModel.custom_fields_data[cf_key].as_string().ilike(pattern)
+                    )
             stmt = stmt.outerjoin(
                 creator, ServiceRequestModel.created_by == creator.c.id,
-            ).where(
-                or_(
-                    ServiceRequestModel.title.ilike(pattern),
-                    ServiceRequestModel.description.ilike(pattern),
-                    ServiceRequestModel.id.ilike(pattern),
-                    creator.c.name.ilike(pattern),
-                    creator.c.email.ilike(pattern),
+            ).where(or_(*or_conditions))
+
+        if custom_field_filters:
+            for key, value in custom_field_filters.items():
+                stmt = stmt.where(
+                    ServiceRequestModel.custom_fields_data[key].as_string() == value
                 )
-            )
+
         if status is not None:
             stmt = stmt.where(ServiceRequestModel.status == status)
         if type is not None:
@@ -396,6 +411,7 @@ class RequestRepository(RequestRepositoryInterface):
             assigned_to=model.assigned_to,
             subtype=model.subtype,
             data=model.data,
+            custom_fields_data=model.custom_fields_data or {},
             resolved_at=model.resolved_at,
             first_response_at=model.first_response_at,
             created_at=model.created_at,

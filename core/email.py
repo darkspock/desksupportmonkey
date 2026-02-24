@@ -22,7 +22,7 @@ class BrevoEmailService(EmailServiceInterface):
     def send(self, to: str, subject: str, html_body: str) -> None:
         payload = {
             "sender": {
-                "name": settings.SMTP_FROM_NAME,
+                "name": settings.smtp_from_name,
                 "email": settings.SMTP_FROM_EMAIL,
             },
             "to": [{"email": to}],
@@ -72,7 +72,7 @@ def send_magic_link_email(email_service: EmailServiceInterface, to: str, token: 
     html = f"""
     <html>
     <body style="font-family: sans-serif; padding: 20px;">
-        <h2>Sign in to DeskSupportMonkey</h2>
+        <h2>Sign in to {settings.BRAND_NAME}</h2>
         <p>Click the link below to sign in:</p>
         <p><a href="{link}" style="display: inline-block; padding: 12px 24px;
             background-color: #2563eb; color: white; text-decoration: none;
@@ -86,7 +86,7 @@ def send_magic_link_email(email_service: EmailServiceInterface, to: str, token: 
     </body>
     </html>
     """
-    email_service.send(to, "Sign in to DeskSupportMonkey", html)
+    email_service.send(to, f"Sign in to {settings.BRAND_NAME}", html)
 
 
 def send_admin_promotion_email(
@@ -108,4 +108,4 @@ def send_admin_promotion_email(
     </body>
     </html>
     """
-    email_service.send(to, "New admin promoted - DeskSupportMonkey", html)
+    email_service.send(to, f"New admin promoted - {settings.BRAND_NAME}", html)

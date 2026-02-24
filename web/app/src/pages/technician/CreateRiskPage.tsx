@@ -3,11 +3,12 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import api from '../../lib/api';
 import { useI18n } from '../../lib/i18n';
-import toast from 'react-hot-toast';
+import { useToast } from '../../components/ui/Toast';
 
 export default function CreateRiskPage() {
   const navigate = useNavigate();
   const { t } = useI18n();
+  const toast = useToast();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('cyber');

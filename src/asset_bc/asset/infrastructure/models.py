@@ -41,6 +41,7 @@ class AssetModel(ULIDMixin, TimestampMixin, Base):
     purchase_cost_cents: Mapped[Optional[int]] = mapped_column(
         Integer, nullable=True,
     )
+    custom_fields_data: Mapped[Any] = mapped_column(JSON, server_default="{}", nullable=False)
 
     __table_args__ = (
         UniqueConstraint("company_id", "serial_number", name="uq_asset_company_serial"),

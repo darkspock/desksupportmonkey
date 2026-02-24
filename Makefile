@@ -1,4 +1,4 @@
-.PHONY: start stop start-docker start-backend start-frontend start-frontend-bg queue start-queue-bg install install-frontend logs db-migrate db-upgrade test test-integration test-all lint scan clean seed demo-reset stripe-login stripe-listen
+.PHONY: start stop start-docker start-backend start-frontend start-frontend-bg queue start-queue-bg install install-frontend logs db-migrate db-upgrade test test-integration test-all lint scan clean seed demo-reset stripe-login stripe-listen build-brand start-brand db-upgrade-brand
 
 # Colors for terminal output
 GREEN := \033[0;32m
@@ -195,6 +195,35 @@ clean:
 	@echo "$(GREEN)Cleanup complete$(NC)"
 
 # =============================================================================
+# White Label / Multi-Brand
+# =============================================================================
+
+## Build frontend for a specific brand (e.g., make build-brand BRAND=dsm)
+build-brand:
+ifndef BRAND
+	$(error BRAND is required. Usage: make build-brand BRAND=dsm)
+endif
+	@echo "$(GREEN)Building frontend for brand: $(BRAND)$(NC)"
+	@cd web/app && env $$(grep '^VITE_' ../../.env.$(BRAND) | xargs) npm run build -- --outDir ../../dist/$(BRAND)
+	@echo "$(GREEN)Build output: dist/$(BRAND)/$(NC)"
+
+## Start backend with a brand-specific env file (e.g., make start-brand BRAND=dsm)
+start-brand:
+ifndef BRAND
+	$(error BRAND is required. Usage: make start-brand BRAND=dsm)
+endif
+	@echo "$(GREEN)Starting backend for brand: $(BRAND)$(NC)"
+	@env $$(grep -v '^#' .env.$(BRAND) | xargs) PYTHONPATH=src uv run uvicorn app:app --reload --host 0.0.0.0 --port 8001
+
+## Apply migrations for a brand's database (e.g., make db-upgrade-brand BRAND=dsm)
+db-upgrade-brand:
+ifndef BRAND
+	$(error BRAND is required. Usage: make db-upgrade-brand BRAND=dsm)
+endif
+	@echo "$(GREEN)Applying migrations for brand: $(BRAND)$(NC)"
+	@env $$(grep -v '^#' .env.$(BRAND) | xargs) PYTHONPATH=src alembic upgrade head
+
+# =============================================================================
 # Help
 # =============================================================================
 
@@ -223,6 +252,11 @@ help:
 	@echo "  $(GREEN)make demo-reset$(NC)     - Reset DB and seed fresh demo data"
 	@echo "  $(GREEN)make logs$(NC)           - Show Docker logs"
 	@echo "  $(GREEN)make clean$(NC)          - Clean generated files"
+	@echo ""
+	@echo "White Label:"
+	@echo "  $(GREEN)make build-brand BRAND=dsm$(NC)      - Build frontend for a specific brand"
+	@echo "  $(GREEN)make start-brand BRAND=dsm$(NC)      - Start backend with brand-specific env"
+	@echo "  $(GREEN)make db-upgrade-brand BRAND=dsm$(NC) - Apply migrations for brand's database"
 	@echo ""
 	@echo "Stripe (local testing):"
 	@echo "  $(GREEN)make stripe-login$(NC)   - Authenticate Stripe CLI (first-time)"

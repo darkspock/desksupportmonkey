@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import ulid
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
 
 from src.incident_bc.incident.domain.entities import (
@@ -59,6 +59,7 @@ class IncidentRepository(IncidentRepositoryInterface):
             existing.detected_at = incident.detected_at
             existing.close_reason = incident.close_reason
             existing.closed_at = incident.closed_at
+            existing.custom_fields_data = incident.custom_fields_data or {}
         else:
             model = SecurityIncidentModel(
                 id=incident.id,
@@ -75,6 +76,7 @@ class IncidentRepository(IncidentRepositoryInterface):
                 detected_at=incident.detected_at,
                 close_reason=incident.close_reason,
                 closed_at=incident.closed_at,
+                custom_fields_data=incident.custom_fields_data or {},
             )
             self.session.add(model)
         self.session.flush()
@@ -111,9 +113,20 @@ class IncidentRepository(IncidentRepositoryInterface):
             )
         if filters.search:
             search_term = f"%{filters.search}%"
-            query = query.where(
-                SecurityIncidentModel.title.ilike(search_term)
-            )
+            or_conditions = [SecurityIncidentModel.title.ilike(search_term)]
+            if filters.custom_field_search_keys:
+                for cf_key in filters.custom_field_search_keys:
+                    or_conditions.append(
+                        SecurityIncidentModel.custom_fields_data[cf_key].as_string().ilike(search_term)
+                    )
+            query = query.where(or_(*or_conditions))
+
+        if filters.custom_field_filters:
+            for key, value in filters.custom_field_filters.items():
+                query = query.where(
+                    SecurityIncidentModel.custom_fields_data[key].as_string() == value
+                )
+
         if filters.date_from:
             query = query.where(
                 SecurityIncidentModel.detected_at >= filters.date_from
@@ -615,6 +628,7 @@ class IncidentRepository(IncidentRepositoryInterface):
             assigned_to=model.assigned_to,
             detected_at=model.detected_at,
             close_reason=model.close_reason,
+            custom_fields_data=model.custom_fields_data or {},
             created_at=model.created_at,
             updated_at=model.updated_at,
             closed_at=model.closed_at,

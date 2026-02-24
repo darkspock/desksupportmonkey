@@ -30,6 +30,7 @@ class AssetRepository(AssetRepositoryInterface):
             existing.purchase_date = asset.purchase_date
             existing.warranty_expiration = asset.warranty_expiration
             existing.notes = asset.notes
+            existing.custom_fields_data = asset.custom_fields_data or {}
         else:
             model = AssetModel(
                 id=asset.id,
@@ -45,6 +46,7 @@ class AssetRepository(AssetRepositoryInterface):
                 purchase_date=asset.purchase_date,
                 warranty_expiration=asset.warranty_expiration,
                 notes=asset.notes,
+                custom_fields_data=asset.custom_fields_data or {},
             )
             self.session.add(model)
             existing = model
@@ -88,18 +90,31 @@ class AssetRepository(AssetRepositoryInterface):
         location_id: Optional[str] = None,
         sort_by: str = "created_at",
         sort_order: str = "desc",
+        custom_field_filters: Optional[dict[str, str]] = None,
+        custom_field_search_keys: Optional[list[str]] = None,
     ) -> tuple[list[Asset], int]:
         stmt = select(AssetModel).where(AssetModel.company_id == company_id)
 
         if search:
             pattern = f"%{search}%"
-            stmt = stmt.where(
-                or_(
-                    AssetModel.serial_number.ilike(pattern),
-                    AssetModel.brand.ilike(pattern),
-                    AssetModel.model.ilike(pattern),
+            or_conditions = [
+                AssetModel.serial_number.ilike(pattern),
+                AssetModel.brand.ilike(pattern),
+                AssetModel.model.ilike(pattern),
+            ]
+            if custom_field_search_keys:
+                for cf_key in custom_field_search_keys:
+                    or_conditions.append(
+                        AssetModel.custom_fields_data[cf_key].as_string().ilike(pattern)
+                    )
+            stmt = stmt.where(or_(*or_conditions))
+
+        if custom_field_filters:
+            for key, value in custom_field_filters.items():
+                stmt = stmt.where(
+                    AssetModel.custom_fields_data[key].as_string() == value
                 )
-            )
+
         if type is not None:
             stmt = stmt.where(AssetModel.type == type)
         if status is not None:
@@ -373,6 +388,7 @@ class AssetRepository(AssetRepositoryInterface):
             purchase_date=model.purchase_date,
             warranty_expiration=model.warranty_expiration,
             notes=model.notes,
+            custom_fields_data=model.custom_fields_data or {},
             created_at=model.created_at,
             updated_at=model.updated_at,
         )

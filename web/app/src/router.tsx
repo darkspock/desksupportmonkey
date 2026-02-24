@@ -62,6 +62,7 @@ const RiskDetailPage = lazy(() => import('./pages/technician/RiskDetailPage'));
 const CreateRiskPage = lazy(() => import('./pages/technician/CreateRiskPage'));
 const EditRiskPage = lazy(() => import('./pages/technician/EditRiskPage'));
 const RiskDashboardPage = lazy(() => import('./pages/technician/RiskDashboardPage'));
+const KBCategoriesPage = lazy(() => import('./pages/admin/KBCategoriesPage'));
 const KBArticleListPage = lazy(() => import('./pages/technician/KBArticleListPage'));
 const KBArticleDetailPage = lazy(() => import('./pages/technician/KBArticleDetailPage'));
 const CreateArticlePage = lazy(() => import('./pages/technician/CreateArticlePage'));
@@ -82,6 +83,7 @@ const ComplianceControlsPage = lazy(() => import('./pages/admin/ComplianceContro
 const CrossCompanyAuditPage = lazy(() => import('./pages/superadmin/CrossCompanyAuditPage'));
 const GdprRequestsPage = lazy(() => import('./pages/admin/GdprRequestsPage'));
 const ComplianceDashboardPage = lazy(() => import('./pages/admin/ComplianceDashboardPage'));
+const CustomFieldsPage = lazy(() => import('./pages/admin/CustomFieldsPage'));
 
 function S({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoading />}>{children}</Suspense>;
@@ -225,6 +227,10 @@ export const router = createBrowserRouter([
         element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><KBArticleVersionsPage /></S></RequireRole>,
       },
       {
+        path: 'kb/categories',
+        element: <RequireRole roles={['admin', 'super_admin']}><S><KBCategoriesPage /></S></RequireRole>,
+      },
+      {
         path: 'risks',
         element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><RiskListPage /></S></RequireRole>,
       },
@@ -353,6 +359,10 @@ export const router = createBrowserRouter([
       {
         path: 'compliance/dashboard',
         element: <RequireRole roles={['admin', 'super_admin']}><S><ComplianceDashboardPage /></S></RequireRole>,
+      },
+      {
+        path: 'settings/custom-fields',
+        element: <RequireRole roles={['admin', 'super_admin']}><S><CustomFieldsPage /></S></RequireRole>,
       },
       // Super Admin
       {

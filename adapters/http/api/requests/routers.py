@@ -7,8 +7,17 @@ import ulid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
+from starlette.requests import Request
 
 from adapters.http.api.auth.dependencies import get_current_user, require_role
+from adapters.http.api.custom_fields.dependencies import (
+    get_cf_definition_repo,
+    get_cf_enrichment_service,
+    get_cf_validation_service,
+)
+from src.custom_field_bc.definition.infrastructure.repository import (
+    CustomFieldDefinitionRepository,
+)
 from adapters.http.api.dependencies import get_event_bus
 from adapters.http.api.requests.dependencies import (
     get_asset_repo,
@@ -35,6 +44,12 @@ from adapters.http.api.requests.schemas import (
 from adapters.http.schemas.responses import PaginationMeta
 from core.database import get_db
 from src.auth_bc.user.domain.entities import User
+from src.custom_field_bc.definition.application.services.enrichment_service import (
+    CustomFieldEnrichmentService,
+)
+from src.custom_field_bc.definition.application.services.validation_service import (
+    CustomFieldValidationService,
+)
 from src.auth_bc.user.domain.enums import UserRole
 from src.auth_bc.user.infrastructure.repository import UserRepository
 from src.notification_bc.notification.application.services.event_bus import EventBus
@@ -184,6 +199,7 @@ def _to_response(
     created_by_email: str | None = None,
     assigned_to_name: str | None = None,
     assigned_to_email: str | None = None,
+    custom_fields: list | None = None,
 ) -> RequestResponse:
     return RequestResponse(
         id=request.id,
@@ -201,6 +217,7 @@ def _to_response(
         status=request.status.value,
         priority=request.priority.value,
         data=request.data,
+        custom_fields=custom_fields,
         resolved_at=request.resolved_at,
         created_at=request.created_at,
         updated_at=request.updated_at,
@@ -212,6 +229,7 @@ def _to_list_item(
     r: ServiceRequest,
     email_map: dict[str, str],
     name_map: dict[str, str | None],
+    custom_fields: list | None = None,
 ) -> dict:
     return RequestListItemResponse(
         id=r.id,
@@ -226,6 +244,7 @@ def _to_list_item(
         created_by=r.created_by,
         created_by_name=name_map.get(r.created_by),
         created_by_email=email_map.get(r.created_by),
+        custom_fields=custom_fields,
         created_at=r.created_at,
         updated_at=r.updated_at,
     ).model_dump(mode="json")
@@ -357,6 +376,7 @@ def _attempt_auto_assign(
 
 @router.get("")
 def list_requests(
+    request: Request,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     search: Optional[str] = Query(None),
@@ -368,8 +388,17 @@ def list_requests(
     current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
     request_repo: RequestRepository = Depends(get_request_repo),
     user_repo: UserRepository = Depends(get_user_repo),
+    cf_enricher: CustomFieldEnrichmentService = Depends(get_cf_enrichment_service),
+    cf_def_repo: CustomFieldDefinitionRepository = Depends(get_cf_definition_repo),
 ):
     effective_assigned_to = current_user.id if assigned_to == "me" else assigned_to
+    cf_filters = {
+        k[3:]: v for k, v in request.query_params.items() if k.startswith("cf_")
+    }
+    cf_search_keys: list[str] | None = None
+    if search:
+        defs = cf_def_repo.find_active_by_entity_type(current_user.company_id, "request")
+        cf_search_keys = [d.field_key for d in defs if d.field_type in ("text", "number")]
     handler = ListRequestsQueryHandler(request_repo=request_repo)
     requests, total = handler.handle(
         ListRequestsQuery(
@@ -377,13 +406,21 @@ def list_requests(
             page=page, page_size=page_size, search=search,
             status=request_status, type=type, priority=priority,
             assigned_to=effective_assigned_to, subtype=subtype,
+            custom_field_filters=cf_filters or None,
+            custom_field_search_keys=cf_search_keys,
         )
     )
     user_ids = [r.created_by for r in requests]
     user_ids.extend([r.assigned_to for r in requests if r.assigned_to])
     email_map, name_map = _user_maps(user_repo, user_ids)
+    cf_batch = cf_enricher.enrich_batch(
+        current_user.company_id, "request", [r.custom_fields_data or {} for r in requests]
+    )
     return {
-        "data": [_to_list_item(r, email_map, name_map) for r in requests],
+        "data": [
+            _to_list_item(r, email_map, name_map, custom_fields=cf_batch[i])
+            for i, r in enumerate(requests)
+        ],
         "meta": PaginationMeta(page=page, page_size=page_size, total=total).model_dump(),
     }
 
@@ -403,6 +440,8 @@ def create_request(
         get_classification_config_repo,
     ),
     user_repo: UserRepository = Depends(get_user_repo),
+    cf_validator: CustomFieldValidationService = Depends(get_cf_validation_service),
+    cf_enricher: CustomFieldEnrichmentService = Depends(get_cf_enrichment_service),
 ):
     # Resolve effective user (on_behalf_of for technician/admin)
     effective_user = current_user
@@ -533,6 +572,15 @@ def create_request(
             current_user.company_id,
         )
 
+    cf_data: dict = {}
+    if body.custom_fields_data:
+        try:
+            cf_data = cf_validator.validate_for_save(
+                current_user.company_id, "request", body.custom_fields_data
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+
     request_id = str(ulid.new())
     handler = CreateRequestCommandHandler(request_repo=request_repo)
     try:
@@ -547,6 +595,7 @@ def create_request(
                 department_has_manager=dept_has_manager,
                 ai_priority_hint=ai_priority_hint,
                 ai_classification=ai_classification,
+                custom_fields_data=cf_data,
             )
         )
     except ValueError as e:
@@ -573,11 +622,15 @@ def create_request(
         )
         event_bus.publish(approval_event, db)
 
+    custom_fields = cf_enricher.enrich(
+        current_user.company_id, "request", request.custom_fields_data or {}
+    )
     return {
         "data": _to_response(
             request,
             created_by_name=_display_name(effective_user),
             created_by_email=effective_user.email,
+            custom_fields=custom_fields,
         ).model_dump(mode="json")
     }
 
@@ -588,6 +641,7 @@ def get_request(
     current_user: User = Depends(get_current_user),
     request_repo: RequestRepository = Depends(get_request_repo),
     user_repo: UserRepository = Depends(get_user_repo),
+    cf_enricher: CustomFieldEnrichmentService = Depends(get_cf_enrichment_service),
 ):
     handler = GetRequestQueryHandler(request_repo=request_repo)
     try:
@@ -603,6 +657,9 @@ def get_request(
 
     user_ids = [detail.request.created_by] + ([detail.request.assigned_to] if detail.request.assigned_to else [])
     email_map, name_map = _user_maps(user_repo, user_ids)
+    custom_fields = cf_enricher.enrich(
+        current_user.company_id, "request", detail.request.custom_fields_data or {}
+    )
     return {
         "data": _to_response(
             detail.request, detail.comment_count,
@@ -610,6 +667,7 @@ def get_request(
             created_by_email=email_map.get(detail.request.created_by),
             assigned_to_name=name_map.get(detail.request.assigned_to) if detail.request.assigned_to else None,
             assigned_to_email=email_map.get(detail.request.assigned_to) if detail.request.assigned_to else None,
+            custom_fields=custom_fields,
         ).model_dump(mode="json")
     }
 

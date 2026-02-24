@@ -6,6 +6,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Pagination } from '../../components/ui/Pagination';
 import { Loading } from '../../components/ui/Loading';
 import { EmptyState, ErrorState } from '../../components/ui/StateBlock';
+import { CustomFieldFilters } from '../../components/custom-fields/CustomFieldFilters';
 import { formatDateTime } from '../../lib/date';
 import { useI18n } from '../../lib/i18n';
 import type { IncidentListItem, PaginatedResponse } from '../../types';
@@ -33,15 +34,26 @@ export default function IncidentsList() {
   const [severity, setSeverity] = useState('');
   const [incidentType, setIncidentType] = useState('');
   const [search, setSearch] = useState('');
+  const [cfFilters, setCfFilters] = useState<Record<string, string>>({});
+
+  const handleCfFilterChange = (key: string, value: string) => {
+    setCfFilters((prev) => {
+      const next = { ...prev };
+      if (value) { next[key] = value; } else { delete next[key]; }
+      return next;
+    });
+    setPage(1);
+  };
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['incidents', page, status, severity, incidentType, search],
+    queryKey: ['incidents', page, status, severity, incidentType, search, cfFilters],
     queryFn: async () => {
       const params: Record<string, string | number> = { page, page_size: 20 };
       if (status) params.status = status;
       if (severity) params.severity = severity;
       if (incidentType) params.incident_type = incidentType;
       if (search.trim()) params.search = search.trim();
+      Object.entries(cfFilters).forEach(([k, v]) => { if (v) params[k] = v; });
       const { data } = await api.get('/incidents', { params });
       return data as PaginatedResponse<IncidentListItem>;
     },
@@ -103,6 +115,7 @@ export default function IncidentsList() {
           </select>
         </div>
       </div>
+      <CustomFieldFilters entityType="incident" filters={cfFilters} onFilterChange={handleCfFilterChange} />
 
       {isLoading ? <Loading /> : isError ? (
         <ErrorState

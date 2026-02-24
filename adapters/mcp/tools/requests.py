@@ -11,6 +11,12 @@ from src.auth_bc.user.domain.enums import UserRole
 from src.auth_bc.user.infrastructure.repository import (
     UserRepository,
 )
+from src.custom_field_bc.definition.application.services.enrichment_service import (
+    CustomFieldEnrichmentService,
+)
+from src.custom_field_bc.definition.infrastructure.repository import (
+    CustomFieldDefinitionRepository,
+)
 from src.request_bc.request.application.ports import (
     UserLookup,
 )
@@ -207,10 +213,23 @@ async def handle_list_requests(
         handler = ListRequestsQueryHandler(request_repo)
         requests, total = handler.handle(query)
 
+        cf_repo = CustomFieldDefinitionRepository(db)
+        cf_enricher = CustomFieldEnrichmentService(cf_repo)
+        enriched_batch = cf_enricher.enrich_batch(
+            tenant.company_id,
+            "request",
+            [r.custom_fields_data or {} for r in requests],
+        )
+
+        items = []
+        for req, enriched_cf in zip(requests, enriched_batch):
+            item = _serialize_request(req)
+            if enriched_cf:
+                item["custom_fields"] = enriched_cf
+            items.append(item)
+
         return _text({
-            "items": [
-                _serialize_request(r) for r in requests
-            ],
+            "items": items,
             "total": total,
             "page": query.page,
             "page_size": query.page_size,
@@ -245,6 +264,17 @@ async def handle_get_request(
 
         result = _serialize_request(detail.request)
         result["comment_count"] = detail.comment_count
+
+        cf_repo = CustomFieldDefinitionRepository(db)
+        cf_enricher = CustomFieldEnrichmentService(cf_repo)
+        custom_fields = cf_enricher.enrich(
+            tenant.company_id,
+            "request",
+            detail.request.custom_fields_data or {},
+        )
+        if custom_fields:
+            result["custom_fields"] = custom_fields
+
         return _text(result)
     except _NOT_FOUND as e:
         return _error(str(e))

@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 
 class StorageServiceInterface(ABC):
     @abstractmethod
-    def upload(self, key: str, data: bytes) -> str:
+    def upload(
+        self, key: str, data: bytes, content_type: str | None = None
+    ) -> str:
         """Upload data to storage. Returns the object key."""
         ...
 
@@ -49,8 +51,15 @@ class S3StorageService(StorageServiceInterface):
             region_name=region_name,
         )
 
-    def upload(self, key: str, data: bytes) -> str:
-        self.client.put_object(Bucket=self.bucket, Key=key, Body=data)
+    def upload(
+        self, key: str, data: bytes, content_type: str | None = None
+    ) -> str:
+        extra: dict = {}
+        if content_type:
+            extra["ContentType"] = content_type
+        self.client.put_object(
+            Bucket=self.bucket, Key=key, Body=data, **extra
+        )
         logger.info("Uploaded %s to %s", key, self.bucket)
         return key
 

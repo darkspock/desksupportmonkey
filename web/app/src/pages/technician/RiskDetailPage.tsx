@@ -7,8 +7,8 @@ import { Loading } from '../../components/ui/Loading';
 import { ErrorState } from '../../components/ui/StateBlock';
 import { formatDateTime } from '../../lib/date';
 import { useI18n } from '../../lib/i18n';
-import { useAuthStore } from '../../stores/authStore';
-import toast from 'react-hot-toast';
+import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../components/ui/Toast';
 import type { RiskDetail } from '../../types';
 
 const levelVariant: Record<string, 'default' | 'info' | 'success' | 'warning' | 'danger'> = {
@@ -37,8 +37,9 @@ export default function RiskDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useI18n();
-  const { user } = useAuthStore();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
+  const toast = useToast();
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
   const [showAssess, setShowAssess] = useState(false);

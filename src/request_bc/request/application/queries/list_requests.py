@@ -17,6 +17,8 @@ class ListRequestsQuery(Query):
     priority: Optional[str] = None
     assigned_to: Optional[str] = None
     subtype: Optional[str] = None
+    custom_field_filters: Optional[dict[str, str]] = None
+    custom_field_search_keys: Optional[list[str]] = None
 
 
 class ListRequestsQueryHandler(QueryHandler[ListRequestsQuery, tuple[list[ServiceRequest], int]]):
@@ -34,4 +36,6 @@ class ListRequestsQueryHandler(QueryHandler[ListRequestsQuery, tuple[list[Servic
             priority=query.priority,
             assigned_to=query.assigned_to,
             subtype=query.subtype,
+            custom_field_filters=query.custom_field_filters,
+            custom_field_search_keys=query.custom_field_search_keys,
         )

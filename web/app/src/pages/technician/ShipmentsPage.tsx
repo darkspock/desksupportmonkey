@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
 import { Badge } from '../../components/ui/Badge';
 import { Table, Th, Td, Tr } from '../../components/ui/Table';
@@ -8,6 +8,7 @@ import { EmptyState, ErrorState } from '../../components/ui/StateBlock';
 import { Loading } from '../../components/ui/Loading';
 import { Pagination } from '../../components/ui/Pagination';
 import { formatDateTime } from '../../lib/date';
+import { useToast } from '../../hooks/useToast';
 import { useI18n } from '../../lib/i18n';
 import type { PaginatedResponse, Shipment, ShippingAddress } from '../../types';
 
@@ -37,6 +38,8 @@ function StatCard({
 
 export default function ShipmentsPage() {
   const { t } = useI18n();
+  const { showToast } = useToast();
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -78,6 +81,35 @@ export default function ShipmentsPage() {
     delivered: statsRows.filter((s) => s.status === 'delivered').length,
     pending: statsRows.filter((s) => s.status === 'draft' || s.status === 'dispatched').length,
   }), [statsRows, statsQuery.data?.meta?.total]);
+
+  const refreshShipments = () => {
+    queryClient.invalidateQueries({ queryKey: ['shipments'] });
+    queryClient.invalidateQueries({ queryKey: ['shipments-stats'] });
+  };
+
+  const dispatch = useMutation({
+    mutationFn: (shipmentId: string) => api.post(`/shipments/${shipmentId}/dispatch`, {}),
+    onSuccess: () => {
+      refreshShipments();
+      showToast({ title: t('page.shipment_detail.toast_dispatched'), variant: 'success' });
+    },
+    onError: (err: unknown) => {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('page.shipment_detail.error_deliver');
+      showToast({ title: detail, variant: 'error' });
+    },
+  });
+
+  const deliver = useMutation({
+    mutationFn: (shipmentId: string) => api.post(`/shipments/${shipmentId}/deliver`, {}),
+    onSuccess: () => {
+      refreshShipments();
+      showToast({ title: t('page.shipment_detail.toast_delivered'), variant: 'success' });
+    },
+    onError: (err: unknown) => {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('page.shipment_detail.error_deliver');
+      showToast({ title: detail, variant: 'error' });
+    },
+  });
 
   return (
     <div className="flex flex-col gap-6">
@@ -159,6 +191,26 @@ export default function ShipmentsPage() {
                         >
                           {t('table.details')}
                         </Link>
+                        {s.status.toUpperCase() === 'DRAFT' && (
+                          <button
+                            type="button"
+                            onClick={() => dispatch.mutate(s.id)}
+                            disabled={dispatch.isPending}
+                            className="inline-flex h-8 items-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow-xs hover:bg-primary/90 disabled:opacity-50"
+                          >
+                            {t('page.shipment_detail.dispatch')}
+                          </button>
+                        )}
+                        {(s.status.toUpperCase() === 'DISPATCHED' || s.status.toUpperCase() === 'IN_TRANSIT') && (
+                          <button
+                            type="button"
+                            onClick={() => deliver.mutate(s.id)}
+                            disabled={deliver.isPending}
+                            className="inline-flex h-8 items-center rounded-md bg-success px-3 text-xs font-medium text-white shadow-xs hover:bg-success/90 disabled:opacity-50"
+                          >
+                            {t('page.shipment_detail.deliver')}
+                          </button>
+                        )}
                         {s.tracking_url && (
                           <a
                             href={s.tracking_url}

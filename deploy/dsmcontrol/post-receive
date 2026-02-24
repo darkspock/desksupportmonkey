@@ -1,0 +1,52 @@
+#!/bin/bash
+set -e
+
+echo "==> Deploying DSM Control..."
+
+WORK_DIR="/opt/dsmcontrol/app"
+SITE_DIR="/opt/dsmcontrol/web/site"
+APP_DIR="/opt/dsmcontrol/web/app"
+
+# Checkout latest code
+git --work-tree="$WORK_DIR" --git-dir="/opt/dsmcontrol/repo.git" checkout -f
+
+cd "$WORK_DIR"
+
+# --- Backend ---
+echo "==> Installing Python dependencies..."
+cd "$WORK_DIR" && uv sync --frozen 2>&1 || true
+
+echo "==> Running database migrations..."
+cd "$WORK_DIR" && PYTHONPATH=src uv run alembic upgrade head 2>&1 || true
+
+# --- Astro marketing site ---
+echo "==> Building Astro marketing site..."
+cd "$WORK_DIR/web/site"
+npm ci --production=false
+npm run build
+mkdir -p "$SITE_DIR"
+rm -rf "${SITE_DIR:?}"/*
+cp -r dist/* "$SITE_DIR/"
+echo "==> Astro site deployed to $SITE_DIR"
+
+# --- React SPA ---
+echo "==> Building React SPA..."
+cd "$WORK_DIR/web/app"
+npm ci --production=false
+npm run build
+mkdir -p "$APP_DIR"
+rm -rf "${APP_DIR:?}"/*
+cp -r dist/* "$APP_DIR/"
+echo "==> React SPA deployed to $APP_DIR"
+
+# --- Copy logo to marketing site public dir ---
+if [ -f "$WORK_DIR/web/site/public/logo.png" ]; then
+    cp "$WORK_DIR/web/site/public/logo.png" "$SITE_DIR/logo.png" 2>/dev/null || true
+fi
+
+# --- Restart services ---
+echo "==> Restarting services..."
+sudo systemctl restart dsmcontrol-api
+sudo systemctl restart dsmcontrol-celery
+
+echo "==> DSM Control deployment complete!"

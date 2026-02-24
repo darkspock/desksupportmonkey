@@ -80,13 +80,21 @@ class Settings(BaseSettings):
     POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: int = 5444
 
+    # Brand
+    BRAND_NAME: str = "DeskSupportMonkey"
+    BRAND_SHORT_NAME: str = "DS Monkey"
+    BRAND_SLUG: str = "dsm"
+    BRAND_LOGO_EXT: str = "png"
+    BRAND_FAVICON_EXT: str = "png"
+    BRAND_LOGIN_EXT: str = "png"
+
     # Environment
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
 
     # Email (Brevo HTTP API in production, console in dev)
     SMTP_FROM_EMAIL: str = "noreply@desksupportmonkey.com"
-    SMTP_FROM_NAME: str = "DeskSupportMonkey"
+    SMTP_FROM_NAME: str = ""
     BREVO_API_KEY: str = ""
 
     # Monitoring
@@ -95,6 +103,10 @@ class Settings(BaseSettings):
     # Frontend
     FRONTEND_URL: str = "http://localhost:5173"
     CORS_ORIGINS: str = ""
+
+    @property
+    def smtp_from_name(self) -> str:
+        return self.SMTP_FROM_NAME or self.BRAND_NAME
 
     @property
     def cors_origins_list(self) -> list[str]:

@@ -24,6 +24,7 @@ class CreateAssetCommand(Command):
     warranty_expiration: Optional[date] = None
     notes: Optional[str] = None
     id: Optional[str] = None
+    custom_fields_data: Optional[dict] = None
 
 
 class CreateAssetCommandHandler(CommandHandler[CreateAssetCommand]):
@@ -49,6 +50,7 @@ class CreateAssetCommandHandler(CommandHandler[CreateAssetCommand]):
             warranty_expiration=command.warranty_expiration,
             notes=command.notes,
             id=command.id,
+            custom_fields_data=command.custom_fields_data,
         )
 
         # Default location: Almacén Principal

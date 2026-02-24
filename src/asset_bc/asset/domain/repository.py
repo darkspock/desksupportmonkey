@@ -50,6 +50,8 @@ class AssetRepositoryInterface(ABC):
         location_id: Optional[str] = None,
         sort_by: str = "created_at",
         sort_order: str = "desc",
+        custom_field_filters: Optional[dict[str, str]] = None,
+        custom_field_search_keys: Optional[list[str]] = None,
     ) -> tuple[list[Asset], int]: ...
 
     @abstractmethod

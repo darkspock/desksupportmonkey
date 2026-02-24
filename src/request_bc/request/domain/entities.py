@@ -28,6 +28,7 @@ class ServiceRequest:
     assigned_to: Optional[str] = None
     subtype: Optional[str] = None
     data: Optional[dict] = field(default=None)
+    custom_fields_data: Optional[dict] = field(default=None)
     resolved_at: Optional[datetime] = None
     first_response_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
@@ -42,6 +43,7 @@ class ServiceRequest:
         title: str,
         description: str,
         data: Optional[dict] = None,
+        custom_fields_data: Optional[dict] = None,
         id: Optional[str] = None,
         subtype: Optional[str] = None,
         requires_approval: bool = False,
@@ -70,6 +72,7 @@ class ServiceRequest:
             priority=DEFAULT_PRIORITY[type],
             subtype=subtype,
             data=data,
+            custom_fields_data=custom_fields_data or {},
         )
 
     def change_status(self, new_status: RequestStatus) -> None:

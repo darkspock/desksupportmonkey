@@ -13,6 +13,7 @@ TEMPLATE_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "templates"
 )
 _jinja_env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
+_jinja_env.globals["brand_name"] = settings.BRAND_NAME
 
 REPORT_TYPE_LABELS = {
     "early_warning_24h": "Early Warning (24h)",

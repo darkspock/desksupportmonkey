@@ -6,7 +6,7 @@ from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from core.database import SessionLocal
-from core.tenant import get_tenant
+from core.jwt import JWTService
 from src.audit_bc.audit.application.context import (
     audit_action_override,
     audit_changes,
@@ -39,6 +39,8 @@ _METHOD_ACTION_MAP = {
     "DELETE": "deleted",
 }
 
+_jwt_service = JWTService()
+
 
 class AuditMiddleware(BaseHTTPMiddleware):
     async def dispatch(  # type: ignore[override]
@@ -65,8 +67,8 @@ class AuditMiddleware(BaseHTTPMiddleware):
     # ------------------------------------------------------------------
 
     def _record_audit(self, request: Request, response: Response) -> None:
-        tenant = get_tenant()
         path = request.url.path
+        company_id, actor_id = self._extract_identity(request)
 
         action = self._derive_action(request)
         resource_type = self._extract_resource_type(path)
@@ -74,12 +76,16 @@ class AuditMiddleware(BaseHTTPMiddleware):
 
         db = SessionLocal()
         try:
+            actor_email = ""
+            if actor_id:
+                actor_email = self._resolve_email(db, actor_id)
+
             repo = AuditRepository(db)
             service = AuditService(repo)
             service.record(
-                company_id=tenant.company_id if tenant else None,
-                actor_id=tenant.user_id if tenant else None,
-                actor_email=self._get_actor_email(request, tenant),
+                company_id=company_id,
+                actor_id=actor_id,
+                actor_email=actor_email,
                 action=action,
                 resource_type=resource_type,
                 resource_id=resource_id,
@@ -151,7 +157,32 @@ class AuditMiddleware(BaseHTTPMiddleware):
         return any(path.startswith(prefix) for prefix in _EXCLUDED_PREFIXES)
 
     @staticmethod
-    def _get_actor_email(request: Request, tenant) -> str:  # type: ignore[no-untyped-def]
-        if hasattr(request.state, "user_email"):
-            return request.state.user_email
-        return ""
+    def _extract_identity(
+        request: Request,
+    ) -> tuple[Optional[str], Optional[str]]:
+        """Decode JWT from Authorization header to get company_id, user_id.
+
+        This avoids relying on ContextVar (which is lost across threads
+        in BaseHTTPMiddleware).
+        """
+        auth = request.headers.get("authorization", "")
+        if not auth.lower().startswith("bearer "):
+            return None, None
+        token = auth[7:]
+        try:
+            payload = _jwt_service.decode_token(token)
+            user_id = payload.get("sub")
+            company_id = payload.get("company_id")
+            return company_id, user_id
+        except Exception:
+            return None, None
+
+    @staticmethod
+    def _resolve_email(db, user_id: str) -> str:  # type: ignore[no-untyped-def]
+        from sqlalchemy import select
+        from src.auth_bc.user.infrastructure.models import UserModel
+
+        row = db.execute(
+            select(UserModel.email).where(UserModel.id == user_id)
+        ).scalar_one_or_none()
+        return row or ""

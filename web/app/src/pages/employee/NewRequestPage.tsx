@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
 import { useI18n } from '../../lib/i18n';
 import { useToast } from '../../hooks/useToast';
+import { CustomFieldsForm } from '../../components/custom-fields/CustomFieldsForm';
+import { useAuth } from '../../contexts/AuthContext';
 import type { RequestType } from '../../types';
 import { VALID_SUBTYPES } from '../../types';
 
@@ -84,6 +86,7 @@ export default function NewRequestPage() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const { isRole } = useAuth();
   const [searchParams] = useSearchParams();
   const onBehalfOf = searchParams.get('on_behalf_of');
   const onBehalfOfLabel = searchParams.get('on_behalf_of_label');
@@ -93,6 +96,7 @@ export default function NewRequestPage() {
     description: '',
     subtype: '',
   });
+  const [customFieldsData, setCustomFieldsData] = useState<Record<string, unknown>>({});
 
   const subtypeOptions = form.type ? (VALID_SUBTYPES[form.type] ?? []) : [];
 
@@ -125,6 +129,7 @@ export default function NewRequestPage() {
       };
       if (form.subtype) body.subtype = form.subtype;
       if (onBehalfOf) body.on_behalf_of = onBehalfOf;
+      if (Object.keys(customFieldsData).length) body.custom_fields_data = customFieldsData;
       const { data } = await api.post('/requests', body);
       return data.data;
     },
@@ -269,6 +274,14 @@ export default function NewRequestPage() {
               {t('page.new_request.description_hint')}
             </p>
           </div>
+
+          {/* Custom Fields */}
+          <CustomFieldsForm
+            entityType="request"
+            values={customFieldsData}
+            onChange={setCustomFieldsData}
+            isEmployee={isRole('employee')}
+          />
         </div>
 
         {/* Buttons — right-aligned */}

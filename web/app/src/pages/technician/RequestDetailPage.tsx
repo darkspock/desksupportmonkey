@@ -7,10 +7,11 @@ import { Loading } from '../../components/ui/Loading';
 import { ErrorState } from '../../components/ui/StateBlock';
 import { Badge, StatusBadge } from '../../components/ui/Badge';
 import { EmployeeSearchSelect } from '../../components/ui/EmployeeSearchSelect';
+import { CustomFieldsDisplay } from '../../components/custom-fields/CustomFieldsDisplay';
 import { useToast } from '../../hooks/useToast';
 import { formatDateTime } from '../../lib/date';
 import { humanizeToken, useI18n } from '../../lib/i18n';
-import type { ServiceRequest, Comment, Note, RequestEventItem, AIClassificationData, RecentPO, Appointment, TimeSlot, Shipment, AssignableUser, PaginatedResponse, User } from '../../types';
+import type { ServiceRequest, Comment, Note, RequestEventItem, AIClassificationData, RecentPO, Appointment, TimeSlot, Shipment, AssignableUser, PaginatedResponse, User, CustomFieldValue } from '../../types';
 
 /* ── helper components ────────────────────────────────────────────── */
 
@@ -554,6 +555,12 @@ export default function RequestDetailPage() {
                 </p>
               </div>
             </div>
+            {request.custom_fields && request.custom_fields.length > 0 && (
+              <div className="mt-4">
+                <h3 className="mb-2 text-sm font-semibold text-foreground">{t('page.custom_fields.section_title')}</h3>
+                <CustomFieldsDisplay customFields={request.custom_fields} />
+              </div>
+            )}
           </div>
 
           {/* Conversation / Comments */}

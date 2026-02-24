@@ -116,6 +116,14 @@ def _user_name_resolver_factory(user_repo: UserRepository):
     return resolver
 
 
+def _detail_to_response(detail) -> dict:  # type: ignore[no-untyped-def]
+    """Convert a RiskDetailDto (with nested dataclass lists) to a dict for Pydantic."""
+    from dataclasses import asdict
+
+    d = asdict(detail)
+    return RiskDetailResponse.model_validate(d).model_dump(mode="json")
+
+
 # --- Risk CRUD ---
 
 
@@ -153,7 +161,7 @@ def create_risk(
     detail = detail_handler.handle(
         GetRiskDetailQuery(risk_id=risk_id, company_id=current_user.company_id)
     )
-    return {"data": RiskDetailResponse.model_validate(detail.__dict__).model_dump(mode="json")}
+    return {"data": _detail_to_response(detail)}
 
 
 @router.get("")
@@ -277,7 +285,7 @@ def get_risk_detail(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Risk not found"
         )
-    return {"data": RiskDetailResponse.model_validate(detail.__dict__).model_dump(mode="json")}
+    return {"data": _detail_to_response(detail)}
 
 
 @router.put("/{risk_id}")
@@ -319,7 +327,7 @@ def update_risk(
     detail = detail_handler.handle(
         GetRiskDetailQuery(risk_id=risk_id, company_id=current_user.company_id)
     )
-    return {"data": RiskDetailResponse.model_validate(detail.__dict__).model_dump(mode="json")}
+    return {"data": _detail_to_response(detail)}
 
 
 @router.delete("/{risk_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -380,7 +388,7 @@ def assess_risk(
     detail = detail_handler.handle(
         GetRiskDetailQuery(risk_id=risk_id, company_id=current_user.company_id)
     )
-    return {"data": RiskDetailResponse.model_validate(detail.__dict__).model_dump(mode="json")}
+    return {"data": _detail_to_response(detail)}
 
 
 @router.post("/{risk_id}/treatment")
@@ -418,7 +426,7 @@ def set_treatment(
     detail = detail_handler.handle(
         GetRiskDetailQuery(risk_id=risk_id, company_id=current_user.company_id)
     )
-    return {"data": RiskDetailResponse.model_validate(detail.__dict__).model_dump(mode="json")}
+    return {"data": _detail_to_response(detail)}
 
 
 @router.post("/{risk_id}/status")
@@ -456,7 +464,7 @@ def change_risk_status(
     detail = detail_handler.handle(
         GetRiskDetailQuery(risk_id=risk_id, company_id=current_user.company_id)
     )
-    return {"data": RiskDetailResponse.model_validate(detail.__dict__).model_dump(mode="json")}
+    return {"data": _detail_to_response(detail)}
 
 
 # --- History ---

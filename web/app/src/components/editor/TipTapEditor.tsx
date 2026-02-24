@@ -2,7 +2,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
-import { useI18n } from '../../i18n';
+import { useI18n } from '../../lib/i18n';
 
 interface TipTapEditorProps {
   content: string;
@@ -81,7 +81,7 @@ export default function TipTapEditor({ content, onChange, placeholder }: TipTapE
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({ link: false }),
       Link.configure({ openOnClick: false }),
       Placeholder.configure({ placeholder: placeholder || t('page.kb.editor_placeholder') }),
     ],

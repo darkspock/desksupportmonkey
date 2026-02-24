@@ -6,7 +6,7 @@ import { Loading } from '../../components/ui/Loading';
 import { ErrorState } from '../../components/ui/StateBlock';
 import { formatDateTime } from '../../lib/date';
 import { useI18n } from '../../lib/i18n';
-import { useAuthStore } from '../../stores/authStore';
+import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../components/ui/Toast';
 import type { ArticleDetail } from '../../types';
 
@@ -19,7 +19,7 @@ const statusVariant: Record<string, 'default' | 'info' | 'success' | 'warning' |
 export default function KBArticleDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useI18n();
-  const { user } = useAuthStore();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = useToast();

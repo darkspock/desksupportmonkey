@@ -11,6 +11,7 @@ class CreateRequestRequest(BaseModel):
     subtype: Optional[str] = None
     data: Optional[dict] = None
     on_behalf_of: Optional[str] = None
+    custom_fields_data: Optional[dict[str, Any]] = None
 
 
 class ChangeStatusRequest(BaseModel):
@@ -38,6 +39,7 @@ class RequestListItemResponse(BaseModel):
     created_by: str
     created_by_name: Optional[str] = None
     created_by_email: Optional[str] = None
+    custom_fields: Optional[list[dict[str, Any]]] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -95,6 +97,7 @@ class RequestResponse(BaseModel):
     status: str
     priority: str
     data: Optional[dict] = None
+    custom_fields: Optional[list[dict[str, Any]]] = None
     resolved_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

@@ -55,6 +55,12 @@ from src.asset_bc.asset.domain.enums import InvalidStatusTransitionError
 from src.asset_bc.asset.infrastructure.repository import AssetRepository
 from src.auth_bc.user.domain.enums import UserRole
 from src.auth_bc.user.infrastructure.repository import UserRepository
+from src.custom_field_bc.definition.application.services.enrichment_service import (
+    CustomFieldEnrichmentService,
+)
+from src.custom_field_bc.definition.infrastructure.repository import (
+    CustomFieldDefinitionRepository,
+)
 
 
 def _serialize_asset(asset: Asset) -> dict[str, Any]:
@@ -188,8 +194,23 @@ async def handle_list_assets(arguments: dict) -> list[TextContent]:
         handler = ListAssetsQueryHandler(asset_repo)
         assets, total = handler.handle(query)
 
+        cf_repo = CustomFieldDefinitionRepository(db)
+        cf_enricher = CustomFieldEnrichmentService(cf_repo)
+        enriched_batch = cf_enricher.enrich_batch(
+            tenant.company_id,
+            "asset",
+            [a.custom_fields_data or {} for a in assets],
+        )
+
+        items = []
+        for asset, enriched_cf in zip(assets, enriched_batch):
+            item = _serialize_asset(asset)
+            if enriched_cf:
+                item["custom_fields"] = enriched_cf
+            items.append(item)
+
         return _text({
-            "items": [_serialize_asset(a) for a in assets],
+            "items": items,
             "total": total,
             "page": query.page,
             "page_size": query.page_size,
@@ -211,7 +232,19 @@ async def handle_get_asset(arguments: dict) -> list[TextContent]:
 
         handler = GetAssetQueryHandler(asset_repo)
         asset = handler.handle(query)
-        return _text(_serialize_asset(asset))
+
+        result = _serialize_asset(asset)
+        cf_repo = CustomFieldDefinitionRepository(db)
+        cf_enricher = CustomFieldEnrichmentService(cf_repo)
+        custom_fields = cf_enricher.enrich(
+            tenant.company_id,
+            "asset",
+            asset.custom_fields_data or {},
+        )
+        if custom_fields:
+            result["custom_fields"] = custom_fields
+
+        return _text(result)
     except AssetNotFoundError as e:
         return _error(str(e))
     finally:

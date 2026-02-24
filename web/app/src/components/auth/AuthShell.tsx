@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useI18n } from '../../lib/i18n';
+import { brand } from '../../config/brand';
 
 interface AuthShellProps {
   title: string;
@@ -39,12 +40,12 @@ export function AuthShell({ title, subtitle, children, showBackToLogin = false }
           <div className="relative flex h-full flex-col">
             <div className="flex items-center gap-3">
               <img
-                src="/logo.png"
-                alt="DeskSupportMonkey"
+                src={brand.loginImagePath}
+                alt={brand.name}
                 className="h-11 w-11 rounded-xl border border-white/20 bg-slate-900/80 p-1"
               />
               <div className="space-y-0.5">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-100">DeskSupportMonkey</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-100">{brand.name}</p>
                 <p className="text-xs text-slate-300">{t('auth.brand_caption')}</p>
               </div>
             </div>
@@ -71,8 +72,8 @@ export function AuthShell({ title, subtitle, children, showBackToLogin = false }
             <div className="mt-auto rounded-2xl border border-white/15 bg-slate-900/70 p-5 backdrop-blur-sm">
               <div className="flex items-center gap-4">
                 <img
-                  src="/logo.png"
-                  alt="DeskSupportMonkey mascot"
+                  src={brand.logoPath}
+                  alt={brand.name}
                   className="auth-float h-20 w-auto shrink-0 drop-shadow-[0_8px_18px_rgba(15,23,42,0.55)]"
                 />
                 <div>
@@ -87,8 +88,8 @@ export function AuthShell({ title, subtitle, children, showBackToLogin = false }
         <section className="flex items-center justify-center py-4 lg:py-0">
           <div className="auth-fade-up w-full max-w-xl rounded-2xl border border-border/85 bg-card/95 p-6 shadow-[0_22px_70px_-36px_rgba(15,23,42,0.45)] backdrop-blur sm:p-8">
             <div className="mb-6 flex items-center gap-3 lg:hidden">
-              <img src="/logo.png" alt="DeskSupportMonkey" className="h-10 w-10" />
-              <p className="text-sm font-semibold text-foreground">DeskSupportMonkey</p>
+              <img src={brand.logoPath} alt={brand.name} className="h-10 w-10" />
+              <p className="text-sm font-semibold text-foreground">{brand.name}</p>
             </div>
             <p className="inline-flex rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-primary">
               {t('auth.secure_access')}

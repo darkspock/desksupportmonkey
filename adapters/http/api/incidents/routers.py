@@ -6,6 +6,20 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from adapters.http.api.auth.dependencies import get_current_user, require_role
+from adapters.http.api.custom_fields.dependencies import (
+    get_cf_definition_repo,
+    get_cf_enrichment_service,
+    get_cf_validation_service,
+)
+from src.custom_field_bc.definition.infrastructure.repository import (
+    CustomFieldDefinitionRepository,
+)
+from src.custom_field_bc.definition.application.services.enrichment_service import (
+    CustomFieldEnrichmentService,
+)
+from src.custom_field_bc.definition.application.services.validation_service import (
+    CustomFieldValidationService,
+)
 from adapters.http.api.dependencies import get_event_bus
 from adapters.http.api.incidents.dependencies import (
     get_asset_repo,
@@ -34,6 +48,7 @@ from adapters.http.api.incidents.schemas import (
     UpdatePostMortemRequest,
     UpcomingDeadlineResponse,
 )
+from starlette.requests import Request
 from starlette.responses import JSONResponse
 from adapters.http.schemas.responses import PaginationMeta
 from core.database import get_db
@@ -184,6 +199,7 @@ def _user_name_resolver_factory(user_repo: UserRepository):
 
 @router.get("")
 def list_incidents(
+    request: Request,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     incident_status: Optional[str] = Query(None, alias="status"),
@@ -193,7 +209,16 @@ def list_incidents(
     current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
     incident_repo: IncidentRepository = Depends(get_incident_repo),
     user_repo: UserRepository = Depends(get_user_repo),
+    cf_enricher: CustomFieldEnrichmentService = Depends(get_cf_enrichment_service),
+    cf_def_repo: CustomFieldDefinitionRepository = Depends(get_cf_definition_repo),
 ):
+    cf_filters = {
+        k[3:]: v for k, v in request.query_params.items() if k.startswith("cf_")
+    }
+    cf_search_keys: list[str] | None = None
+    if search:
+        defs = cf_def_repo.find_active_by_entity_type(current_user.company_id, "incident")
+        cf_search_keys = [d.field_key for d in defs if d.field_type in ("text", "number")]
     handler = ListIncidentsQueryHandler(
         incident_repo=incident_repo,
         user_name_resolver=_user_name_resolver_factory(user_repo),
@@ -207,7 +232,12 @@ def list_incidents(
             severity=severity,
             incident_type=incident_type,
             search=search,
+            custom_field_filters=cf_filters or None,
+            custom_field_search_keys=cf_search_keys,
         )
+    )
+    cf_batch = cf_enricher.enrich_batch(
+        current_user.company_id, "incident", [i.custom_fields_data or {} for i in items]
     )
     return {
         "data": [
@@ -219,11 +249,12 @@ def list_incidents(
                 status=i.status,
                 assigned_to=i.assigned_to,
                 assigned_to_name=i.assigned_to_name,
+                custom_fields=cf_batch[idx],
                 detected_at=i.detected_at,
                 created_at=i.created_at,
                 updated_at=i.updated_at,
             ).model_dump(mode="json")
-            for i in items
+            for idx, i in enumerate(items)
         ],
         "meta": PaginationMeta(
             page=page, page_size=page_size, total=total
@@ -282,7 +313,20 @@ def create_incident(
     asset_repo: AssetRepository = Depends(get_asset_repo),
     vendor_repo: VendorRepository = Depends(get_vendor_repo),
     event_bus: EventBus = Depends(get_event_bus),
+    cf_validator: CustomFieldValidationService = Depends(get_cf_validation_service),
+    cf_enricher: CustomFieldEnrichmentService = Depends(get_cf_enrichment_service),
 ):
+    cf_data: dict = {}
+    if body.custom_fields_data:
+        try:
+            cf_data = cf_validator.validate_for_save(
+                current_user.company_id, "incident", body.custom_fields_data
+            )
+        except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
+            )
+
     incident_id = str(ulid.new())
     handler = CreateIncidentCommandHandler(
         incident_repo=incident_repo, event_bus=event_bus, db=db
@@ -300,6 +344,7 @@ def create_incident(
                 attack_vector=body.attack_vector,
                 data_breach_scope=body.data_breach_scope,
                 id=incident_id,
+                custom_fields_data=cf_data,
             )
         )
     except ValueError as e:
@@ -315,7 +360,10 @@ def create_incident(
             incident_id=incident_id, company_id=current_user.company_id
         )
     )
-    return {"data": _detail_to_response(detail).model_dump(mode="json")}
+    custom_fields = cf_enricher.enrich(
+        current_user.company_id, "incident", detail.custom_fields_data or {}
+    )
+    return {"data": _detail_to_response(detail, custom_fields=custom_fields).model_dump(mode="json")}
 
 
 @router.get("/{incident_id}")
@@ -326,6 +374,7 @@ def get_incident(
     user_repo: UserRepository = Depends(get_user_repo),
     asset_repo: AssetRepository = Depends(get_asset_repo),
     vendor_repo: VendorRepository = Depends(get_vendor_repo),
+    cf_enricher: CustomFieldEnrichmentService = Depends(get_cf_enrichment_service),
 ):
     handler = _make_detail_handler(
         incident_repo, user_repo, asset_repo, vendor_repo,
@@ -342,7 +391,10 @@ def get_incident(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Incident not found",
         )
-    return {"data": _detail_to_response(detail).model_dump(mode="json")}
+    custom_fields = cf_enricher.enrich(
+        current_user.company_id, "incident", detail.custom_fields_data or {}
+    )
+    return {"data": _detail_to_response(detail, custom_fields=custom_fields).model_dump(mode="json")}
 
 
 @router.put("/{incident_id}")
@@ -354,7 +406,20 @@ def update_incident(
     user_repo: UserRepository = Depends(get_user_repo),
     asset_repo: AssetRepository = Depends(get_asset_repo),
     vendor_repo: VendorRepository = Depends(get_vendor_repo),
+    cf_validator: CustomFieldValidationService = Depends(get_cf_validation_service),
+    cf_enricher: CustomFieldEnrichmentService = Depends(get_cf_enrichment_service),
 ):
+    cf_data = None
+    if body.custom_fields_data is not None:
+        try:
+            cf_data = cf_validator.validate_for_save(
+                current_user.company_id, "incident", body.custom_fields_data
+            )
+        except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
+            )
+
     handler = UpdateIncidentCommandHandler(incident_repo=incident_repo)
     try:
         handler.handle(
@@ -366,6 +431,7 @@ def update_incident(
                 description=body.description,
                 attack_vector=body.attack_vector,
                 data_breach_scope=body.data_breach_scope,
+                custom_fields_data=cf_data,
             )
         )
     except IncidentNotFoundError:
@@ -387,7 +453,10 @@ def update_incident(
             company_id=current_user.company_id,
         )
     )
-    return {"data": _detail_to_response(detail).model_dump(mode="json")}
+    custom_fields = cf_enricher.enrich(
+        current_user.company_id, "incident", detail.custom_fields_data or {}
+    )
+    return {"data": _detail_to_response(detail, custom_fields=custom_fields).model_dump(mode="json")}
 
 
 @router.post("/{incident_id}/status")
@@ -1009,7 +1078,7 @@ def _postmortem_to_response(pm) -> PostMortemResponse:
     )
 
 
-def _detail_to_response(detail) -> IncidentDetailResponse:
+def _detail_to_response(detail, custom_fields: list | None = None) -> IncidentDetailResponse:
     from datetime import datetime as dt
     from datetime import timezone as tz
 
@@ -1058,6 +1127,7 @@ def _detail_to_response(detail) -> IncidentDetailResponse:
         detected_at=detail.detected_at,
         close_reason=detail.close_reason,
         closed_at=detail.closed_at,
+        custom_fields=custom_fields,
         created_at=detail.created_at,
         updated_at=detail.updated_at,
         timeline=[

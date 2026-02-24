@@ -20,6 +20,7 @@ TEMPLATE_MAP = {
 }
 
 _jinja_env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
+_jinja_env.globals["brand_name"] = settings.BRAND_NAME
 HTML = None
 
 

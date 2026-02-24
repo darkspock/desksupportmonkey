@@ -19,6 +19,8 @@ class ListAssetsQuery(Query):
     location_id: Optional[str] = None
     sort_by: str = "created_at"
     sort_order: str = "desc"
+    custom_field_filters: Optional[dict[str, str]] = None
+    custom_field_search_keys: Optional[list[str]] = None
 
 
 class ListAssetsQueryHandler(QueryHandler[ListAssetsQuery, tuple[list[Asset], int]]):
@@ -38,4 +40,6 @@ class ListAssetsQueryHandler(QueryHandler[ListAssetsQuery, tuple[list[Asset], in
             location_id=query.location_id,
             sort_by=query.sort_by,
             sort_order=query.sort_order,
+            custom_field_filters=query.custom_field_filters,
+            custom_field_search_keys=query.custom_field_search_keys,
         )

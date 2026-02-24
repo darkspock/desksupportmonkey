@@ -21,6 +21,7 @@ class UpdateAssetCommand(Command):
     notes: Optional[str] = None
     purchase_date: Optional[date] = None
     warranty_expiration: Optional[date] = None
+    custom_fields_data: Optional[dict] = None
 
 
 class UpdateAssetCommandHandler(CommandHandler[UpdateAssetCommand]):
@@ -38,6 +39,7 @@ class UpdateAssetCommandHandler(CommandHandler[UpdateAssetCommand]):
             notes=command.notes,
             purchase_date=command.purchase_date,
             warranty_expiration=command.warranty_expiration,
+            custom_fields_data=command.custom_fields_data,
         )
 
         self.asset_repo.save(asset)

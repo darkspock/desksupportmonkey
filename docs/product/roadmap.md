@@ -34,7 +34,7 @@
 | E27 | Surveys & Feedback | CSAT surveys after ticket resolution (star rating + comment), decision polls for purchase planning (connects with E14), onboarding feedback after equipment delivery (connects with E22), and satisfaction metrics per technician, department, and category | Low | Pending |
 | E28 | Mobile / PWA | Progressive Web App for technicians and employees — QR scanning with camera, ticket updates from the field, push notifications, offline support, and responsive mobile-first UI | Low | Pending |
 | E29 | Audit Trail & Compliance Evidence | Complete audit log of all user actions (who did what, when), immutable append-only log storage, GDPR data export and deletion requests, compliance evidence tagging (link audit entries to NIS2/DORA/ISO 27001 controls), regulatory data retention policies per company, and audit-ready evidence export for external auditors | Critical | Done |
-| E30 | Custom Fields | Admin-defined custom fields for assets, tickets, and companies — text, number, date, dropdown, and multi-select types with validation rules and visibility per role | High | Pending |
+| E30 | Custom Fields | Admin-defined custom fields for assets, tickets, and companies — text, number, date, dropdown, and multi-select types with validation rules and visibility per role | High | Done |
 | E31 | Workflow Automations | Rule engine for if-then automations — auto-assign tickets by category, auto-escalate after SLA threshold, notify manager on critical priority, auto-close resolved tickets after X days, and trigger actions on asset status changes | High | Pending |
 | E32 | Asset Discovery | Automatic network device discovery — agent-based and agentless scanning, sync discovered devices with asset inventory, detect new/removed devices, and scheduled discovery scans | Low | Pending |
 | E33 | Change Management (ITIL) | Change request workflow — request, risk assessment, CAB approval board, scheduled implementation, rollback plan, post-implementation review, and change calendar integration | Low | Pending |
@@ -46,6 +46,7 @@
 | E39 | Compliance Dashboard | Compliance posture management — control mapping to NIS2, DORA, and ISO 27001 articles, compliance status per control (compliant/partial/non-compliant), evidence collection linking controls to audit logs, incidents, and change records, compliance gap analysis reports, and audit-ready PDF export per framework | Critical | Done |
 | E40 | Vulnerability Management | Track known vulnerabilities per asset — CVE tracking linked to asset brand/model/OS, severity scoring (CVSS), remediation ticket auto-creation from vulnerabilities, patch status tracking, vulnerability scan result import (CSV/API), and vulnerability-to-asset exposure dashboard | Medium | Pending |
 | E42 | SSO & Directory Sync | SAML/OIDC enterprise single sign-on configuration, LDAP/Active Directory synchronization of users, departments, and roles, automatic provisioning/deprovisioning, group-to-role mapping from identity provider | Critical | Pending |
+| E46 | White Label & Multi-Brand | Build-time brand configuration (name, logo, colors), per-brand asset folders, branded build scripts, database isolation per deployment | High | Done |
 | E43 | Billing & Subscriptions | Stripe-based subscription management — Free/Premium/Enterprise/Open Source plans, usage limits enforcement, Stripe Checkout for upgrades, Stripe Customer Portal for invoices, grace period and suspension on payment failure, feature gating per plan, super admin complimentary plans | Critical | Done |
 | E44 | Super Admin Enhancements | Company list with usage counts and trial visibility, Stripe invoice history per company, revenue overview dashboard (MRR, plan distribution, active trials) | High | Done |
 | E45 | Asset Locations & Movement Tracking | Location entity within asset BC, 3 system locations per company, admin-managed custom locations, automatic location changes on assign/unassign/create/decommission/shipping, movement audit trail, location management UI | High | Done |
@@ -332,5 +333,5 @@ E10: Asset QR & Barcodes (depends on E2 + E7)
 | **Phase 12** | E28 + E32 + E33 | **Advanced** — mobile PWA, asset discovery, ITIL change management |  |
 | **Backlog** | E26 + E27 + E34 | Internal tooling, surveys, feature voting — build when needed |  |
 
-**Completed:** 31 epics (E0-E19, E24, E29, E35-E37, E43-E45)
-**Remaining:** 17 epics (E20-E23, E25-E28, E30-E34, E38-E40, E42)
+**Completed:** 32 epics (E0-E19, E24, E29-E30, E35-E37, E43-E45)
+**Remaining:** 16 epics (E20-E23, E25-E28, E31-E34, E38-E40, E42)

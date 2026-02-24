@@ -36,6 +36,7 @@ class SecurityIncident:
     data_breach_scope: Optional[str] = None
     assigned_to: Optional[str] = None
     close_reason: Optional[str] = None
+    custom_fields_data: Optional[dict] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     closed_at: Optional[datetime] = None
@@ -53,6 +54,7 @@ class SecurityIncident:
         attack_vector: Optional[str] = None,
         data_breach_scope: Optional[str] = None,
         id: Optional[str] = None,
+        custom_fields_data: Optional[dict] = None,
     ) -> "SecurityIncident":
         if not title or not title.strip():
             raise ValueError("Title is required")
@@ -70,6 +72,7 @@ class SecurityIncident:
             detected_at=detected_at,
             attack_vector=attack_vector,
             data_breach_scope=data_breach_scope,
+            custom_fields_data=custom_fields_data or {},
         )
 
     def change_status(

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import api from '../../lib/api';
 import { Card } from '../../components/ui/Card';
+import { CustomFieldsForm } from '../../components/custom-fields/CustomFieldsForm';
 import { useToast } from '../../hooks/useToast';
 import { useI18n } from '../../lib/i18n';
 
@@ -18,6 +19,7 @@ export default function CreateIncidentPage() {
   const [detectedAt, setDetectedAt] = useState('');
   const [attackVector, setAttackVector] = useState('');
   const [dataBreachScope, setDataBreachScope] = useState('');
+  const [customFieldsData, setCustomFieldsData] = useState<Record<string, unknown>>({});
   const [formError, setFormError] = useState('');
 
   const createMutation = useMutation({
@@ -29,6 +31,7 @@ export default function CreateIncidentPage() {
       detected_at: detectedAt ? new Date(detectedAt).toISOString() : null,
       attack_vector: attackVector || null,
       data_breach_scope: dataBreachScope || null,
+      custom_fields_data: Object.keys(customFieldsData).length ? customFieldsData : undefined,
     }),
     onSuccess: (res) => {
       showToast({ title: t('page.create_incident.toast_created'), variant: 'success' });
@@ -108,6 +111,13 @@ export default function CreateIncidentPage() {
           <div className="md:col-span-2">
             <label className="block mb-1.5 text-muted-foreground">{t('page.create_incident.data_breach_scope')}</label>
             <textarea value={dataBreachScope} onChange={(e) => setDataBreachScope(e.target.value)} rows={2} className="w-full" placeholder={t('page.create_incident.data_breach_scope_placeholder')} />
+          </div>
+          <div className="md:col-span-2">
+            <CustomFieldsForm
+              entityType="incident"
+              values={customFieldsData}
+              onChange={setCustomFieldsData}
+            />
           </div>
         </div>
       </Card>

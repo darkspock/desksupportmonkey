@@ -91,6 +91,7 @@ export interface Asset {
   purchase_date: string | null;
   warranty_expiration: string | null;
   notes: string | null;
+  custom_fields?: CustomFieldValue[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -158,6 +159,7 @@ export interface ServiceRequest {
   data: Record<string, unknown>;
   resolved_at: string | null;
   comment_count?: number;
+  custom_fields?: CustomFieldValue[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -724,6 +726,7 @@ export interface IncidentListItem {
   assigned_to?: string | null;
   assigned_to_name?: string | null;
   detected_at?: string | null;
+  custom_fields?: CustomFieldValue[] | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -751,6 +754,7 @@ export interface IncidentDetail {
   assets: IncidentAsset[];
   vendors: IncidentVendor[];
   postmortem?: PostMortem | null;
+  custom_fields?: CustomFieldValue[] | null;
 }
 
 export interface PostMortem {
@@ -1016,6 +1020,45 @@ export interface ComplianceDashboard {
   controls_without_evidence: number;
   frameworks: FrameworkSummary[];
   gap_controls: ControlAssessment[];
+}
+
+// Custom Fields
+export type CustomFieldType = 'text' | 'number' | 'date' | 'select' | 'multi_select' | 'boolean' | 'file';
+
+export interface CustomFieldFile {
+  id: string;
+  name: string;
+  size: number;
+  mime: string;
+  key: string;
+  download_path?: string;
+}
+
+export interface CustomFieldDefinition {
+  id: string;
+  entity_type: 'asset' | 'request' | 'incident';
+  field_key: string;
+  label: string;
+  description: string | null;
+  field_type: CustomFieldType;
+  options: string[] | null;
+  required: boolean;
+  sort_order: number;
+  is_active: boolean;
+  visible_to_employees: boolean;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface CustomFieldValue {
+  key: string;
+  label: string;
+  type: CustomFieldType;
+  value: unknown;
+  required: boolean;
+  is_active: boolean;
+  visible_to_employees: boolean;
+  options?: string[];
 }
 
 // Knowledge Base

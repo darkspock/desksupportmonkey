@@ -1,3 +1,8 @@
+import logging
+
+from src.asset_bc.asset.domain.entities import (
+    InvalidAssignmentError,
+)
 from src.asset_bc.asset.domain.enums import (
     SystemLocation,
 )
@@ -11,6 +16,8 @@ from src.shipping_bc.shipment.domain.enums import (
     DestinationType,
     ShipmentDirection,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class DeliveryAssetService:
@@ -67,9 +74,16 @@ class DeliveryAssetService:
                 item.asset_id, shipment.company_id,
             )
             if asset and shipment.recipient_user_id:
-                asset.assign(
-                    shipment.recipient_user_id,
-                )
+                try:
+                    asset.assign(
+                        shipment.recipient_user_id,
+                    )
+                except InvalidAssignmentError:
+                    logger.warning(
+                        "Cannot assign asset %s (status=%s), skipping",
+                        asset.id,
+                        asset.status,
+                    )
                 if employee_loc:
                     asset.location_id = employee_loc.id
                 self.asset_repo.save(asset)
@@ -86,7 +100,14 @@ class DeliveryAssetService:
                 item.asset_id, shipment.company_id,
             )
             if asset:
-                asset.unassign()
+                try:
+                    asset.unassign()
+                except InvalidAssignmentError:
+                    logger.warning(
+                        "Cannot unassign asset %s (status=%s), skipping",
+                        asset.id,
+                        asset.status,
+                    )
                 if warehouse_loc:
                     asset.location_id = warehouse_loc.id
                 self.asset_repo.save(asset)

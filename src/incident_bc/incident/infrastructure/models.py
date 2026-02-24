@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 from sqlalchemy import (
     DateTime,
@@ -38,6 +38,7 @@ class SecurityIncidentModel(ULIDMixin, TimestampMixin, Base):
         DateTime(timezone=True), nullable=False
     )
     close_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    custom_fields_data: Mapped[Any] = mapped_column(JSON, server_default="{}", nullable=False)
     closed_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

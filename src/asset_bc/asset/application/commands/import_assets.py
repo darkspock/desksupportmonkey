@@ -7,6 +7,9 @@ from typing import Optional
 from src.asset_bc.asset.domain.entities import Asset, AssetEvent
 from src.asset_bc.asset.domain.enums import AssetType
 from src.asset_bc.asset.domain.repository import AssetRepositoryInterface
+from src.custom_field_bc.definition.application.services.validation_service import (
+    CustomFieldValidationService,
+)
 
 
 REQUIRED_HEADERS = {"type", "brand", "model", "serial_number"}
@@ -42,8 +45,13 @@ class ImportAssetsRequest:
 
 # Application service: returns ImportResult, not a CQRS command handler
 class ImportAssetsService:
-    def __init__(self, asset_repo: AssetRepositoryInterface):
+    def __init__(
+        self,
+        asset_repo: AssetRepositoryInterface,
+        cf_validation_service: CustomFieldValidationService | None = None,
+    ):
         self.asset_repo = asset_repo
+        self.cf_validation_service = cf_validation_service
 
     def handle(self, command: ImportAssetsRequest) -> ImportResult:
         reader = csv.DictReader(io.StringIO(command.csv_content))
@@ -76,6 +84,22 @@ class ImportAssetsService:
             purchase_date = self._parse_date(row.get("purchase_date"))
             warranty_expiration = self._parse_date(row.get("warranty_expiration"))
 
+            # Extract custom field values from extra columns
+            cf_data: dict = {}
+            for header in headers - ALL_HEADERS:
+                val = row.get(header, "").strip()
+                if val:
+                    cf_data[header] = val
+
+            if self.cf_validation_service and cf_data:
+                try:
+                    cf_data = self.cf_validation_service.validate_for_save(
+                        command.company_id, "asset", cf_data
+                    )
+                except ValueError as e:
+                    failed.append(ImportRowError(row=idx, error=str(e)))
+                    continue
+
             asset = Asset.create(
                 company_id=command.company_id,
                 type=AssetType(row["type"].strip().lower()),
@@ -85,6 +109,7 @@ class ImportAssetsService:
                 purchase_date=purchase_date,
                 warranty_expiration=warranty_expiration,
                 notes=row.get("notes", "").strip() or None,
+                custom_fields_data=cf_data if cf_data else None,
             )
             event = AssetEvent.create(
                 asset_id=asset.id,

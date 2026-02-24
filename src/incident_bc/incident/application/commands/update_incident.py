@@ -17,6 +17,7 @@ class UpdateIncidentCommand(Command):
     description: Optional[str] = None
     attack_vector: Optional[str] = None
     data_breach_scope: Optional[str] = None
+    custom_fields_data: Optional[dict] = None
 
 
 class UpdateIncidentCommandHandler(CommandHandler[UpdateIncidentCommand]):
@@ -36,6 +37,9 @@ class UpdateIncidentCommandHandler(CommandHandler[UpdateIncidentCommand]):
             attack_vector=command.attack_vector,
             data_breach_scope=command.data_breach_scope,
         )
+
+        if command.custom_fields_data is not None:
+            incident.custom_fields_data = command.custom_fields_data
 
         self.incident_repo.save(incident)
 

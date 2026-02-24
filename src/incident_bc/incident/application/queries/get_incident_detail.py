@@ -74,6 +74,7 @@ class IncidentDetailDto:
     closed_at: Optional[datetime]
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
+    custom_fields_data: Optional[dict] = None
     timeline: list[TimelineEntryDto] = field(default_factory=list)
     reports: list[ReportDto] = field(default_factory=list)
     assets: list[IncidentAssetDto] = field(default_factory=list)
@@ -227,6 +228,7 @@ class GetIncidentDetailQueryHandler(
             closed_at=incident.closed_at,
             created_at=incident.created_at,
             updated_at=incident.updated_at,
+            custom_fields_data=incident.custom_fields_data,
             timeline=timeline_dtos,
             reports=report_dtos,
             assets=asset_dtos,

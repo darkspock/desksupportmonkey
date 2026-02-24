@@ -15,6 +15,7 @@ class CreateIncidentRequest(BaseModel):
     detected_at: datetime
     attack_vector: Optional[str] = None
     data_breach_scope: Optional[str] = None
+    custom_fields_data: Optional[dict[str, Any]] = None
 
 
 class UpdateIncidentRequest(BaseModel):
@@ -22,6 +23,7 @@ class UpdateIncidentRequest(BaseModel):
     description: Optional[str] = Field(None, min_length=1)
     attack_vector: Optional[str] = None
     data_breach_scope: Optional[str] = None
+    custom_fields_data: Optional[dict[str, Any]] = None
 
 
 class ChangeIncidentStatusRequest(BaseModel):
@@ -69,6 +71,7 @@ class IncidentListItemResponse(BaseModel):
     status: str
     assigned_to: Optional[str] = None
     assigned_to_name: Optional[str] = None
+    custom_fields: Optional[list[dict[str, Any]]] = None
     detected_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -164,6 +167,7 @@ class IncidentDetailResponse(BaseModel):
     detected_at: Optional[datetime] = None
     close_reason: Optional[str] = None
     closed_at: Optional[datetime] = None
+    custom_fields: Optional[list[dict[str, Any]]] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     timeline: list[TimelineEntryResponse] = []

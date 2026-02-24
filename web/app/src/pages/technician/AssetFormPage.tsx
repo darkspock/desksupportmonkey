@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
 import { Card } from '../../components/ui/Card';
+import { CustomFieldsForm } from '../../components/custom-fields/CustomFieldsForm';
 import { useI18n } from '../../lib/i18n';
 
 export default function AssetFormPage() {
@@ -14,6 +15,7 @@ export default function AssetFormPage() {
     purchase_date: '', warranty_expiration: '', notes: '',
   });
   const [error, setError] = useState('');
+  const [customFieldsData, setCustomFieldsData] = useState<Record<string, unknown>>({});
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -21,6 +23,7 @@ export default function AssetFormPage() {
       if (!payload.purchase_date) delete (payload as Record<string, unknown>).purchase_date;
       if (!payload.warranty_expiration) delete (payload as Record<string, unknown>).warranty_expiration;
       if (!payload.notes) delete (payload as Record<string, unknown>).notes;
+      (payload as Record<string, unknown>).custom_fields_data = Object.keys(customFieldsData).length ? customFieldsData : undefined;
       const { data } = await api.post('/assets', payload);
       return data.data;
     },
@@ -90,6 +93,12 @@ export default function AssetFormPage() {
             <textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} rows={4} className="w-full resize-none bg-card" />
           </div>
         </Card>
+
+        <CustomFieldsForm
+          entityType="asset"
+          values={customFieldsData}
+          onChange={setCustomFieldsData}
+        />
 
         <div className="flex items-center justify-end gap-3">
           <button type="button" onClick={() => navigate(-1)} className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50">
