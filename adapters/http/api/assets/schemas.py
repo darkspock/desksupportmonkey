@@ -16,6 +16,7 @@ class CreateAssetRequest(BaseModel):
 
 
 class UpdateAssetRequest(BaseModel):
+    type: Optional[str] = Field(None, min_length=1, max_length=100)
     brand: Optional[str] = Field(None, min_length=1, max_length=255)
     model: Optional[str] = Field(None, min_length=1, max_length=255)
     purchase_date: Optional[date] = None

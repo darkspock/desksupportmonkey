@@ -555,6 +555,7 @@ def update_asset(
                 purchase_date=body.purchase_date,
                 warranty_expiration=body.warranty_expiration,
                 custom_fields_data=cf_data,
+                type=body.type,
             )
         )
     except UpdateAssetNotFoundError:

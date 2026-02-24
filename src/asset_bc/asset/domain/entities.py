@@ -141,10 +141,16 @@ class Asset:
         purchase_date: Optional[date] = None,
         warranty_expiration: Optional[date] = None,
         custom_fields_data: Optional[dict] = None,
+        type: Optional[str] = None,
     ) -> dict:
         changes = {}
         if custom_fields_data is not None:
             self.custom_fields_data = custom_fields_data
+        if type is not None:
+            old = self.type
+            self.type = type
+            if old != self.type:
+                changes["type"] = {"old": old, "new": self.type}
         if brand is not None:
             if not brand.strip():
                 raise ValueError("Brand cannot be empty")

@@ -18,6 +18,7 @@ import type {
   Asset,
   AssetEvent,
   AssetLocation,
+  AssetTypeDefinition,
   AssignableUser,
   AssetStatus,
   CustomFieldValue,
@@ -155,6 +156,7 @@ export default function AssetDetailPage() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
+    type: '',
     brand: '',
     model: '',
     purchase_date: '',
@@ -209,6 +211,14 @@ export default function AssetDetailPage() {
     },
   });
 
+  const { data: assetTypes } = useQuery({
+    queryKey: ['asset-types-active'],
+    queryFn: async () => {
+      const { data } = await api.get('/asset-types', { params: { active_only: true } });
+      return data.data as AssetTypeDefinition[];
+    },
+  });
+
   const {
     data: assignableUsers,
     refetch: refetchAssignableUsers,
@@ -237,6 +247,7 @@ export default function AssetDetailPage() {
   const updateAsset = useMutation({
     mutationFn: () => {
       const payload: Record<string, unknown> = {
+        type: editForm.type,
         brand: editForm.brand.trim(),
         model: editForm.model.trim(),
         purchase_date: editForm.purchase_date || null,
@@ -379,6 +390,7 @@ export default function AssetDetailPage() {
               type="button"
               onClick={() => {
                 setEditForm({
+                  type: asset.type,
                   brand: asset.brand,
                   model: asset.model,
                   purchase_date: asset.purchase_date ?? '',
@@ -662,6 +674,21 @@ export default function AssetDetailPage() {
               className="flex flex-col overflow-hidden"
             >
               <div className="overflow-y-auto px-6 py-4 space-y-3">
+                <div>
+                  <label className="block mb-1.5 text-muted-foreground">{t('table.type')}</label>
+                  <select
+                    value={editForm.type}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, type: e.target.value }))}
+                    className="w-full"
+                  >
+                    {(assetTypes ?? []).map((at) => (
+                      <option key={at.code} value={at.code}>{at.name}</option>
+                    ))}
+                    {assetTypes && !assetTypes.some((at) => at.code === editForm.type) && (
+                      <option value={editForm.type}>{editForm.type}</option>
+                    )}
+                  </select>
+                </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <label className="block mb-1.5 text-muted-foreground">{t('table.brand')}</label>

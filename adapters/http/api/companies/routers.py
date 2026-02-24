@@ -7,6 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from adapters.http.api.auth.dependencies import require_role
 from adapters.http.api.companies.dependencies import (
+    get_asset_repo,
+    get_asset_type_repo,
     get_company_repo,
     get_magic_link_repo,
     get_stripe_client,
@@ -27,6 +29,10 @@ from adapters.http.api.companies.schemas import (
 )
 from adapters.http.schemas.responses import PaginationMeta
 from core.email import get_email_service
+from src.asset_bc.asset.infrastructure.repository import AssetRepository
+from src.asset_type_bc.definition.infrastructure.repository import (
+    AssetTypeDefinitionRepository,
+)
 from src.auth_bc.magic_link.infrastructure.repository import MagicLinkRepository
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
@@ -166,6 +172,8 @@ def create_company(
     user_repo: UserRepository = Depends(get_user_repo),
     magic_link_repo: MagicLinkRepository = Depends(get_magic_link_repo),
     stripe_client: StripeClient = Depends(get_stripe_client),
+    asset_repo: AssetRepository = Depends(get_asset_repo),
+    asset_type_repo: AssetTypeDefinitionRepository = Depends(get_asset_type_repo),
 ):
     company_id = str(ulid.new())
     handler = CreateCompanyCommandHandler(
@@ -174,6 +182,8 @@ def create_company(
         magic_link_repo=magic_link_repo,
         email_service=get_email_service(),
         stripe_client=stripe_client,
+        asset_repo=asset_repo,
+        asset_type_repo=asset_type_repo,
     )
     command = CreateCompanyCommand(
         name=body.name,

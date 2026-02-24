@@ -7,6 +7,10 @@ from core.stripe_client import StripeClient
 from src.asset_bc.asset.domain.entities import AssetLocation
 from src.asset_bc.asset.domain.enums import SystemLocation
 from src.asset_bc.asset.domain.repository import AssetRepositoryInterface
+from src.asset_type_bc.definition.domain.entities import AssetTypeDefinition
+from src.asset_type_bc.definition.domain.repository import (
+    AssetTypeDefinitionRepositoryInterface,
+)
 from src.auth_bc.magic_link.domain.entities import MagicLink
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
@@ -46,6 +50,17 @@ SYSTEM_LOCATION_NAMES: dict[str, str] = {
     SystemLocation.MAIN_WAREHOUSE.value: "Almacén Principal",
 }
 
+DEFAULT_ASSET_TYPES: list[tuple[str, str | None, int]] = [
+    ("Laptop", "laptop", 0),
+    ("Monitor", "monitor", 1),
+    ("Keyboard", "keyboard", 2),
+    ("Mouse", "mouse", 3),
+    ("Headset", "headset", 4),
+    ("Phone", "phone", 5),
+    ("Docking Station", "dock", 6),
+    ("Other", None, 7),
+]
+
 
 class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
     def __init__(
@@ -56,6 +71,7 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
         email_service: EmailServiceInterface,
         stripe_client: StripeClient,
         asset_repo: Optional[AssetRepositoryInterface] = None,
+        asset_type_repo: Optional[AssetTypeDefinitionRepositoryInterface] = None,
     ):
         self.company_repo = company_repo
         self.user_repo = user_repo
@@ -63,6 +79,7 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
         self.email_service = email_service
         self.stripe_client = stripe_client
         self.asset_repo = asset_repo
+        self.asset_type_repo = asset_type_repo
 
     def handle(self, command: CreateCompanyCommand) -> None:
         # Check name uniqueness
@@ -130,5 +147,17 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
                 )
                 self.asset_repo.save_location(loc)
             logger.info("Seeded system locations for company %s", company.id)
+
+        # Seed default asset type definitions
+        if self.asset_type_repo:
+            for name, icon, sort_order in DEFAULT_ASSET_TYPES:
+                at = AssetTypeDefinition.create(
+                    company_id=company.id,
+                    name=name,
+                    icon=icon,
+                    sort_order=sort_order,
+                )
+                self.asset_type_repo.save(at)
+            logger.info("Seeded default asset types for company %s", company.id)
 
         logger.info("Company created: %s (id=%s)", company.name, company.id)
