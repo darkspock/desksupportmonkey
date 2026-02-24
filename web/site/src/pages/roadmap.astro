@@ -34,36 +34,47 @@ const day2Epics = [
   { id: 'E35', title: 'MCP Server', description: 'DSM exposed as MCP tools for AI assistants' },
 ];
 
+const day4Epics = [
+  { id: 'E18', title: 'Knowledge Base & Self-Service', description: 'Wiki with TipTap editor, categories, full-text search, AI-suggested articles, self-service portal' },
+  { id: 'E19', title: 'SLA Management', description: 'Configurable SLA policies, escalation rules, breach notifications, compliance reports' },
+  { id: 'E24', title: 'Google & Microsoft Login', description: 'OAuth2 login buttons, token verification, account linking, auto-creation by domain' },
+  { id: 'E29', title: 'Audit Trail & Compliance', description: 'Immutable audit logs, GDPR data export, evidence tagging for NIS2/DORA/ISO 27001' },
+  { id: 'E30', title: 'Custom Fields', description: 'Admin-defined fields for assets, tickets, and companies — text, number, date, dropdown types' },
+  { id: 'E36', title: 'Security Incident Management', description: 'Incident lifecycle, NIS2 24h/72h reporting timelines, CSIRT notifications, post-mortems' },
+  { id: 'E37', title: 'Risk Register', description: 'Risk scoring matrix, mitigation tracking, periodic reviews, heat map dashboard' },
+  { id: 'E39', title: 'Compliance Dashboard', description: 'NIS2/DORA/ISO 27001 control mapping, evidence collection, gap analysis, audit-ready exports' },
+  { id: 'E43', title: 'Billing & Subscriptions', description: 'Stripe checkout, plan management, usage limits, customer portal, feature gating' },
+  { id: 'E44', title: 'Super Admin Enhancements', description: 'Company list with usage counts, Stripe invoice history, revenue dashboard (MRR)' },
+  { id: 'E45', title: 'Asset Locations & Movement', description: 'Location entity, system locations, movement tracking, automatic location changes' },
+  { id: 'E46', title: 'White Label & Multi-Brand', description: 'Runtime brand config API, per-brand assets, branded deployments, database isolation' },
+  { id: '', title: 'DSM Control Production Launch', description: 'Full deployment at dsmcontrol.com — 3 subdomains, SSL, nginx, systemd, Stripe billing' },
+  { id: '', title: 'Collapsible Navigation', description: 'Redesigned sidebar with collapsible sub-groups for the Management section' },
+];
+
 const pendingEpics = [
-  { id: 'E18', title: 'Knowledge Base & Self-Service', description: 'Wiki, search, and AI-suggested articles', priority: 'High' },
-  { id: 'E19', title: 'SLA Management', description: 'Targets, escalation and breach reporting', priority: 'High' },
   { id: 'E20', title: 'Asset Lifecycle & Warranties', description: 'Depreciation, renewals and warranty workflows', priority: 'Medium' },
   { id: 'E21', title: 'Software License Management', description: 'Seats, renewals, and compliance reports', priority: 'Medium' },
   { id: 'E22', title: 'Employee Onboarding/Offboarding', description: 'Automated joiner/leaver equipment workflows', priority: 'High' },
   { id: 'E23', title: 'Multi-channel Intake', description: 'Email, Slack/Teams and chatbot intake', priority: 'Medium' },
-  { id: 'E24', title: 'SSO & Directory Sync', description: 'SAML/OIDC and LDAP/AD synchronization', priority: 'High' },
   { id: 'E25', title: 'Vendor & Supply Chain Risk', description: 'Vendor management plus third-party risk controls', priority: 'Medium' },
-  { id: 'E26', title: 'Observability with SigNoz', description: 'OpenTelemetry tracing, metrics, logs and errors', priority: 'Medium' },
+  { id: 'E26', title: 'Observability with Grafana', description: 'Prometheus metrics, Grafana dashboards, infrastructure health', priority: 'Low' },
   { id: 'E27', title: 'Surveys & Feedback', description: 'CSAT and operational feedback loops', priority: 'Medium' },
   { id: 'E28', title: 'Mobile / PWA', description: 'Field workflows, push notifications, offline support', priority: 'High' },
-  { id: 'E29', title: 'Audit Trail & Compliance', description: 'Immutable audit evidence and compliance exports', priority: 'High' },
-  { id: 'E30', title: 'Custom Fields', description: 'Admin-defined schema for assets, tickets and companies', priority: 'High' },
   { id: 'E31', title: 'Workflow Automations', description: 'Rule engine for assignment, escalation and closure', priority: 'High' },
   { id: 'E32', title: 'Asset Discovery', description: 'Agent and agentless discovery synchronized with inventory', priority: 'Medium' },
   { id: 'E33', title: 'Change Management (ITIL)', description: 'CAB workflow, rollback plans and change calendar', priority: 'Medium' },
   { id: 'E34', title: 'Feature Voting & Roadmap', description: 'In-app idea board and vote-based prioritization', priority: 'Low' },
-  { id: 'E36', title: 'Security Incident Management', description: 'Incident lifecycle with NIS2 timeline controls', priority: 'High' },
-  { id: 'E37', title: 'Risk Register', description: 'Risk scoring, mitigation tracking and heat maps', priority: 'High' },
   { id: 'E38', title: 'Asset Criticality & CMDB', description: 'Criticality classes and CI relationship mapping', priority: 'Medium' },
-  { id: 'E39', title: 'Compliance Dashboard', description: 'Control mapping and posture dashboards', priority: 'High' },
   { id: 'E40', title: 'Vulnerability Management', description: 'CVE exposure and remediation workflows', priority: 'Medium' },
+  { id: 'E42', title: 'SSO & Directory Sync', description: 'SAML/OIDC and LDAP/AD synchronization', priority: 'Critical' },
 ];
 
-const completedCount = day1Epics.length + day2Epics.length + day3Items.length;
+const completedCount = day1Epics.length + day2Epics.length + day3Items.length + day4Epics.length;
 const total = completedCount + pendingEpics.length;
 const progressPercent = Math.round((completedCount / total) * 100);
 
 const priorityStyles: Record<string, { bg: string; text: string }> = {
+  Critical: { bg: 'bg-red-100', text: 'text-red-700' },
   High: { bg: 'bg-amber-100', text: 'text-amber-700' },
   Medium: { bg: 'bg-blue-100', text: 'text-blue-700' },
   Low: { bg: 'bg-slate-100', text: 'text-slate-600' },
@@ -78,7 +89,7 @@ const priorityStyles: Record<string, { bg: string; text: string }> = {
           {total} Epics
         </span>
         <h1 class="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">Product Roadmap</h1>
-        <p class="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">Real progress broken down by Day 1, Day 2, Day 3, and upcoming.</p>
+        <p class="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">Real progress broken down by Day 1, Day 2, Day 3, Day 4, and upcoming.</p>
       </div>
 
       <div class="mx-auto max-w-2xl mb-16">
@@ -190,6 +201,40 @@ const priorityStyles: Record<string, { bg: string; text: string }> = {
               <div class="min-w-0">
                 <span class="text-sm font-semibold text-slate-900">{item.title}</span>
                 <p class="mt-0.5 text-xs text-slate-500 line-clamp-2">{item.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div class="mb-16">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="flex h-8 w-8 items-center justify-center rounded-full bg-rose-100">
+            <svg class="h-4 w-4 text-rose-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold text-slate-900">Day 4</h2>
+          <span class="rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-semibold text-rose-700">{day4Epics.length}</span>
+        </div>
+        <p class="text-sm text-slate-500 mb-4 ml-11">Enterprise features, compliance, billing, and the first white-label deployment.</p>
+        <div class="ml-11 mb-6 rounded-xl bg-rose-50/60 border border-rose-200/60 p-4 text-sm text-slate-700 leading-relaxed space-y-2">
+          <p>Day 4 was about <strong>making the platform enterprise-ready and commercially viable</strong>. We shipped the full NIS2/DORA compliance stack &mdash; security incident management with regulatory timelines, a risk register with heat maps, and a compliance dashboard mapping controls to NIS2, DORA, and ISO 27001 frameworks.</p>
+          <p>On the commercial side, <strong>Stripe billing went live</strong> with free trials, plan enforcement, and a super admin revenue dashboard. We also built <strong>Google & Microsoft OAuth login</strong>, a <strong>knowledge base with AI article suggestions</strong>, <strong>SLA management with escalation rules</strong>, and <strong>admin-defined custom fields</strong>.</p>
+          <p>The day's highlight: <strong>shipping the first white-label deployment</strong>. A runtime brand config API replaced build-time variables, and DSM Control launched at dsmcontrol.com with its own subdomains (www/app/api), SSL certificates, Stripe products, and a dedicated marketing site &mdash; all powered by the same codebase.</p>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {day4Epics.map((epic) => (
+            <div class="flex items-start gap-3 rounded-xl border-l-4 border-rose-400 bg-white py-3 pl-4 pr-4 shadow-sm">
+              <svg class="mt-0.5 h-5 w-5 shrink-0 text-rose-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0" />
+              </svg>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  {epic.id && <span class="text-xs font-mono font-semibold text-rose-600">{epic.id}</span>}
+                  <span class="text-sm font-semibold text-slate-900 truncate">{epic.title}</span>
+                </div>
+                <p class="mt-0.5 text-xs text-slate-500 line-clamp-2">{epic.description}</p>
               </div>
             </div>
           ))}
