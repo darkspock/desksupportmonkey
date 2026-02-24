@@ -5,7 +5,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from src.asset_bc.asset.domain.entities import Asset, AssetEvent, AssetLocation
-from src.asset_bc.asset.domain.enums import AssetStatus, AssetType
+from src.asset_bc.asset.domain.enums import AssetStatus
 from src.asset_bc.asset.domain.repository import AssetRepositoryInterface
 from src.asset_bc.asset.infrastructure.models import AssetLocationModel, AssetModel, AssetEventModel
 
@@ -19,7 +19,7 @@ class AssetRepository(AssetRepositoryInterface):
             select(AssetModel).where(AssetModel.id == asset.id)
         ).scalar_one_or_none()
         if existing:
-            existing.type = asset.type.value
+            existing.type = asset.type
             existing.brand = asset.brand
             existing.model = asset.model
             existing.serial_number = asset.serial_number
@@ -35,7 +35,7 @@ class AssetRepository(AssetRepositoryInterface):
             model = AssetModel(
                 id=asset.id,
                 company_id=asset.company_id,
-                type=asset.type.value,
+                type=asset.type,
                 brand=asset.brand,
                 model=asset.model,
                 serial_number=asset.serial_number,
@@ -196,7 +196,7 @@ class AssetRepository(AssetRepositoryInterface):
                 AssetModel.company_id == company_id
             ).group_by(AssetModel.type)
         ).all()
-        result = {t.value: 0 for t in AssetType}
+        result: dict[str, int] = {}
         for row in rows:
             result[row[0]] = row[1]
         return result
@@ -293,6 +293,15 @@ class AssetRepository(AssetRepositoryInterface):
         if existing:
             existing.name = location.name
             existing.in_use = location.in_use
+            existing.street_line_1 = location.street_line_1
+            existing.street_line_2 = location.street_line_2
+            existing.city = location.city
+            existing.state = location.state
+            existing.postal_code = location.postal_code
+            existing.country = location.country
+            existing.phone = location.phone
+            existing.is_personal = location.is_personal
+            existing.user_id = location.user_id
         else:
             model = AssetLocationModel(
                 id=location.id,
@@ -301,6 +310,15 @@ class AssetRepository(AssetRepositoryInterface):
                 is_system=location.is_system,
                 system_key=location.system_key,
                 in_use=location.in_use,
+                street_line_1=location.street_line_1,
+                street_line_2=location.street_line_2,
+                city=location.city,
+                state=location.state,
+                postal_code=location.postal_code,
+                country=location.country,
+                phone=location.phone,
+                is_personal=location.is_personal,
+                user_id=location.user_id,
             )
             self.session.add(model)
             existing = model
@@ -360,6 +378,16 @@ class AssetRepository(AssetRepositoryInterface):
         ).scalar_one_or_none()
         return self._location_to_entity(model) if model else None
 
+    def find_personal_location_by_user(self, user_id: str, company_id: str) -> Optional[AssetLocation]:
+        model = self.session.execute(
+            select(AssetLocationModel).where(
+                AssetLocationModel.user_id == user_id,
+                AssetLocationModel.company_id == company_id,
+                AssetLocationModel.is_personal.is_(True),
+            )
+        ).scalar_one_or_none()
+        return self._location_to_entity(model) if model else None
+
     @staticmethod
     def _location_to_entity(model: AssetLocationModel) -> AssetLocation:
         return AssetLocation(
@@ -369,6 +397,15 @@ class AssetRepository(AssetRepositoryInterface):
             is_system=model.is_system,
             system_key=model.system_key,
             in_use=model.in_use,
+            street_line_1=model.street_line_1,
+            street_line_2=model.street_line_2,
+            city=model.city,
+            state=model.state,
+            postal_code=model.postal_code,
+            country=model.country,
+            phone=model.phone,
+            is_personal=model.is_personal,
+            user_id=model.user_id,
             created_at=model.created_at,
         )
 
@@ -377,7 +414,7 @@ class AssetRepository(AssetRepositoryInterface):
         return Asset(
             id=model.id,
             company_id=model.company_id,
-            type=AssetType(model.type),
+            type=model.type,
             brand=model.brand,
             model=model.model,
             serial_number=model.serial_number,

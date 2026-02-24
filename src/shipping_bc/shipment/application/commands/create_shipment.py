@@ -28,10 +28,10 @@ class CreateShipmentCommand(Command):
     company_id: str
     direction: str
     destination_type: str
-    destination_address_id: str
+    destination_location_id: str
     created_by: str
     asset_ids: list[str]
-    origin_address_id: Optional[str] = None
+    origin_location_id: Optional[str] = None
     recipient_name: Optional[str] = None
     recipient_user_id: Optional[str] = None
     carrier: Optional[str] = None
@@ -81,11 +81,11 @@ class CreateShipmentCommandHandler(
             company_id=command.company_id,
             direction=direction,
             destination_type=destination_type,
-            destination_address_id=(
-                command.destination_address_id
+            destination_location_id=(
+                command.destination_location_id
             ),
             created_by=command.created_by,
-            origin_address_id=command.origin_address_id,
+            origin_location_id=command.origin_location_id,
             recipient_name=command.recipient_name,
             recipient_user_id=(
                 command.recipient_user_id

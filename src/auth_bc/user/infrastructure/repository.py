@@ -30,6 +30,12 @@ class UserRepository(UserRepositoryInterface):
             existing.email_verified_at = user.email_verified_at
             existing.google_id = user.google_id
             existing.microsoft_id = user.microsoft_id
+            existing.street_line_1 = user.street_line_1
+            existing.street_line_2 = user.street_line_2
+            existing.city = user.city
+            existing.state = user.state
+            existing.postal_code = user.postal_code
+            existing.country = user.country
         else:
             model = UserModel(
                 id=user.id,
@@ -45,6 +51,12 @@ class UserRepository(UserRepositoryInterface):
                 email_verified_at=user.email_verified_at,
                 google_id=user.google_id,
                 microsoft_id=user.microsoft_id,
+                street_line_1=user.street_line_1,
+                street_line_2=user.street_line_2,
+                city=user.city,
+                state=user.state,
+                postal_code=user.postal_code,
+                country=user.country,
             )
             self.session.add(model)
         self.session.flush()
@@ -213,6 +225,12 @@ class UserRepository(UserRepositoryInterface):
             email_verified_at=model.email_verified_at,
             google_id=model.google_id,
             microsoft_id=model.microsoft_id,
+            street_line_1=model.street_line_1,
+            street_line_2=model.street_line_2,
+            city=model.city,
+            state=model.state,
+            postal_code=model.postal_code,
+            country=model.country,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )

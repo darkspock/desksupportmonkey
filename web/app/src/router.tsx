@@ -84,6 +84,7 @@ const CrossCompanyAuditPage = lazy(() => import('./pages/superadmin/CrossCompany
 const GdprRequestsPage = lazy(() => import('./pages/admin/GdprRequestsPage'));
 const ComplianceDashboardPage = lazy(() => import('./pages/admin/ComplianceDashboardPage'));
 const CustomFieldsPage = lazy(() => import('./pages/admin/CustomFieldsPage'));
+const AssetTypesPage = lazy(() => import('./pages/admin/AssetTypesPage'));
 
 function S({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoading />}>{children}</Suspense>;
@@ -363,6 +364,10 @@ export const router = createBrowserRouter([
       {
         path: 'settings/custom-fields',
         element: <RequireRole roles={['admin', 'super_admin']}><S><CustomFieldsPage /></S></RequireRole>,
+      },
+      {
+        path: 'settings/asset-types',
+        element: <RequireRole roles={['admin', 'super_admin']}><S><AssetTypesPage /></S></RequireRole>,
       },
       // Super Admin
       {

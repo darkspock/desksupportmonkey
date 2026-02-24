@@ -46,6 +46,7 @@ class ReceiveItemInput:
     received_quantity: int
     create_asset: bool = False
     link_asset_id: Optional[str] = None
+    location_id: Optional[str] = None
 
 
 @dataclass
@@ -137,6 +138,7 @@ class ReceiveItemsCommandHandler(
                         po_item=po_item,
                         vendor_name=po.vendor_name,
                         received_by=command.performed_by,
+                        location_id=inp.location_id,
                     )
                 )
                 po_item.linked_asset_id = asset_id

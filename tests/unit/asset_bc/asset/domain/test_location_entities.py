@@ -1,7 +1,7 @@
 import pytest
 
 from src.asset_bc.asset.domain.entities import Asset, AssetLocation
-from src.asset_bc.asset.domain.enums import AssetStatus, AssetType
+from src.asset_bc.asset.domain.enums import AssetStatus
 
 
 class TestAssetLocation:
@@ -71,7 +71,7 @@ class TestAssetMoveToLocation:
     def test_move_to_new_location(self):
         asset = Asset.create(
             company_id="comp1",
-            type=AssetType.LAPTOP,
+            type="laptop",
             brand="Dell",
             model="X",
             serial_number="SN1",
@@ -84,7 +84,7 @@ class TestAssetMoveToLocation:
     def test_move_to_same_location_noop(self):
         asset = Asset.create(
             company_id="comp1",
-            type=AssetType.LAPTOP,
+            type="laptop",
             brand="Dell",
             model="X",
             serial_number="SN1",
@@ -97,7 +97,7 @@ class TestAssetMoveToLocation:
     def test_move_from_none(self):
         asset = Asset.create(
             company_id="comp1",
-            type=AssetType.LAPTOP,
+            type="laptop",
             brand="Dell",
             model="X",
             serial_number="SN1",
@@ -110,7 +110,7 @@ class TestAssetMoveToLocation:
     def test_decommission_clears_location(self):
         asset = Asset.create(
             company_id="comp1",
-            type=AssetType.LAPTOP,
+            type="laptop",
             brand="Dell",
             model="X",
             serial_number="SN1",

@@ -4,7 +4,6 @@ import ulid
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from src.asset_bc.asset.domain.enums import AssetType
 from src.company_bc.equipment_profile.domain.entities import (
     EquipmentProfile,
     EquipmentProfileItem,
@@ -42,7 +41,7 @@ class EquipmentProfileRepository(
                     EquipmentProfileItemModel(
                         id=item.id or str(ulid.new()),
                         profile_id=profile.id,
-                        asset_type=item.asset_type.value,
+                        asset_type=item.asset_type,
                         quantity=item.quantity,
                         preferred_brand=item.preferred_brand,
                         preferred_model=item.preferred_model,
@@ -62,7 +61,7 @@ class EquipmentProfileRepository(
                     EquipmentProfileItemModel(
                         id=i.id or str(ulid.new()),
                         profile_id=profile.id,
-                        asset_type=i.asset_type.value,
+                        asset_type=i.asset_type,
                         quantity=i.quantity,
                         preferred_brand=i.preferred_brand,
                         preferred_model=i.preferred_model,
@@ -179,7 +178,7 @@ class EquipmentProfileRepository(
                 EquipmentProfileItem(
                     id=i.id,
                     profile_id=i.profile_id,
-                    asset_type=AssetType(i.asset_type),
+                    asset_type=i.asset_type,
                     quantity=i.quantity,
                     preferred_brand=i.preferred_brand,
                     preferred_model=i.preferred_model,

@@ -42,6 +42,9 @@ from src.custom_field_bc.definition.domain.entities import CustomFieldDefinition
 from src.custom_field_bc.definition.infrastructure.repository import CustomFieldDefinitionRepository
 from src.custom_field_bc.definition.infrastructure.models import CustomFieldDefinitionModel
 
+# Asset type definitions
+from src.asset_type_bc.definition.infrastructure.models import AssetTypeDefinitionModel
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -144,6 +147,7 @@ def clear_all(session):
     """Delete all data in reverse FK order."""
     print("Clearing existing data...")
     for model in [
+        AssetTypeDefinitionModel,
         CustomFieldDefinitionModel,
         NotificationModel, ReportModel,
         RequestNoteModel, RequestCommentModel, RequestEventModel, ServiceRequestModel,
@@ -216,9 +220,31 @@ SYSTEM_LOCATIONS = [
 ]
 
 CUSTOM_LOCATIONS = [
-    "Sala de Servidores",
-    "Recepción",
-    "Sala de Reuniones A",
+    {
+        "name": "Sala de Servidores",
+        "street_line_1": "100 Tech Park Dr",
+        "city": "Austin",
+        "state": "TX",
+        "postal_code": "78701",
+        "country": "US",
+    },
+    {
+        "name": "Recepción",
+        "street_line_1": "200 Corporate Blvd",
+        "city": "Austin",
+        "state": "TX",
+        "postal_code": "78702",
+        "country": "US",
+    },
+    {
+        "name": "Sala de Reuniones A",
+        "street_line_1": "200 Corporate Blvd",
+        "street_line_2": "Floor 3",
+        "city": "Austin",
+        "state": "TX",
+        "postal_code": "78702",
+        "country": "US",
+    },
 ]
 
 
@@ -237,15 +263,21 @@ def seed_locations(session, companies: list[dict]) -> dict[str, dict]:
             session.add(loc)
             session.flush()
             locs[system_key] = loc.id
-        # Custom locations
-        for name in CUSTOM_LOCATIONS:
+        # Custom locations (with addresses)
+        for loc_spec in CUSTOM_LOCATIONS:
             loc = AssetLocationModel(
-                id=uid(), company_id=cid, name=name,
+                id=uid(), company_id=cid, name=loc_spec["name"],
                 is_system=False, in_use=True,
+                street_line_1=loc_spec.get("street_line_1"),
+                street_line_2=loc_spec.get("street_line_2"),
+                city=loc_spec.get("city"),
+                state=loc_spec.get("state"),
+                postal_code=loc_spec.get("postal_code"),
+                country=loc_spec.get("country"),
             )
             session.add(loc)
             session.flush()
-            locs[name] = loc.id
+            locs[loc_spec["name"]] = loc.id
         loc_map[cid] = locs
     session.commit()
     total = len(SYSTEM_LOCATIONS) + len(CUSTOM_LOCATIONS)
@@ -349,6 +381,39 @@ def seed_users(session, companies: list[dict], dept_map: dict) -> dict:
 
     session.commit()
     return users
+
+
+DEFAULT_ASSET_TYPES = [
+    ("laptop", "Laptop", "laptop", 0),
+    ("monitor", "Monitor", "monitor", 1),
+    ("keyboard", "Keyboard", "keyboard", 2),
+    ("mouse", "Mouse", "mouse", 3),
+    ("headset", "Headset", "headset", 4),
+    ("phone", "Phone", "phone", 5),
+    ("docking_station", "Docking Station", "dock", 6),
+    ("other", "Other", None, 7),
+]
+
+
+def seed_asset_type_definitions(session, companies: list[dict]):
+    """Create default asset type definitions for each company."""
+    now = datetime.utcnow()
+    for company in companies:
+        cid = company["id"]
+        for code, name, icon, sort_order in DEFAULT_ASSET_TYPES:
+            session.add(AssetTypeDefinitionModel(
+                id=uid(),
+                company_id=cid,
+                code=code,
+                name=name,
+                icon=icon,
+                is_active=True,
+                sort_order=sort_order,
+                created_at=now,
+                updated_at=now,
+            ))
+        print(f"  Asset types for {company['name']}: {len(DEFAULT_ASSET_TYPES)} types")
+    session.commit()
 
 
 def seed_assets(session, companies: list[dict], users: dict, dept_map: dict, loc_map: dict) -> dict[str, list[str]]:
@@ -765,6 +830,10 @@ def main():
 
         print("Creating users...")
         users = seed_users(session, companies, dept_map)
+        print()
+
+        print("Creating asset type definitions...")
+        seed_asset_type_definitions(session, companies)
         print()
 
         print("Creating assets...")

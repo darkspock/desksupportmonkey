@@ -10,7 +10,7 @@ import { Pagination } from '../../components/ui/Pagination';
 import { formatDateTime } from '../../lib/date';
 import { useToast } from '../../hooks/useToast';
 import { useI18n } from '../../lib/i18n';
-import type { PaginatedResponse, Shipment, ShippingAddress } from '../../types';
+import type { AssetLocation, PaginatedResponse, Shipment } from '../../types';
 
 const statusColors: Record<string, string> = {
   DRAFT: 'default',
@@ -60,19 +60,19 @@ export default function ShipmentsPage() {
     staleTime: 30_000,
   });
 
-  const addressesQuery = useQuery({
-    queryKey: ['addresses-all-for-shipments'],
+  const locationsQuery = useQuery({
+    queryKey: ['locations-all-for-shipments'],
     queryFn: async () => {
-      const { data } = await api.get('/addresses', { params: { page_size: 300, is_active: true } });
-      return data as PaginatedResponse<ShippingAddress>;
+      const { data } = await api.get('/assets/locations', { params: { page_size: 300 } });
+      return data as PaginatedResponse<AssetLocation>;
     },
   });
 
   const rows = useMemo(() => data?.data ?? [], [data?.data]);
   const statsRows = useMemo(() => statsQuery.data?.data ?? [], [statsQuery.data?.data]);
-  const addressMap = useMemo(
-    () => new Map((addressesQuery.data?.data ?? []).map((a) => [a.id, a])),
-    [addressesQuery.data?.data],
+  const locationMap = useMemo(
+    () => new Map((locationsQuery.data?.data ?? []).map((loc) => [loc.id, loc])),
+    [locationsQuery.data?.data],
   );
 
   const stats = useMemo(() => ({
@@ -157,8 +157,8 @@ export default function ShipmentsPage() {
             </thead>
             <tbody>
               {rows.map((s) => {
-                const origin = s.origin_address_id ? addressMap.get(s.origin_address_id) : undefined;
-                const destination = s.destination_address_id ? addressMap.get(s.destination_address_id) : undefined;
+                const origin = s.origin_location_id ? locationMap.get(s.origin_location_id) : undefined;
+                const destination = s.destination_location_id ? locationMap.get(s.destination_location_id) : undefined;
                 return (
                   <Tr key={s.id}>
                     <Td>
@@ -166,9 +166,9 @@ export default function ShipmentsPage() {
                       <p className="text-xs text-muted-foreground">{t(`enum.shipment_direction.${s.direction}`)}</p>
                     </Td>
                     <Td>
-                      <p className="text-foreground">{origin?.label || '—'}</p>
+                      <p className="text-foreground">{origin?.name || '—'}</p>
                       <p className="text-xs text-muted-foreground">
-                        {destination?.label || s.recipient_name || t('common.na')}
+                        {destination?.name || s.recipient_name || t('common.na')}
                       </p>
                     </Td>
                     <Td>

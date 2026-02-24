@@ -10,12 +10,22 @@ from src.asset_bc.asset.domain.repository import AssetRepositoryInterface
 from src.framework.application.command_bus import Command, CommandHandler
 
 
+_UNSET = object()
+
+
 @dataclass
 class UpdateLocationCommand(Command):
     location_id: str
     company_id: str
     name: Optional[str] = None
     in_use: Optional[bool] = None
+    street_line_1: object = _UNSET
+    street_line_2: object = _UNSET
+    city: object = _UNSET
+    state: object = _UNSET
+    postal_code: object = _UNSET
+    country: object = _UNSET
+    phone: object = _UNSET
 
 
 class UpdateLocationCommandHandler(CommandHandler[UpdateLocationCommand]):
@@ -41,5 +51,20 @@ class UpdateLocationCommandHandler(CommandHandler[UpdateLocationCommand]):
 
         if command.in_use is not None:
             location.in_use = command.in_use
+
+        if command.street_line_1 is not _UNSET:
+            location.street_line_1 = command.street_line_1  # type: ignore[assignment]
+        if command.street_line_2 is not _UNSET:
+            location.street_line_2 = command.street_line_2  # type: ignore[assignment]
+        if command.city is not _UNSET:
+            location.city = command.city  # type: ignore[assignment]
+        if command.state is not _UNSET:
+            location.state = command.state  # type: ignore[assignment]
+        if command.postal_code is not _UNSET:
+            location.postal_code = command.postal_code  # type: ignore[assignment]
+        if command.country is not _UNSET:
+            location.country = command.country  # type: ignore[assignment]
+        if command.phone is not _UNSET:
+            location.phone = command.phone  # type: ignore[assignment]
 
         self.asset_repo.save_location(location)

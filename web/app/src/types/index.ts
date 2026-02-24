@@ -13,6 +13,12 @@ export interface User {
   is_active: boolean;
   password_set?: boolean;
   has_oauth?: boolean;
+  street_line_1?: string | null;
+  street_line_2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postal_code?: string | null;
+  country?: string | null;
   created_at: string;
 }
 
@@ -72,13 +78,23 @@ export interface Department {
 }
 
 // Asset
-export type AssetType = 'laptop' | 'monitor' | 'keyboard' | 'mouse' | 'headset' | 'phone' | 'docking_station' | 'other';
 export type AssetStatus = 'in_stock' | 'assigned' | 'in_repair' | 'decommissioned';
+
+export interface AssetTypeDefinition {
+  id: string;
+  code: string;
+  name: string;
+  icon: string | null;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface Asset {
   id: string;
   company_id: string;
-  type: AssetType;
+  type: string;
   brand: string;
   model: string;
   serial_number: string;
@@ -102,6 +118,15 @@ export interface AssetLocation {
   is_system: boolean;
   system_key: string | null;
   in_use: boolean;
+  street_line_1?: string | null;
+  street_line_2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postal_code?: string | null;
+  country?: string | null;
+  phone?: string | null;
+  is_personal: boolean;
+  user_id?: string | null;
   asset_count: number;
   created_at: string;
 }
@@ -284,7 +309,7 @@ export interface CreatedApiKey {
 // Equipment Profile
 export interface EquipmentProfileItem {
   id: string;
-  asset_type: AssetType;
+  asset_type: string;
   quantity: number;
   preferred_brand?: string | null;
   preferred_model?: string | null;
@@ -532,8 +557,8 @@ export interface Shipment {
   direction: ShipmentDirection;
   destination_type: DestinationType;
   status: ShipmentStatus;
-  origin_address_id?: string | null;
-  destination_address_id?: string | null;
+  origin_location_id?: string | null;
+  destination_location_id?: string | null;
   carrier?: string | null;
   service_level?: string | null;
   tracking_number?: string | null;

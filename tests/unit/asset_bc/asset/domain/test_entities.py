@@ -3,14 +3,14 @@ from datetime import date
 import pytest
 
 from src.asset_bc.asset.domain.entities import Asset, AssetEvent, InvalidAssignmentError
-from src.asset_bc.asset.domain.enums import AssetStatus, AssetType, InvalidStatusTransitionError
+from src.asset_bc.asset.domain.enums import AssetStatus, InvalidStatusTransitionError
 
 
 class TestAsset:
     def test_create_valid(self):
         asset = Asset.create(
             company_id="comp1",
-            type=AssetType.LAPTOP,
+            type="laptop",
             brand="Dell",
             model="Latitude 5520",
             serial_number="SN123",
@@ -18,7 +18,7 @@ class TestAsset:
         assert asset.brand == "Dell"
         assert asset.model == "Latitude 5520"
         assert asset.serial_number == "SN123"
-        assert asset.type == AssetType.LAPTOP
+        assert asset.type == "laptop"
         assert asset.status == AssetStatus.IN_STOCK
         assert asset.company_id == "comp1"
         assert len(asset.id) == 26
@@ -28,7 +28,7 @@ class TestAsset:
     def test_create_with_optional_fields(self):
         asset = Asset.create(
             company_id="comp1",
-            type=AssetType.MONITOR,
+            type="monitor",
             brand="LG",
             model="27UK850",
             serial_number="MON456",
@@ -43,7 +43,7 @@ class TestAsset:
     def test_create_strips_whitespace(self):
         asset = Asset.create(
             company_id="comp1",
-            type=AssetType.LAPTOP,
+            type="laptop",
             brand="  Dell  ",
             model="  Latitude  ",
             serial_number="  SN123  ",
@@ -57,27 +57,27 @@ class TestAsset:
     def test_create_empty_brand_raises(self):
         with pytest.raises(ValueError, match="Brand is required"):
             Asset.create(
-                company_id="comp1", type=AssetType.LAPTOP,
+                company_id="comp1", type="laptop",
                 brand="", model="X", serial_number="SN1",
             )
 
     def test_create_empty_model_raises(self):
         with pytest.raises(ValueError, match="Model is required"):
             Asset.create(
-                company_id="comp1", type=AssetType.LAPTOP,
+                company_id="comp1", type="laptop",
                 brand="Dell", model="", serial_number="SN1",
             )
 
     def test_create_empty_serial_raises(self):
         with pytest.raises(ValueError, match="Serial number is required"):
             Asset.create(
-                company_id="comp1", type=AssetType.LAPTOP,
+                company_id="comp1", type="laptop",
                 brand="Dell", model="X", serial_number="",
             )
 
     def test_update_fields(self):
         asset = Asset.create(
-            company_id="comp1", type=AssetType.LAPTOP,
+            company_id="comp1", type="laptop",
             brand="Dell", model="Old", serial_number="SN1",
         )
         changes = asset.update(brand="HP", model="New", notes="updated")
@@ -90,7 +90,7 @@ class TestAsset:
 
     def test_update_no_changes(self):
         asset = Asset.create(
-            company_id="comp1", type=AssetType.LAPTOP,
+            company_id="comp1", type="laptop",
             brand="Dell", model="X", serial_number="SN1",
         )
         changes = asset.update(brand="Dell")
@@ -98,7 +98,7 @@ class TestAsset:
 
     def test_update_empty_brand_raises(self):
         asset = Asset.create(
-            company_id="comp1", type=AssetType.LAPTOP,
+            company_id="comp1", type="laptop",
             brand="Dell", model="X", serial_number="SN1",
         )
         with pytest.raises(ValueError, match="Brand cannot be empty"):
@@ -106,7 +106,7 @@ class TestAsset:
 
     def test_change_status_valid_in_stock_to_in_repair(self):
         asset = Asset.create(
-            company_id="comp1", type=AssetType.LAPTOP,
+            company_id="comp1", type="laptop",
             brand="Dell", model="X", serial_number="SN1",
         )
         asset.change_status(AssetStatus.IN_REPAIR)
@@ -114,7 +114,7 @@ class TestAsset:
 
     def test_change_status_valid_in_repair_to_in_stock(self):
         asset = Asset.create(
-            company_id="comp1", type=AssetType.LAPTOP,
+            company_id="comp1", type="laptop",
             brand="Dell", model="X", serial_number="SN1",
         )
         asset.change_status(AssetStatus.IN_REPAIR)
@@ -123,7 +123,7 @@ class TestAsset:
 
     def test_change_status_invalid_raises(self):
         asset = Asset.create(
-            company_id="comp1", type=AssetType.LAPTOP,
+            company_id="comp1", type="laptop",
             brand="Dell", model="X", serial_number="SN1",
         )
         with pytest.raises(InvalidStatusTransitionError):
@@ -131,7 +131,7 @@ class TestAsset:
 
     def test_change_status_decommissioned_is_terminal(self):
         asset = Asset.create(
-            company_id="comp1", type=AssetType.LAPTOP,
+            company_id="comp1", type="laptop",
             brand="Dell", model="X", serial_number="SN1",
         )
         asset.change_status(AssetStatus.DECOMMISSIONED)
@@ -140,7 +140,7 @@ class TestAsset:
 
     def test_assign_success(self):
         asset = Asset.create(
-            company_id="comp1", type=AssetType.LAPTOP,
+            company_id="comp1", type="laptop",
             brand="Dell", model="X", serial_number="SN1",
         )
         asset.assign(user_id="user1", department_id="dept1")
@@ -150,7 +150,7 @@ class TestAsset:
 
     def test_assign_wrong_status_raises(self):
         asset = Asset.create(
-            company_id="comp1", type=AssetType.LAPTOP,
+            company_id="comp1", type="laptop",
             brand="Dell", model="X", serial_number="SN1",
         )
         asset.change_status(AssetStatus.IN_REPAIR)
@@ -159,7 +159,7 @@ class TestAsset:
 
     def test_unassign_success(self):
         asset = Asset.create(
-            company_id="comp1", type=AssetType.LAPTOP,
+            company_id="comp1", type="laptop",
             brand="Dell", model="X", serial_number="SN1",
         )
         asset.assign(user_id="user1", department_id="dept1")
@@ -170,7 +170,7 @@ class TestAsset:
 
     def test_unassign_not_assigned_raises(self):
         asset = Asset.create(
-            company_id="comp1", type=AssetType.LAPTOP,
+            company_id="comp1", type="laptop",
             brand="Dell", model="X", serial_number="SN1",
         )
         with pytest.raises(InvalidAssignmentError, match="not currently assigned"):
@@ -178,7 +178,7 @@ class TestAsset:
 
     def test_decommission_clears_assigned_to(self):
         asset = Asset.create(
-            company_id="comp1", type=AssetType.LAPTOP,
+            company_id="comp1", type="laptop",
             brand="Dell", model="X", serial_number="SN1",
         )
         asset.assigned_to = "user1"

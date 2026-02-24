@@ -187,7 +187,7 @@ def my_equipment(
         "data": [
             MyEquipmentResponse(
                 id=a.id,
-                type=a.type.value,
+                type=a.type,
                 brand=a.brand,
                 model=a.model,
                 serial_number=a.serial_number,

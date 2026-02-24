@@ -8,9 +8,6 @@ class TestAutoAssignment:
     ):
         """new_equipment request with profile -> auto_assignment."""
         from src.asset_bc.asset.domain.entities import Asset
-        from src.asset_bc.asset.domain.enums import (
-            AssetType,
-        )
         from src.asset_bc.asset.infrastructure.repository import (  # noqa: E501
             AssetRepository,
         )
@@ -69,7 +66,7 @@ class TestAutoAssignment:
             EquipmentProfileItem(
                 id="item-1",
                 profile_id=profile.id,
-                asset_type=AssetType.LAPTOP,
+                asset_type="laptop",
                 quantity=1,
             ),
         ]
@@ -79,7 +76,7 @@ class TestAutoAssignment:
         # Create in-stock laptop
         asset = Asset.create(
             company_id=company.id,
-            type=AssetType.LAPTOP,
+            type="laptop",
             brand="Dell",
             model="Latitude 5540",
             serial_number="AUTO-001",

@@ -131,7 +131,7 @@ def _to_response(
     return AssetResponse(
         id=asset.id,
         company_id=asset.company_id,
-        type=asset.type.value,
+        type=asset.type,
         brand=asset.brand,
         model=asset.model,
         serial_number=asset.serial_number,
@@ -210,6 +210,27 @@ def _resolve_assigned_emails(
         uid: user_map[uid].email if uid in user_map else None
         for uid in assigned_ids
     }
+
+
+def _location_to_response(loc: AssetLocation, asset_count: int = 0) -> AssetLocationResponse:
+    return AssetLocationResponse(
+        id=loc.id,
+        name=loc.name,
+        is_system=loc.is_system,
+        system_key=loc.system_key,
+        in_use=loc.in_use,
+        street_line_1=loc.street_line_1,
+        street_line_2=loc.street_line_2,
+        city=loc.city,
+        state=loc.state,
+        postal_code=loc.postal_code,
+        country=loc.country,
+        phone=loc.phone,
+        is_personal=loc.is_personal,
+        user_id=loc.user_id,
+        asset_count=asset_count,
+        created_at=loc.created_at,
+    )
 
 
 def _parse_csv_upload(content: bytes) -> str:
@@ -383,15 +404,7 @@ def list_locations(
     )
     return {
         "data": [
-            AssetLocationResponse(
-                id=loc.id,
-                name=loc.name,
-                is_system=loc.is_system,
-                system_key=loc.system_key,
-                in_use=loc.in_use,
-                asset_count=asset_repo.count_assets_at_location(loc.id),
-                created_at=loc.created_at,
-            ).model_dump(mode="json")
+            _location_to_response(loc, asset_repo.count_assets_at_location(loc.id)).model_dump(mode="json")
             for loc in locations
         ]
     }
@@ -412,6 +425,13 @@ def create_location(
                 name=body.name,
                 in_use=body.in_use,
                 id=loc_id,
+                street_line_1=body.street_line_1,
+                street_line_2=body.street_line_2,
+                city=body.city,
+                state=body.state,
+                postal_code=body.postal_code,
+                country=body.country,
+                phone=body.phone,
             )
         )
     except LocationNameExistsError:
@@ -419,17 +439,7 @@ def create_location(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     loc = asset_repo.find_location_by_id(loc_id, current_user.company_id)
-    return {
-        "data": AssetLocationResponse(
-            id=loc.id,
-            name=loc.name,
-            is_system=loc.is_system,
-            system_key=loc.system_key,
-            in_use=loc.in_use,
-            asset_count=0,
-            created_at=loc.created_at,
-        ).model_dump(mode="json")
-    }
+    return {"data": _location_to_response(loc, 0).model_dump(mode="json")}
 
 
 @router.put("/locations/{location_id}")
@@ -439,16 +449,20 @@ def update_location(
     current_user: User = Depends(require_role(UserRole.ADMIN)),
     asset_repo: AssetRepository = Depends(get_asset_repo),
 ):
+    from src.asset_bc.asset.application.commands.update_location import _UNSET
+    cmd_kwargs: dict = {
+        "location_id": location_id,
+        "company_id": current_user.company_id,
+        "name": body.name,
+        "in_use": body.in_use,
+    }
+    for field_name in ("street_line_1", "street_line_2", "city", "state", "postal_code", "country", "phone"):
+        val = getattr(body, field_name, None)
+        if val is not None:
+            cmd_kwargs[field_name] = val
     handler = UpdateLocationCommandHandler(asset_repo=asset_repo)
     try:
-        handler.handle(
-            UpdateLocationCommand(
-                location_id=location_id,
-                company_id=current_user.company_id,
-                name=body.name,
-                in_use=body.in_use,
-            )
-        )
+        handler.handle(UpdateLocationCommand(**cmd_kwargs))
     except LocationNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Location not found")
     except SystemLocationError as e:
@@ -458,17 +472,7 @@ def update_location(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     loc = asset_repo.find_location_by_id(location_id, current_user.company_id)
-    return {
-        "data": AssetLocationResponse(
-            id=loc.id,
-            name=loc.name,
-            is_system=loc.is_system,
-            system_key=loc.system_key,
-            in_use=loc.in_use,
-            asset_count=asset_repo.count_assets_at_location(loc.id),
-            created_at=loc.created_at,
-        ).model_dump(mode="json")
-    }
+    return {"data": _location_to_response(loc, asset_repo.count_assets_at_location(loc.id)).model_dump(mode="json")}
 
 
 @router.delete("/locations/{location_id}", status_code=status.HTTP_204_NO_CONTENT)

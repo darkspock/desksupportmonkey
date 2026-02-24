@@ -13,6 +13,15 @@ class CreateLocationCommand(Command):
     name: str
     in_use: bool = True
     id: Optional[str] = None
+    street_line_1: Optional[str] = None
+    street_line_2: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    postal_code: Optional[str] = None
+    country: Optional[str] = None
+    phone: Optional[str] = None
+    is_personal: bool = False
+    user_id: Optional[str] = None
 
 
 class CreateLocationCommandHandler(CommandHandler[CreateLocationCommand]):
@@ -31,5 +40,14 @@ class CreateLocationCommandHandler(CommandHandler[CreateLocationCommand]):
             name=command.name,
             in_use=command.in_use,
             id=command.id,
+            street_line_1=command.street_line_1,
+            street_line_2=command.street_line_2,
+            city=command.city,
+            state=command.state,
+            postal_code=command.postal_code,
+            country=command.country,
+            phone=command.phone,
+            is_personal=command.is_personal,
+            user_id=command.user_id,
         )
         self.asset_repo.save_location(location)

@@ -45,11 +45,11 @@ class ShipmentRepository(ShipmentRepositoryInterface):
                 shipment.destination_type.value
             )
             existing.status = shipment.status.value
-            existing.origin_address_id = (
-                shipment.origin_address_id
+            existing.origin_location_id = (
+                shipment.origin_location_id
             )
-            existing.destination_address_id = (
-                shipment.destination_address_id
+            existing.destination_location_id = (
+                shipment.destination_location_id
             )
             existing.recipient_name = shipment.recipient_name
             existing.recipient_user_id = (
@@ -100,11 +100,11 @@ class ShipmentRepository(ShipmentRepositoryInterface):
                     shipment.destination_type.value
                 ),
                 status=shipment.status.value,
-                origin_address_id=(
-                    shipment.origin_address_id
+                origin_location_id=(
+                    shipment.origin_location_id
                 ),
-                destination_address_id=(
-                    shipment.destination_address_id
+                destination_location_id=(
+                    shipment.destination_location_id
                 ),
                 recipient_name=shipment.recipient_name,
                 recipient_user_id=(
@@ -371,11 +371,16 @@ class ShipmentRepository(ShipmentRepositoryInterface):
                 model.destination_type,
             ),
             status=ShipmentStatus(model.status),
-            destination_address_id=(
-                model.destination_address_id
+            destination_location_id=(
+                model.destination_location_id
+                or model.destination_address_id
+                or ""
             ),
             created_by=model.created_by,
-            origin_address_id=model.origin_address_id,
+            origin_location_id=(
+                model.origin_location_id
+                or model.origin_address_id
+            ),
             recipient_name=model.recipient_name,
             recipient_user_id=model.recipient_user_id,
             carrier=model.carrier,

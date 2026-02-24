@@ -25,7 +25,6 @@ from adapters.http.api.equipment_profiles.schemas import (
     UpdateProfileRequest,
 )
 from adapters.http.schemas.responses import PaginationMeta
-from src.asset_bc.asset.domain.enums import AssetType
 from src.auth_bc.user.domain.entities import User
 from src.company_bc.department.infrastructure.repository import (
     DepartmentRepository,
@@ -113,14 +112,12 @@ def _to_response(
 
 
 def _validate_items(items):
-    """Validate asset_type values."""
+    """Validate asset_type values are non-empty strings."""
     for item in items:
-        try:
-            AssetType(item.asset_type)
-        except ValueError:
+        if not item.asset_type or not item.asset_type.strip():
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Invalid asset type: {item.asset_type}",
+                detail="Asset type is required",
             )
 
 
@@ -154,7 +151,7 @@ def create_profile(
                 employee_role_id=body.employee_role_id,
                 items=[
                     ProfileItemInput(
-                        asset_type=AssetType(i.asset_type),
+                        asset_type=i.asset_type,
                         quantity=i.quantity,
                         preferred_brand=i.preferred_brand,
                         preferred_model=i.preferred_model,
@@ -342,7 +339,7 @@ def update_profile(
                 company_id=current_user.company_id,
                 items=[
                     UpdateItemInput(
-                        asset_type=AssetType(i.asset_type),
+                        asset_type=i.asset_type,
                         quantity=i.quantity,
                         preferred_brand=i.preferred_brand,
                         preferred_model=i.preferred_model,

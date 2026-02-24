@@ -2,46 +2,44 @@
 
 import pytest
 
-from src.shipping_bc.address.domain.entities import ShippingAddress
-from src.shipping_bc.address.infrastructure.repository import (
-    ShippingAddressRepository,
-)
+from src.asset_bc.asset.domain.entities import AssetLocation
+from src.asset_bc.asset.infrastructure.repository import AssetRepository
 
 
 @pytest.fixture()
-def shipping_address(db_session, company):
-    """Create a shipping address for integration tests."""
-    addr = ShippingAddress.create(
+def shipment_location(db_session, company):
+    """Create an asset location for integration tests."""
+    loc = AssetLocation.create(
         company_id=company.id,
-        label="HQ Office",
-        recipient_name="Test User",
+        name="HQ Office",
         street_line_1="123 Main St",
         city="Austin",
         state="TX",
         postal_code="78701",
+        country="US",
     )
-    repo = ShippingAddressRepository(db_session)
-    repo.save(addr)
+    repo = AssetRepository(db_session)
+    repo.save_location(loc)
     db_session.flush()
-    return addr
+    return loc
 
 
 @pytest.fixture()
-def second_address(db_session, company):
-    """Create a second shipping address."""
-    addr = ShippingAddress.create(
+def second_location(db_session, company):
+    """Create a second asset location."""
+    loc = AssetLocation.create(
         company_id=company.id,
-        label="Warehouse",
-        recipient_name="Warehouse Mgr",
+        name="Warehouse",
         street_line_1="456 Industrial Blvd",
         city="Austin",
         state="TX",
         postal_code="78702",
+        country="US",
     )
-    repo = ShippingAddressRepository(db_session)
-    repo.save(addr)
+    repo = AssetRepository(db_session)
+    repo.save_location(loc)
     db_session.flush()
-    return addr
+    return loc
 
 
 def _create_asset(client, serial):
@@ -57,7 +55,7 @@ def _create_asset(client, serial):
 
 
 def _create_shipment(
-    client, address_id, asset_ids,
+    client, location_id, asset_ids,
     direction="OUTBOUND",
     destination_type="EMPLOYEE_HOME",
     **kwargs,
@@ -66,7 +64,7 @@ def _create_shipment(
     payload = {
         "direction": direction,
         "destination_type": destination_type,
-        "destination_address_id": address_id,
+        "destination_location_id": location_id,
         "asset_ids": asset_ids,
         **kwargs,
     }
@@ -76,14 +74,14 @@ def _create_shipment(
 class TestCreateShipment:
     def test_create_shipment_returns_201(
         self, client, auth_as, technician_user,
-        shipping_address,
+        shipment_location,
     ):
         auth_as(technician_user)
         asset_id = _create_asset(client, "SHIP-SN001")
 
         resp = _create_shipment(
             client,
-            shipping_address.id,
+            shipment_location.id,
             [asset_id],
             service_level="two_day",
             items_description="Laptop + Dock",
@@ -102,20 +100,20 @@ class TestCreateShipment:
 
     def test_create_with_asset_conflict_returns_409(
         self, client, auth_as, technician_user,
-        shipping_address,
+        shipment_location,
     ):
         auth_as(technician_user)
         asset_id = _create_asset(client, "SHIP-SN002")
 
         # First shipment — OK
         resp1 = _create_shipment(
-            client, shipping_address.id, [asset_id],
+            client, shipment_location.id, [asset_id],
         )
         assert resp1.status_code == 201
 
         # Second with same asset — conflict
         resp2 = _create_shipment(
-            client, shipping_address.id, [asset_id],
+            client, shipment_location.id, [asset_id],
         )
         assert resp2.status_code == 409
 
@@ -123,12 +121,12 @@ class TestCreateShipment:
 class TestListShipments:
     def test_list_shipments_returns_200(
         self, client, auth_as, technician_user,
-        shipping_address,
+        shipment_location,
     ):
         auth_as(technician_user)
         asset_id = _create_asset(client, "SHIP-SN003")
         _create_shipment(
-            client, shipping_address.id, [asset_id],
+            client, shipment_location.id, [asset_id],
         )
 
         resp = client.get("/api/v1/shipments")
@@ -142,12 +140,12 @@ class TestListShipments:
 class TestGetShipment:
     def test_get_shipment_returns_200(
         self, client, auth_as, technician_user,
-        shipping_address,
+        shipment_location,
     ):
         auth_as(technician_user)
         asset_id = _create_asset(client, "SHIP-SN004")
         create_resp = _create_shipment(
-            client, shipping_address.id, [asset_id],
+            client, shipment_location.id, [asset_id],
         )
         sid = create_resp.json()["data"]["id"]
 
@@ -159,12 +157,12 @@ class TestGetShipment:
 class TestUpdateShipment:
     def test_update_shipment_returns_200(
         self, client, auth_as, technician_user,
-        shipping_address,
+        shipment_location,
     ):
         auth_as(technician_user)
         asset_id = _create_asset(client, "SHIP-SN005")
         create_resp = _create_shipment(
-            client, shipping_address.id, [asset_id],
+            client, shipment_location.id, [asset_id],
         )
         sid = create_resp.json()["data"]["id"]
 
@@ -191,12 +189,12 @@ class TestUpdateShipment:
 class TestDispatchShipment:
     def test_dispatch_shipment_returns_200(
         self, client, auth_as, technician_user,
-        shipping_address,
+        shipment_location,
     ):
         auth_as(technician_user)
         asset_id = _create_asset(client, "SHIP-SN006")
         create_resp = _create_shipment(
-            client, shipping_address.id, [asset_id],
+            client, shipment_location.id, [asset_id],
         )
         sid = create_resp.json()["data"]["id"]
 
@@ -212,12 +210,12 @@ class TestDispatchShipment:
 
     def test_dispatch_without_tracking_returns_422(
         self, client, auth_as, technician_user,
-        shipping_address,
+        shipment_location,
     ):
         auth_as(technician_user)
         asset_id = _create_asset(client, "SHIP-SN007")
         create_resp = _create_shipment(
-            client, shipping_address.id, [asset_id],
+            client, shipment_location.id, [asset_id],
         )
         sid = create_resp.json()["data"]["id"]
 
@@ -231,12 +229,12 @@ class TestDispatchShipment:
 class TestMarkInTransit:
     def test_mark_in_transit_returns_200(
         self, client, auth_as, technician_user,
-        shipping_address,
+        shipment_location,
     ):
         auth_as(technician_user)
         asset_id = _create_asset(client, "SHIP-SN008")
         create_resp = _create_shipment(
-            client, shipping_address.id, [asset_id],
+            client, shipment_location.id, [asset_id],
         )
         sid = create_resp.json()["data"]["id"]
 
@@ -259,12 +257,12 @@ class TestMarkInTransit:
 class TestDeliverShipment:
     def test_deliver_shipment_returns_200(
         self, client, auth_as, technician_user,
-        shipping_address,
+        shipment_location,
     ):
         auth_as(technician_user)
         asset_id = _create_asset(client, "SHIP-SN009")
         create_resp = _create_shipment(
-            client, shipping_address.id, [asset_id],
+            client, shipment_location.id, [asset_id],
         )
         sid = create_resp.json()["data"]["id"]
 
@@ -289,12 +287,12 @@ class TestDeliverShipment:
 class TestFailShipment:
     def test_fail_shipment_returns_200(
         self, client, auth_as, technician_user,
-        shipping_address,
+        shipment_location,
     ):
         auth_as(technician_user)
         asset_id = _create_asset(client, "SHIP-SN010")
         create_resp = _create_shipment(
-            client, shipping_address.id, [asset_id],
+            client, shipment_location.id, [asset_id],
         )
         sid = create_resp.json()["data"]["id"]
 
@@ -319,12 +317,12 @@ class TestFailShipment:
 class TestCancelShipment:
     def test_cancel_shipment_returns_200(
         self, client, auth_as, technician_user,
-        shipping_address,
+        shipment_location,
     ):
         auth_as(technician_user)
         asset_id = _create_asset(client, "SHIP-SN011")
         create_resp = _create_shipment(
-            client, shipping_address.id, [asset_id],
+            client, shipment_location.id, [asset_id],
         )
         sid = create_resp.json()["data"]["id"]
 
@@ -339,12 +337,12 @@ class TestCancelShipment:
 
     def test_invalid_transition_returns_409(
         self, client, auth_as, technician_user,
-        shipping_address,
+        shipment_location,
     ):
         auth_as(technician_user)
         asset_id = _create_asset(client, "SHIP-SN012")
         create_resp = _create_shipment(
-            client, shipping_address.id, [asset_id],
+            client, shipment_location.id, [asset_id],
         )
         sid = create_resp.json()["data"]["id"]
 
@@ -372,12 +370,12 @@ class TestCancelShipment:
 class TestCreateReturn:
     def test_create_return_returns_201(
         self, client, auth_as, technician_user,
-        shipping_address, second_address,
+        shipment_location, second_location,
     ):
         auth_as(technician_user)
         asset_id = _create_asset(client, "SHIP-SN013")
         create_resp = _create_shipment(
-            client, shipping_address.id, [asset_id],
+            client, shipment_location.id, [asset_id],
         )
         sid = create_resp.json()["data"]["id"]
 
@@ -397,7 +395,7 @@ class TestCreateReturn:
         resp = client.post(
             f"/api/v1/shipments/{sid}/return",
             json={
-                "destination_address_id": second_address.id,
+                "destination_location_id": second_location.id,
                 "asset_ids": [asset_id],
             },
         )
@@ -410,12 +408,12 @@ class TestCreateReturn:
 class TestShipmentsByAsset:
     def test_shipments_by_asset_returns_200(
         self, client, auth_as, technician_user,
-        shipping_address,
+        shipment_location,
     ):
         auth_as(technician_user)
         asset_id = _create_asset(client, "SHIP-SN014")
         _create_shipment(
-            client, shipping_address.id, [asset_id],
+            client, shipment_location.id, [asset_id],
         )
 
         resp = client.get(
@@ -428,13 +426,13 @@ class TestShipmentsByAsset:
 class TestModifyItems:
     def test_modify_items_returns_200(
         self, client, auth_as, technician_user,
-        shipping_address,
+        shipment_location,
     ):
         auth_as(technician_user)
         asset1 = _create_asset(client, "SHIP-SN015")
         asset2 = _create_asset(client, "SHIP-SN016")
         create_resp = _create_shipment(
-            client, shipping_address.id, [asset1],
+            client, shipment_location.id, [asset1],
         )
         sid = create_resp.json()["data"]["id"]
         item_id = create_resp.json()["data"]["items"][0]["id"]
@@ -455,12 +453,12 @@ class TestModifyItems:
 class TestMyShipments:
     def test_my_shipments_returns_200(
         self, client, auth_as, technician_user,
-        employee_user, shipping_address,
+        employee_user, shipment_location,
     ):
         auth_as(technician_user)
         asset_id = _create_asset(client, "SHIP-SN017")
         _create_shipment(
-            client, shipping_address.id, [asset_id],
+            client, shipment_location.id, [asset_id],
             recipient_user_id=employee_user.id,
         )
 
@@ -475,12 +473,12 @@ class TestMyShipments:
 class TestDashboardShipments:
     def test_dashboard_shipments_returns_200(
         self, client, auth_as, admin_user,
-        technician_user, shipping_address,
+        technician_user, shipment_location,
     ):
         auth_as(technician_user)
         asset_id = _create_asset(client, "SHIP-SN018")
         _create_shipment(
-            client, shipping_address.id, [asset_id],
+            client, shipment_location.id, [asset_id],
         )
 
         auth_as(admin_user)
@@ -497,14 +495,14 @@ class TestDashboardShipments:
 class TestDeliverOutboundEmployeeAssignsAssets:
     def test_deliver_outbound_employee_assigns_assets(
         self, client, auth_as, technician_user,
-        employee_user, shipping_address,
+        employee_user, shipment_location,
     ):
         auth_as(technician_user)
         asset_id = _create_asset(client, "SHIP-SN019")
 
         # Create outbound to employee home
         create_resp = _create_shipment(
-            client, shipping_address.id, [asset_id],
+            client, shipment_location.id, [asset_id],
             direction="OUTBOUND",
             destination_type="EMPLOYEE_HOME",
             recipient_user_id=employee_user.id,

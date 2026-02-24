@@ -12,10 +12,20 @@ import { useToast } from '../../hooks/useToast';
 import { useI18n } from '../../lib/i18n';
 import type { AssetLocation } from '../../types';
 
-interface EditModalState {
-  locationId: string;
+interface LocationFormFields {
   name: string;
   inUse: boolean;
+  street_line_1: string;
+  street_line_2: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+  phone: string;
+}
+
+interface EditModalState extends LocationFormFields {
+  locationId: string;
 }
 
 export default function LocationsPage() {
@@ -23,8 +33,9 @@ export default function LocationsPage() {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
+  const emptyForm: LocationFormFields = { name: '', inUse: true, street_line_1: '', street_line_2: '', city: '', state: '', postal_code: '', country: '', phone: '' };
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [createName, setCreateName] = useState('');
+  const [createForm, setCreateForm] = useState<LocationFormFields>(emptyForm);
   const [createError, setCreateError] = useState('');
   const [editModal, setEditModal] = useState<EditModalState | null>(null);
   const [editError, setEditError] = useState('');
@@ -39,9 +50,19 @@ export default function LocationsPage() {
   });
 
   const create = useMutation({
-    mutationFn: (name: string) => api.post('/assets/locations', { name }),
+    mutationFn: (form: LocationFormFields) => api.post('/assets/locations', {
+      name: form.name.trim(),
+      in_use: form.inUse,
+      street_line_1: form.street_line_1 || null,
+      street_line_2: form.street_line_2 || null,
+      city: form.city || null,
+      state: form.state || null,
+      postal_code: form.postal_code || null,
+      country: form.country || null,
+      phone: form.phone || null,
+    }),
     onSuccess: () => {
-      setCreateName('');
+      setCreateForm(emptyForm);
       setCreateError('');
       setCreateModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ['locations'] });
@@ -59,6 +80,13 @@ export default function LocationsPage() {
       await api.put(`/assets/locations/${payload.locationId}`, {
         name: payload.name.trim(),
         in_use: payload.inUse,
+        street_line_1: payload.street_line_1 || null,
+        street_line_2: payload.street_line_2 || null,
+        city: payload.city || null,
+        state: payload.state || null,
+        postal_code: payload.postal_code || null,
+        country: payload.country || null,
+        phone: payload.phone || null,
       });
     },
     onSuccess: () => {
@@ -115,7 +143,7 @@ export default function LocationsPage() {
       }
       if (createModalOpen && !create.isPending) {
         setCreateModalOpen(false);
-        setCreateName('');
+        setCreateForm(emptyForm);
         setCreateError('');
       }
     };
@@ -143,7 +171,7 @@ export default function LocationsPage() {
         <button
           type="button"
           onClick={() => {
-            setCreateName('');
+            setCreateForm(emptyForm);
             setCreateError('');
             setCreateModalOpen(true);
           }}
@@ -198,6 +226,9 @@ export default function LocationsPage() {
                   {loc.is_system && loc.system_key && (
                     <span className="ml-2 text-xs text-muted-foreground">({systemLocationLabel(loc.system_key)})</span>
                   )}
+                  {loc.city && (
+                    <span className="block text-xs text-muted-foreground">{[loc.city, loc.state, loc.country].filter(Boolean).join(', ')}</span>
+                  )}
                 </Td>
                 <Td>
                   {loc.is_system ? (
@@ -244,6 +275,13 @@ export default function LocationsPage() {
                               locationId: loc.id,
                               name: loc.name,
                               inUse: loc.in_use,
+                              street_line_1: loc.street_line_1 ?? '',
+                              street_line_2: loc.street_line_2 ?? '',
+                              city: loc.city ?? '',
+                              state: loc.state ?? '',
+                              postal_code: loc.postal_code ?? '',
+                              country: loc.country ?? '',
+                              phone: loc.phone ?? '',
                             });
                           }}
                           aria-label={t('common.edit')}
@@ -301,7 +339,7 @@ export default function LocationsPage() {
             onClick={() => {
               if (create.isPending) return;
               setCreateModalOpen(false);
-              setCreateName('');
+              setCreateForm(emptyForm);
               setCreateError('');
             }}
             aria-label={t('errors.close_confirmation_dialog')}
@@ -311,47 +349,41 @@ export default function LocationsPage() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                const name = createName.trim();
-                if (!name) {
+                if (!createForm.name.trim()) {
                   setCreateError(t('page.locations.error_name_required'));
                   return;
                 }
                 setCreateError('');
-                create.mutate(name);
+                create.mutate(createForm);
               }}
               className="mt-4 space-y-4"
             >
               <div>
                 {createError && <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">{createError}</div>}
                 <label className="mb-1.5 block text-muted-foreground">{t('table.name')}</label>
-                <input
-                  type="text"
-                  value={createName}
-                  onChange={(e) => setCreateName(e.target.value)}
-                  placeholder={t('page.locations.name_placeholder')}
-                  className="w-full bg-card"
-                  autoFocus
-                  required
-                />
+                <input type="text" value={createForm.name} onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })} placeholder={t('page.locations.name_placeholder')} className="w-full bg-card" autoFocus required />
+              </div>
+              <div className="border-t border-border pt-3">
+                <p className="mb-2 text-sm font-medium text-muted-foreground">{t('page.locations.address')}</p>
+                <div className="space-y-2">
+                  <input type="text" value={createForm.street_line_1} onChange={(e) => setCreateForm({ ...createForm, street_line_1: e.target.value })} placeholder={t('page.locations.street_line_1')} className="w-full bg-card" />
+                  <input type="text" value={createForm.street_line_2} onChange={(e) => setCreateForm({ ...createForm, street_line_2: e.target.value })} placeholder={t('page.locations.street_line_2')} className="w-full bg-card" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="text" value={createForm.city} onChange={(e) => setCreateForm({ ...createForm, city: e.target.value })} placeholder={t('page.locations.city')} className="w-full bg-card" />
+                    <input type="text" value={createForm.state} onChange={(e) => setCreateForm({ ...createForm, state: e.target.value })} placeholder={t('page.locations.state')} className="w-full bg-card" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="text" value={createForm.postal_code} onChange={(e) => setCreateForm({ ...createForm, postal_code: e.target.value })} placeholder={t('page.locations.postal_code')} className="w-full bg-card" />
+                    <input type="text" value={createForm.country} onChange={(e) => setCreateForm({ ...createForm, country: e.target.value })} placeholder={t('page.locations.country')} className="w-full bg-card" />
+                  </div>
+                  <input type="text" value={createForm.phone} onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })} placeholder={t('page.locations.phone')} className="w-full bg-card" />
+                </div>
               </div>
               <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (create.isPending) return;
-                    setCreateModalOpen(false);
-                    setCreateName('');
-                    setCreateError('');
-                  }}
-                  className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50"
-                >
+                <button type="button" onClick={() => { if (create.isPending) return; setCreateModalOpen(false); setCreateForm(emptyForm); setCreateError(''); }} className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50">
                   {t('common.cancel')}
                 </button>
-                <button
-                  type="submit"
-                  disabled={create.isPending}
-                  className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
-                >
+                <button type="submit" disabled={create.isPending} className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50">
                   {create.isPending ? t('common.working') : t('common.create')}
                 </button>
               </div>
@@ -389,22 +421,11 @@ export default function LocationsPage() {
               <div>
                 {editError && <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">{editError}</div>}
                 <label className="mb-1.5 block text-muted-foreground">{t('table.name')}</label>
-                <input
-                  type="text"
-                  value={editModal.name}
-                  onChange={(e) => setEditModal({ ...editModal, name: e.target.value })}
-                  className="w-full bg-card"
-                  required
-                />
+                <input type="text" value={editModal.name} onChange={(e) => setEditModal({ ...editModal, name: e.target.value })} className="w-full bg-card" required />
               </div>
               <div className="flex items-center gap-3">
                 <label className="relative inline-flex cursor-pointer items-center">
-                  <input
-                    type="checkbox"
-                    checked={editModal.inUse}
-                    onChange={(e) => setEditModal({ ...editModal, inUse: e.target.checked })}
-                    className="peer sr-only"
-                  />
+                  <input type="checkbox" checked={editModal.inUse} onChange={(e) => setEditModal({ ...editModal, inUse: e.target.checked })} className="peer sr-only" />
                   <div className="h-5 w-9 rounded-full bg-muted peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/50 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all peer-checked:after:translate-x-full" />
                 </label>
                 <div>
@@ -412,23 +433,27 @@ export default function LocationsPage() {
                   <p className="text-xs text-muted-foreground">{t('page.locations.in_use_help')}</p>
                 </div>
               </div>
+              <div className="border-t border-border pt-3">
+                <p className="mb-2 text-sm font-medium text-muted-foreground">{t('page.locations.address')}</p>
+                <div className="space-y-2">
+                  <input type="text" value={editModal.street_line_1} onChange={(e) => setEditModal({ ...editModal, street_line_1: e.target.value })} placeholder={t('page.locations.street_line_1')} className="w-full bg-card" />
+                  <input type="text" value={editModal.street_line_2} onChange={(e) => setEditModal({ ...editModal, street_line_2: e.target.value })} placeholder={t('page.locations.street_line_2')} className="w-full bg-card" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="text" value={editModal.city} onChange={(e) => setEditModal({ ...editModal, city: e.target.value })} placeholder={t('page.locations.city')} className="w-full bg-card" />
+                    <input type="text" value={editModal.state} onChange={(e) => setEditModal({ ...editModal, state: e.target.value })} placeholder={t('page.locations.state')} className="w-full bg-card" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="text" value={editModal.postal_code} onChange={(e) => setEditModal({ ...editModal, postal_code: e.target.value })} placeholder={t('page.locations.postal_code')} className="w-full bg-card" />
+                    <input type="text" value={editModal.country} onChange={(e) => setEditModal({ ...editModal, country: e.target.value })} placeholder={t('page.locations.country')} className="w-full bg-card" />
+                  </div>
+                  <input type="text" value={editModal.phone} onChange={(e) => setEditModal({ ...editModal, phone: e.target.value })} placeholder={t('page.locations.phone')} className="w-full bg-card" />
+                </div>
+              </div>
               <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (saveEdit.isPending) return;
-                    setEditModal(null);
-                    setEditError('');
-                  }}
-                  className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50"
-                >
+                <button type="button" onClick={() => { if (saveEdit.isPending) return; setEditModal(null); setEditError(''); }} className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50">
                   {t('common.cancel')}
                 </button>
-                <button
-                  type="submit"
-                  disabled={saveEdit.isPending}
-                  className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
-                >
+                <button type="submit" disabled={saveEdit.isPending} className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50">
                   {saveEdit.isPending ? t('common.working') : t('common.save')}
                 </button>
               </div>

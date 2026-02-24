@@ -7,17 +7,6 @@ class SystemLocation(str, Enum):
     MAIN_WAREHOUSE = "main_warehouse"
 
 
-class AssetType(str, Enum):
-    LAPTOP = "laptop"
-    MONITOR = "monitor"
-    KEYBOARD = "keyboard"
-    MOUSE = "mouse"
-    HEADSET = "headset"
-    PHONE = "phone"
-    DOCKING_STATION = "docking_station"
-    OTHER = "other"
-
-
 class AssetStatus(str, Enum):
     IN_STOCK = "in_stock"
     ASSIGNED = "assigned"

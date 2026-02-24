@@ -22,7 +22,6 @@ from core.tenant import TenantContext  # noqa: E402
 from src.asset_bc.asset.domain.entities import Asset  # noqa: E402
 from src.asset_bc.asset.domain.enums import (  # noqa: E402
     AssetStatus,
-    AssetType,
 )
 from src.company_bc.company.application.commands.update_company import (  # noqa: E402,E501
     DomainAlreadyTakenError,
@@ -67,7 +66,7 @@ def _make_asset(**overrides) -> Asset:
     defaults = {
         "id": "asset-1",
         "company_id": "company-1",
-        "type": AssetType.LAPTOP,
+        "type": "laptop",
         "brand": "Dell",
         "model": "Latitude 5520",
         "serial_number": "SN001",
@@ -175,7 +174,7 @@ class TestMyEquipment:
             _make_asset(),
             _make_asset(
                 id="asset-2",
-                type=AssetType.MONITOR,
+                type="monitor",
                 serial_number="SN002",
             ),
         ]

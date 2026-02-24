@@ -40,7 +40,6 @@ from src.asset_bc.asset.domain.entities import (  # noqa: E402
 )
 from src.asset_bc.asset.domain.enums import (  # noqa: E402
     AssetStatus,
-    AssetType,
     InvalidStatusTransitionError,
 )
 
@@ -49,7 +48,7 @@ def _make_asset(**overrides) -> Asset:
     defaults = {
         "id": "asset-1",
         "company_id": "company-1",
-        "type": AssetType.LAPTOP,
+        "type": "laptop",
         "brand": "Dell",
         "model": "XPS 15",
         "serial_number": "SN-001",

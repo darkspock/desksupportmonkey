@@ -15,14 +15,14 @@ from src.asset_bc.asset.application.commands.unassign_asset import (
     UnassignAssetCommandHandler,
 )
 from src.asset_bc.asset.domain.entities import Asset, InvalidAssignmentError
-from src.asset_bc.asset.domain.enums import AssetStatus, AssetType
+from src.asset_bc.asset.domain.enums import AssetStatus
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
 
 
 def _make_asset(**overrides):
     defaults = dict(
-        company_id="comp1", type=AssetType.LAPTOP,
+        company_id="comp1", type="laptop",
         brand="Dell", model="Latitude", serial_number="SN001",
     )
     defaults.update(overrides)

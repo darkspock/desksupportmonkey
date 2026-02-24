@@ -5,8 +5,10 @@ from datetime import date
 from typing import Optional
 
 from src.asset_bc.asset.domain.entities import Asset, AssetEvent
-from src.asset_bc.asset.domain.enums import AssetType
 from src.asset_bc.asset.domain.repository import AssetRepositoryInterface
+from src.asset_type_bc.definition.domain.repository import (
+    AssetTypeDefinitionRepositoryInterface,
+)
 from src.custom_field_bc.definition.application.services.validation_service import (
     CustomFieldValidationService,
 )
@@ -15,8 +17,6 @@ from src.custom_field_bc.definition.application.services.validation_service impo
 REQUIRED_HEADERS = {"type", "brand", "model", "serial_number"}
 OPTIONAL_HEADERS = {"purchase_date", "warranty_expiration", "notes"}
 ALL_HEADERS = REQUIRED_HEADERS | OPTIONAL_HEADERS
-
-VALID_TYPES = {t.value for t in AssetType}
 
 
 class InvalidCSVError(Exception):
@@ -49,9 +49,11 @@ class ImportAssetsService:
         self,
         asset_repo: AssetRepositoryInterface,
         cf_validation_service: CustomFieldValidationService | None = None,
+        asset_type_repo: AssetTypeDefinitionRepositoryInterface | None = None,
     ):
         self.asset_repo = asset_repo
         self.cf_validation_service = cf_validation_service
+        self.asset_type_repo = asset_type_repo
 
     def handle(self, command: ImportAssetsRequest) -> ImportResult:
         reader = csv.DictReader(io.StringIO(command.csv_content))
@@ -64,6 +66,12 @@ class ImportAssetsService:
         if missing:
             raise InvalidCSVError(f"Missing required columns: {', '.join(sorted(missing))}")
 
+        # Load valid asset type codes from DB
+        valid_types: set[str] | None = None
+        if self.asset_type_repo:
+            types = self.asset_type_repo.find_active(command.company_id)
+            valid_types = {t.code for t in types}
+
         rows = list(reader)
         total = len(rows)
         failed: list[ImportRowError] = []
@@ -73,7 +81,7 @@ class ImportAssetsService:
         for idx, row in enumerate(rows, start=2):  # row 1 = header
             row = {k.strip().lower(): v.strip() if v else "" for k, v in row.items()}
 
-            error = self._validate_row(row, seen_serials, command.company_id)
+            error = self._validate_row(row, seen_serials, command.company_id, valid_types)
             if error:
                 failed.append(ImportRowError(row=idx, error=error))
                 continue
@@ -102,7 +110,7 @@ class ImportAssetsService:
 
             asset = Asset.create(
                 company_id=command.company_id,
-                type=AssetType(row["type"].strip().lower()),
+                type=row["type"].strip().lower(),
                 brand=row["brand"].strip(),
                 model=row["model"].strip(),
                 serial_number=serial,
@@ -130,17 +138,18 @@ class ImportAssetsService:
         )
 
     def _validate_row(
-        self, row: dict, seen_serials: set[str], company_id: str
+        self, row: dict, seen_serials: set[str], company_id: str,
+        valid_types: set[str] | None = None,
     ) -> Optional[str]:
         # Required fields
         for field_name in ("brand", "model", "serial_number", "type"):
             if not row.get(field_name, "").strip():
                 return f"{field_name} is required"
 
-        # Type enum
+        # Type validation against company's configured types
         type_val = row["type"].strip().lower()
-        if type_val not in VALID_TYPES:
-            return f"Invalid type '{row['type'].strip()}'. Valid: {', '.join(sorted(VALID_TYPES))}"
+        if valid_types is not None and type_val not in valid_types:
+            return f"Invalid type '{row['type'].strip()}'. Valid: {', '.join(sorted(valid_types))}"
 
         # Serial number uniqueness (intra-CSV)
         serial = row["serial_number"].strip().lower()

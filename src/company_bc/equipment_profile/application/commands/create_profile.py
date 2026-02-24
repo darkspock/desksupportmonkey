@@ -4,7 +4,6 @@ from typing import Optional
 
 import ulid
 
-from src.asset_bc.asset.domain.enums import AssetType
 from src.company_bc.equipment_profile.domain.entities import (
     EquipmentProfile,
     EquipmentProfileItem,
@@ -26,7 +25,7 @@ class ActiveProfileExistsError(Exception):
 
 @dataclass
 class ProfileItemInput:
-    asset_type: AssetType
+    asset_type: str
     quantity: int = 1
     preferred_brand: Optional[str] = None
     preferred_model: Optional[str] = None

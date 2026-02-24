@@ -29,7 +29,7 @@ def _make_draft_with_items():
         company_id="comp-1",
         direction=ShipmentDirection.OUTBOUND,
         destination_type=DestinationType.EMPLOYEE_HOME,
-        destination_address_id="addr-1",
+        destination_location_id="addr-1",
         created_by="user-1",
         items=[item],
     )
@@ -84,7 +84,7 @@ class TestModifyShipmentItems:
             company_id="comp-1",
             direction=ShipmentDirection.OUTBOUND,
             destination_type=DestinationType.EMPLOYEE_HOME,
-            destination_address_id="addr-1",
+            destination_location_id="addr-1",
             created_by="user-1",
             carrier="FedEx",
             tracking_number="FX123",
@@ -114,7 +114,7 @@ class TestModifyShipmentItems:
             company_id="comp-1",
             direction=ShipmentDirection.OUTBOUND,
             destination_type=DestinationType.OFFICE,
-            destination_address_id="addr-2",
+            destination_location_id="addr-2",
             created_by="user-1",
         )
         repo.find_active_by_asset_id.return_value = [

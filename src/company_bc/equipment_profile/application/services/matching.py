@@ -98,7 +98,7 @@ class EquipmentProfileMatcher:
         candidates = (
             self.asset_lookup.find_in_stock_by_type(
                 company_id=company_id,
-                asset_type=item.asset_type.value,
+                asset_type=item.asset_type,
             )
         )
         if not candidates:
@@ -253,7 +253,7 @@ class EquipmentProfileMatcher:
     def _item_description(
         item: EquipmentProfileItem,
     ) -> str:
-        parts = [f"type={item.asset_type.value}"]
+        parts = [f"type={item.asset_type}"]
         if item.preferred_brand:
             parts.append(
                 f"brand={item.preferred_brand}",

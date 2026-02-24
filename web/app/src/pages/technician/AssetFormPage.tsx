@@ -1,17 +1,26 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
 import { Card } from '../../components/ui/Card';
 import { CustomFieldsForm } from '../../components/custom-fields/CustomFieldsForm';
 import { useI18n } from '../../lib/i18n';
+import type { AssetTypeDefinition } from '../../types';
 
 export default function AssetFormPage() {
   const navigate = useNavigate();
   const { t } = useI18n();
   const queryClient = useQueryClient();
+  const { data: assetTypes } = useQuery({
+    queryKey: ['asset-types-active'],
+    queryFn: async () => {
+      const { data } = await api.get('/asset-types', { params: { active_only: true } });
+      return data.data as AssetTypeDefinition[];
+    },
+  });
+
   const [form, setForm] = useState({
-    type: 'laptop', brand: '', model: '', serial_number: '',
+    type: '', brand: '', model: '', serial_number: '',
     purchase_date: '', warranty_expiration: '', notes: '',
   });
   const [error, setError] = useState('');
@@ -20,6 +29,7 @@ export default function AssetFormPage() {
   const mutation = useMutation({
     mutationFn: async () => {
       const payload = { ...form };
+      if (!payload.type) payload.type = assetTypes?.[0]?.code ?? '';
       if (!payload.purchase_date) delete (payload as Record<string, unknown>).purchase_date;
       if (!payload.warranty_expiration) delete (payload as Record<string, unknown>).warranty_expiration;
       if (!payload.notes) delete (payload as Record<string, unknown>).notes;
@@ -59,9 +69,9 @@ export default function AssetFormPage() {
 
             <div className="md:col-span-2">
               <label className="mb-1.5 block text-sm text-muted-foreground">{t('table.type')}</label>
-              <select value={form.type} onChange={(e) => set('type', e.target.value)} className="w-full bg-card">
-                {['laptop', 'desktop', 'phone', 'tablet', 'monitor', 'printer', 'other'].map((assetType) => (
-                  <option key={assetType} value={assetType}>{t(`enum.${assetType}`)}</option>
+              <select value={form.type || (assetTypes?.[0]?.code ?? '')} onChange={(e) => set('type', e.target.value)} className="w-full bg-card">
+                {(assetTypes ?? []).map((at) => (
+                  <option key={at.code} value={at.code}>{at.name}</option>
                 ))}
               </select>
             </div>

@@ -49,6 +49,7 @@ class ReceiveItemRequest(BaseModel):
     received_quantity: int = Field(ge=1)
     create_asset: bool = False
     link_asset_id: Optional[str] = None
+    location_id: Optional[str] = None
 
 
 class ReceiveRequest(BaseModel):

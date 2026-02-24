@@ -7,9 +7,9 @@ from pydantic import BaseModel
 class CreateShipmentRequest(BaseModel):
     direction: str
     destination_type: str
-    destination_address_id: str
+    destination_location_id: str
     asset_ids: list[str]
-    origin_address_id: Optional[str] = None
+    origin_location_id: Optional[str] = None
     recipient_name: Optional[str] = None
     recipient_user_id: Optional[str] = None
     carrier: Optional[str] = None
@@ -52,7 +52,7 @@ class UpdateShipmentRequest(BaseModel):
 
 
 class CreateReturnRequest(BaseModel):
-    destination_address_id: str
+    destination_location_id: str
     asset_ids: list[str]
     carrier: Optional[str] = None
     tracking_number: Optional[str] = None
@@ -77,9 +77,9 @@ class ShipmentResponse(BaseModel):
     direction: str
     destination_type: str
     status: str
-    destination_address_id: str
+    destination_location_id: str
     created_by: str
-    origin_address_id: Optional[str] = None
+    origin_location_id: Optional[str] = None
     recipient_name: Optional[str] = None
     recipient_user_id: Optional[str] = None
     carrier: Optional[str] = None

@@ -21,7 +21,7 @@ from src.asset_bc.asset.application.commands.move_asset import (
     MoveAssetCommandHandler,
 )
 from src.asset_bc.asset.domain.entities import Asset, AssetLocation
-from src.asset_bc.asset.domain.enums import AssetStatus, AssetType
+from src.asset_bc.asset.domain.enums import AssetStatus
 from src.asset_bc.asset.domain.exceptions import (
     LocationHasAssetsError,
     LocationNameExistsError,
@@ -42,7 +42,7 @@ def _make_location(**overrides):
 def _make_asset(**overrides):
     defaults = dict(
         company_id="comp1",
-        type=AssetType.LAPTOP,
+        type="laptop",
         brand="Dell",
         model="Latitude",
         serial_number="SN001",

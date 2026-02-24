@@ -11,12 +11,10 @@ import { EmptyState, ErrorState } from '../../components/ui/StateBlock';
 import { Tooltip } from '../../components/ui/Tooltip';
 import { useToast } from '../../hooks/useToast';
 import { useI18n, humanizeToken } from '../../lib/i18n';
-import type { Department, EmployeeRole, EquipmentProfile, PaginatedResponse, AssetType } from '../../types';
-
-const ASSET_TYPES: AssetType[] = ['laptop', 'monitor', 'keyboard', 'mouse', 'headset', 'phone', 'docking_station', 'other'];
+import type { AssetTypeDefinition, Department, EmployeeRole, EquipmentProfile, PaginatedResponse } from '../../types';
 
 interface ItemForm {
-  asset_type: AssetType;
+  asset_type: string;
   quantity: number;
   preferred_brand: string;
   preferred_model: string;
@@ -25,8 +23,8 @@ interface ItemForm {
   budget: string;
 }
 
-function emptyItem(): ItemForm {
-  return { asset_type: 'laptop', quantity: 1, preferred_brand: '', preferred_model: '', min_ram_gb: '', min_storage_gb: '', budget: '' };
+function emptyItem(defaultCode = ''): ItemForm {
+  return { asset_type: defaultCode, quantity: 1, preferred_brand: '', preferred_model: '', min_ram_gb: '', min_storage_gb: '', budget: '' };
 }
 
 interface CreateModalState {
@@ -58,6 +56,14 @@ export default function EquipmentProfilesPage() {
   const [editError, setEditError] = useState('');
   const [pendingDelete, setPendingDelete] = useState<{ id: string } | null>(null);
   const [pendingToggle, setPendingToggle] = useState<{ id: string; activate: boolean; label: string } | null>(null);
+
+  const { data: assetTypes } = useQuery({
+    queryKey: ['asset-types-active'],
+    queryFn: async () => {
+      const { data } = await api.get('/asset-types', { params: { active_only: true } });
+      return data.data as AssetTypeDefinition[];
+    },
+  });
 
   const { data: departments } = useQuery({
     queryKey: ['departments-all'],
@@ -182,7 +188,7 @@ export default function EquipmentProfilesPage() {
       <div>
         <div className="flex items-center justify-between mb-2">
           <label className="text-muted-foreground">{t('page.equipment_profiles.items')}</label>
-          <button type="button" onClick={() => setItems([...items, emptyItem()])} className="text-xs text-primary hover:underline">
+          <button type="button" onClick={() => setItems([...items, emptyItem(assetTypes?.[0]?.code)])} className="text-xs text-primary hover:underline">
             {t('page.equipment_profiles.add_item')}
           </button>
         </div>
@@ -192,8 +198,8 @@ export default function EquipmentProfilesPage() {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block mb-1.5 text-muted-foreground text-xs">{t('table.type')}</label>
-                  <select value={item.asset_type} onChange={(e) => { const next = [...items]; next[idx] = { ...item, asset_type: e.target.value as AssetType }; setItems(next); }} className="w-full text-sm">
-                    {ASSET_TYPES.map((at) => <option key={at} value={at}>{t(`enum.${at}`, undefined, { defaultValue: humanizeToken(at) })}</option>)}
+                  <select value={item.asset_type} onChange={(e) => { const next = [...items]; next[idx] = { ...item, asset_type: e.target.value }; setItems(next); }} className="w-full text-sm">
+                    {(assetTypes ?? []).map((at) => <option key={at.code} value={at.code}>{at.name}</option>)}
                   </select>
                 </div>
                 <div>
@@ -244,7 +250,7 @@ export default function EquipmentProfilesPage() {
           type="button"
           onClick={() => {
             setCreateError('');
-            setCreateModal({ deptId: '', roleId: '', items: [emptyItem()] });
+            setCreateModal({ deptId: '', roleId: '', items: [emptyItem(assetTypes?.[0]?.code)] });
           }}
           className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90"
         >
@@ -283,7 +289,7 @@ export default function EquipmentProfilesPage() {
                 type="button"
                 onClick={() => {
                   setCreateError('');
-                  setCreateModal({ deptId: '', roleId: '', items: [emptyItem()] });
+                  setCreateModal({ deptId: '', roleId: '', items: [emptyItem(assetTypes?.[0]?.code)] });
                 }}
                 className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90"
               >
@@ -313,7 +319,8 @@ export default function EquipmentProfilesPage() {
                   <Td>
                     <span className="text-xs text-muted-foreground">
                       {p.items.map((i) => {
-                        const name = `${i.quantity}x ${t(`enum.${i.asset_type}`, undefined, { defaultValue: humanizeToken(i.asset_type) })}`;
+                        const typeName = assetTypes?.find((at) => at.code === i.asset_type)?.name ?? humanizeToken(i.asset_type);
+                        const name = `${i.quantity}x ${typeName}`;
                         return i.budget_cents != null ? `${name} ($${(i.budget_cents / 100).toFixed(0)})` : name;
                       }).join(', ')}
                     </span>

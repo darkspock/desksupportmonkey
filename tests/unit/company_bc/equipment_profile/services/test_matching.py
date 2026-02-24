@@ -5,7 +5,6 @@ from datetime import date
 from typing import Optional
 from unittest.mock import MagicMock
 
-from src.asset_bc.asset.domain.enums import AssetType
 from src.company_bc.assignment_config.domain.enums import (
     FallbackReason,
 )
@@ -44,7 +43,7 @@ def _profile(items: list[EquipmentProfileItem]) -> EquipmentProfile:
 
 
 def _item(
-    asset_type: AssetType = AssetType.LAPTOP,
+    asset_type: str = "laptop",
     preferred_brand: Optional[str] = None,
     preferred_model: Optional[str] = None,
     min_ram_gb: Optional[int] = None,
@@ -189,15 +188,15 @@ class TestPartialMatch:
         lookup = MagicMock()
 
         def side_effect(company_id, asset_type):
-            if asset_type == AssetType.LAPTOP.value:
+            if asset_type == "laptop":
                 return [laptop]
             return []  # no monitors
 
         lookup.find_in_stock_by_type.side_effect = side_effect
 
         items = [
-            _item(AssetType.LAPTOP),
-            _item(AssetType.MONITOR),
+            _item("laptop"),
+            _item("monitor"),
         ]
         matcher = EquipmentProfileMatcher(asset_lookup=lookup)
         result = matcher.match(_profile(items), "c1")
@@ -220,17 +219,17 @@ class TestFullMatchAllItems:
         lookup = MagicMock()
 
         def side_effect(company_id, asset_type):
-            if asset_type == AssetType.LAPTOP.value:
+            if asset_type == "laptop":
                 return [laptop]
-            if asset_type == AssetType.MONITOR.value:
+            if asset_type == "monitor":
                 return [monitor]
             return []
 
         lookup.find_in_stock_by_type.side_effect = side_effect
 
         items = [
-            _item(AssetType.LAPTOP),
-            _item(AssetType.MONITOR),
+            _item("laptop"),
+            _item("monitor"),
         ]
         matcher = EquipmentProfileMatcher(asset_lookup=lookup)
         result = matcher.match(_profile(items), "c1")

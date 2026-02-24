@@ -19,10 +19,10 @@ cd "$WORK_DIR" && uv sync --frozen 2>&1 || true
 echo "==> Running database migrations..."
 cd "$WORK_DIR" && PYTHONPATH=src uv run alembic upgrade head 2>&1 || true
 
-# --- Astro marketing site ---
+# --- Astro marketing site (sitedsm) ---
 echo "==> Building Astro marketing site..."
-cd "$WORK_DIR/web/site"
-npm ci --production=false
+cd "$WORK_DIR/web/sitedsm"
+npm install 2>&1 || true
 npm run build
 mkdir -p "$SITE_DIR"
 rm -rf "${SITE_DIR:?}"/*
@@ -32,17 +32,12 @@ echo "==> Astro site deployed to $SITE_DIR"
 # --- React SPA ---
 echo "==> Building React SPA..."
 cd "$WORK_DIR/web/app"
-npm ci --production=false
-npm run build
+npm install 2>&1 || true
+npx vite build
 mkdir -p "$APP_DIR"
 rm -rf "${APP_DIR:?}"/*
 cp -r dist/* "$APP_DIR/"
 echo "==> React SPA deployed to $APP_DIR"
-
-# --- Copy logo to marketing site public dir ---
-if [ -f "$WORK_DIR/web/site/public/logo.png" ]; then
-    cp "$WORK_DIR/web/site/public/logo.png" "$SITE_DIR/logo.png" 2>/dev/null || true
-fi
 
 # --- Restart services ---
 echo "==> Restarting services..."

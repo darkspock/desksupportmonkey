@@ -83,11 +83,25 @@ class ImportResponse(BaseModel):
 class CreateLocationRequest(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     in_use: bool = True
+    street_line_1: Optional[str] = Field(None, max_length=255)
+    street_line_2: Optional[str] = Field(None, max_length=255)
+    city: Optional[str] = Field(None, max_length=100)
+    state: Optional[str] = Field(None, max_length=100)
+    postal_code: Optional[str] = Field(None, max_length=20)
+    country: Optional[str] = Field(None, max_length=100)
+    phone: Optional[str] = Field(None, max_length=50)
 
 
 class UpdateLocationRequest(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=255)
     in_use: Optional[bool] = None
+    street_line_1: Optional[str] = Field(None, max_length=255)
+    street_line_2: Optional[str] = Field(None, max_length=255)
+    city: Optional[str] = Field(None, max_length=100)
+    state: Optional[str] = Field(None, max_length=100)
+    postal_code: Optional[str] = Field(None, max_length=20)
+    country: Optional[str] = Field(None, max_length=100)
+    phone: Optional[str] = Field(None, max_length=50)
 
 
 class AssetLocationResponse(BaseModel):
@@ -96,6 +110,15 @@ class AssetLocationResponse(BaseModel):
     is_system: bool
     system_key: Optional[str] = None
     in_use: bool
+    street_line_1: Optional[str] = None
+    street_line_2: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    postal_code: Optional[str] = None
+    country: Optional[str] = None
+    phone: Optional[str] = None
+    is_personal: bool = False
+    user_id: Optional[str] = None
     asset_count: int = 0
     created_at: Optional[datetime] = None
 

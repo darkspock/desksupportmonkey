@@ -975,6 +975,9 @@ const en: Record<string, string> = {
   // E14: PO PDF + Dashboard
   'page.po.download_pdf': 'Download PDF',
   'page.po.error_pdf': 'Failed to generate PDF',
+  'page.po.location_modal_title': 'Select asset location',
+  'page.po.location_modal_desc': 'Choose the location where the new assets will be stored.',
+  'page.po.location_label': 'Location',
   'page.po.more_actions': 'More actions',
   'page.po.confirm_submit_title': 'Submit purchase order',
   'page.po.confirm_submit_desc': 'Submit this purchase order for approval?',
@@ -1977,6 +1980,14 @@ const en: Record<string, string> = {
   'page.locations.error_delete': 'Failed to delete location',
   'page.locations.error_delete_title': 'Delete failed',
   'page.locations.error_name_required': 'Location name is required',
+  'page.locations.address': 'Address (optional)',
+  'page.locations.street_line_1': 'Street line 1',
+  'page.locations.street_line_2': 'Street line 2',
+  'page.locations.city': 'City',
+  'page.locations.state': 'State / Province',
+  'page.locations.postal_code': 'Postal code',
+  'page.locations.country': 'Country',
+  'page.locations.phone': 'Phone',
 
   // Asset location integration
   'page.asset_detail.location': 'Location',
@@ -2243,6 +2254,26 @@ const en: Record<string, string> = {
   'gdpr.anonymize_error': 'Failed to request anonymization.',
   'gdpr.cancel_success': 'Request cancelled.',
   'gdpr.cancel_error': 'Failed to cancel request.',
+
+  // Asset Types (configurable)
+  'nav.asset_types': 'Asset Types',
+  'page.asset_types.title': 'Asset Types',
+  'page.asset_types.subtitle': 'Define the types of assets your company tracks.',
+  'page.asset_types.new': 'New Asset Type',
+  'page.asset_types.empty': 'No asset types defined yet.',
+  'page.asset_types.code': 'Code',
+  'page.asset_types.icon': 'Icon',
+  'page.asset_types.icon_placeholder': 'e.g. laptop, monitor',
+  'page.asset_types.name_placeholder': 'e.g. Laptop, Monitor',
+  'page.asset_types.name_required': 'Name is required.',
+  'page.asset_types.activate': 'Activate',
+  'page.asset_types.deactivate': 'Deactivate',
+  'page.asset_types.toggle_desc': 'Are you sure you want to change the status of this asset type?',
+  'page.asset_types.delete_title': 'Delete Asset Type',
+  'page.asset_types.delete_desc': 'Are you sure you want to delete "{name}"? This cannot be undone. Types in use by assets cannot be deleted.',
+  'page.asset_types.toast_created': 'Asset type created.',
+  'page.asset_types.toast_updated': 'Asset type updated.',
+  'page.asset_types.toast_deleted': 'Asset type deleted.',
 };
 
 export default en;

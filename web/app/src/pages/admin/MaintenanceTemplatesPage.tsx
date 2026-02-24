@@ -12,9 +12,7 @@ import { Pagination } from '../../components/ui/Pagination';
 import { useToast } from '../../hooks/useToast';
 import { useI18n, humanizeToken } from '../../lib/i18n';
 import { formatDateTime } from '../../lib/date';
-import type { Asset, AssetType, MaintenanceChecklistItem, MaintenancePlan, MaintenanceTemplate, PaginatedResponse } from '../../types';
-
-const ASSET_TYPES: AssetType[] = ['laptop', 'monitor', 'keyboard', 'mouse', 'headset', 'phone', 'docking_station', 'other'];
+import type { Asset, AssetTypeDefinition, MaintenanceChecklistItem, MaintenancePlan, MaintenanceTemplate, PaginatedResponse } from '../../types';
 
 interface ChecklistItemForm {
   title: string;
@@ -52,6 +50,14 @@ export default function MaintenanceTemplatesPage() {
   // Confirm dialogs
   const [pendingTemplateDelete, setPendingTemplateDelete] = useState<MaintenanceTemplate | null>(null);
   const [pendingPlanDeactivate, setPendingPlanDeactivate] = useState<MaintenancePlan | null>(null);
+
+  const { data: assetTypes } = useQuery({
+    queryKey: ['asset-types-active'],
+    queryFn: async () => {
+      const { data } = await api.get('/asset-types', { params: { active_only: true } });
+      return data.data as AssetTypeDefinition[];
+    },
+  });
 
   const { data: templates, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['maintenance-templates', page],
@@ -484,7 +490,7 @@ export default function MaintenanceTemplatesPage() {
                 <label className="mb-1.5 block text-muted-foreground">{t('page.maintenance_templates.asset_type_filter')}</label>
                 <select value={createAssetTypeFilter} onChange={(e) => setCreateAssetTypeFilter(e.target.value)} className="w-full bg-card">
                   <option value="">{t('page.maintenance_templates.all_asset_types')}</option>
-                  {ASSET_TYPES.map((at) => <option key={at} value={at}>{t(`enum.${at}`, undefined, { defaultValue: humanizeToken(at) })}</option>)}
+                  {(assetTypes ?? []).map((at) => <option key={at.code} value={at.code}>{at.name}</option>)}
                 </select>
               </div>
               {renderChecklistForm(createChecklist, setCreateChecklist)}

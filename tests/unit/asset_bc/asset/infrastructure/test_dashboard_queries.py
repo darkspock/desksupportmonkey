@@ -32,7 +32,7 @@ class TestCountByStatus:
 
 
 class TestCountByType:
-    def test_returns_all_types_with_defaults(self):
+    def test_returns_counts_from_db(self):
         repo, session = _make_repo()
         session.execute.return_value.all.return_value = [
             ("laptop", 20),
@@ -41,9 +41,14 @@ class TestCountByType:
         result = repo.count_by_type("comp1")
         assert result["laptop"] == 20
         assert result["monitor"] == 10
-        assert result["keyboard"] == 0
-        assert result["other"] == 0
-        assert len(result) == 8
+        assert result.get("keyboard", 0) == 0
+        assert len(result) == 2
+
+    def test_empty_returns_empty_dict(self):
+        repo, session = _make_repo()
+        session.execute.return_value.all.return_value = []
+        result = repo.count_by_type("comp1")
+        assert result == {}
 
 
 class TestFindExpiringWarranties:

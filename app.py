@@ -40,6 +40,7 @@ from adapters.http.api.risks.routers import router as risks_router
 from adapters.http.api.kb.routers import router as kb_router
 from adapters.http.api.sla.routers import router as sla_router
 from adapters.http.api.audit.routers import router as audit_router
+from adapters.http.api.asset_types.routers import router as asset_types_router
 from adapters.http.api.custom_fields.routers import router as custom_fields_router
 from adapters.http.api.brand import router as brand_router
 from adapters.http.api.super_admin.routers import router as super_admin_router
@@ -127,6 +128,7 @@ def create_app() -> FastAPI:
     application.include_router(kb_router)
     application.include_router(sla_router)
     application.include_router(audit_router)
+    application.include_router(asset_types_router)
     application.include_router(custom_fields_router)
     application.include_router(super_admin_router)
     application.include_router(ws_router)

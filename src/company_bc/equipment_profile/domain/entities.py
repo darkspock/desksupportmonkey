@@ -4,14 +4,12 @@ from typing import Optional
 
 import ulid
 
-from src.asset_bc.asset.domain.enums import AssetType
-
 
 @dataclass
 class EquipmentProfileItem:
     id: str
     profile_id: str
-    asset_type: AssetType
+    asset_type: str
     quantity: int = 1
     preferred_brand: Optional[str] = None
     preferred_model: Optional[str] = None

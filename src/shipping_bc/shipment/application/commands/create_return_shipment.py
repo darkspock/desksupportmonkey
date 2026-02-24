@@ -30,7 +30,7 @@ class CreateReturnShipmentCommand(Command):
     original_shipment_id: str
     company_id: str
     created_by: str
-    destination_address_id: str
+    destination_location_id: str
     asset_ids: list[str]
     carrier: Optional[str] = None
     tracking_number: Optional[str] = None
@@ -79,12 +79,12 @@ class CreateReturnShipmentCommandHandler(
             destination_type=(
                 original.destination_type
             ),
-            destination_address_id=(
-                command.destination_address_id
+            destination_location_id=(
+                command.destination_location_id
             ),
             created_by=command.created_by,
-            origin_address_id=(
-                original.destination_address_id
+            origin_location_id=(
+                original.destination_location_id
             ),
             recipient_name=original.recipient_name,
             recipient_user_id=(

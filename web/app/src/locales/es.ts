@@ -975,6 +975,9 @@ const es: Record<string, string> = {
   // E14: PO PDF + Dashboard
   'page.po.download_pdf': 'Descargar PDF',
   'page.po.error_pdf': 'Error al generar PDF',
+  'page.po.location_modal_title': 'Seleccionar ubicación del activo',
+  'page.po.location_modal_desc': 'Elige la ubicación donde se almacenarán los nuevos activos.',
+  'page.po.location_label': 'Ubicación',
   'page.po.more_actions': 'Más acciones',
   'page.po.confirm_submit_title': 'Enviar orden de compra',
   'page.po.confirm_submit_desc': '¿Enviar esta orden de compra para aprobación?',
@@ -1977,6 +1980,14 @@ const es: Record<string, string> = {
   'page.locations.error_delete': 'No se pudo eliminar la ubicacion',
   'page.locations.error_delete_title': 'Error al eliminar',
   'page.locations.error_name_required': 'El nombre de la ubicacion es obligatorio',
+  'page.locations.address': 'Direccion (opcional)',
+  'page.locations.street_line_1': 'Direccion linea 1',
+  'page.locations.street_line_2': 'Direccion linea 2',
+  'page.locations.city': 'Ciudad',
+  'page.locations.state': 'Estado / Provincia',
+  'page.locations.postal_code': 'Codigo postal',
+  'page.locations.country': 'Pais',
+  'page.locations.phone': 'Telefono',
 
   // Integracion de ubicacion de activos
   'page.asset_detail.location': 'Ubicacion',
@@ -2243,6 +2254,26 @@ const es: Record<string, string> = {
   'gdpr.anonymize_error': 'Error al solicitar la anonimización.',
   'gdpr.cancel_success': 'Solicitud cancelada.',
   'gdpr.cancel_error': 'Error al cancelar la solicitud.',
+
+  // Tipos de Activo (configurables)
+  'nav.asset_types': 'Tipos de Activo',
+  'page.asset_types.title': 'Tipos de Activo',
+  'page.asset_types.subtitle': 'Define los tipos de activos que tu empresa gestiona.',
+  'page.asset_types.new': 'Nuevo Tipo de Activo',
+  'page.asset_types.empty': 'No hay tipos de activo definidos.',
+  'page.asset_types.code': 'Código',
+  'page.asset_types.icon': 'Icono',
+  'page.asset_types.icon_placeholder': 'ej. laptop, monitor',
+  'page.asset_types.name_placeholder': 'ej. Portátil, Monitor',
+  'page.asset_types.name_required': 'El nombre es obligatorio.',
+  'page.asset_types.activate': 'Activar',
+  'page.asset_types.deactivate': 'Desactivar',
+  'page.asset_types.toggle_desc': '¿Estás seguro de que deseas cambiar el estado de este tipo de activo?',
+  'page.asset_types.delete_title': 'Eliminar Tipo de Activo',
+  'page.asset_types.delete_desc': '¿Estás seguro de que deseas eliminar "{name}"? Esta acción no se puede deshacer. Los tipos en uso no se pueden eliminar.',
+  'page.asset_types.toast_created': 'Tipo de activo creado.',
+  'page.asset_types.toast_updated': 'Tipo de activo actualizado.',
+  'page.asset_types.toast_deleted': 'Tipo de activo eliminado.',
 };
 
 export default es;

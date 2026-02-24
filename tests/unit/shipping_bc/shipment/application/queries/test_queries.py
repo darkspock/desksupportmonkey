@@ -39,7 +39,7 @@ def _make_shipment(**overrides):
         company_id="comp-1",
         direction=ShipmentDirection.OUTBOUND,
         destination_type=DestinationType.EMPLOYEE_HOME,
-        destination_address_id="addr-1",
+        destination_location_id="addr-1",
         created_by="user-1",
     )
     defaults.update(overrides)

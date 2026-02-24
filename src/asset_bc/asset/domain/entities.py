@@ -6,7 +6,6 @@ import ulid
 
 from src.asset_bc.asset.domain.enums import (
     AssetStatus,
-    AssetType,
     InvalidStatusTransitionError,
     VALID_TRANSITIONS,
 )
@@ -24,7 +23,19 @@ class AssetLocation:
     is_system: bool
     system_key: Optional[str] = None
     in_use: bool = True
+    street_line_1: Optional[str] = None
+    street_line_2: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    postal_code: Optional[str] = None
+    country: Optional[str] = None
+    phone: Optional[str] = None
+    is_personal: bool = False
+    user_id: Optional[str] = None
     created_at: Optional[datetime] = None
+
+    def has_address(self) -> bool:
+        return bool(self.street_line_1 and self.city and self.country)
 
     @classmethod
     def create(
@@ -35,6 +46,15 @@ class AssetLocation:
         system_key: Optional[str] = None,
         in_use: bool = True,
         id: Optional[str] = None,
+        street_line_1: Optional[str] = None,
+        street_line_2: Optional[str] = None,
+        city: Optional[str] = None,
+        state: Optional[str] = None,
+        postal_code: Optional[str] = None,
+        country: Optional[str] = None,
+        phone: Optional[str] = None,
+        is_personal: bool = False,
+        user_id: Optional[str] = None,
     ) -> "AssetLocation":
         if not name or not name.strip():
             raise ValueError("Location name is required")
@@ -47,6 +67,15 @@ class AssetLocation:
             is_system=is_system,
             system_key=system_key,
             in_use=in_use,
+            street_line_1=street_line_1,
+            street_line_2=street_line_2,
+            city=city,
+            state=state,
+            postal_code=postal_code,
+            country=country,
+            phone=phone,
+            is_personal=is_personal,
+            user_id=user_id,
         )
 
 
@@ -54,7 +83,7 @@ class AssetLocation:
 class Asset:
     id: str
     company_id: str
-    type: AssetType
+    type: str
     brand: str
     model: str
     serial_number: str
@@ -74,7 +103,7 @@ class Asset:
     def create(
         cls,
         company_id: str,
-        type: AssetType,
+        type: str,
         brand: str,
         model: str,
         serial_number: str,

@@ -36,9 +36,22 @@ class ShipmentModel(ULIDMixin, TimestampMixin, Base):
             nullable=True,
         )
     )
-    destination_address_id: Mapped[str] = mapped_column(
+    destination_address_id: Mapped[Optional[str]] = mapped_column(
         String(26),
         ForeignKey("shipping_addresses.id"),
+        nullable=True,
+    )
+    origin_location_id: Mapped[Optional[str]] = mapped_column(
+        String(26),
+        ForeignKey("asset_locations.id"),
+        nullable=True,
+        index=True,
+    )
+    destination_location_id: Mapped[Optional[str]] = mapped_column(
+        String(26),
+        ForeignKey("asset_locations.id"),
+        nullable=True,
+        index=True,
     )
     recipient_name: Mapped[Optional[str]] = (
         mapped_column(

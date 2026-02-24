@@ -2,7 +2,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.asset_bc.asset.domain.enums import AssetType
 from src.company_bc.equipment_profile.application.commands.create_profile import (  # noqa: E501
     ActiveProfileExistsError,
     CreateEquipmentProfileCommand,
@@ -30,7 +29,7 @@ class TestCreateEquipmentProfile:
                 employee_role_id="er1",
                 items=[
                     ProfileItemInput(
-                        asset_type=AssetType.LAPTOP,
+                        asset_type="laptop",
                         quantity=1,
                     ),
                 ],
@@ -44,7 +43,7 @@ class TestCreateEquipmentProfile:
         assert saved.department_id == "dept1"
         assert saved.employee_role_id == "er1"
         assert len(saved.items) == 1
-        assert saved.items[0].asset_type == AssetType.LAPTOP
+        assert saved.items[0].asset_type == "laptop"
 
     def test_active_profile_exists_raises(self):
         existing = EquipmentProfile.create(
@@ -66,7 +65,7 @@ class TestCreateEquipmentProfile:
                     employee_role_id="er1",
                     items=[
                         ProfileItemInput(
-                            asset_type=AssetType.LAPTOP,
+                            asset_type="laptop",
                         ),
                     ],
                     performed_by="admin1",
@@ -90,13 +89,13 @@ class TestCreateEquipmentProfile:
                 employee_role_id="er2",
                 items=[
                     ProfileItemInput(
-                        asset_type=AssetType.LAPTOP,
+                        asset_type="laptop",
                         quantity=1,
                         min_ram_gb=16,
                         min_storage_gb=512,
                     ),
                     ProfileItemInput(
-                        asset_type=AssetType.MONITOR,
+                        asset_type="monitor",
                         quantity=2,
                         preferred_brand="Dell",
                     ),
@@ -126,12 +125,12 @@ class TestCreateEquipmentProfile:
                 employee_role_id="er1",
                 items=[
                     ProfileItemInput(
-                        asset_type=AssetType.LAPTOP,
+                        asset_type="laptop",
                         quantity=1,
                         budget_cents=120000,
                     ),
                     ProfileItemInput(
-                        asset_type=AssetType.MONITOR,
+                        asset_type="monitor",
                         quantity=1,
                         budget_cents=None,
                     ),
@@ -159,7 +158,7 @@ class TestCreateEquipmentProfile:
                 employee_role_id="er3",
                 items=[
                     ProfileItemInput(
-                        asset_type=AssetType.LAPTOP,
+                        asset_type="laptop",
                         quantity=1,
                     ),
                 ],

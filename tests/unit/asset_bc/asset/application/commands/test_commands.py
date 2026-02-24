@@ -19,13 +19,13 @@ from src.asset_bc.asset.application.commands.change_asset_status import (
     ChangeAssetStatusCommandHandler,
 )
 from src.asset_bc.asset.domain.entities import Asset
-from src.asset_bc.asset.domain.enums import AssetStatus, AssetType, InvalidStatusTransitionError
+from src.asset_bc.asset.domain.enums import AssetStatus, InvalidStatusTransitionError
 
 
 def _make_asset(**overrides):
     defaults = dict(
         company_id="comp1",
-        type=AssetType.LAPTOP,
+        type="laptop",
         brand="Dell",
         model="Latitude",
         serial_number="SN001",

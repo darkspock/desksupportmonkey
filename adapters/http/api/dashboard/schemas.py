@@ -78,19 +78,9 @@ class AssetStatusCounts(BaseModel):
     decommissioned: int = 0
 
 
-class AssetTypeCounts(BaseModel):
-    laptop: int = 0
-    monitor: int = 0
-    keyboard: int = 0
-    mouse: int = 0
-    headset: int = 0
-    docking_station: int = 0
-    other: int = 0
-
-
 class AssetSummaryResponse(BaseModel):
     by_status: AssetStatusCounts
-    by_type: AssetTypeCounts
+    by_type: dict[str, int]
     total: int
 
 

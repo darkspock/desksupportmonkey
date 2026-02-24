@@ -39,7 +39,7 @@ class TestReceiptAssetService:
         self.asset_repo.save.assert_called_once()
         saved_asset = self.asset_repo.save.call_args[0][0]
         assert saved_asset.company_id == "comp1"
-        assert saved_asset.type.value == "laptop"
+        assert saved_asset.type == "laptop"
         assert saved_asset.brand == "Dell Inc"
         assert saved_asset.model == "Dell Latitude 5550"
         assert saved_asset.purchase_cost_cents == 80000

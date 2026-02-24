@@ -25,13 +25,13 @@ from src.asset_bc.asset.application.queries.my_equipment import (
     MyEquipmentQueryHandler,
 )
 from src.asset_bc.asset.domain.entities import Asset, AssetEvent, AssetLocation
-from src.asset_bc.asset.domain.enums import AssetStatus, AssetType
+from src.asset_bc.asset.domain.enums import AssetStatus
 
 
 def _make_asset(**overrides):
     defaults = dict(
         company_id="comp1",
-        type=AssetType.LAPTOP,
+        type="laptop",
         brand="Dell",
         model="Latitude",
         serial_number="SN001",

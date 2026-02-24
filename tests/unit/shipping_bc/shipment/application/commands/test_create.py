@@ -29,7 +29,7 @@ def _make_shipment(**overrides):
         company_id="comp-1",
         direction=ShipmentDirection.OUTBOUND,
         destination_type=DestinationType.EMPLOYEE_HOME,
-        destination_address_id="addr-1",
+        destination_location_id="addr-1",
         created_by="user-1",
     )
     defaults.update(overrides)
@@ -50,7 +50,7 @@ class TestCreateShipment:
                 company_id="comp-1",
                 direction="OUTBOUND",
                 destination_type="EMPLOYEE_HOME",
-                destination_address_id="addr-1",
+                destination_location_id="addr-1",
                 created_by="user-1",
                 asset_ids=["asset-1", "asset-2"],
             )
@@ -78,7 +78,7 @@ class TestCreateShipment:
                     company_id="comp-1",
                     direction="OUTBOUND",
                     destination_type="EMPLOYEE_HOME",
-                    destination_address_id="addr-1",
+                    destination_location_id="addr-1",
                     created_by="user-1",
                     asset_ids=["asset-1"],
                 )
@@ -97,7 +97,7 @@ class TestCreateShipment:
                     company_id="comp-1",
                     direction="INVALID",
                     destination_type="EMPLOYEE_HOME",
-                    destination_address_id="addr-1",
+                    destination_location_id="addr-1",
                     created_by="user-1",
                     asset_ids=[],
                 )
@@ -120,7 +120,7 @@ class TestCreateReturnShipment:
                 original_shipment_id="ship-orig",
                 company_id="comp-1",
                 created_by="user-1",
-                destination_address_id="addr-2",
+                destination_location_id="addr-2",
                 asset_ids=["asset-1"],
             )
         )
@@ -129,7 +129,7 @@ class TestCreateReturnShipment:
         saved = repo.save.call_args[0][0]
         assert saved.return_for_shipment_id == "ship-orig"
         assert saved.direction == ShipmentDirection.INBOUND
-        assert saved.origin_address_id == "addr-1"
+        assert saved.origin_location_id == "addr-1"
 
     def test_create_return_original_not_found(self):
         repo = MagicMock()
@@ -145,7 +145,7 @@ class TestCreateReturnShipment:
                     original_shipment_id="ship-nope",
                     company_id="comp-1",
                     created_by="user-1",
-                    destination_address_id="addr-2",
+                    destination_location_id="addr-2",
                     asset_ids=["asset-1"],
                 )
             )

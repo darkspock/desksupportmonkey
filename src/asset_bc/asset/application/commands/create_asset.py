@@ -3,7 +3,7 @@ from datetime import date
 from typing import Optional
 
 from src.asset_bc.asset.domain.entities import Asset, AssetEvent
-from src.asset_bc.asset.domain.enums import AssetType, SystemLocation
+from src.asset_bc.asset.domain.enums import SystemLocation
 from src.asset_bc.asset.domain.repository import AssetRepositoryInterface
 from src.framework.application.command_bus import Command, CommandHandler
 
@@ -38,11 +38,9 @@ class CreateAssetCommandHandler(CommandHandler[CreateAssetCommand]):
                 f"Asset with serial number '{command.serial_number}' already exists"
             )
 
-        asset_type = AssetType(command.type)
-
         asset = Asset.create(
             company_id=command.company_id,
-            type=asset_type,
+            type=command.type,
             brand=command.brand,
             model=command.model,
             serial_number=command.serial_number,
@@ -66,7 +64,7 @@ class CreateAssetCommandHandler(CommandHandler[CreateAssetCommand]):
             asset_id=asset.id,
             event_type="created",
             data={
-                "type": asset.type.value,
+                "type": asset.type,
                 "brand": asset.brand,
                 "model": asset.model,
                 "serial_number": asset.serial_number,

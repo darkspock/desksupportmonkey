@@ -27,6 +27,6 @@ class AssetRepositoryLookupAdapter(AssetLookup):
     ) -> list[AssetSummary]:
         assets = self.asset_repo.find_all_by_company(company_id)
         return [
-            AssetSummary(id=asset.id, type=asset.type.value)
+            AssetSummary(id=asset.id, type=asset.type)
             for asset in assets
         ]

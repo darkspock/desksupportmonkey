@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useToast } from '../../hooks/useToast';
 import { useI18n } from '../../lib/i18n';
 import api from '../../lib/api';
-import type { Asset, AssignableUser, PaginatedResponse, ShippingAddress } from '../../types';
+import type { Asset, AssignableUser, PaginatedResponse, AssetLocation } from '../../types';
 
 type AddressMode = 'employee' | 'address' | 'here';
 type ServiceLevel = 'standard' | 'two_day' | 'overnight';
@@ -103,13 +103,13 @@ function InlineAddressForm({
   );
 }
 
-function formatAddressOption(address: ShippingAddress): string {
-  return `${address.label} — ${address.city}, ${address.state}`;
+function formatLocationOption(location: AssetLocation): string {
+  return `${location.name} — ${location.city ?? ''}, ${location.state ?? ''}`;
 }
 
-function formatAddressBlock(address: ShippingAddress): string {
-  const line2 = address.street_line_2 ? `${address.street_line_2}, ` : '';
-  return `${address.street_line_1}, ${line2}${address.city}, ${address.state} ${address.postal_code}, ${address.country}`;
+function formatLocationBlock(location: AssetLocation): string {
+  const line2 = location.street_line_2 ? `${location.street_line_2}, ` : '';
+  return `${location.street_line_1 ?? ''}, ${line2}${location.city ?? ''}, ${location.state ?? ''} ${location.postal_code ?? ''}, ${location.country ?? ''}`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -153,11 +153,11 @@ export default function ShipmentCreatePage() {
   const inlineAddrValid = inlineAddr.street_line_1.trim() && inlineAddr.city.trim() && inlineAddr.state.trim() && inlineAddr.postal_code.trim();
 
   /* ---- Queries ---- */
-  const addressesQuery = useQuery({
-    queryKey: ['addresses-all'],
+  const locationsQuery = useQuery({
+    queryKey: ['locations-all'],
     queryFn: async () => {
-      const { data } = await api.get('/addresses', { params: { page_size: 100, is_active: true } });
-      return data as PaginatedResponse<ShippingAddress>;
+      const { data } = await api.get('/assets/locations', { params: { page_size: 100 } });
+      return data as PaginatedResponse<AssetLocation>;
     },
   });
 
@@ -177,33 +177,33 @@ export default function ShipmentCreatePage() {
     },
   });
 
-  const addrList = addressesQuery.data?.data ?? [];
+  const locationList = locationsQuery.data?.data ?? [];
   const userList = usersQuery.data ?? [];
   const assetList = assetsQuery.data?.data ?? [];
 
-  const officeAddresses = addrList.filter((a) => a.is_office);
-  const companyAddressId = officeAddresses[0]?.id ?? '';
+  const officeLocations = locationList.filter((a) => a.is_system || (!a.is_personal && !a.user_id));
+  const companyLocationId = officeLocations[0]?.id ?? '';
   const selectedOriginUser = userList.find((u) => u.id === originUserId);
   const selectedRecipientUser = userList.find((u) => u.id === recipientUserId);
 
   const originOptions = originMode === 'employee'
-    ? (originUserId ? addrList.filter((a) => !a.is_office && a.user_id === originUserId) : addrList.filter((a) => !a.is_office))
+    ? (originUserId ? locationList.filter((a) => a.is_personal && a.user_id === originUserId) : locationList.filter((a) => a.is_personal))
     : originMode === 'here'
-      ? officeAddresses
-      : addrList;
+      ? officeLocations
+      : locationList;
 
   const destinationOptions = (
     destinationMode === 'employee' && recipientUserId
-      ? addrList.filter((a) => !a.is_office && a.user_id === recipientUserId)
+      ? locationList.filter((a) => a.is_personal && a.user_id === recipientUserId)
       : destinationMode === 'employee'
-        ? addrList.filter((a) => !a.is_office)
+        ? locationList.filter((a) => a.is_personal)
         : destinationMode === 'here'
-          ? officeAddresses
-          : addrList
+          ? officeLocations
+          : locationList
   );
 
-  const resolvedOriginAddrId = originMode === 'here' ? (originAddrId || companyAddressId) : originAddrId;
-  const resolvedDestAddrId = destinationMode === 'here' ? (destAddrId || companyAddressId) : destAddrId;
+  const resolvedOriginLocId = originMode === 'here' ? (originAddrId || companyLocationId) : originAddrId;
+  const resolvedDestLocId = destinationMode === 'here' ? (destAddrId || companyLocationId) : destAddrId;
 
   const effectiveDestinationType: 'EMPLOYEE_HOME' | 'OFFICE' | 'VENDOR' = (
     destinationMode === 'employee' ? 'EMPLOYEE_HOME' : destinationMode === 'here' ? 'OFFICE' : destType
@@ -222,29 +222,34 @@ export default function ShipmentCreatePage() {
     ? userList.filter((u) => `${u.email} ${u.name ?? ''}`.toLowerCase().includes(employeeSearchNormalized))
     : userList;
 
-  // Derived flags: does the selected employee need an inline address?
+  // Derived flags: does the selected employee need an inline location?
   const originNeedsInline = originMode === 'employee' && originUserId && !originOptions.length;
   const destNeedsInline = destinationMode === 'employee' && recipientUserId && !destinationOptions.length;
 
   /* ---- Mutation ---- */
   const createShipment = useMutation({
     mutationFn: async () => {
-      let finalOriginAddrId = resolvedOriginAddrId;
-      let finalDestAddrId = resolvedDestAddrId;
+      let finalOriginLocId = resolvedOriginLocId;
+      let finalDestLocId = resolvedDestLocId;
 
-      // Create inline address if employee has none
+      // Create inline location if employee has none
       if (inlineAddrTarget && inlineAddrValid) {
         const userId = inlineAddrTarget === 'origin' ? originUserId : recipientUserId;
-        const addrPayload = {
-          ...inlineAddr,
-          label: inlineAddr.label || `${inlineAddr.city}, ${inlineAddr.state}`,
+        const locPayload = {
+          name: inlineAddr.label || `${inlineAddr.city}, ${inlineAddr.state}`,
+          street_line_1: inlineAddr.street_line_1,
+          street_line_2: inlineAddr.street_line_2 || undefined,
+          city: inlineAddr.city,
+          state: inlineAddr.state,
+          postal_code: inlineAddr.postal_code,
+          country: inlineAddr.country,
           user_id: userId || undefined,
-          is_office: false,
+          is_personal: true,
         };
-        const { data: addrResp } = await api.post('/addresses', addrPayload);
-        const newAddrId = addrResp.data.id as string;
-        if (inlineAddrTarget === 'origin') finalOriginAddrId = newAddrId;
-        else finalDestAddrId = newAddrId;
+        const { data: locResp } = await api.post('/assets/locations', locPayload);
+        const newLocId = locResp.data.id as string;
+        if (inlineAddrTarget === 'origin') finalOriginLocId = newLocId;
+        else finalDestLocId = newLocId;
       }
 
       const payload: Record<string, unknown> = {
@@ -253,8 +258,8 @@ export default function ShipmentCreatePage() {
         asset_ids: selectedAssets,
       };
 
-      if (finalOriginAddrId) payload.origin_address_id = finalOriginAddrId;
-      if (finalDestAddrId) payload.destination_address_id = finalDestAddrId;
+      if (finalOriginLocId) payload.origin_location_id = finalOriginLocId;
+      if (finalDestLocId) payload.destination_location_id = finalDestLocId;
       if (destinationMode === 'employee' && recipientUserId) payload.recipient_user_id = recipientUserId;
       if (carrier) payload.carrier = carrier;
       if (serviceLevel) payload.service_level = serviceLevel;
@@ -315,7 +320,7 @@ export default function ShipmentCreatePage() {
     closeEmployeeModal();
   };
 
-  const setOriginToHere = () => { setOriginMode('here'); setOriginUserId(''); setOriginAddrId(companyAddressId); setFormError(''); };
+  const setOriginToHere = () => { setOriginMode('here'); setOriginUserId(''); setOriginAddrId(companyLocationId); setFormError(''); };
   const setOriginToEmployee = () => {
     const was = originMode === 'employee';
     setOriginMode('employee');
@@ -324,7 +329,7 @@ export default function ShipmentCreatePage() {
     openEmployeeModal('origin');
   };
   const setOriginToAddress = () => { setOriginMode('address'); setOriginAddrId(''); setOriginUserId(''); setFormError(''); };
-  const setDestinationToHere = () => { setDestinationMode('here'); setDestType('OFFICE'); setRecipientUserId(''); setDestAddrId(companyAddressId); setFormError(''); };
+  const setDestinationToHere = () => { setDestinationMode('here'); setDestType('OFFICE'); setRecipientUserId(''); setDestAddrId(companyLocationId); setFormError(''); };
   const setDestinationToEmployee = () => {
     const was = destinationMode === 'employee';
     setDestinationMode('employee');
@@ -356,10 +361,10 @@ export default function ShipmentCreatePage() {
     };
     if (!selectedAssets.length) { showValidationError(t('page.shipment_create.error_assets_required')); return; }
     if (destinationMode === 'employee' && !recipientUserId) { showValidationError(t('page.shipment_create.error_employee_required')); return; }
-    if (destinationMode === 'here' && !companyAddressId && !destAddrId) { showValidationError(t('page.shipment_create.error_company_address_required')); return; }
+    if (destinationMode === 'here' && !companyLocationId && !destAddrId) { showValidationError(t('page.shipment_create.error_company_address_required')); return; }
     // Allow inline address as a valid destination
     const hasInlineAddr = inlineAddrTarget && inlineAddrValid;
-    if (!resolvedDestAddrId && !hasInlineAddr) { showValidationError(t('page.shipment_create.error_destination_required')); return; }
+    if (!resolvedDestLocId && !hasInlineAddr) { showValidationError(t('page.shipment_create.error_destination_required')); return; }
     createShipment.mutate();
   };
 
@@ -503,10 +508,10 @@ export default function ShipmentCreatePage() {
                     </svg>
                   </div>
                   <div>
-                    {officeAddresses[0] ? (
+                    {officeLocations[0] ? (
                       <>
-                        <p className="text-sm font-semibold text-foreground">{officeAddresses[0].label}</p>
-                        <p className="mt-1 text-sm text-muted-foreground">{formatAddressBlock(officeAddresses[0])}</p>
+                        <p className="text-sm font-semibold text-foreground">{officeLocations[0].name}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">{formatLocationBlock(officeLocations[0])}</p>
                       </>
                     ) : (
                       <p className="text-sm text-muted-foreground">{t('page.shipment_create.no_company_address')}</p>
@@ -550,24 +555,24 @@ export default function ShipmentCreatePage() {
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-muted-foreground">{t('page.shipment_create.origin_address')}</label>
                 <select
-                  value={inlineAddrTarget === 'origin' ? '__new__' : resolvedOriginAddrId}
+                  value={inlineAddrTarget === 'origin' ? '__new__' : resolvedOriginLocId}
                   onChange={(e) => {
                     if (e.target.value === '__new__') { setOriginAddrId(''); setInlineAddrTarget('origin'); setInlineAddr({ label: '', street_line_1: '', street_line_2: '', city: '', state: '', postal_code: '', country: 'US' }); }
                     else { setOriginAddrId(e.target.value); if (inlineAddrTarget === 'origin') setInlineAddrTarget(null); }
                     setFormError('');
                   }}
                   className="w-full"
-                  disabled={addressesQuery.isLoading || (originMode === 'employee' && !originUserId)}
+                  disabled={locationsQuery.isLoading || (originMode === 'employee' && !originUserId)}
                 >
                   <option value="">
                     {originMode === 'employee' && !originUserId
                       ? t('page.shipment_create.select_employee_first')
-                      : addressesQuery.isLoading
+                      : locationsQuery.isLoading
                         ? t('page.shipment_create.loading_addresses')
                         : t('page.shipment_create.select_address')}
                   </option>
                   {originOptions.map((a) => (
-                    <option key={a.id} value={a.id}>{formatAddressOption(a)}</option>
+                    <option key={a.id} value={a.id}>{formatLocationOption(a)}</option>
                   ))}
                   <option value="__new__">+ {t('page.shipment_create.new_address')}</option>
                 </select>
@@ -616,10 +621,10 @@ export default function ShipmentCreatePage() {
                     </svg>
                   </div>
                   <div>
-                    {officeAddresses[0] ? (
+                    {officeLocations[0] ? (
                       <>
-                        <p className="text-sm font-semibold text-foreground">{officeAddresses[0].label}</p>
-                        <p className="mt-1 text-sm text-muted-foreground">{formatAddressBlock(officeAddresses[0])}</p>
+                        <p className="text-sm font-semibold text-foreground">{officeLocations[0].name}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">{formatLocationBlock(officeLocations[0])}</p>
                       </>
                     ) : (
                       <p className="text-sm text-muted-foreground">{t('page.shipment_create.no_company_address')}</p>
@@ -663,28 +668,28 @@ export default function ShipmentCreatePage() {
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-muted-foreground">{t('page.shipment_create.destination_address')}</label>
                 <select
-                  value={inlineAddrTarget === 'destination' ? '__new__' : resolvedDestAddrId}
+                  value={inlineAddrTarget === 'destination' ? '__new__' : resolvedDestLocId}
                   onChange={(e) => {
                     if (e.target.value === '__new__') { setDestAddrId(''); setInlineAddrTarget('destination'); setInlineAddr({ label: '', street_line_1: '', street_line_2: '', city: '', state: '', postal_code: '', country: 'US' }); }
                     else { setDestAddrId(e.target.value); if (inlineAddrTarget === 'destination') setInlineAddrTarget(null); }
                     setFormError('');
                   }}
                   className="w-full"
-                  disabled={addressesQuery.isLoading || (destinationMode === 'employee' && !recipientUserId)}
+                  disabled={locationsQuery.isLoading || (destinationMode === 'employee' && !recipientUserId)}
                 >
                   <option value="">
                     {destinationMode === 'employee' && !recipientUserId
                       ? t('page.shipment_create.select_employee_first')
-                      : addressesQuery.isLoading
+                      : locationsQuery.isLoading
                         ? t('page.shipment_create.loading_addresses')
                         : t('page.shipment_create.select_address')}
                   </option>
                   {destinationOptions.map((a) => (
-                    <option key={a.id} value={a.id}>{formatAddressOption(a)}</option>
+                    <option key={a.id} value={a.id}>{formatLocationOption(a)}</option>
                   ))}
                   <option value="__new__">+ {t('page.shipment_create.new_address')}</option>
                 </select>
-                {destinationMode === 'here' && !companyAddressId && (
+                {destinationMode === 'here' && !companyLocationId && (
                   <p className="mt-1.5 text-xs text-muted-foreground">{t('page.shipment_create.no_company_address')}</p>
                 )}
               </div>
@@ -795,12 +800,12 @@ export default function ShipmentCreatePage() {
           </div>
 
           <div className="space-y-4 p-6">
-            {addressesQuery.isError && (
+            {locationsQuery.isError && (
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                 <span>{t('page.shipment_create.error_addresses_load')}</span>
                 <button
                   type="button"
-                  onClick={() => { void addressesQuery.refetch(); }}
+                  onClick={() => { void locationsQuery.refetch(); }}
                   className="rounded-md border border-destructive/30 bg-card px-3 py-1 text-xs font-medium text-foreground hover:bg-accent"
                 >
                   {t('common.retry')}

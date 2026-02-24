@@ -19,7 +19,6 @@ from adapters.http.api.dashboard.schemas import (
     AgingAlertItem,
     AssetStatusCounts,
     AssetSummaryResponse,
-    AssetTypeCounts,
     AtRiskDepartmentItem,
     BudgetHealthResponse,
     RecentPOItem,
@@ -166,7 +165,7 @@ def asset_summary(
     return {
         "data": AssetSummaryResponse(
             by_status=AssetStatusCounts(**by_status),
-            by_type=AssetTypeCounts(**by_type),
+            by_type=by_type,
             total=total,
         ).model_dump()
     }

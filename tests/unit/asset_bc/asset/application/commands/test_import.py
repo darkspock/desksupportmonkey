@@ -8,7 +8,6 @@ from src.asset_bc.asset.application.commands.import_assets import (
     InvalidCSVError,
 )
 from src.asset_bc.asset.domain.entities import Asset
-from src.asset_bc.asset.domain.enums import AssetType
 
 
 def _make_handler(repo=None):
@@ -42,8 +41,16 @@ class TestImportAssetsService:
         assert repo.save.call_count == 2
         assert repo.save_event.call_count == 2
 
-    def test_partial_some_rows_fail(self):
-        handler, repo = _make_handler()
+    def test_partial_some_rows_fail_with_type_validation(self):
+        """When asset_type_repo is provided, invalid types are rejected."""
+        repo = MagicMock()
+        repo.find_by_serial_number.return_value = None
+        repo.save.side_effect = lambda a: a
+        type_repo = MagicMock()
+        type_def = MagicMock()
+        type_def.code = "laptop"
+        type_repo.find_active.return_value = [type_def]
+        handler = ImportAssetsService(asset_repo=repo, asset_type_repo=type_repo)
         csv_content = _csv([
             "laptop,Dell,Latitude,SN001,,,",
             "invalid_type,Dell,Latitude,SN002,,,",
@@ -59,6 +66,21 @@ class TestImportAssetsService:
         assert len(result.failed) == 1
         assert result.failed[0].row == 3
         assert "Invalid type" in result.failed[0].error
+
+    def test_all_types_accepted_without_type_repo(self):
+        """Without asset_type_repo, any type string is accepted."""
+        handler, repo = _make_handler()
+        csv_content = _csv([
+            "laptop,Dell,Latitude,SN001,,,",
+            "custom_type,Dell,Latitude,SN002,,,",
+        ])
+
+        result = handler.handle(
+            ImportAssetsRequest(company_id="comp1", performed_by="user1", csv_content=csv_content)
+        )
+
+        assert result.total == 2
+        assert result.successful == 2
 
     def test_duplicate_serial_in_csv(self):
         handler, repo = _make_handler()
@@ -115,8 +137,15 @@ class TestImportAssetsService:
         assert "model is required" in result.failed[1].error
         assert "serial_number is required" in result.failed[2].error
 
-    def test_invalid_type_enum(self):
-        handler, repo = _make_handler()
+    def test_invalid_type_with_type_repo(self):
+        """When asset_type_repo is provided, unknown types are rejected."""
+        repo = MagicMock()
+        repo.find_by_serial_number.return_value = None
+        type_repo = MagicMock()
+        type_def = MagicMock()
+        type_def.code = "laptop"
+        type_repo.find_active.return_value = [type_def]
+        handler = ImportAssetsService(asset_repo=repo, asset_type_repo=type_repo)
         csv_content = _csv(["printer,HP,LaserJet,SN001,,,"])
 
         result = handler.handle(

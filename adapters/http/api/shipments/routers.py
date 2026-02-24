@@ -139,9 +139,9 @@ def _to_response(shipment: Shipment) -> dict:
         direction=shipment.direction.value,
         destination_type=shipment.destination_type.value,
         status=shipment.status.value,
-        destination_address_id=shipment.destination_address_id,
+        destination_location_id=shipment.destination_location_id,
         created_by=shipment.created_by,
-        origin_address_id=shipment.origin_address_id,
+        origin_location_id=shipment.origin_location_id,
         recipient_name=shipment.recipient_name,
         recipient_user_id=shipment.recipient_user_id,
         carrier=shipment.carrier,
@@ -194,12 +194,12 @@ def create_shipment(
                 company_id=current_user.company_id,
                 direction=body.direction,
                 destination_type=body.destination_type,
-                destination_address_id=(
-                    body.destination_address_id
+                destination_location_id=(
+                    body.destination_location_id
                 ),
                 created_by=current_user.id,
                 asset_ids=body.asset_ids,
-                origin_address_id=body.origin_address_id,
+                origin_location_id=body.origin_location_id,
                 recipient_name=body.recipient_name,
                 recipient_user_id=body.recipient_user_id,
                 carrier=body.carrier,
@@ -628,8 +628,8 @@ def create_return_shipment(
                 original_shipment_id=shipment_id,
                 company_id=current_user.company_id,
                 created_by=current_user.id,
-                destination_address_id=(
-                    body.destination_address_id
+                destination_location_id=(
+                    body.destination_location_id
                 ),
                 asset_ids=body.asset_ids,
                 carrier=body.carrier,

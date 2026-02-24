@@ -67,7 +67,7 @@ def _serialize_asset(asset: Asset) -> dict[str, Any]:
     return {
         "id": asset.id,
         "company_id": asset.company_id,
-        "type": asset.type.value,
+        "type": asset.type,
         "brand": asset.brand,
         "model": asset.model,
         "serial_number": asset.serial_number,

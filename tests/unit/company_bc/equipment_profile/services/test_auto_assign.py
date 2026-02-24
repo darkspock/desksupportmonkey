@@ -5,7 +5,6 @@ from datetime import date
 from typing import Optional
 from unittest.mock import MagicMock
 
-from src.asset_bc.asset.domain.enums import AssetType
 from src.company_bc.assignment_config.domain.enums import (
     FallbackReason,
 )
@@ -78,7 +77,7 @@ class TestAutoAssignSuccess:
             EquipmentProfileItem(
                 id="i1",
                 profile_id=profile.id,
-                asset_type=AssetType.LAPTOP,
+                asset_type="laptop",
                 quantity=1,
             ),
         ]

@@ -10,7 +10,7 @@ import { formatDate, formatDateTime } from '../../lib/date';
 import { useToast } from '../../hooks/useToast';
 import { useI18n } from '../../lib/i18n';
 import { useAuth } from '../../contexts/AuthContext';
-import type { PurchaseOrder, PurchaseOrderStatus, PurchaseOrderItem, Department } from '../../types';
+import type { PurchaseOrder, PurchaseOrderStatus, PurchaseOrderItem, Department, AssetLocation } from '../../types';
 
 const STATUS_VARIANT: Record<string, 'default' | 'info' | 'warning' | 'success' | 'danger'> = {
   DRAFT: 'default',
@@ -36,6 +36,7 @@ interface ReceiveInput {
   item_id: string;
   received_quantity: number;
   create_asset: boolean;
+  location_id?: string;
 }
 
 export default function PurchaseOrderDetailPage() {
@@ -53,6 +54,9 @@ export default function PurchaseOrderDetailPage() {
   const [receiveQtys, setReceiveQtys] = useState<Record<string, number>>({});
   const [createAssets, setCreateAssets] = useState<Record<string, boolean>>({});
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [selectedLocationId, setSelectedLocationId] = useState<string>('');
+  const [pendingReceiveItems, setPendingReceiveItems] = useState<ReceiveInput[]>([]);
 
   const { data: deptsData } = useQuery({
     queryKey: ['departments'],
@@ -62,6 +66,15 @@ export default function PurchaseOrderDetailPage() {
     },
   });
   const deptMap = new Map((deptsData?.data ?? []).map((d) => [d.id, d.name]));
+
+  const { data: locationsData } = useQuery({
+    queryKey: ['asset-locations'],
+    queryFn: async () => {
+      const { data } = await api.get('/assets/locations');
+      return data as { data: AssetLocation[] };
+    },
+  });
+  const locations = locationsData?.data ?? [];
 
   const { data: po, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['purchase-order', id],
@@ -128,6 +141,8 @@ export default function PurchaseOrderDetailPage() {
       refresh();
       setReceiveQtys({});
       setCreateAssets({});
+      setShowLocationModal(false);
+      setPendingReceiveItems([]);
       showToast({ title: t('page.po.toast_received'), variant: 'success' });
     },
     onError: (err: unknown) => {
@@ -169,7 +184,7 @@ export default function PurchaseOrderDetailPage() {
     }
   };
 
-  const handleReceive = () => {
+  const buildReceiveItems = (): ReceiveInput[] => {
     const items: ReceiveInput[] = [];
     for (const item of po.items) {
       const qty = receiveQtys[item.id] || 0;
@@ -181,8 +196,30 @@ export default function PurchaseOrderDetailPage() {
         });
       }
     }
+    return items;
+  };
+
+  const handleReceive = () => {
+    const items = buildReceiveItems();
     if (items.length === 0) return;
+
+    const hasAssetCreation = items.some((i) => i.create_asset);
+    if (hasAssetCreation) {
+      setPendingReceiveItems(items);
+      setSelectedLocationId(locations.find((l) => l.system_key === 'main_warehouse')?.id ?? locations[0]?.id ?? '');
+      setShowLocationModal(true);
+    } else {
+      receiveItems.mutate(items);
+    }
+  };
+
+  const handleConfirmReceiveWithLocation = () => {
+    const items = pendingReceiveItems.map((item) =>
+      item.create_asset ? { ...item, location_id: selectedLocationId || undefined } : item,
+    );
     receiveItems.mutate(items);
+    setShowLocationModal(false);
+    setPendingReceiveItems([]);
   };
 
   const hasReceiveInput = Object.values(receiveQtys).some((q) => q > 0);
@@ -661,6 +698,51 @@ export default function PurchaseOrderDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Location selection modal for asset creation */}
+      {showLocationModal && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/40"
+            onClick={() => { setShowLocationModal(false); setPendingReceiveItems([]); }}
+            aria-label={t('common.cancel')}
+          />
+          <div className="relative z-[91] w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lg">
+            <h3 className="text-lg font-semibold text-foreground">{t('page.po.location_modal_title')}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{t('page.po.location_modal_desc')}</p>
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-foreground mb-1.5">{t('page.po.location_label')}</label>
+              <select
+                value={selectedLocationId}
+                onChange={(e) => setSelectedLocationId(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                {locations.map((loc) => (
+                  <option key={loc.id} value={loc.id}>
+                    {loc.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => { setShowLocationModal(false); setPendingReceiveItems([]); }}
+                className="inline-flex items-center justify-center rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={handleConfirmReceiveWithLocation}
+                disabled={receiveItems.isPending}
+                className="inline-flex items-center justify-center rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+              >
+                {receiveItems.isPending ? t('common.working') : t('page.po.action_receive')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -31,6 +31,9 @@ class AssetRepositoryInterface(ABC):
     def find_location_by_name(self, name: str, company_id: str) -> Optional[AssetLocation]: ...
 
     @abstractmethod
+    def find_personal_location_by_user(self, user_id: str, company_id: str) -> Optional[AssetLocation]: ...
+
+    @abstractmethod
     def find_by_id(self, asset_id: str, company_id: str) -> Optional[Asset]: ...
 
     @abstractmethod

@@ -10,7 +10,7 @@ import { Table, Th, Td } from '../../components/ui/Table';
 import { useToast } from '../../hooks/useToast';
 import { formatDateTime } from '../../lib/date';
 import { useI18n } from '../../lib/i18n';
-import type { Shipment, ShippingAddress } from '../../types';
+import type { Shipment, AssetLocation } from '../../types';
 
 const statusColors: Record<string, string> = {
   DRAFT: 'default',
@@ -21,9 +21,12 @@ const statusColors: Record<string, string> = {
   CANCELLED: 'default',
 };
 
-function formatAddress(addr: ShippingAddress | undefined): string {
-  if (!addr) return '—';
-  return `${addr.label} — ${addr.street_line_1}, ${addr.city}, ${addr.state} ${addr.postal_code}`;
+function formatLocation(loc: AssetLocation | undefined): string {
+  if (!loc) return '—';
+  const parts: string[] = [loc.name];
+  const addrParts = [loc.street_line_1, loc.city, loc.state, loc.postal_code].filter(Boolean);
+  if (addrParts.length) parts.push(addrParts.join(', '));
+  return parts.join(' — ');
 }
 
 export default function ShipmentDetailPage() {
@@ -60,23 +63,17 @@ export default function ShipmentDetailPage() {
     enabled: Boolean(id),
   });
 
-  const { data: originAddr } = useQuery({
-    queryKey: ['address', shipment?.origin_address_id],
+  const { data: locations } = useQuery({
+    queryKey: ['asset-locations'],
     queryFn: async () => {
-      const { data } = await api.get(`/addresses/${shipment!.origin_address_id}`);
-      return data.data as ShippingAddress;
+      const { data } = await api.get('/assets/locations');
+      return data.data as AssetLocation[];
     },
-    enabled: Boolean(shipment?.origin_address_id),
+    enabled: Boolean(shipment),
   });
 
-  const { data: destAddr } = useQuery({
-    queryKey: ['address', shipment?.destination_address_id],
-    queryFn: async () => {
-      const { data } = await api.get(`/addresses/${shipment!.destination_address_id}`);
-      return data.data as ShippingAddress;
-    },
-    enabled: Boolean(shipment?.destination_address_id),
-  });
+  const originLocation = locations?.find((l) => l.id === shipment?.origin_location_id);
+  const destLocation = locations?.find((l) => l.id === shipment?.destination_location_id);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['shipment', id] });
@@ -300,11 +297,11 @@ export default function ShipmentDetailPage() {
         <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
           <div>
             <p className="text-xs text-muted-foreground mb-1">{t('page.shipment_detail.origin')}</p>
-            <p className="text-foreground">{formatAddress(originAddr)}</p>
+            <p className="text-foreground">{formatLocation(originLocation)}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground mb-1">{t('page.shipment_detail.destination')}</p>
-            <p className="text-foreground">{formatAddress(destAddr)}</p>
+            <p className="text-foreground">{formatLocation(destLocation)}</p>
           </div>
         </div>
       </Card>

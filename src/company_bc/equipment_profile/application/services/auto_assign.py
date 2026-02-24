@@ -105,7 +105,7 @@ class AutoAssignService:
     ) -> dict:
         matched_assets = [
             {
-                "asset_type": m.item.asset_type.value,
+                "asset_type": m.item.asset_type,
                 "asset_id": m.asset_id,
                 "ai_used": m.ai_used,
             }

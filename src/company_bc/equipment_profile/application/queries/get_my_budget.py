@@ -58,7 +58,7 @@ class GetMyBudgetQueryHandler(
         return MyBudgetReadModel(
             items=[
                 BudgetItemReadModel(
-                    asset_type=item.asset_type.value,
+                    asset_type=item.asset_type,
                     budget_cents=item.budget_cents,
                 )
                 for item in profile.items

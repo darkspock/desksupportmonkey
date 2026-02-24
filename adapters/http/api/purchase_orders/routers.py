@@ -745,6 +745,7 @@ def receive_items(
                         received_quantity=i.received_quantity,
                         create_asset=i.create_asset,
                         link_asset_id=i.link_asset_id,
+                        location_id=i.location_id,
                     )
                     for i in body.items
                 ],

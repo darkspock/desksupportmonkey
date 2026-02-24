@@ -22,6 +22,12 @@ class User:
     email_verified_at: Optional[datetime] = None
     google_id: Optional[str] = None
     microsoft_id: Optional[str] = None
+    street_line_1: Optional[str] = None
+    street_line_2: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    postal_code: Optional[str] = None
+    country: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

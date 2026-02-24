@@ -16,6 +16,15 @@ class AssetLocationModel(ULIDMixin, Base):
     is_system: Mapped[bool] = mapped_column(Boolean, server_default="false")
     system_key: Mapped[Optional[str]] = mapped_column(String(50))
     in_use: Mapped[bool] = mapped_column(Boolean, server_default="true")
+    street_line_1: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    street_line_2: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    city: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    state: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    postal_code: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    country: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    is_personal: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    user_id: Mapped[Optional[str]] = mapped_column(String(26), ForeignKey("users.id"), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     __table_args__ = (
