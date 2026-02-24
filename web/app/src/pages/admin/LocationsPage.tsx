@@ -196,7 +196,7 @@ export default function LocationsPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setCreateName('');
+                  setCreateForm(emptyForm);
                   setCreateError('');
                   setCreateModalOpen(true);
                 }}

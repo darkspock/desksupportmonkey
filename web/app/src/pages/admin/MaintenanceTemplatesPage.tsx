@@ -10,7 +10,7 @@ import { Loading } from '../../components/ui/Loading';
 import { EmptyState, ErrorState } from '../../components/ui/StateBlock';
 import { Pagination } from '../../components/ui/Pagination';
 import { useToast } from '../../hooks/useToast';
-import { useI18n, humanizeToken } from '../../lib/i18n';
+import { useI18n } from '../../lib/i18n';
 import { formatDateTime } from '../../lib/date';
 import type { Asset, AssetTypeDefinition, MaintenanceChecklistItem, MaintenancePlan, MaintenanceTemplate, PaginatedResponse } from '../../types';
 
