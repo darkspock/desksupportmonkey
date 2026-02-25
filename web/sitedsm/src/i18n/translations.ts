@@ -32,12 +32,21 @@ export const translations = {
       card1_title: 'El inventario vive en Excel',
       card1_text:
         'Cada vez que alguien pregunta cuantos portatiles tenemos, la respuesta es "depende de quien tenga la ultima version". No hay fuente unica de verdad.',
-      card2_title: 'El auditor ha preguntado y no tienes respuesta',
+      card2_title: 'No sabes que tienes, ni cuanto, ni donde',
       card2_text:
-        'NIS2 exige documentar que activos tienes, quien los tiene y que incidencias han tenido. Si no puedes mostrarlo, tienes un problema de compliance.',
+        '"¿Cuantos portatiles tenemos en almacen sin asignar?" "¿Donde esta el router que compramos en enero?" "¿Que hay en la oficina de Valencia?" Si contestar requiere hacer llamadas, tienes un problema.',
       card3_title: 'Incidencias desconectadas de los dispositivos',
       card3_text:
-        'Cuando un portatil falla 5 veces en un ano, deberia ser visible de un vistazo. Hoy esa informacion esta entre emails, tickets y la memoria del tecnico.',
+        'Un portatil falla 5 veces en un ano y nadie conecta los puntos. El tecnico repara y repara sin datos para decir "esto hay que darlo de baja".',
+      card4_title: 'Alerta de seguridad: ¿tenemos alguno de esos?',
+      card4_text:
+        '"Hay una vulnerabilidad critica en los routers TapLink RX-500. ¿Tenemos alguno? ¿Donde estan?" Si responder te lleva mas de 30 segundos, no estas preparado para gestionar un incidente de seguridad.',
+      card5_title: 'No controlas el coste ni la vida util',
+      card5_text:
+        'Garantias que caducan sin que nadie lo note. Equipos que se reemplazan cuando se rompen, no cuando deberian. Sin datos de coste por dispositivo, no puedes planificar renovaciones ni justificar presupuesto.',
+      card6_title: 'El auditor ha preguntado y no tienes respuesta',
+      card6_text:
+        'NIS2 exige documentar que activos tienes, quien los tiene y que incidencias han tenido. Si no puedes mostrarlo, tienes un problema de compliance. Y el plazo ya ha empezado.',
     },
     lifecycle: {
       title: 'El ciclo de vida completo, en una sola plataforma',
@@ -199,12 +208,21 @@ export const translations = {
       card1_title: 'Your inventory lives in Excel',
       card1_text:
         'Every time someone asks how many laptops you have, the answer is "it depends on who has the latest version." There is no single source of truth.',
-      card2_title: 'The auditor asked and you had no answer',
+      card2_title: 'You don\'t know what you have, how much, or where',
       card2_text:
-        'NIS2 requires you to document what assets you have, who has them, and what incidents they have had. If you cannot show that, you have a compliance problem.',
+        '"How many laptops do we have in stock unassigned?" "Where is the router we bought in January?" "What\'s at the Valencia office?" If answering requires phone calls, you have a problem.',
       card3_title: 'Incidents disconnected from devices',
       card3_text:
-        'When a laptop fails 5 times in a year, it should be visible at a glance. Today that information is scattered across emails, tickets, and the technician\'s memory.',
+        'A laptop fails 5 times in a year and nobody connects the dots. The technician keeps repairing without data to say "this needs to be decommissioned."',
+      card4_title: 'Security alert: do we have any of those?',
+      card4_text:
+        '"There\'s a critical vulnerability in TapLink RX-500 routers. Do we have any? Where are they?" If answering takes more than 30 seconds, you\'re not ready to handle a security incident.',
+      card5_title: 'You don\'t control costs or useful life',
+      card5_text:
+        'Warranties expire without anyone noticing. Devices get replaced when they break, not when they should. Without per-device cost data, you can\'t plan refreshes or justify budgets.',
+      card6_title: 'The auditor asked and you had no answer',
+      card6_text:
+        'NIS2 requires you to document what assets you have, who has them, and what incidents they have had. If you cannot show that, you have a compliance problem. And the deadline has already started.',
     },
     lifecycle: {
       title: 'The complete lifecycle, in a single platform',
