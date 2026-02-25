@@ -14,10 +14,10 @@ cd "$WORK_DIR"
 
 # --- Backend ---
 echo "==> Installing Python dependencies..."
-cd "$WORK_DIR" && uv sync --frozen 2>&1 || true
+cd "$WORK_DIR" && /root/.local/bin/uv sync --frozen 2>&1 || true
 
 echo "==> Running database migrations..."
-cd "$WORK_DIR" && PYTHONPATH=src uv run alembic upgrade head 2>&1 || true
+cd "$WORK_DIR" && PYTHONPATH=src /root/.local/bin/uv run alembic upgrade head 2>&1 || true
 
 # --- Astro marketing site (sitedsm) ---
 echo "==> Building Astro marketing site..."
