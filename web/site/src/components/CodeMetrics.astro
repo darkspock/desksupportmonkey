@@ -1,19 +1,19 @@
 ---
 const metrics = [
-  { label: 'Total lines of code', value: '~159,000 lines' },
-  { label: 'Backend (Python)', value: '~65,200 lines' },
-  { label: 'Frontend (React/TS)', value: '~45,700 lines' },
-  { label: 'Astro sites', value: '~4,500 lines' },
-  { label: 'Tests', value: '~42,800 lines' },
+  { label: 'Total lines of code', value: '~160,000 lines' },
+  { label: 'Backend (Python)', value: '~72,100 lines' },
+  { label: 'Frontend (React/TS)', value: '~36,000 lines' },
+  { label: 'Astro sites', value: '~6,000 lines' },
+  { label: 'Tests', value: '~44,300 lines' },
   { label: 'Test Coverage', value: '79%' },
-  { label: 'Bounded Contexts', value: '18' },
-  { label: 'Database Migrations', value: '57' },
-  { label: 'Documentation', value: '~66,800 lines' },
+  { label: 'Bounded Contexts', value: '19' },
+  { label: 'Database Migrations', value: '60' },
+  { label: 'Documentation', value: '~65,700 lines' },
 ];
 
-// ~159,000 total lines (production + tests)
+// ~160,000 total lines (production + tests)
 // Dev: 100 lines/day, Tech Lead: 100 lines/day -> 200 lines/day combined
-// 159,000 / 200 = 795 working days / 22 days per month ~= 36 months timeline
+// 160,000 / 200 = 800 working days / 22 days per month ~= 36 months timeline
 const teamBreakdown = [
   { role: 'Developer', allocation: '100%', months: '36', detail: 'Full-stack implementation, ~100 lines/day' },
   { role: 'Tech Lead', allocation: '100%', months: '36', detail: 'Architecture, code review, ~100 lines/day' },
@@ -42,7 +42,7 @@ const teamBreakdown = [
         <!-- Built by AI in -->
         <div class="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-blue-50/50">
           <span class="text-sm font-medium text-blue-700">Built by AI in</span>
-          <span class="text-sm font-bold text-blue-700">4 days</span>
+          <span class="text-sm font-bold text-blue-700">5 days</span>
         </div>
 
         <!-- Human Estimation -->
@@ -70,7 +70,7 @@ const teamBreakdown = [
     <div class="flex items-start justify-between mb-5">
       <div>
         <h3 class="text-lg font-bold text-slate-900">Human Team Estimation</h3>
-        <p class="mt-1 text-xs text-slate-500">~159,000 lines &middot; 2 coders at 100 lines/day &middot; ~36 month timeline</p>
+        <p class="mt-1 text-xs text-slate-500">~160,000 lines &middot; 2 coders at 100 lines/day &middot; ~36 month timeline</p>
       </div>
       <button id="estimate-modal-close" type="button" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors" aria-label="Close">
         <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -108,10 +108,11 @@ const teamBreakdown = [
       <p class="mt-1 text-sm text-slate-700"><strong>Day 2:</strong> ~79,700 total lines, 11 BCs, 32 migrations, expanded scope on top of Day 1.</p>
       <p class="mt-1 text-sm text-slate-700"><strong>Day 3:</strong> ~84,000 total lines, 11 BCs, 32 migrations, v0 UI redesign + marketing site refresh.</p>
       <p class="mt-1 text-sm text-slate-700"><strong>Day 4:</strong> ~159,000 total lines, 18 BCs, 57 migrations, compliance stack, billing, white-label deployment.</p>
+      <p class="mt-1 text-sm text-slate-700"><strong>Day 5:</strong> ~160,000 total lines, 19 BCs, 60 migrations, workflow templates, nav visibility, UX polish.</p>
     </div>
 
     <p class="mt-4 text-xs text-slate-400 text-center">
-      AI built the same scope in 4 days with a single human architect.
+      AI built the same scope in 5 days with a single human architect.
     </p>
 
     <div class="mt-3 rounded-lg bg-slate-50 border border-slate-200 px-4 py-3">
