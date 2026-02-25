@@ -326,7 +326,7 @@ export default function CustomFieldsPage() {
         <ErrorState message={(error as Error)?.message || t('common.error')} onRetry={refetch} />
       )}
       {data && data.length === 0 && (
-        <EmptyState title={t('page.custom_fields.no_fields')} />
+        <EmptyState message={t('page.custom_fields.no_fields')} />
       )}
 
       {data && data.length > 0 && (

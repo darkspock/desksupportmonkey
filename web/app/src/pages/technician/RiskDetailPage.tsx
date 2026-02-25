@@ -207,7 +207,7 @@ export default function RiskDetailPage() {
             </div>
             <span className="text-xl text-muted-foreground">=</span>
             <div className="text-center">
-              <Badge variant={levelVariant[risk.risk_level || ''] || 'default'} className="text-lg px-3 py-1">
+              <Badge variant={levelVariant[risk.risk_level || ''] || 'default'}>
                 {risk.risk_level ? t(`risk.level.${risk.risk_level}`) : '—'}
               </Badge>
             </div>
@@ -348,7 +348,7 @@ export default function RiskDetailPage() {
                   <p className="text-xs text-muted-foreground mt-1">
                     {m.owner_name && <span>{m.owner_name} · </span>}
                     {m.target_date && <span>{m.target_date} · </span>}
-                    <Badge variant={mitStatusVariant[m.status] || 'default'} className="text-[10px]">
+                    <Badge variant={mitStatusVariant[m.status] || 'default'}>
                       {t(`risk.mitigation_status.${m.status}`)}
                     </Badge>
                   </p>
@@ -394,7 +394,7 @@ export default function RiskDetailPage() {
             {risk.links.map(l => (
               <div key={l.id} className="px-4 py-3 flex items-center justify-between">
                 <div>
-                  <Badge variant="default" className="mr-2">{t(`risk.link_type.${l.link_type}`)}</Badge>
+                  <span className="mr-2"><Badge variant="default">{t(`risk.link_type.${l.link_type}`)}</Badge></span>
                   <span className="text-sm font-mono text-muted-foreground">{l.link_id.slice(0, 12)}...</span>
                 </div>
               </div>

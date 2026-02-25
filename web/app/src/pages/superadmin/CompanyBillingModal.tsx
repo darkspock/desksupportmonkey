@@ -66,7 +66,6 @@ type Tab = 'billing' | 'invoices';
 
 /* Shared styles */
 const btnPrimary = 'inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 disabled:opacity-50 transition-all';
-const btnOutline = 'inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground disabled:opacity-50 transition-all';
 const btnDestructiveOutline = 'inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border border-destructive text-destructive shadow-xs hover:bg-destructive hover:text-destructive-foreground disabled:opacity-50 transition-all';
 const btnPurple = 'inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-purple-600 text-white shadow-xs hover:bg-purple-700 disabled:opacity-50 transition-all';
 

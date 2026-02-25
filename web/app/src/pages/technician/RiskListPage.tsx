@@ -116,8 +116,7 @@ export default function RiskListPage() {
 
       {data && data.data.length === 0 && (
         <EmptyState
-          title={t('page.risks.empty_title')}
-          description={t('page.risks.empty_description')}
+          message={t('page.risks.empty_title')}
         />
       )}
 
@@ -183,7 +182,7 @@ export default function RiskListPage() {
             page={data.meta.page}
             pageSize={data.meta.page_size}
             total={data.meta.total}
-            onPageChange={setPage}
+            onChange={setPage}
           />
         </>
       )}

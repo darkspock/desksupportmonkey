@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '../../lib/api';
-import { useI18n } from '../../lib/i18n';
 import type { CustomFieldDefinition } from '../../types';
 import { TextField } from './fields/TextField';
 import { NumberField } from './fields/NumberField';
@@ -18,8 +17,6 @@ interface CustomFieldsFormProps {
 }
 
 export function CustomFieldsForm({ entityType, values, onChange, isEmployee }: CustomFieldsFormProps) {
-  const { t } = useI18n();
-
   const { data: definitions } = useQuery({
     queryKey: ['cf-definitions', entityType],
     queryFn: async () => {

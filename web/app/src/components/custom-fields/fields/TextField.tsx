@@ -1,5 +1,4 @@
 import type { CustomFieldDefinition } from '../../../types';
-import { useI18n } from '../../../lib/i18n';
 
 interface Props {
   definition: CustomFieldDefinition;
@@ -8,7 +7,6 @@ interface Props {
 }
 
 export function TextField({ definition, value, onChange }: Props) {
-  const { t } = useI18n();
   return (
     <div>
       <label className="mb-1.5 block text-sm text-muted-foreground">

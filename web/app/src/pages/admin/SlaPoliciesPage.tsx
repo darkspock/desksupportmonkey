@@ -236,7 +236,7 @@ export default function SlaPoliciesPage() {
 
       {isLoading && <Loading />}
       {isError && <ErrorState message={(error as Error)?.message || t('common.error')} onRetry={refetch} />}
-      {data && data.length === 0 && <EmptyState title={t('page.sla.no_policies')} />}
+      {data && data.length === 0 && <EmptyState message={t('page.sla.no_policies')} />}
 
       {data && data.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">

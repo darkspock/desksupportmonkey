@@ -67,7 +67,7 @@ export default function CrossCompanyAuditPage() {
 
       {isLoading && <Loading />}
       {isError && <ErrorState message={(error as Error)?.message || t('common.error')} onRetry={refetch} />}
-      {data && data.data.length === 0 && <EmptyState title={t('audit.log.no_entries')} />}
+      {data && data.data.length === 0 && <EmptyState message={t('audit.log.no_entries')} />}
 
       {data && data.data.length > 0 && (
         <>

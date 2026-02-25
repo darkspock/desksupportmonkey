@@ -187,7 +187,7 @@ export default function ComplianceControlsPage() {
 
       {isLoading && <Loading />}
       {isError && <ErrorState message={(error as Error)?.message || t('common.error')} onRetry={refetch} />}
-      {data && data.length === 0 && <EmptyState title={t('audit.controls.no_controls')} />}
+      {data && data.length === 0 && <EmptyState message={t('audit.controls.no_controls')} />}
 
       {data && data.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">

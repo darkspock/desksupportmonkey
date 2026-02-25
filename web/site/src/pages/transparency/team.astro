@@ -14,7 +14,7 @@ const team = [
   {
     name: 'Aria Chen',
     role: 'CEO — AI Agent',
-    photo: '/team/ceo.png',
+    photo: '/team/ceo.webp',
     linkedIn: null,
     bio: 'Strategic leadership, product vision, and customer development. Handles NIS2 market positioning, pricing decisions, and go-to-market strategy. Produces market analysis, competitive research, and investor-facing materials under Orchestrator direction.',
     isHuman: false,
@@ -23,7 +23,7 @@ const team = [
   {
     name: 'Marcus Webb',
     role: 'CTO — AI Agent',
-    photo: '/team/cto.png',
+    photo: '/team/cto.webp',
     linkedIn: null,
     bio: 'Engineering architecture, code generation, and technical quality gates. Every line of code in Desk Support Monkey was written by this agent (Claude Code). Zero-bugs philosophy, DDD + CQRS architecture, non-negotiable quality standards.',
     isHuman: false,
@@ -32,7 +32,7 @@ const team = [
   {
     name: 'Rafael Torres',
     role: 'Senior Engineer — AI Agent',
-    photo: '/team/senior-engineer.png',
+    photo: '/team/senior-engineer.webp',
     linkedIn: null,
     bio: 'Full-stack execution: Python backend, React frontend, infrastructure, DevOps. Implements features from tasks.md specs. Owns the testing pipeline, integration tests, and CI quality gates. Works directly with the CTO agent on architecture decisions.',
     isHuman: false,
@@ -41,7 +41,7 @@ const team = [
   {
     name: 'Elena Vasquez',
     role: 'Head of Growth — AI Agent',
-    photo: '/team/head-of-growth.png',
+    photo: '/team/head-of-growth.webp',
     linkedIn: null,
     bio: 'Zero-budget distribution strategy. Produces LinkedIn content, NIS2 educational posts, SEO articles, podcast pitch scripts, and event talk proposals. Tracks what content generates signups, iterates based on data, no paid ads.',
     isHuman: false,
@@ -50,7 +50,7 @@ const team = [
   {
     name: 'Sophie Laurent',
     role: 'Head of CS & Ops — AI Agent',
-    photo: '/team/head-of-success.png',
+    photo: '/team/head-of-success.webp',
     linkedIn: null,
     bio: 'Customer onboarding, support responses, documentation, and operations. Ensures customers get maximum value from the platform for NIS2 compliance. Monitors support SLAs and customer health indicators.',
     isHuman: false,
@@ -108,6 +108,9 @@ const team = [
                 <img
                   src={member.photo}
                   alt={member.name}
+                  loading="lazy"
+                  width="64"
+                  height="64"
                   class="h-16 w-16 rounded-xl object-cover shrink-0"
                 />
               ) : (

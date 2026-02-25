@@ -33,9 +33,11 @@ const featuresPath = lang === 'es' ? '/funcionalidades' : '/en/features';
             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
         </button>
-        <div class="absolute left-0 top-full mt-1 hidden group-hover:block w-48 rounded-xl border border-slate-200 bg-white py-1.5 shadow-lg">
-          <a href={featuresPath} class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">{t.nav.funcionalidades}</a>
-          <a href={prefix + '/vs'} class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">{t.nav.comparativas}</a>
+        <div class="absolute left-0 top-full hidden group-hover:block pt-1 w-48">
+          <div class="rounded-xl border border-slate-200 bg-white py-1.5 shadow-lg">
+            <a href={featuresPath} class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">{t.nav.funcionalidades}</a>
+            <a href={prefix + '/vs'} class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">{t.nav.comparativas}</a>
+          </div>
         </div>
       </div>
       <a href={prefix + '/#compliance'} class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">{t.nav.compliance}</a>

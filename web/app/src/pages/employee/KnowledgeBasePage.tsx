@@ -76,7 +76,7 @@ export default function KnowledgeBasePage() {
 
       {isLoading && <Loading />}
       {isError && <ErrorState message={(error as Error)?.message || t('common.error')} onRetry={refetch} />}
-      {data && data.data.length === 0 && <EmptyState title={t('page.kb.no_articles_public')} />}
+      {data && data.data.length === 0 && <EmptyState message={t('page.kb.no_articles_public')} />}
 
       {data && data.data.length > 0 && (
         <div className="grid gap-4">

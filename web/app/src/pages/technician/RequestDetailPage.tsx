@@ -11,7 +11,7 @@ import { CustomFieldsDisplay } from '../../components/custom-fields/CustomFields
 import { useToast } from '../../hooks/useToast';
 import { formatDateTime } from '../../lib/date';
 import { humanizeToken, useI18n } from '../../lib/i18n';
-import type { ServiceRequest, Comment, Note, RequestEventItem, AIClassificationData, RecentPO, Appointment, TimeSlot, Shipment, AssignableUser, PaginatedResponse, User, CustomFieldValue, RequestChecklistItem, ChecklistProgress } from '../../types';
+import type { ServiceRequest, Comment, Note, RequestEventItem, AIClassificationData, RecentPO, Appointment, TimeSlot, Shipment, AssignableUser, PaginatedResponse, User, RequestChecklistItem, ChecklistProgress } from '../../types';
 
 /* ── helper components ────────────────────────────────────────────── */
 

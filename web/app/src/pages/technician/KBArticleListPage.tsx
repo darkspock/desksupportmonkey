@@ -118,7 +118,7 @@ export default function KBArticleListPage() {
           onRetry={() => { void refetch(); }}
         />
       ) : !data?.data.length ? (
-        <EmptyState title={t('page.kb.no_articles')} />
+        <EmptyState message={t('page.kb.no_articles')} />
       ) : (
         <>
           <Table>

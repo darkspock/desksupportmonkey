@@ -283,7 +283,7 @@ export default function WorkflowTemplatesPage() {
         <ErrorState message={(error as Error)?.message || t('common.error')} onRetry={refetch} />
       )}
       {data && data.length === 0 && (
-        <EmptyState title={t('page.workflow_templates.empty')} />
+        <EmptyState message={t('page.workflow_templates.empty')} />
       )}
 
       {data && data.length > 0 && (
