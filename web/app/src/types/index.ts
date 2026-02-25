@@ -1138,3 +1138,55 @@ export interface ArticleVersion {
   editor_name?: string | null;
   created_at?: string | null;
 }
+
+// Workflow Templates
+export interface WorkflowSubtype {
+  id: string;
+  name: string;
+  description?: string | null;
+  sort_order: number;
+}
+
+export interface ChecklistItemDefinition {
+  id: string;
+  title: string;
+  description?: string | null;
+  assignee_role?: string | null;
+  sort_order: number;
+  is_required: boolean;
+}
+
+export interface WorkflowTemplate {
+  id: string;
+  name: string;
+  description?: string | null;
+  icon?: string | null;
+  is_active: boolean;
+  require_all_complete: boolean;
+  sort_order: number;
+  subtypes: WorkflowSubtype[];
+  checklist_items: ChecklistItemDefinition[];
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+// Request Checklist
+export interface RequestChecklistItem {
+  id: string;
+  request_id: string;
+  title: string;
+  description?: string | null;
+  assignee_id?: string | null;
+  is_required: boolean;
+  is_completed: boolean;
+  completed_by?: string | null;
+  completed_at?: string | null;
+  sort_order: number;
+  created_at?: string | null;
+}
+
+export interface ChecklistProgress {
+  total: number;
+  completed: number;
+  required_remaining: number;
+}

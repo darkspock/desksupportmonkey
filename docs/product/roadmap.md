@@ -35,7 +35,7 @@
 | E28 | Mobile / PWA | Progressive Web App for technicians and employees — QR scanning with camera, ticket updates from the field, push notifications, offline support, and responsive mobile-first UI | Low | Pending |
 | E29 | Audit Trail & Compliance Evidence | Complete audit log of all user actions (who did what, when), immutable append-only log storage, GDPR data export and deletion requests, compliance evidence tagging (link audit entries to NIS2/DORA/ISO 27001 controls), regulatory data retention policies per company, and audit-ready evidence export for external auditors | Critical | Done |
 | E30 | Custom Fields | Admin-defined custom fields for assets, tickets, and companies — text, number, date, dropdown, and multi-select types with validation rules and visibility per role | High | Done |
-| E31 | Workflow Automations | Rule engine for if-then automations — auto-assign tickets by category, auto-escalate after SLA threshold, notify manager on critical priority, auto-close resolved tickets after X days, and trigger actions on asset status changes | High | Pending |
+| E31 | Workflow Templates & Checklists | Dynamic workflow templates with configurable checklist items per request type — admin-defined templates with subtypes, required/optional checklist items, resolution guard (block resolve until required items complete), auto-generate checklist on request creation, and inline checklist management on request detail | High | Done |
 | E32 | Asset Discovery | Automatic network device discovery — agent-based and agentless scanning, sync discovered devices with asset inventory, detect new/removed devices, and scheduled discovery scans | Low | Pending |
 | E33 | Change Management (ITIL) | Change request workflow — request, risk assessment, CAB approval board, scheduled implementation, rollback plan, post-implementation review, and change calendar integration | Low | Pending |
 | E34 | Feature Voting & Roadmap | In-app feature request board — users submit and upvote ideas, admin reviews and prioritizes, public roadmap view with status (planned, in progress, shipped), and vote-based priority scoring for product decisions | Low | Pending |
@@ -333,5 +333,5 @@ E10: Asset QR & Barcodes (depends on E2 + E7)
 | **Phase 12** | E28 + E32 + E33 | **Advanced** — mobile PWA, asset discovery, ITIL change management |  |
 | **Backlog** | E26 + E27 + E34 | Internal tooling, surveys, feature voting — build when needed |  |
 
-**Completed:** 32 epics (E0-E19, E24, E29-E30, E35-E37, E43-E45)
-**Remaining:** 16 epics (E20-E23, E25-E28, E31-E34, E38-E40, E42)
+**Completed:** 33 epics (E0-E19, E24, E29-E31, E35-E37, E43-E46)
+**Remaining:** 15 epics (E20-E23, E25-E28, E32-E34, E38-E40, E42)

@@ -85,6 +85,7 @@ const GdprRequestsPage = lazy(() => import('./pages/admin/GdprRequestsPage'));
 const ComplianceDashboardPage = lazy(() => import('./pages/admin/ComplianceDashboardPage'));
 const CustomFieldsPage = lazy(() => import('./pages/admin/CustomFieldsPage'));
 const AssetTypesPage = lazy(() => import('./pages/admin/AssetTypesPage'));
+const WorkflowTemplatesPage = lazy(() => import('./pages/admin/WorkflowTemplatesPage'));
 
 function S({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoading />}>{children}</Suspense>;
@@ -368,6 +369,10 @@ export const router = createBrowserRouter([
       {
         path: 'settings/asset-types',
         element: <RequireRole roles={['admin', 'super_admin']}><S><AssetTypesPage /></S></RequireRole>,
+      },
+      {
+        path: 'settings/workflow-templates',
+        element: <RequireRole roles={['admin', 'super_admin']}><S><WorkflowTemplatesPage /></S></RequireRole>,
       },
       // Super Admin
       {

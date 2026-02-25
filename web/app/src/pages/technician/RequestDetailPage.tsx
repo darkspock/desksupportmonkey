@@ -11,7 +11,7 @@ import { CustomFieldsDisplay } from '../../components/custom-fields/CustomFields
 import { useToast } from '../../hooks/useToast';
 import { formatDateTime } from '../../lib/date';
 import { humanizeToken, useI18n } from '../../lib/i18n';
-import type { ServiceRequest, Comment, Note, RequestEventItem, AIClassificationData, RecentPO, Appointment, TimeSlot, Shipment, AssignableUser, PaginatedResponse, User, CustomFieldValue } from '../../types';
+import type { ServiceRequest, Comment, Note, RequestEventItem, AIClassificationData, RecentPO, Appointment, TimeSlot, Shipment, AssignableUser, PaginatedResponse, User, CustomFieldValue, RequestChecklistItem, ChecklistProgress } from '../../types';
 
 /* ── helper components ────────────────────────────────────────────── */
 
@@ -320,6 +320,15 @@ export default function RequestDetailPage() {
     enabled: isTech && !!id,
   });
 
+  const { data: checklistData } = useQuery({
+    queryKey: ['request-checklist', id],
+    queryFn: async () => {
+      const { data } = await api.get(`/requests/${id}/checklist`);
+      return data as { data: RequestChecklistItem[]; progress: ChecklistProgress };
+    },
+    enabled: !!id,
+  });
+
   const { data: techniciansData } = useQuery({
     queryKey: ['request-detail-technicians-options'],
     queryFn: async () => {
@@ -340,6 +349,7 @@ export default function RequestDetailPage() {
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [assignUserId, setAssignUserId] = useState('');
+  const [newChecklistItem, setNewChecklistItem] = useState('');
   const [showBooking, setShowBooking] = useState(false);
   const [bookingDate, setBookingDate] = useState('');
   const [bookingSlot, setBookingSlot] = useState('');
@@ -476,6 +486,30 @@ export default function RequestDetailPage() {
     },
   });
 
+  /* ── checklist mutations ──────────────────────────────────── */
+
+  const toggleChecklistItem = useMutation({
+    mutationFn: (itemId: string) => api.patch(`/requests/${id}/checklist/${itemId}/toggle`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['request-checklist', id] });
+    },
+  });
+
+  const addChecklistItem = useMutation({
+    mutationFn: (title: string) => api.post(`/requests/${id}/checklist`, { title }),
+    onSuccess: () => {
+      setNewChecklistItem('');
+      queryClient.invalidateQueries({ queryKey: ['request-checklist', id] });
+    },
+  });
+
+  const removeChecklistItem = useMutation({
+    mutationFn: (itemId: string) => api.delete(`/requests/${id}/checklist/${itemId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['request-checklist', id] });
+    },
+  });
+
   /* ── loading / error ───────────────────────────────────────── */
 
   if (isLoading) return <Loading />;
@@ -562,6 +596,112 @@ export default function RequestDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Checklist */}
+          {checklistData && checklistData.data.length > 0 && (
+            <div className="rounded-lg border border-border bg-card p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-foreground">{t('checklist.title')}</h3>
+                <span className="text-xs text-muted-foreground">
+                  {t('checklist.progress')
+                    .replace('{{completed}}', String(checklistData.progress.completed))
+                    .replace('{{total}}', String(checklistData.progress.total))}
+                </span>
+              </div>
+              {/* Progress bar */}
+              <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-all duration-300"
+                  style={{
+                    width: checklistData.progress.total > 0
+                      ? `${(checklistData.progress.completed / checklistData.progress.total) * 100}%`
+                      : '0%',
+                  }}
+                />
+              </div>
+              {checklistData.progress.required_remaining > 0 && (
+                <p className="text-xs text-warning">
+                  {t('checklist.required_remaining').replace(
+                    '{{count}}',
+                    String(checklistData.progress.required_remaining),
+                  )}
+                </p>
+              )}
+              {/* Items */}
+              <div className="space-y-1">
+                {checklistData.data.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-3 py-1.5 group"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => toggleChecklistItem.mutate(item.id)}
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors ${
+                        item.is_completed
+                          ? 'bg-primary border-primary text-primary-foreground'
+                          : 'border-border hover:border-primary'
+                      }`}
+                    >
+                      {item.is_completed && (
+                        <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                        </svg>
+                      )}
+                    </button>
+                    <span
+                      className={`flex-1 text-sm ${
+                        item.is_completed
+                          ? 'line-through text-muted-foreground'
+                          : 'text-foreground'
+                      }`}
+                    >
+                      {item.title}
+                      {item.is_required && (
+                        <span className="ml-1.5 text-[10px] font-medium text-destructive">*</span>
+                      )}
+                    </span>
+                    {isTech && (
+                      <button
+                        type="button"
+                        onClick={() => removeChecklistItem.mutate(item.id)}
+                        className="opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive/80 text-xs transition-opacity"
+                      >
+                        {t('common.remove')}
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {/* Add item */}
+              {isTech && (
+                <div className="flex gap-2 pt-1">
+                  <input
+                    type="text"
+                    value={newChecklistItem}
+                    onChange={(e) => setNewChecklistItem(e.target.value)}
+                    placeholder={t('checklist.add_item_placeholder')}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newChecklistItem.trim()) {
+                        addChecklistItem.mutate(newChecklistItem.trim());
+                      }
+                    }}
+                    className="flex-1 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newChecklistItem.trim()) addChecklistItem.mutate(newChecklistItem.trim());
+                    }}
+                    disabled={!newChecklistItem.trim()}
+                    className="inline-flex items-center justify-center rounded-md h-9 px-3 text-sm font-medium bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+                  >
+                    {t('checklist.add_item')}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Conversation / Comments */}
           <div className="space-y-4">

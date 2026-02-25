@@ -142,6 +142,12 @@ from src.request_bc.request.application.services.classification_service import (
     ClassificationService,
 )
 from src.request_bc.request.domain.entities import ServiceRequest
+from src.workflow_bc.checklist.application.commands.generate_checklist import (
+    GenerateChecklistCommand,
+    GenerateChecklistCommandHandler,
+)
+from src.workflow_bc.checklist.infrastructure.repository import ChecklistItemRepository
+from src.workflow_bc.template.infrastructure.repository import WorkflowTemplateRepository
 from src.request_bc.request.domain.enums import (
     VALID_SUBTYPES,
     InvalidStatusTransitionError,
@@ -622,6 +628,22 @@ def create_request(
         )
         event_bus.publish(approval_event, db)
 
+    # Generate checklist from workflow template (if template_id provided)
+    if body.template_id:
+        try:
+            wf_template_repo = WorkflowTemplateRepository(db)
+            wf_checklist_repo = ChecklistItemRepository(db)
+            generate_handler = GenerateChecklistCommandHandler(
+                template_repo=wf_template_repo, checklist_repo=wf_checklist_repo,
+            )
+            generate_handler.handle(GenerateChecklistCommand(
+                request_id=request_id,
+                template_id=body.template_id,
+                company_id=current_user.company_id,
+            ))
+        except Exception:
+            logger.exception("Failed to generate checklist for request %s", request_id)
+
     custom_fields = cf_enricher.enrich(
         current_user.company_id, "request", request.custom_fields_data or {}
     )
@@ -711,7 +733,25 @@ def change_request_status(
     request_repo: RequestRepository = Depends(get_request_repo),
     event_bus: EventBus = Depends(get_event_bus),
 ):
-    old_status = _find_existing_or_404(request_repo, request_id, current_user.company_id).status.value
+    existing_request = _find_existing_or_404(request_repo, request_id, current_user.company_id)
+    old_status = existing_request.status.value
+
+    # Resolution guard: check if all required checklist items are complete
+    if body.status == "resolved":
+        wf_checklist_repo = ChecklistItemRepository(db)
+        checklist_items = wf_checklist_repo.find_by_request(request_id)
+        has_require_all = any(item.require_all_complete for item in checklist_items)
+        if has_require_all:
+            incomplete = [
+                item for item in checklist_items
+                if item.is_required and not item.is_completed
+            ]
+            if incomplete:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Complete all required checklist items before resolving",
+                )
+
     handler = ChangeRequestStatusCommandHandler(request_repo=request_repo)
     try:
         handler.handle(ChangeRequestStatusCommand(

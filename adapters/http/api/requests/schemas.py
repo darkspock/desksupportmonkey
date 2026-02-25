@@ -12,6 +12,7 @@ class CreateRequestRequest(BaseModel):
     data: Optional[dict] = None
     on_behalf_of: Optional[str] = None
     custom_fields_data: Optional[dict[str, Any]] = None
+    template_id: Optional[str] = None
 
 
 class ChangeStatusRequest(BaseModel):

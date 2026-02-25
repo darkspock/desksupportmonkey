@@ -22,6 +22,8 @@ class ServiceRequestModel(ULIDMixin, TimestampMixin, Base):
     priority: Mapped[str] = mapped_column(String(10))
     data: Mapped[Optional[Any]] = mapped_column(JSON)
     custom_fields_data: Mapped[Any] = mapped_column(JSON, server_default="{}", nullable=False)
+    workflow_template_id: Mapped[Optional[str]] = mapped_column(String(26), nullable=True)
+    workflow_subtype_id: Mapped[Optional[str]] = mapped_column(String(26), nullable=True)
     resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     first_response_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 

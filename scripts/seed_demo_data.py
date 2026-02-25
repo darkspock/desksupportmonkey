@@ -45,6 +45,13 @@ from src.custom_field_bc.definition.infrastructure.models import CustomFieldDefi
 # Asset type definitions
 from src.asset_type_bc.definition.infrastructure.models import AssetTypeDefinitionModel
 
+# Workflow templates
+from src.workflow_bc.template.domain.entities import (
+    WorkflowTemplate,
+    ChecklistItemDefinition,
+)
+from src.workflow_bc.template.infrastructure.repository import WorkflowTemplateRepository
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -144,20 +151,20 @@ NOTE_TEMPLATES = [
 # ---------------------------------------------------------------------------
 
 def clear_all(session):
-    """Delete all data in reverse FK order."""
+    """Delete all data using TRUNCATE CASCADE for reliability."""
+    from sqlalchemy import text
+
     print("Clearing existing data...")
-    for model in [
-        AssetTypeDefinitionModel,
-        CustomFieldDefinitionModel,
-        NotificationModel, ReportModel,
-        RequestNoteModel, RequestCommentModel, RequestEventModel, ServiceRequestModel,
-        AssetEventModel, AssetModel, AssetLocationModel,
-        UserModel, DepartmentModel,
-        CompanyEmailDomainModel, CompanyModel,
-    ]:
-        count = session.query(model).delete()
-        if count:
-            print(f"  Deleted {count} rows from {model.__tablename__}")
+    # Get all user tables from the database (not alembic_version)
+    result = session.execute(text(
+        "SELECT tablename FROM pg_tables "
+        "WHERE schemaname = 'public' AND tablename != 'alembic_version'"
+    ))
+    tables = [row[0] for row in result]
+    if tables:
+        table_list = ", ".join(f'"{t}"' for t in tables)
+        session.execute(text(f"TRUNCATE {table_list} CASCADE"))
+        print(f"  Truncated {len(tables)} tables")
     session.commit()
 
 
@@ -802,6 +809,106 @@ def seed_custom_field_values(session, asset_map: dict[str, list[str]], request_m
 
 
 # ---------------------------------------------------------------------------
+# Workflow templates
+# ---------------------------------------------------------------------------
+
+WORKFLOW_TEMPLATE_SPECS = [
+    {
+        "name": "Incident",
+        "description": "Report a technical issue or outage",
+        "require_all_complete": False,
+        "checklist_items": [
+            {"title": "Identify root cause", "is_required": True},
+            {"title": "Apply fix or workaround", "is_required": True},
+            {"title": "Verify resolution with reporter", "is_required": True},
+            {"title": "Update documentation", "is_required": False},
+        ],
+    },
+    {
+        "name": "New Equipment",
+        "description": "Request new hardware or software",
+        "require_all_complete": True,
+        "checklist_items": [
+            {"title": "Verify budget approval", "is_required": True},
+            {"title": "Place purchase order", "is_required": True},
+            {"title": "Receive and inspect equipment", "is_required": True},
+            {"title": "Configure and install", "is_required": True},
+            {"title": "Deliver to employee", "is_required": True},
+            {"title": "Confirm employee acceptance", "is_required": True},
+        ],
+    },
+    {
+        "name": "Employee Onboarding",
+        "description": "Set up accounts, equipment, and access for new hire",
+        "require_all_complete": True,
+        "checklist_items": [
+            {"title": "Create user accounts (email, Slack, etc.)", "is_required": True},
+            {"title": "Assign laptop and peripherals", "is_required": True},
+            {"title": "Set up VPN and network access", "is_required": True},
+            {"title": "Grant application permissions", "is_required": True},
+            {"title": "Ship equipment to employee", "is_required": True},
+            {"title": "Schedule orientation call", "is_required": False},
+            {"title": "Add to team channels", "is_required": False},
+        ],
+    },
+    {
+        "name": "Employee Offboarding",
+        "description": "Revoke access and recover equipment for departing employee",
+        "require_all_complete": True,
+        "checklist_items": [
+            {"title": "Disable email account", "is_required": True},
+            {"title": "Revoke VPN and network access", "is_required": True},
+            {"title": "Revoke application permissions", "is_required": True},
+            {"title": "Wipe company data from devices", "is_required": True},
+            {"title": "Collect company equipment", "is_required": True},
+            {"title": "Collect badge and physical keys", "is_required": True},
+            {"title": "Transfer file ownership", "is_required": False},
+        ],
+    },
+    {
+        "name": "Access Request",
+        "description": "Request access to systems, applications, or physical spaces",
+        "require_all_complete": True,
+        "checklist_items": [
+            {"title": "Verify manager approval", "is_required": True},
+            {"title": "Provision access", "is_required": True},
+            {"title": "Confirm access works", "is_required": True},
+        ],
+    },
+]
+
+
+def seed_workflow_templates(session, companies: list[dict]) -> None:
+    """Create workflow templates for each company."""
+    repo = WorkflowTemplateRepository(session)
+    total = 0
+
+    for company in companies:
+        cid = company["id"]
+        for i, spec in enumerate(WORKFLOW_TEMPLATE_SPECS):
+            template = WorkflowTemplate.create(
+                company_id=cid,
+                name=spec["name"],
+                description=spec.get("description"),
+                require_all_complete=spec.get("require_all_complete", False),
+            )
+            items = []
+            for j, item_spec in enumerate(spec.get("checklist_items", [])):
+                items.append(ChecklistItemDefinition.create(
+                    template_id=template.id,
+                    title=item_spec["title"],
+                    is_required=item_spec.get("is_required", True),
+                    sort_order=j,
+                ))
+            template.set_checklist_items(items)
+            repo.save(template)
+            total += 1
+
+    session.commit()
+    print(f"  Workflow templates: {len(WORKFLOW_TEMPLATE_SPECS)} per company ({total} total)")
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -859,6 +966,11 @@ def main():
 
         print("Assigning custom field values...")
         seed_custom_field_values(session, asset_map, request_map)
+        print()
+
+        # --- Workflow Templates ---
+        print("Creating workflow templates...")
+        seed_workflow_templates(session, companies)
         print()
 
         print("=" * 60)
