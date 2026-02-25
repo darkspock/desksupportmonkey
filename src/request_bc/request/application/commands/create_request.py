@@ -4,7 +4,6 @@ from typing import Optional
 from src.framework.application.command_bus import Command, CommandHandler
 from src.request_bc.request.application.services.priority_scorer import PriorityScorer
 from src.request_bc.request.domain.entities import RequestEvent, ServiceRequest
-from src.request_bc.request.domain.enums import RequestType
 from src.request_bc.request.domain.repository import RequestRepositoryInterface
 
 
@@ -24,6 +23,8 @@ class CreateRequestCommand(Command):
     ai_priority_hint: int = 0
     ai_classification: Optional[dict] = None
     custom_fields_data: Optional[dict] = None
+    workflow_template_id: Optional[str] = None
+    workflow_subtype_id: Optional[str] = None
 
 
 class CreateRequestCommandHandler(CommandHandler[CreateRequestCommand]):
@@ -31,11 +32,9 @@ class CreateRequestCommandHandler(CommandHandler[CreateRequestCommand]):
         self.request_repo = request_repo
 
     def handle(self, command: CreateRequestCommand) -> None:
-        request_type = RequestType(command.type)
-
         scorer = PriorityScorer()
         priority, scoring_breakdown = scorer.compute(
-            request_type=request_type,
+            request_type=command.type,
             subtype=command.subtype,
             department_priority_weight=command.department_priority_weight,
             user_role=command.user_role,
@@ -48,13 +47,13 @@ class CreateRequestCommandHandler(CommandHandler[CreateRequestCommand]):
             data["ai_classification"] = command.ai_classification
 
         requires_approval = (
-            request_type == RequestType.NEW_EQUIPMENT and command.department_has_manager
+            command.type == "new_equipment" and command.department_has_manager
         )
 
         request = ServiceRequest.create(
             company_id=command.company_id,
             created_by=command.created_by,
-            type=request_type,
+            type=command.type,
             title=command.title,
             description=command.description,
             data=data,
@@ -62,6 +61,8 @@ class CreateRequestCommandHandler(CommandHandler[CreateRequestCommand]):
             subtype=command.subtype,
             requires_approval=requires_approval,
             custom_fields_data=command.custom_fields_data,
+            workflow_template_id=command.workflow_template_id,
+            workflow_subtype_id=command.workflow_subtype_id,
         )
         request.priority = priority
 
@@ -71,7 +72,7 @@ class CreateRequestCommandHandler(CommandHandler[CreateRequestCommand]):
             request_id=request.id,
             event_type="created",
             data={
-                "type": request.type.value,
+                "type": request.type,
                 "title": request.title,
                 "priority": request.priority.value,
             },

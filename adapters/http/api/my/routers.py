@@ -200,7 +200,7 @@ def my_equipment(
 
 def _to_my_request(r: object, user_map: dict) -> dict:
     return MyRequestResponse(
-        id=r.id, type=r.type.value, subtype=r.subtype, title=r.title, status=r.status.value,
+        id=r.id, type=r.type, subtype=r.subtype, title=r.title, status=r.status.value,
         priority=r.priority.value, assigned_to=r.assigned_to,
         assigned_to_email=user_map[r.assigned_to].email if r.assigned_to and r.assigned_to in user_map else None,
         created_at=r.created_at, updated_at=r.updated_at,

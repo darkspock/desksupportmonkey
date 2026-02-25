@@ -21,7 +21,7 @@ def upgrade() -> None:
     op.create_table(
         "workflow_templates",
         sa.Column("id", sa.String(26), primary_key=True),
-        sa.Column("company_id", sa.String(26), sa.ForeignKey("companies.id"), nullable=False),
+        sa.Column("company_id", sa.String(26), nullable=False),
         sa.Column("name", sa.String(255), nullable=False),
         sa.Column("description", sa.Text, nullable=True),
         sa.Column("icon", sa.String(50), nullable=True),
@@ -38,15 +38,11 @@ def upgrade() -> None:
     op.create_table(
         "workflow_subtypes",
         sa.Column("id", sa.String(26), primary_key=True),
-        sa.Column(
-            "template_id",
-            sa.String(26),
-            sa.ForeignKey("workflow_templates.id", ondelete="CASCADE"),
-            nullable=False,
-        ),
+        sa.Column("template_id", sa.String(26), nullable=False),
         sa.Column("name", sa.String(255), nullable=False),
         sa.Column("description", sa.Text, nullable=True),
         sa.Column("sort_order", sa.Integer, server_default="0", nullable=False),
+        sa.Column("is_active", sa.Boolean, server_default="true", nullable=False),
         sa.UniqueConstraint("template_id", "name", name="uq_workflow_subtypes_template_name"),
     )
     op.create_index("ix_workflow_subtypes_template", "workflow_subtypes", ["template_id"])
@@ -55,12 +51,7 @@ def upgrade() -> None:
     op.create_table(
         "checklist_item_definitions",
         sa.Column("id", sa.String(26), primary_key=True),
-        sa.Column(
-            "template_id",
-            sa.String(26),
-            sa.ForeignKey("workflow_templates.id", ondelete="CASCADE"),
-            nullable=False,
-        ),
+        sa.Column("template_id", sa.String(26), nullable=False),
         sa.Column("title", sa.String(255), nullable=False),
         sa.Column("description", sa.Text, nullable=True),
         sa.Column("assignee_role", sa.String(30), nullable=True),
@@ -75,12 +66,7 @@ def upgrade() -> None:
     op.create_table(
         "request_checklist_items",
         sa.Column("id", sa.String(26), primary_key=True),
-        sa.Column(
-            "request_id",
-            sa.String(26),
-            sa.ForeignKey("service_requests.id", ondelete="CASCADE"),
-            nullable=False,
-        ),
+        sa.Column("request_id", sa.String(26), nullable=False),
         sa.Column("require_all_complete", sa.Boolean, server_default="false", nullable=False),
         sa.Column("title", sa.String(255), nullable=False),
         sa.Column("description", sa.Text, nullable=True),

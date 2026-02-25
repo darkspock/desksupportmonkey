@@ -17,6 +17,7 @@ class CreateRequestRequest(BaseModel):
 
 class ChangeStatusRequest(BaseModel):
     status: str
+    reason: Optional[str] = None
 
 
 class ChangePriorityRequest(BaseModel):
@@ -41,6 +42,8 @@ class RequestListItemResponse(BaseModel):
     created_by_name: Optional[str] = None
     created_by_email: Optional[str] = None
     custom_fields: Optional[list[dict[str, Any]]] = None
+    workflow_template_name: Optional[str] = None
+    workflow_template_icon: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -99,6 +102,9 @@ class RequestResponse(BaseModel):
     priority: str
     data: Optional[dict] = None
     custom_fields: Optional[list[dict[str, Any]]] = None
+    workflow_template_id: Optional[str] = None
+    workflow_template_name: Optional[str] = None
+    workflow_template_icon: Optional[str] = None
     resolved_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

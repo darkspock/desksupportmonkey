@@ -32,6 +32,7 @@ class ServiceRequestModel(ULIDMixin, TimestampMixin, Base):
         Index("ix_service_requests_company_created_by", "company_id", "created_by"),
         Index("ix_service_requests_company_assigned_to", "company_id", "assigned_to"),
         Index("ix_service_requests_company_subtype", "company_id", "subtype"),
+        Index("ix_service_requests_company_status_assigned", "company_id", "status", "assigned_to"),
     )
 
 

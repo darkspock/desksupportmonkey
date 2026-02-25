@@ -1,19 +1,30 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Pencil } from 'lucide-react';
 import api from '../../lib/api';
+import { Badge } from '../../components/ui/Badge';
+import { Card } from '../../components/ui/Card';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { Loading } from '../../components/ui/Loading';
 import { EmptyState, ErrorState } from '../../components/ui/StateBlock';
+import { Table, Td, Th, Tr } from '../../components/ui/Table';
+import { Tooltip } from '../../components/ui/Tooltip';
 import { useI18n } from '../../lib/i18n';
 import { useToast } from '../../components/ui/Toast';
+import { WorkflowIcon } from '../../components/ui/WorkflowIcon';
+import { LucideIconPickerModal } from '../../components/ui/LucideIconPickerModal';
 import type { WorkflowTemplate } from '../../types';
 
 interface SubtypeForm {
+  id?: string;
   name: string;
   description: string;
   sort_order: number;
+  is_active: boolean;
 }
 
 interface ChecklistItemForm {
+  id?: string;
   title: string;
   description: string;
   is_required: boolean;
@@ -38,15 +49,52 @@ const emptyForm = (): TemplateForm => ({
   checklist_items: [],
 });
 
+function normalizePayload(form: TemplateForm) {
+  return {
+    name: form.name.trim(),
+    description: form.description.trim() || null,
+    icon: form.icon.trim() || null,
+    require_all_complete: form.require_all_complete,
+    subtypes: form.subtypes
+      .map((s) => ({
+        id: s.id,
+        name: s.name.trim(),
+        description: s.description.trim() || null,
+        is_active: s.is_active,
+      }))
+      .filter((s) => s.name.length > 0)
+      .map((s, idx) => ({ ...s, sort_order: idx })),
+    checklist_items: form.checklist_items
+      .map((item) => ({
+        id: item.id,
+        title: item.title.trim(),
+        description: item.description.trim() || null,
+        is_required: item.is_required,
+      }))
+      .filter((item) => item.title.length > 0)
+      .map((item, idx) => ({ ...item, sort_order: idx })),
+  };
+}
+
+const iconActionButtonClass =
+  'inline-flex h-8 w-8 items-center justify-center rounded-md border transition-colors';
+
 export default function WorkflowTemplatesPage() {
   const { t } = useI18n();
   const toast = useToast();
   const queryClient = useQueryClient();
 
   const [showModal, setShowModal] = useState(false);
+  const [iconPickerOpen, setIconPickerOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<WorkflowTemplate | null>(null);
-  const [form, setForm] = useState<TemplateForm>(emptyForm());
   const [deleteTarget, setDeleteTarget] = useState<WorkflowTemplate | null>(null);
+  const [toggleTarget, setToggleTarget] = useState<{
+    id: string;
+    name: string;
+    nextActive: boolean;
+  } | null>(null);
+  const [form, setForm] = useState<TemplateForm>(emptyForm());
+  const [formError, setFormError] = useState('');
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['workflow-templates'],
@@ -56,70 +104,37 @@ export default function WorkflowTemplatesPage() {
     },
   });
 
+  const extractError = (err: unknown): string => {
+    const data = (err as { response?: { data?: { detail?: string; error?: { message?: string } } } })?.response?.data;
+    return data?.error?.message || data?.detail || t('common.error');
+  };
+
   const createMutation = useMutation({
     mutationFn: async () => {
-      await api.post('/workflow-templates', {
-        name: form.name,
-        description: form.description || null,
-        icon: form.icon || null,
-        require_all_complete: form.require_all_complete,
-        subtypes: form.subtypes.map((s, i) => ({
-          name: s.name,
-          description: s.description || null,
-          sort_order: i,
-        })),
-        checklist_items: form.checklist_items.map((item, i) => ({
-          title: item.title,
-          description: item.description || null,
-          is_required: item.is_required,
-          sort_order: i,
-        })),
-      });
+      await api.post('/workflow-templates', normalizePayload(form));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workflow-templates'] });
       toast.success(t('page.workflow_templates.toast_created'));
-      closeModal();
+      closeModal(true);
     },
     onError: (err: unknown) => {
-      const message =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        t('common.error');
-      toast.error(message);
+      toast.error(extractError(err));
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: async () => {
       if (!editingTemplate) return;
-      await api.put(`/workflow-templates/${editingTemplate.id}`, {
-        name: form.name,
-        description: form.description || null,
-        icon: form.icon || null,
-        require_all_complete: form.require_all_complete,
-        subtypes: form.subtypes.map((s, i) => ({
-          name: s.name,
-          description: s.description || null,
-          sort_order: i,
-        })),
-        checklist_items: form.checklist_items.map((item, i) => ({
-          title: item.title,
-          description: item.description || null,
-          is_required: item.is_required,
-          sort_order: i,
-        })),
-      });
+      await api.put(`/workflow-templates/${editingTemplate.id}`, normalizePayload(form));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workflow-templates'] });
       toast.success(t('page.workflow_templates.toast_updated'));
-      closeModal();
+      closeModal(true);
     },
     onError: (err: unknown) => {
-      const message =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        t('common.error');
-      toast.error(message);
+      toast.error(extractError(err));
     },
   });
 
@@ -133,12 +148,11 @@ export default function WorkflowTemplatesPage() {
       setDeleteTarget(null);
     },
     onError: (err: unknown) => {
-      const detail =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || '';
-      if (detail.toLowerCase().includes('request')) {
+      const msg = extractError(err);
+      if (msg.toLowerCase().includes('request')) {
         toast.error(t('page.workflow_templates.has_requests'));
       } else {
-        toast.error(detail || t('common.error'));
+        toast.error(msg);
       }
     },
   });
@@ -151,22 +165,25 @@ export default function WorkflowTemplatesPage() {
       queryClient.invalidateQueries({ queryKey: ['workflow-templates'] });
     },
     onError: (err: unknown) => {
-      const message =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        t('common.error');
-      toast.error(message);
+      toast.error(extractError(err));
     },
   });
 
-  const closeModal = () => {
+  const isMutating = createMutation.isPending || updateMutation.isPending;
+
+  const closeModal = (force = false) => {
+    if (!force && isMutating) return;
     setShowModal(false);
+    setIconPickerOpen(false);
     setEditingTemplate(null);
     setForm(emptyForm());
+    setFormError('');
   };
 
   const openCreate = () => {
     setEditingTemplate(null);
     setForm(emptyForm());
+    setFormError('');
     setShowModal(true);
   };
 
@@ -178,23 +195,31 @@ export default function WorkflowTemplatesPage() {
       icon: tmpl.icon || '',
       require_all_complete: tmpl.require_all_complete,
       subtypes: tmpl.subtypes.map((s) => ({
+        id: s.id,
         name: s.name,
         description: s.description || '',
         sort_order: s.sort_order,
+        is_active: s.is_active,
       })),
       checklist_items: tmpl.checklist_items.map((item) => ({
+        id: item.id,
         title: item.title,
         description: item.description || '',
         is_required: item.is_required,
         sort_order: item.sort_order,
       })),
     });
+    setFormError('');
     setShowModal(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim()) return;
+    if (!form.name.trim()) {
+      setFormError(t('page.workflow_templates.error_name_required'));
+      return;
+    }
+    setFormError('');
     if (editingTemplate) {
       updateMutation.mutate();
     } else {
@@ -202,11 +227,10 @@ export default function WorkflowTemplatesPage() {
     }
   };
 
-  // Subtype helpers
   const addSubtype = () => {
     setForm((prev) => ({
       ...prev,
-      subtypes: [...prev.subtypes, { name: '', description: '', sort_order: prev.subtypes.length }],
+      subtypes: [...prev.subtypes, { name: '', description: '', sort_order: prev.subtypes.length, is_active: true }],
     }));
   };
 
@@ -225,7 +249,6 @@ export default function WorkflowTemplatesPage() {
     });
   };
 
-  // Checklist item helpers
   const addChecklistItem = () => {
     setForm((prev) => ({
       ...prev,
@@ -255,199 +278,273 @@ export default function WorkflowTemplatesPage() {
     });
   };
 
-  const isMutating = createMutation.isPending || updateMutation.isPending;
-
   return (
     <div className="flex flex-col gap-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
             {t('page.workflow_templates.title')}
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
             {t('page.workflow_templates.subtitle')}
           </p>
         </div>
         <button
+          type="button"
           onClick={openCreate}
-          className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90"
         >
           {t('page.workflow_templates.new')}
         </button>
       </div>
 
-      {/* Content */}
-      {isLoading && <Loading />}
-      {isError && (
-        <ErrorState message={(error as Error)?.message || t('common.error')} onRetry={refetch} />
+      {isLoading && (
+        <Card>
+          <Loading />
+        </Card>
       )}
+
+      {isError && (
+        <Card>
+          <ErrorState
+            message={
+              (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
+              t('common.error')
+            }
+            onRetry={() => {
+              void refetch();
+            }}
+          />
+        </Card>
+      )}
+
       {data && data.length === 0 && (
-        <EmptyState message={t('page.workflow_templates.empty')} />
+        <Card>
+          <EmptyState message={t('page.workflow_templates.empty')} />
+        </Card>
       )}
 
       {data && data.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-900">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  {t('page.workflow_templates.name')}
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  {t('page.workflow_templates.subtypes')}
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  {t('page.workflow_templates.checklist_items')}
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  {t('common.status')}
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {data.map((tmpl) => (
-                <tr key={tmpl.id} className={!tmpl.is_active ? 'opacity-50' : ''}>
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
-                    {tmpl.name}
-                    {tmpl.description && (
-                      <p className="text-xs text-gray-400 dark:text-gray-500 font-normal">
-                        {tmpl.description}
-                      </p>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                    {tmpl.subtypes.length > 0
-                      ? t('page.workflow_templates.subtypes_count').replace(
-                          '{{count}}',
-                          String(tmpl.subtypes.length),
-                        )
-                      : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                    {tmpl.checklist_items.length > 0
-                      ? t('page.workflow_templates.items_count').replace(
-                          '{{count}}',
-                          String(tmpl.checklist_items.length),
-                        )
-                      : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-sm">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                        tmpl.is_active
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                          : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                      }`}
-                    >
-                      {tmpl.is_active
-                        ? t('page.workflow_templates.active')
-                        : t('page.workflow_templates.inactive')}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-right">
-                    <div className="flex gap-2 justify-end items-center">
+        <Table>
+          <thead>
+            <tr>
+              <Th>{t('page.workflow_templates.name')}</Th>
+              <Th>{t('page.workflow_templates.icon')}</Th>
+              <Th>{t('page.workflow_templates.subtypes')}</Th>
+              <Th>{t('page.workflow_templates.checklist_items')}</Th>
+              <Th>{t('common.status')}</Th>
+              <Th className="text-right">{t('table.actions')}</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((tmpl) => (
+              <Tr key={tmpl.id} className={!tmpl.is_active ? 'opacity-70' : undefined}>
+                <Td className="font-medium text-foreground">
+                  {tmpl.name}
+                  {tmpl.description && (
+                    <p className="mt-0.5 text-xs font-normal text-muted-foreground">{tmpl.description}</p>
+                  )}
+                </Td>
+                <Td>
+                  {tmpl.icon ? (
+                    <div className="flex items-center gap-1.5">
+                      <WorkflowIcon name={tmpl.icon} className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">{tmpl.icon}</span>
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </Td>
+                <Td className="text-muted-foreground">
+                  {tmpl.subtypes.length > 0
+                    ? t('page.workflow_templates.subtypes_count', { count: tmpl.subtypes.length })
+                    : '—'}
+                </Td>
+                <Td className="text-muted-foreground">
+                  {tmpl.checklist_items.length > 0
+                    ? t('page.workflow_templates.items_count', { count: tmpl.checklist_items.length })
+                    : '—'}
+                </Td>
+                <Td>
+                  <Badge variant={tmpl.is_active ? 'success' : 'default'}>
+                    {tmpl.is_active
+                      ? t('page.workflow_templates.active')
+                      : t('page.workflow_templates.inactive')}
+                  </Badge>
+                </Td>
+                <Td className="text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <Tooltip content={t('common.edit')}>
                       <button
+                        type="button"
+                        aria-label={t('common.edit')}
                         onClick={() => openEdit(tmpl)}
-                        className="text-blue-600 dark:text-blue-400 hover:underline text-xs"
+                        className={`${iconActionButtonClass} border-border bg-background text-foreground hover:bg-accent`}
                       >
-                        {t('common.edit')}
+                        <Pencil className="h-4 w-4" />
                       </button>
+                    </Tooltip>
+
+                    <Tooltip
+                      content={
+                        tmpl.is_active
+                          ? t('page.workflow_templates.deactivate')
+                          : t('page.workflow_templates.activate')
+                      }
+                    >
                       <button
+                        type="button"
+                        aria-label={
+                          tmpl.is_active
+                            ? t('page.workflow_templates.deactivate')
+                            : t('page.workflow_templates.activate')
+                        }
                         onClick={() =>
-                          toggleActiveMutation.mutate({
+                          setToggleTarget({
                             id: tmpl.id,
-                            is_active: !tmpl.is_active,
+                            name: tmpl.name,
+                            nextActive: !tmpl.is_active,
                           })
                         }
-                        className={`hover:underline text-xs ${
-                          tmpl.is_active
-                            ? 'text-yellow-600 dark:text-yellow-400'
-                            : 'text-green-600 dark:text-green-400'
-                        }`}
+                        className={`${iconActionButtonClass} border-border bg-background text-foreground hover:bg-accent`}
                       >
-                        {tmpl.is_active
-                          ? t('page.workflow_templates.inactive')
-                          : t('page.workflow_templates.active')}
+                        {tmpl.is_active ? (
+                          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="6" y="4" width="12" height="16" rx="1" />
+                            <path d="M9 20h6" />
+                          </svg>
+                        ) : (
+                          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M7 4v16l13-8Z" />
+                          </svg>
+                        )}
                       </button>
+                    </Tooltip>
+
+                    <Tooltip content={t('common.delete')}>
                       <button
+                        type="button"
+                        aria-label={t('common.delete')}
                         onClick={() => setDeleteTarget(tmpl)}
-                        className="text-red-600 dark:text-red-400 hover:underline text-xs"
+                        className={`${iconActionButtonClass} border-destructive/40 bg-background text-destructive hover:bg-destructive/10`}
                       >
-                        {t('common.delete')}
+                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M3 6h18" />
+                          <path d="M8 6V4h8v2" />
+                          <path d="M19 6l-1 14H6L5 6" />
+                          <path d="M10 11v6M14 11v6" />
+                        </svg>
                       </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    </Tooltip>
+                  </div>
+                </Td>
+              </Tr>
+            ))}
+          </tbody>
+        </Table>
       )}
 
-      {/* Create / Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-5 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {editingTemplate
-                  ? t('common.edit') + ' ' + editingTemplate.name
-                  : t('page.workflow_templates.new')}
-              </h2>
-            </div>
-            <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-5">
-              {/* Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('page.workflow_templates.name')} *
-                </label>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  required
-                  maxLength={255}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white"
-                  placeholder="e.g. Employee Offboarding"
-                />
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/40"
+            onClick={() => closeModal()}
+            aria-label={t('errors.close_confirmation_dialog')}
+          />
+          <div className="relative z-[91] w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-border bg-card p-6 shadow-lg">
+            <h3 className="text-lg font-semibold text-foreground">
+              {editingTemplate ? `${t('common.edit')} ${editingTemplate.name}` : t('page.workflow_templates.new')}
+            </h3>
+
+            <form onSubmit={handleSubmit} className="mt-4 space-y-5">
+              {formError && (
+                <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+                  {formError}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-1.5 block text-sm text-muted-foreground">
+                    {t('page.workflow_templates.name')} *
+                  </label>
+                  <input
+                    type="text"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    maxLength={255}
+                    required
+                    autoFocus
+                    className="w-full bg-card"
+                    placeholder="Employee Offboarding"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm text-muted-foreground">
+                    {t('page.workflow_templates.icon')}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIconPickerOpen(true)}
+                      className="inline-flex items-center justify-center rounded-md h-9 px-3 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all"
+                    >
+                      {form.icon
+                        ? t('page.workflow_templates.change_icon')
+                        : t('page.workflow_templates.select_icon')}
+                    </button>
+                    {form.icon && (
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, icon: '' })}
+                        className="inline-flex items-center justify-center rounded-md h-9 px-3 text-sm font-medium border border-destructive/40 bg-background text-destructive hover:bg-destructive/10 transition-all"
+                      >
+                        {t('page.workflow_templates.remove_icon')}
+                      </button>
+                    )}
+                  </div>
+                  {form.icon && (
+                    <div className="mt-2 inline-flex items-center gap-2 rounded-md border border-border bg-secondary/40 px-2.5 py-1.5 text-xs text-foreground">
+                      <WorkflowIcon name={form.icon} className="h-3.5 w-3.5" />
+                      <span>{form.icon}</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="mb-1.5 block text-sm text-muted-foreground">
                   {t('page.workflow_templates.description')}
                 </label>
                 <textarea
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  rows={2}
+                  rows={3}
                   maxLength={500}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white resize-none"
+                  className="w-full resize-none bg-card"
                 />
               </div>
 
-              {/* Require all complete */}
-              <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
                 <input
                   type="checkbox"
                   checked={form.require_all_complete}
                   onChange={(e) => setForm({ ...form, require_all_complete: e.target.checked })}
-                  className="rounded border-gray-300"
                 />
                 {t('page.workflow_templates.require_all_complete')}
               </label>
 
-              {/* Subtypes */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="mb-1 block text-sm text-muted-foreground">
                   {t('page.workflow_templates.subtypes')}
                 </label>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
+                <p className="mb-2 text-xs text-muted-foreground">
                   {t('page.workflow_templates.subtypes_hint')}
                 </p>
-                <div className="flex flex-col gap-2">
+
+                <div className="space-y-2">
                   {form.subtypes.map((sub, idx) => (
                     <div key={idx} className="flex items-center gap-2">
                       <input
@@ -455,53 +552,51 @@ export default function WorkflowTemplatesPage() {
                         value={sub.name}
                         onChange={(e) => updateSubtype(idx, 'name', e.target.value)}
                         placeholder={t('page.workflow_templates.subtype_name')}
-                        className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-900 dark:text-white"
+                        className="flex-1 bg-card"
                       />
                       <button
                         type="button"
                         onClick={() => removeSubtype(idx)}
-                        className="text-red-500 hover:text-red-700 text-xs shrink-0"
+                        className="inline-flex items-center justify-center rounded-md h-8 px-2.5 text-xs font-medium border border-destructive/40 bg-background text-destructive hover:bg-destructive/10"
                       >
                         {t('common.remove')}
                       </button>
                     </div>
                   ))}
                 </div>
+
                 <button
                   type="button"
                   onClick={addSubtype}
-                  className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                  className="mt-2 inline-flex items-center justify-center rounded-md h-8 px-2.5 text-xs font-medium border border-border bg-background text-foreground hover:bg-accent"
                 >
                   + {t('page.workflow_templates.add_subtype')}
                 </button>
               </div>
 
-              {/* Checklist Items */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="mb-1 block text-sm text-muted-foreground">
                   {t('page.workflow_templates.checklist_items')}
                 </label>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
+                <p className="mb-2 text-xs text-muted-foreground">
                   {t('page.workflow_templates.checklist_hint')}
                 </p>
-                <div className="flex flex-col gap-3">
+
+                <div className="space-y-3">
                   {form.checklist_items.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="flex flex-col gap-1.5 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
-                    >
+                    <div key={idx} className="rounded-lg border border-border bg-secondary/40 p-3">
                       <div className="flex items-center gap-2">
                         <input
                           type="text"
                           value={item.title}
                           onChange={(e) => updateChecklistItem(idx, 'title', e.target.value)}
                           placeholder={t('page.workflow_templates.item_title')}
-                          className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-900 dark:text-white"
+                          className="flex-1 bg-card"
                         />
                         <button
                           type="button"
                           onClick={() => removeChecklistItem(idx)}
-                          className="text-red-500 hover:text-red-700 text-xs shrink-0"
+                          className="inline-flex items-center justify-center rounded-md h-8 px-2.5 text-xs font-medium border border-destructive/40 bg-background text-destructive hover:bg-destructive/10"
                         >
                           {t('common.remove')}
                         </button>
@@ -511,46 +606,44 @@ export default function WorkflowTemplatesPage() {
                         value={item.description}
                         onChange={(e) => updateChecklistItem(idx, 'description', e.target.value)}
                         placeholder={t('page.workflow_templates.item_description')}
-                        className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-900 dark:text-white"
+                        className="mt-2 w-full bg-card"
                       />
-                      <label className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                      <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
                         <input
                           type="checkbox"
                           checked={item.is_required}
-                          onChange={(e) =>
-                            updateChecklistItem(idx, 'is_required', e.target.checked)
-                          }
-                          className="rounded border-gray-300"
+                          onChange={(e) => updateChecklistItem(idx, 'is_required', e.target.checked)}
                         />
                         {t('page.workflow_templates.item_required')}
                       </label>
                     </div>
                   ))}
                 </div>
+
                 <button
                   type="button"
                   onClick={addChecklistItem}
-                  className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                  className="mt-2 inline-flex items-center justify-center rounded-md h-8 px-2.5 text-xs font-medium border border-border bg-background text-foreground hover:bg-accent"
                 >
                   + {t('page.workflow_templates.add_checklist_item')}
                 </button>
               </div>
 
-              {/* Actions */}
-              <div className="flex gap-3 pt-2">
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => closeModal()}
+                  disabled={isMutating}
+                  className="inline-flex items-center justify-center rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50"
+                >
+                  {t('common.cancel')}
+                </button>
                 <button
                   type="submit"
                   disabled={isMutating}
-                  className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="inline-flex items-center justify-center rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
                 >
                   {isMutating ? t('common.saving') : t('common.save')}
-                </button>
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="inline-flex items-center rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  {t('common.cancel')}
                 </button>
               </div>
             </form>
@@ -558,34 +651,51 @@ export default function WorkflowTemplatesPage() {
         </div>
       )}
 
-      {/* Delete Confirmation */}
-      {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-5 flex flex-col gap-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {t('common.delete')}
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              {t('page.workflow_templates.confirm_delete')}
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => deleteMutation.mutate(deleteTarget.id)}
-                disabled={deleteMutation.isPending}
-                className="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
-              >
-                {deleteMutation.isPending ? t('common.working') : t('common.delete')}
-              </button>
-              <button
-                onClick={() => setDeleteTarget(null)}
-                className="inline-flex items-center rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
-                {t('common.cancel')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <LucideIconPickerModal
+        open={iconPickerOpen}
+        selectedIcon={form.icon}
+        onClose={() => setIconPickerOpen(false)}
+        onSelect={(iconName) => {
+          setForm((prev) => ({ ...prev, icon: iconName }));
+          setIconPickerOpen(false);
+        }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(toggleTarget)}
+        title={t('page.workflow_templates.confirm_status_title')}
+        description={
+          toggleTarget
+            ? toggleTarget.nextActive
+              ? t('page.workflow_templates.confirm_activate', { name: toggleTarget.name })
+              : t('page.workflow_templates.confirm_deactivate', { name: toggleTarget.name })
+            : ''
+        }
+        confirmLabel={t('common.confirm')}
+        busy={toggleActiveMutation.isPending}
+        onCancel={() => setToggleTarget(null)}
+        onConfirm={() => {
+          if (!toggleTarget) return;
+          toggleActiveMutation.mutate({
+            id: toggleTarget.id,
+            is_active: toggleTarget.nextActive,
+          });
+          setToggleTarget(null);
+        }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title={t('common.delete')}
+        description={deleteTarget ? `${t('page.workflow_templates.confirm_delete')} (${deleteTarget.name})` : ''}
+        confirmLabel={t('common.delete')}
+        tone="danger"
+        busy={deleteMutation.isPending}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget) deleteMutation.mutate(deleteTarget.id);
+        }}
+      />
     </div>
   );
 }

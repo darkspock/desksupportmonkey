@@ -83,9 +83,9 @@ VALID_STATUS_TRANSITIONS: dict[RequestStatus, list[RequestStatus]] = {
     RequestStatus.PENDING_APPROVAL: [RequestStatus.SUBMITTED, RequestStatus.REJECTED],
     RequestStatus.SUBMITTED: [RequestStatus.IN_REVIEW],
     RequestStatus.IN_REVIEW: [RequestStatus.IN_PROGRESS, RequestStatus.REJECTED],
-    RequestStatus.IN_PROGRESS: [RequestStatus.RESOLVED, RequestStatus.IN_REVIEW],
-    RequestStatus.RESOLVED: [],
-    RequestStatus.REJECTED: [],
+    RequestStatus.IN_PROGRESS: [RequestStatus.RESOLVED, RequestStatus.IN_REVIEW, RequestStatus.REJECTED],
+    RequestStatus.RESOLVED: [RequestStatus.IN_PROGRESS],
+    RequestStatus.REJECTED: [RequestStatus.SUBMITTED, RequestStatus.IN_REVIEW, RequestStatus.IN_PROGRESS],
 }
 
 PRIORITY_SORT_ORDER: dict[RequestPriority, int] = {
@@ -95,13 +95,13 @@ PRIORITY_SORT_ORDER: dict[RequestPriority, int] = {
     RequestPriority.URGENT: 4,
 }
 
-DEFAULT_PRIORITY: dict[RequestType, RequestPriority] = {
-    RequestType.INCIDENT: RequestPriority.HIGH,
-    RequestType.NEW_EQUIPMENT: RequestPriority.LOW,
-    RequestType.ONBOARDING: RequestPriority.MEDIUM,
-    RequestType.REPAIR: RequestPriority.MEDIUM,
-    RequestType.CONFIGURATION: RequestPriority.LOW,
-    RequestType.ACCESS_REQUEST: RequestPriority.LOW,
+DEFAULT_PRIORITY: dict[str, RequestPriority] = {
+    RequestType.INCIDENT.value: RequestPriority.HIGH,
+    RequestType.NEW_EQUIPMENT.value: RequestPriority.LOW,
+    RequestType.ONBOARDING.value: RequestPriority.MEDIUM,
+    RequestType.REPAIR.value: RequestPriority.MEDIUM,
+    RequestType.CONFIGURATION.value: RequestPriority.LOW,
+    RequestType.ACCESS_REQUEST.value: RequestPriority.LOW,
 }
 
 

@@ -15,6 +15,7 @@ class RequestStatusCounts(BaseModel):
 
 
 class RequestTypeCounts(BaseModel):
+    model_config = {"extra": "allow"}
     incident: int = 0
     new_equipment: int = 0
     onboarding: int = 0

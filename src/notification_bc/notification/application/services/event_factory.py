@@ -15,28 +15,32 @@ class RequestEventFactory:
                 "request_id": request.id,
                 "created_by": request.created_by,
                 "assigned_to": request.assigned_to,
-                "type": request.type.value,
+                "type": request.type,
                 "title": request.title,
             },
-            title=f"New {request.type.value.replace('_', ' ')} request",
+            title=f"New {request.type.replace('_', ' ')} request",
             body=request.title,
         )
 
     @staticmethod
     def status_changed(
         request: ServiceRequest, old_status: str, new_status: str, actor_id: str,
+        reason: str | None = None,
     ) -> DomainEvent:
+        payload: dict = {
+            "request_id": request.id,
+            "created_by": request.created_by,
+            "assigned_to": request.assigned_to,
+            "old_status": old_status,
+            "new_status": new_status,
+        }
+        if reason:
+            payload["reason"] = reason
         return DomainEvent(
             event_type=EventType.REQUEST_STATUS_CHANGED,
             company_id=request.company_id,
             actor_id=actor_id,
-            payload={
-                "request_id": request.id,
-                "created_by": request.created_by,
-                "assigned_to": request.assigned_to,
-                "old_status": old_status,
-                "new_status": new_status,
-            },
+            payload=payload,
             title="Request updated",
             body=f"Status changed from {old_status} to {new_status}",
         )

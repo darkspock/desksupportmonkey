@@ -10,7 +10,7 @@ from src.request_bc.request.domain.entities import (
     RequestNote,
     ServiceRequest,
 )
-from src.request_bc.request.domain.enums import RequestPriority, RequestStatus, RequestType
+from src.request_bc.request.domain.enums import RequestPriority, RequestStatus
 from src.request_bc.request.domain.repository import RequestRepositoryInterface
 from src.auth_bc.user.infrastructure.models import UserModel
 from src.request_bc.request.infrastructure.models import (
@@ -42,7 +42,7 @@ class RequestRepository(RequestRepositoryInterface):
                 company_id=request.company_id,
                 created_by=request.created_by,
                 assigned_to=request.assigned_to,
-                type=request.type.value,
+                type=request.type,
                 subtype=request.subtype,
                 title=request.title,
                 description=request.description,
@@ -50,6 +50,8 @@ class RequestRepository(RequestRepositoryInterface):
                 priority=request.priority.value,
                 data=request.data,
                 custom_fields_data=request.custom_fields_data or {},
+                workflow_template_id=request.workflow_template_id,
+                workflow_subtype_id=request.workflow_subtype_id,
                 resolved_at=request.resolved_at,
             )
             self.session.add(model)
@@ -274,7 +276,7 @@ class RequestRepository(RequestRepositoryInterface):
                 ServiceRequestModel.company_id == company_id
             ).group_by(ServiceRequestModel.type)
         ).all()
-        result = {t.value: 0 for t in RequestType}
+        result: dict[str, int] = {}
         for row in rows:
             result[row[0]] = row[1]
         return result
@@ -397,13 +399,26 @@ class RequestRepository(RequestRepositoryInterface):
             for row in rows
         ]
 
+    def queue_counts(self, company_id: str) -> dict[str, int]:
+        """Return counts of open requests: total and urgent."""
+        open_statuses = ["submitted", "in_review", "in_progress"]
+        base = select(func.count()).where(
+            ServiceRequestModel.company_id == company_id,
+            ServiceRequestModel.status.in_(open_statuses),
+        )
+        total_open = self.session.scalar(base) or 0
+        urgent = self.session.scalar(
+            base.where(ServiceRequestModel.priority == "urgent")
+        ) or 0
+        return {"urgent": urgent, "total_open": total_open}
+
     @staticmethod
     def _to_entity(model: ServiceRequestModel) -> ServiceRequest:
         return ServiceRequest(
             id=model.id,
             company_id=model.company_id,
             created_by=model.created_by,
-            type=RequestType(model.type),
+            type=model.type,
             title=model.title,
             description=model.description,
             status=RequestStatus(model.status),
@@ -412,6 +427,8 @@ class RequestRepository(RequestRepositoryInterface):
             subtype=model.subtype,
             data=model.data,
             custom_fields_data=model.custom_fields_data or {},
+            workflow_template_id=model.workflow_template_id,
+            workflow_subtype_id=model.workflow_subtype_id,
             resolved_at=model.resolved_at,
             first_response_at=model.first_response_at,
             created_at=model.created_at,

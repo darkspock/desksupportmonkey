@@ -152,7 +152,6 @@ from src.request_bc.request.domain.enums import (
     VALID_SUBTYPES,
     InvalidStatusTransitionError,
     RequestStatus,
-    RequestType,
 )
 from src.request_bc.request.infrastructure.repository import (
     RequestRepository,
@@ -206,6 +205,8 @@ def _to_response(
     assigned_to_name: str | None = None,
     assigned_to_email: str | None = None,
     custom_fields: list | None = None,
+    workflow_template_name: str | None = None,
+    workflow_template_icon: str | None = None,
 ) -> RequestResponse:
     return RequestResponse(
         id=request.id,
@@ -216,7 +217,7 @@ def _to_response(
         assigned_to=request.assigned_to,
         assigned_to_name=assigned_to_name,
         assigned_to_email=assigned_to_email,
-        type=request.type.value,
+        type=request.type,
         subtype=request.subtype,
         title=request.title,
         description=request.description,
@@ -224,6 +225,9 @@ def _to_response(
         priority=request.priority.value,
         data=request.data,
         custom_fields=custom_fields,
+        workflow_template_id=request.workflow_template_id,
+        workflow_template_name=workflow_template_name,
+        workflow_template_icon=workflow_template_icon,
         resolved_at=request.resolved_at,
         created_at=request.created_at,
         updated_at=request.updated_at,
@@ -236,10 +240,12 @@ def _to_list_item(
     email_map: dict[str, str],
     name_map: dict[str, str | None],
     custom_fields: list | None = None,
+    workflow_template_name: str | None = None,
+    workflow_template_icon: str | None = None,
 ) -> dict:
     return RequestListItemResponse(
         id=r.id,
-        type=r.type.value,
+        type=r.type,
         subtype=r.subtype,
         title=r.title,
         status=r.status.value,
@@ -251,6 +257,8 @@ def _to_list_item(
         created_by_name=name_map.get(r.created_by),
         created_by_email=email_map.get(r.created_by),
         custom_fields=custom_fields,
+        workflow_template_name=workflow_template_name,
+        workflow_template_icon=workflow_template_icon,
         created_at=r.created_at,
         updated_at=r.updated_at,
     ).model_dump(mode="json")
@@ -392,6 +400,7 @@ def list_requests(
     assigned_to: Optional[str] = Query(None),
     subtype: Optional[str] = Query(None),
     current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
+    db: Session = Depends(get_db),
     request_repo: RequestRepository = Depends(get_request_repo),
     user_repo: UserRepository = Depends(get_user_repo),
     cf_enricher: CustomFieldEnrichmentService = Depends(get_cf_enrichment_service),
@@ -422,9 +431,24 @@ def list_requests(
     cf_batch = cf_enricher.enrich_batch(
         current_user.company_id, "request", [r.custom_fields_data or {} for r in requests]
     )
+
+    # Batch-fetch workflow templates for enrichment
+    template_ids = list({r.workflow_template_id for r in requests if r.workflow_template_id})
+    template_map: dict[str, tuple[str, str | None]] = {}
+    if template_ids:
+        wf_repo = WorkflowTemplateRepository(db)
+        for tid in template_ids:
+            tmpl = wf_repo.find_by_id(tid, current_user.company_id)
+            if tmpl:
+                template_map[tid] = (tmpl.name, tmpl.icon)
+
     return {
         "data": [
-            _to_list_item(r, email_map, name_map, custom_fields=cf_batch[i])
+            _to_list_item(
+                r, email_map, name_map, custom_fields=cf_batch[i],
+                workflow_template_name=template_map.get(r.workflow_template_id, (None, None))[0] if r.workflow_template_id else None,
+                workflow_template_icon=template_map.get(r.workflow_template_id, (None, None))[1] if r.workflow_template_id else None,
+            )
             for i, r in enumerate(requests)
         ],
         "meta": PaginationMeta(page=page, page_size=page_size, total=total).model_dump(),
@@ -587,6 +611,29 @@ def create_request(
         except ValueError as e:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
 
+    # Resolve workflow template (if template_id provided)
+    wf_template = None
+    wf_template_id: str | None = None
+    wf_subtype_id: str | None = None
+    wf_template_repo: WorkflowTemplateRepository | None = None
+    if body.template_id:
+        wf_template_repo = WorkflowTemplateRepository(db)
+        wf_template = wf_template_repo.find_by_id(body.template_id, current_user.company_id)
+        if not wf_template or not wf_template.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Workflow template not found or inactive",
+            )
+        wf_template_id = wf_template.id
+        # Resolve subtype against template's subtypes
+        if body.subtype and wf_template.subtypes:
+            matched = next(
+                (s for s in wf_template.subtypes if s.name == body.subtype), None
+            )
+            if matched:
+                wf_subtype_id = matched.id
+                resolved_subtype = matched.name
+
     request_id = str(ulid.new())
     handler = CreateRequestCommandHandler(request_repo=request_repo)
     try:
@@ -602,6 +649,8 @@ def create_request(
                 ai_priority_hint=ai_priority_hint,
                 ai_classification=ai_classification,
                 custom_fields_data=cf_data,
+                workflow_template_id=wf_template_id,
+                workflow_subtype_id=wf_subtype_id,
             )
         )
     except ValueError as e:
@@ -610,7 +659,7 @@ def create_request(
     request = _get_refreshed_request(request_repo, request_id, current_user.company_id)
 
     # Auto-assign only for onboarding at creation; new_equipment auto-assigns post-approval
-    if request.type == RequestType.ONBOARDING:
+    if request.type == "onboarding":
         _attempt_auto_assign(
             request, effective_user, request_repo,
             profile_repo, config_repo, asset_repo,
@@ -629,16 +678,17 @@ def create_request(
         event_bus.publish(approval_event, db)
 
     # Generate checklist from workflow template (if template_id provided)
-    if body.template_id:
+    if wf_template_id:
         try:
-            wf_template_repo = WorkflowTemplateRepository(db)
+            if not wf_template_repo:
+                wf_template_repo = WorkflowTemplateRepository(db)
             wf_checklist_repo = ChecklistItemRepository(db)
             generate_handler = GenerateChecklistCommandHandler(
                 template_repo=wf_template_repo, checklist_repo=wf_checklist_repo,
             )
             generate_handler.handle(GenerateChecklistCommand(
                 request_id=request_id,
-                template_id=body.template_id,
+                template_id=wf_template_id,
                 company_id=current_user.company_id,
             ))
         except Exception:
@@ -653,6 +703,8 @@ def create_request(
             created_by_name=_display_name(effective_user),
             created_by_email=effective_user.email,
             custom_fields=custom_fields,
+            workflow_template_name=wf_template.name if wf_template else None,
+            workflow_template_icon=wf_template.icon if wf_template else None,
         ).model_dump(mode="json")
     }
 
@@ -661,6 +713,7 @@ def create_request(
 def get_request(
     request_id: str,
     current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
     request_repo: RequestRepository = Depends(get_request_repo),
     user_repo: UserRepository = Depends(get_user_repo),
     cf_enricher: CustomFieldEnrichmentService = Depends(get_cf_enrichment_service),
@@ -677,6 +730,16 @@ def get_request(
         if detail.request.created_by != current_user.id:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
 
+    # Resolve workflow template info for response
+    wf_name: str | None = None
+    wf_icon: str | None = None
+    if detail.request.workflow_template_id:
+        wf_repo = WorkflowTemplateRepository(db)
+        tmpl = wf_repo.find_by_id(detail.request.workflow_template_id, current_user.company_id)
+        if tmpl:
+            wf_name = tmpl.name
+            wf_icon = tmpl.icon
+
     user_ids = [detail.request.created_by] + ([detail.request.assigned_to] if detail.request.assigned_to else [])
     email_map, name_map = _user_maps(user_repo, user_ids)
     custom_fields = cf_enricher.enrich(
@@ -690,6 +753,8 @@ def get_request(
             assigned_to_name=name_map.get(detail.request.assigned_to) if detail.request.assigned_to else None,
             assigned_to_email=email_map.get(detail.request.assigned_to) if detail.request.assigned_to else None,
             custom_fields=custom_fields,
+            workflow_template_name=wf_name,
+            workflow_template_icon=wf_icon,
         ).model_dump(mode="json")
     }
 
@@ -768,6 +833,7 @@ def change_request_status(
     request = _get_refreshed_request(request_repo, request_id, current_user.company_id)
     event = RequestEventFactory.status_changed(
         request, old_status=old_status, new_status=request.status.value, actor_id=current_user.id,
+        reason=body.reason,
     )
     event_bus.publish(event, db)
 
@@ -886,7 +952,7 @@ def approve_request(
     request = _get_refreshed_request(request_repo, request_id, current_user.company_id)
 
     # Auto-assign new_equipment requests after approval (using requester's dept/role)
-    if request.type == RequestType.NEW_EQUIPMENT and requester:
+    if request.type == "new_equipment" and requester:
         _attempt_auto_assign(
             request, requester, request_repo,
             profile_repo, config_repo, asset_repo,

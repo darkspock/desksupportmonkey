@@ -5,12 +5,15 @@ from pydantic import BaseModel, Field
 
 
 class SubtypeRequest(BaseModel):
+    id: Optional[str] = None
     name: str = Field(min_length=1, max_length=255)
     description: Optional[str] = Field(default=None, max_length=500)
     sort_order: int = 0
+    is_active: bool = True
 
 
 class ChecklistItemDefinitionRequest(BaseModel):
+    id: Optional[str] = None
     title: str = Field(min_length=1, max_length=255)
     description: Optional[str] = Field(default=None, max_length=500)
     assignee_role: Optional[str] = Field(default=None, max_length=30)
@@ -44,6 +47,7 @@ class SubtypeResponse(BaseModel):
     name: str
     description: Optional[str]
     sort_order: int
+    is_active: bool
 
 
 class ChecklistItemDefinitionResponse(BaseModel):

@@ -50,7 +50,7 @@ class GetRequestSlaStatusQueryHandler(
         policy = self.sla_repo.find_policy_for_request(
             company_id=query.company_id,
             priority=request.priority.value,
-            request_type=request.type.value,
+            request_type=request.type,
         )
         if not policy:
             return None

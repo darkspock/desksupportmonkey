@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Pencil } from 'lucide-react';
 import api from '../../lib/api';
 import { Loading } from '../../components/ui/Loading';
 import { Table, Th, Td } from '../../components/ui/Table';
@@ -36,15 +37,6 @@ const EMPTY_FORM: VendorFormValues = {
   address: '',
   notes: '',
 };
-
-function EditIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
-    </svg>
-  );
-}
 
 function DeactivateIcon() {
   return (
@@ -333,7 +325,7 @@ export default function VendorListPage() {
                           aria-label={t('common.edit')}
                           title={t('common.edit')}
                         >
-                          <EditIcon />
+                          <Pencil className="h-4 w-4" />
                         </button>
                         {isAdmin && (
                           <button

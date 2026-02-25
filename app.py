@@ -23,6 +23,7 @@ from adapters.http.api.equipment_profiles.routers import router as equipment_pro
 from adapters.http.api.settings.routers import router as settings_router
 from adapters.http.api.settings.classification_router import router as classification_settings_router
 from adapters.http.api.settings.procurement_routers import router as procurement_settings_router
+from adapters.http.api.settings.nav_config_router import router as nav_config_router
 from adapters.http.api.vendors.routers import router as vendors_router
 from adapters.http.api.purchase_orders.routers import router as purchase_orders_router
 from adapters.http.api.appointments.routers import router as appointments_router
@@ -115,6 +116,7 @@ def create_app() -> FastAPI:
     application.include_router(settings_router)
     application.include_router(classification_settings_router)
     application.include_router(procurement_settings_router)
+    application.include_router(nav_config_router)
     application.include_router(vendors_router)
     application.include_router(purchase_orders_router)
     application.include_router(appointments_router)

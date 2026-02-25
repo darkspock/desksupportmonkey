@@ -28,6 +28,13 @@ def _super_admin_user() -> User:
     )
 
 
+def _mock_nav_config_repo():
+    """Return a mock NavConfigRepository whose find_by_company returns None."""
+    mock = MagicMock()
+    mock.return_value.find_by_company.return_value = None
+    return mock
+
+
 @pytest.fixture
 def mock_company_repo():
     return MagicMock()
@@ -54,7 +61,11 @@ def super_admin_client(mock_company_repo):
 
 
 class TestAuthMeEndpoint:
-    def test_includes_company_name_when_company_is_present(self, company_client, mock_company_repo):
+    @patch(
+        "src.company_bc.nav_config.infrastructure.repository.NavConfigRepository",
+        new_callable=_mock_nav_config_repo,
+    )
+    def test_includes_company_name_when_company_is_present(self, _nav_repo, company_client, mock_company_repo):
         mock_company_repo.find_by_id.return_value = SimpleNamespace(name="Acme Corp")
 
         response = company_client.get("/api/v1/auth/me")
@@ -63,6 +74,7 @@ class TestAuthMeEndpoint:
         data = response.json()["data"]
         assert data["company_id"] == "comp1"
         assert data["company_name"] == "Acme Corp"
+        assert data["hidden_nav_items"] is None
         mock_company_repo.find_by_id.assert_called_once_with("comp1")
 
     def test_skips_company_lookup_for_super_admin(self, super_admin_client, mock_company_repo):
@@ -72,4 +84,5 @@ class TestAuthMeEndpoint:
         data = response.json()["data"]
         assert data["company_id"] is None
         assert data["company_name"] is None
+        assert data["hidden_nav_items"] is None
         mock_company_repo.find_by_id.assert_not_called()

@@ -64,6 +64,8 @@ class UpdateWorkflowTemplateCommandHandler(
                     name=s.name,
                     description=s.description,
                     sort_order=s.sort_order,
+                    id=s.id,
+                    is_active=s.is_active,
                 )
                 for s in command.subtypes
             ]
@@ -78,6 +80,7 @@ class UpdateWorkflowTemplateCommandHandler(
                     assignee_role=ci.assignee_role,
                     sort_order=ci.sort_order,
                     is_required=ci.is_required,
+                    id=ci.id,
                 )
                 for ci in command.checklist_items
             ]

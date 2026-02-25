@@ -101,7 +101,11 @@ def _check_billing_not_suspended(user: Optional[User], db: Session) -> None:
         raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail="account_suspended")
 
 
-def _user_response(user: User, company_name: Optional[str] = None) -> dict:
+def _user_response(
+    user: User,
+    company_name: Optional[str] = None,
+    hidden_nav_items: Optional[dict] = None,
+) -> dict:
     return UserResponse(
         id=user.id,
         email=user.email,
@@ -113,6 +117,7 @@ def _user_response(user: User, company_name: Optional[str] = None) -> dict:
         is_active=user.is_active,
         password_set=user.has_password,
         has_oauth=bool(user.google_id or user.microsoft_id),
+        hidden_nav_items=hidden_nav_items,
     ).model_dump()
 
 
@@ -320,12 +325,24 @@ def microsoft_oauth_login(
 @router.get("/me")
 def get_me(
     current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
     company_repo: CompanyRepository = Depends(get_company_repo),
 ):
     """Get current authenticated user profile."""
     company_name: Optional[str] = None
+    hidden_nav_items = None
     if current_user.company_id:
         company = company_repo.find_by_id(current_user.company_id)
         company_name = company.name if company else None
 
-    return {"data": _user_response(current_user, company_name=company_name)}
+        # Load nav visibility config
+        from src.company_bc.nav_config.infrastructure.repository import NavConfigRepository
+        nav_config = NavConfigRepository(db).find_by_company(current_user.company_id)
+        if nav_config:
+            hidden_nav_items = nav_config.hidden_nav_items
+
+    return {"data": _user_response(
+        current_user,
+        company_name=company_name,
+        hidden_nav_items=hidden_nav_items,
+    )}

@@ -112,7 +112,7 @@ def _serialize_request(req: ServiceRequest) -> dict[str, Any]:
         "id": req.id,
         "company_id": req.company_id,
         "created_by": req.created_by,
-        "type": req.type.value,
+        "type": req.type,
         "title": req.title,
         "description": req.description,
         "status": req.status.value,

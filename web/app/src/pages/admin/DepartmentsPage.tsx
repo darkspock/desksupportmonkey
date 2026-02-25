@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Pencil } from 'lucide-react';
 import api from '../../lib/api';
 import { Loading } from '../../components/ui/Loading';
 import { Table, Th, Td, Tr } from '../../components/ui/Table';
@@ -286,10 +287,7 @@ export default function DepartmentsPage() {
                               aria-label={t('common.edit')}
                               className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
                             >
-                              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M15.2 5.2 18.8 8.8" />
-                                <path d="M4 20h3.4l10-10a2.5 2.5 0 0 0-3.5-3.5L4 16.5V20z" />
-                              </svg>
+                              <Pencil className="h-4 w-4" />
                             </button>
                           </Tooltip>
                           <Tooltip content={t('common.delete')}>

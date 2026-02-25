@@ -56,8 +56,9 @@
 </div>
 {% endif %}
 
+{% for location_name, location_assets in by_location %}
 <div class="section">
-    <h2>Asset Inventory</h2>
+    <h2>{{ location_name }} <span style="font-size: 14px; font-weight: normal; color: #6b7280;">({{ location_assets | length }} asset{{ "s" if location_assets | length != 1 }})</span></h2>
     <table>
         <thead>
             <tr>
@@ -72,7 +73,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for asset in assets %}
+            {% for asset in location_assets %}
             <tr>
                 <td>{{ asset.brand }}</td>
                 <td>{{ asset.model }}</td>
@@ -99,6 +100,7 @@
         </tbody>
     </table>
 </div>
+{% endfor %}
 
 {% set assets_with_cf = [] %}
 {% for asset in assets %}

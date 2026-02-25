@@ -6,80 +6,18 @@ import { useI18n } from '../../lib/i18n';
 import { useToast } from '../../hooks/useToast';
 import { CustomFieldsForm } from '../../components/custom-fields/CustomFieldsForm';
 import { useAuth } from '../../contexts/AuthContext';
-import type { RequestType } from '../../types';
-import { VALID_SUBTYPES } from '../../types';
+import { WorkflowIcon } from '../../components/ui/WorkflowIcon';
+import { ClipboardList } from 'lucide-react';
+import type { WorkflowTemplate } from '../../types';
 
-// Map request subtypes to equipment profile asset types
+// Map request subtypes to equipment profile asset types (for budget display)
 const SUBTYPE_ASSET_MAP: Record<string, string[]> = {
-  computer: ['laptop'],
-  mobile: [],
-  peripheral: ['keyboard', 'mouse', 'headset', 'docking_station'],
-  monitor: ['monitor'],
-  software_license: [],
+  Computer: ['laptop'],
+  Mobile: [],
+  Peripheral: ['keyboard', 'mouse', 'headset', 'docking_station'],
+  Monitor: ['monitor'],
+  'Software License': [],
 };
-
-const TYPE_CONFIG: { key: RequestType; icon: React.ReactNode; descKey: string }[] = [
-  {
-    key: 'incident',
-    descKey: 'page.new_request.type_desc_incident',
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="12" cy="12" r="10" />
-        <path d="M12 8v4M12 16h.01" />
-      </svg>
-    ),
-  },
-  {
-    key: 'new_equipment',
-    descKey: 'page.new_request.type_desc_new_equipment',
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-        <rect x="2" y="3" width="20" height="14" rx="2" />
-        <path d="M8 21h8M12 17v4" />
-      </svg>
-    ),
-  },
-  {
-    key: 'onboarding',
-    descKey: 'page.new_request.type_desc_onboarding',
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M19 8v6M22 11h-6" />
-      </svg>
-    ),
-  },
-  {
-    key: 'repair',
-    descKey: 'page.new_request.type_desc_repair',
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76Z" />
-      </svg>
-    ),
-  },
-  {
-    key: 'configuration',
-    descKey: 'page.new_request.type_desc_configuration',
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-        <circle cx="12" cy="12" r="3" />
-      </svg>
-    ),
-  },
-  {
-    key: 'access_request',
-    descKey: 'page.new_request.type_desc_access_request',
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-        <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-      </svg>
-    ),
-  },
-];
 
 export default function NewRequestPage() {
   const navigate = useNavigate();
@@ -90,23 +28,37 @@ export default function NewRequestPage() {
   const [searchParams] = useSearchParams();
   const onBehalfOf = searchParams.get('on_behalf_of');
   const onBehalfOfLabel = searchParams.get('on_behalf_of_label');
-  const [form, setForm] = useState<{ type: RequestType; title: string; description: string; subtype: string }>({
-    type: '' as RequestType,
+  const [form, setForm] = useState({
+    templateId: '',
+    type: '',
     title: '',
     description: '',
     subtype: '',
   });
   const [customFieldsData, setCustomFieldsData] = useState<Record<string, unknown>>({});
 
-  const subtypeOptions = form.type ? (VALID_SUBTYPES[form.type] ?? []) : [];
+  // Fetch active workflow templates
+  const templatesQuery = useQuery({
+    queryKey: ['workflow-templates', { active: true }],
+    queryFn: async () => {
+      const { data } = await api.get('/workflow-templates?active=true');
+      return data.data as WorkflowTemplate[];
+    },
+  });
 
+  const templates = templatesQuery.data ?? [];
+  const selectedTemplate = templates.find((t) => t.id === form.templateId);
+  const subtypeOptions = (selectedTemplate?.subtypes ?? []).filter((s) => s.is_active);
+
+  // Budget query for "New Equipment" type
+  const isNewEquipment = selectedTemplate?.name === 'New Equipment';
   const budgetQuery = useQuery({
     queryKey: ['my-budget'],
     queryFn: async () => {
       const { data } = await api.get('/equipment-profiles/my-budget');
       return data.data as { items: { asset_type: string; budget_cents: number }[] };
     },
-    enabled: form.type === 'new_equipment',
+    enabled: isNewEquipment,
   });
 
   const matchingBudgets = (() => {
@@ -126,6 +78,7 @@ export default function NewRequestPage() {
         type: form.type,
         title: form.title,
         description: form.description,
+        template_id: form.templateId || undefined,
       };
       if (form.subtype) body.subtype = form.subtype;
       if (onBehalfOf) body.on_behalf_of = onBehalfOf;
@@ -145,7 +98,7 @@ export default function NewRequestPage() {
   });
 
   const handleSubmit = () => {
-    if (!form.type) {
+    if (!form.templateId) {
       showError(t('page.new_request.error_type_required'));
       return;
     }
@@ -186,28 +139,46 @@ export default function NewRequestPage() {
           {/* Type selector cards */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-3">{t('page.new_request.type_label')}</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {TYPE_CONFIG.map((cfg) => (
-                <button
-                  key={cfg.key}
-                  type="button"
-                  onClick={() => setForm({ ...form, type: cfg.key, subtype: '' })}
-                  className={`flex flex-col items-start gap-3 rounded-lg border p-4 text-left transition-all hover:border-primary ${
-                    form.type === cfg.key ? 'border-primary bg-primary/5' : 'border-border'
-                  }`}
-                >
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-md ${
-                    form.type === cfg.key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                  }`}>
-                    {cfg.icon}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{t(`enum.${cfg.key}`)}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{t(cfg.descKey)}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
+            {templatesQuery.isLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="h-24 rounded-lg border border-border bg-muted/30 animate-pulse" />
+                ))}
+              </div>
+            ) : templatesQuery.isError ? (
+              <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+                {t('page.new_request.error_loading_types')}
+              </div>
+            ) : templates.length === 0 ? (
+              <div className="rounded-md border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+                {t('page.new_request.no_types_available')}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {templates.map((tmpl) => (
+                  <button
+                    key={tmpl.id}
+                    type="button"
+                    onClick={() => setForm({ ...form, templateId: tmpl.id, type: tmpl.name, subtype: '' })}
+                    className={`flex flex-col items-start gap-3 rounded-lg border p-4 text-left transition-all hover:border-primary ${
+                      form.templateId === tmpl.id ? 'border-primary bg-primary/5' : 'border-border'
+                    }`}
+                  >
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-md ${
+                      form.templateId === tmpl.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                    }`}>
+                      {tmpl.icon ? <WorkflowIcon name={tmpl.icon} className="h-5 w-5" /> : <ClipboardList className="h-5 w-5" />}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{tmpl.name}</p>
+                      {tmpl.description && (
+                        <p className="text-xs text-muted-foreground mt-0.5">{tmpl.description}</p>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Title + Subtype row */}
@@ -231,15 +202,15 @@ export default function NewRequestPage() {
                 >
                   <option value="">{t('page.new_request.select_subtype')}</option>
                   {subtypeOptions.map((sub) => (
-                    <option key={sub} value={sub}>{t(`enum.${sub}`)}</option>
+                    <option key={sub.id} value={sub.name}>{sub.name}</option>
                   ))}
                 </select>
               </div>
             )}
           </div>
 
-          {/* Budget indicator for new_equipment */}
-          {form.type === 'new_equipment' && form.subtype && (
+          {/* Budget indicator for New Equipment */}
+          {isNewEquipment && form.subtype && (
             <div className="flex items-center gap-2 rounded-md border border-border bg-muted/50 px-3 py-2 text-sm">
               <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />

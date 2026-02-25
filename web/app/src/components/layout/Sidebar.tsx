@@ -1,9 +1,12 @@
-import { useEffect, useState, useCallback, type ReactNode } from 'react';
+import { useEffect, useState, useCallback, useMemo, type ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import { cn } from '../../lib/cn';
 import { useI18n } from '../../lib/i18n';
 import { brand } from '../../config/brand';
+import api from '../../lib/api';
+import { sections, type NavEntry, type NavSection, type NavItem, type NavSeparator, type NavSubGroup } from '../../config/navSections';
 
 /* ------------------------------------------------------------------ */
 /* Icons – Heroicons-style outline SVGs (24×24, strokeWidth 1.5)      */
@@ -23,6 +26,7 @@ const icons: Record<string, ReactNode> = {
   '/my/shipments':   icon('M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M2.25 14.25V5.625c0-.621.504-1.125 1.125-1.125h8.25c.621 0 1.125.504 1.125 1.125v8.625m0 0h5.25M14.25 7.5v5.25'),
   '/my/incidents':  icon('M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z'),
   '/my/maintenance': icon('M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 1 1-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 0 0 4.486-6.336l-3.276 3.277a3.004 3.004 0 0 1-2.25-2.25l3.276-3.276a4.5 4.5 0 0 0-6.336 4.486c.049.58.025 1.193-.14 1.743'),
+  '/my/tasks/requests': icon('M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15a2.25 2.25 0 0 1 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z'),
   '/my/tasks/appointments': icon('M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z'),
 
   // Operations
@@ -73,6 +77,7 @@ const icons: Record<string, ReactNode> = {
   '/settings/custom-fields':         icon('M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75'),
   '/settings/asset-types':           icon('M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z M6 6h.008v.008H6V6Z'),
   '/settings/workflow-templates':    icon('M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z'),
+  '/settings/nav-visibility':       icon('M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178ZM15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z'),
   '/super-admin/audit':              icon('M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Zm3.75 11.625a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z'),
 
   // Platform
@@ -81,156 +86,13 @@ const icons: Record<string, ReactNode> = {
 };
 
 /* ------------------------------------------------------------------ */
-/* Data                                                                */
+/* Data (imported from config/navSections.ts)                          */
 /* ------------------------------------------------------------------ */
-
-interface NavItem {
-  type?: undefined;
-  to: string;
-  labelKey: string;
-  roles?: string[];
-}
-
-interface NavSeparator {
-  type: 'separator';
-  roles?: string[];
-}
-
-interface NavSubGroup {
-  type: 'subgroup';
-  labelKey: string;
-  roles?: string[];
-  items: NavItem[];
-}
-
-type NavEntry = NavItem | NavSeparator | NavSubGroup;
-
-interface NavSection {
-  labelKey?: string;
-  items: NavEntry[];
-}
 
 interface SidebarProps {
   mobileOpen?: boolean;
   onClose?: () => void;
 }
-
-const sections: NavSection[] = [
-  {
-    labelKey: 'nav.section_my_activity',
-    items: [
-      { to: '/my/equipment', labelKey: 'nav.my_equipment' },
-      { to: '/my/requests', labelKey: 'nav.my_requests' },
-      { to: '/my/appointments', labelKey: 'nav.my_appointments' },
-      { to: '/my/shipments', labelKey: 'nav.my_shipments' },
-      { to: '/my/incidents', labelKey: 'nav.my_incidents' },
-    ],
-  },
-  {
-    labelKey: 'nav.section_my_tasks',
-    items: [
-      { to: '/my/tasks/appointments', labelKey: 'nav.my_task_appointments', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
-      { to: '/my/maintenance', labelKey: 'nav.my_maintenance', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
-    ],
-  },
-  {
-    labelKey: 'nav.section_operations',
-    items: [
-      { to: '/dashboard', labelKey: 'nav.dashboard', roles: ['admin', 'super_admin'] },
-      { to: '/requests', labelKey: 'nav.request_queue', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
-      { to: '/calendar', labelKey: 'nav.calendar', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
-      { to: '/assets', labelKey: 'nav.asset_inventory', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
-      { to: '/vendors', labelKey: 'nav.vendors', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
-      { to: '/purchase-orders', labelKey: 'nav.purchase_orders', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
-      { to: '/shipments', labelKey: 'nav.shipments', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
-      { to: '/maintenance', labelKey: 'nav.maintenance', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
-      { to: '/addresses', labelKey: 'nav.addresses', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
-    ],
-  },
-  {
-    labelKey: 'nav.section_knowledge',
-    items: [
-      { to: '/knowledge-base', labelKey: 'nav.knowledge_base' },
-      { to: '/kb', labelKey: 'nav.kb_management', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
-      { to: '/kb/categories', labelKey: 'nav.kb_categories', roles: ['admin', 'super_admin'] },
-    ],
-  },
-  {
-    labelKey: 'nav.section_security',
-    items: [
-      { to: '/audit', labelKey: 'nav.audit_log', roles: ['admin', 'super_admin'] },
-      { to: '/incidents', labelKey: 'nav.incidents', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
-      { to: '/incidents/dashboard', labelKey: 'nav.incident_dashboard', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
-      { to: '/risks', labelKey: 'nav.risks', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
-      { to: '/risks/dashboard', labelKey: 'nav.risk_dashboard', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
-      { to: '/compliance/dashboard', labelKey: 'nav.compliance_dashboard', roles: ['admin', 'super_admin'] },
-    ],
-  },
-  {
-    labelKey: 'nav.section_management',
-    items: [
-      {
-        type: 'subgroup', labelKey: 'nav.subgroup_people', roles: ['admin', 'super_admin'],
-        items: [
-          { to: '/users', labelKey: 'nav.users', roles: ['admin', 'super_admin'] },
-          { to: '/departments', labelKey: 'nav.departments', roles: ['admin', 'super_admin'] },
-          { to: '/settings/employee-roles', labelKey: 'nav.employee_roles', roles: ['admin', 'super_admin'] },
-          { to: '/settings/gdpr', labelKey: 'nav.gdpr_requests', roles: ['admin'] },
-        ],
-      },
-      {
-        type: 'subgroup', labelKey: 'nav.subgroup_configuration', roles: ['admin'],
-        items: [
-          { to: '/settings/company', labelKey: 'nav.company_settings', roles: ['admin'] },
-          { to: '/settings/locations', labelKey: 'nav.locations', roles: ['admin'] },
-          { to: '/settings/compliance', labelKey: 'nav.compliance_controls', roles: ['admin'] },
-          { to: '/settings/request-classification', labelKey: 'nav.request_classification', roles: ['admin'] },
-          { to: '/maintenance-templates', labelKey: 'nav.maintenance_templates', roles: ['admin', 'super_admin'] },
-          { to: '/settings/assignment-ai', labelKey: 'nav.assignment_ai', roles: ['admin'] },
-          { to: '/settings/availability', labelKey: 'nav.availability_settings', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
-        ],
-      },
-      {
-        type: 'subgroup', labelKey: 'nav.subgroup_procurement', roles: ['admin'],
-        items: [
-          { to: '/settings/equipment-profiles', labelKey: 'nav.equipment_profiles', roles: ['admin', 'super_admin'] },
-          { to: '/settings/procurement', labelKey: 'nav.procurement_settings', roles: ['admin'] },
-        ],
-      },
-      {
-        type: 'subgroup', labelKey: 'nav.subgroup_customization', roles: ['admin', 'super_admin'],
-        items: [
-          { to: '/settings/asset-types', labelKey: 'nav.asset_types', roles: ['admin', 'super_admin'] },
-          { to: '/settings/custom-fields', labelKey: 'nav.custom_fields', roles: ['admin', 'super_admin'] },
-          { to: '/settings/workflow-templates', labelKey: 'nav.workflow_templates', roles: ['admin', 'super_admin'] },
-        ],
-      },
-      {
-        type: 'subgroup', labelKey: 'nav.subgroup_advanced', roles: ['admin', 'super_admin'],
-        items: [
-          { to: '/settings/api-keys', labelKey: 'nav.api_keys', roles: ['admin', 'super_admin'] },
-        ],
-      },
-      {
-        type: 'subgroup', labelKey: 'nav.subgroup_sla', roles: ['admin', 'super_admin'],
-        items: [
-          { to: '/sla/policies', labelKey: 'nav.sla_policies', roles: ['admin', 'super_admin'] },
-          { to: '/sla/dashboard', labelKey: 'nav.sla_dashboard', roles: ['admin', 'super_admin'] },
-        ],
-      },
-      { to: '/billing', labelKey: 'nav.billing', roles: ['admin'] },
-      { to: '/reports', labelKey: 'nav.reports', roles: ['admin', 'super_admin'] },
-    ],
-  },
-  {
-    labelKey: 'nav.section_platform',
-    items: [
-      { to: '/overview', labelKey: 'nav.overview', roles: ['super_admin'] },
-      { to: '/companies', labelKey: 'nav.companies', roles: ['super_admin'] },
-      { to: '/super-admin/audit', labelKey: 'nav.super_admin_audit', roles: ['super_admin'] },
-    ],
-  },
-];
 
 /* ------------------------------------------------------------------ */
 /* Component                                                           */
@@ -241,19 +103,59 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const { t } = useI18n();
   const role = user?.role;
   const companyName = user?.company_name?.trim() || user?.email || brand.name;
+  const isTech = role === 'technician' || role === 'admin' || role === 'super_admin';
+
+  const { data: myTaskCounts } = useQuery({
+    queryKey: ['my-task-counts'],
+    queryFn: async () => {
+      const { data } = await api.get('/dashboard/my-tasks/counts');
+      return data.data as { requests: number; requests_urgent: number; appointments: number; maintenance: number; total: number; has_urgent: boolean };
+    },
+    enabled: isTech,
+    refetchInterval: 60_000,
+  });
+
+  const { data: queueCounts } = useQuery({
+    queryKey: ['queue-counts'],
+    queryFn: async () => {
+      const { data } = await api.get('/dashboard/requests/queue-counts');
+      return data.data as { urgent: number; total_open: number };
+    },
+    enabled: isTech,
+    refetchInterval: 30_000,
+  });
+
+  const navBadgeCounts: Record<string, number> = {
+    ...(myTaskCounts ? {
+      '/my/tasks/requests': myTaskCounts.requests,
+      '/my/tasks/appointments': myTaskCounts.appointments,
+      '/my/maintenance': myTaskCounts.maintenance,
+    } : {}),
+    ...(queueCounts ? {
+      '/requests': queueCounts.total_open,
+    } : {}),
+  };
+
+  // Hidden nav items from company config (skip for admin/super_admin)
+  const hiddenPaths = useMemo(() => {
+    if (!role || role === 'super_admin') return new Set<string>();
+    const paths = user?.hidden_nav_items?.[role];
+    return new Set(paths ?? []);
+  }, [role, user?.hidden_nav_items]);
 
   const isSeparator = (entry: NavEntry): entry is NavSeparator => entry.type === 'separator';
   const isSubGroup = (entry: NavEntry): entry is NavSubGroup => entry.type === 'subgroup';
   const isNavItem = (entry: NavEntry): entry is NavItem => !entry.type;
 
   const roleVisible = (entry: { roles?: string[] }) => !entry.roles || (role && entry.roles.includes(role));
+  const notHidden = (entry: NavItem) => !hiddenPaths.has(entry.to);
 
   const filterEntries = useCallback((items: NavEntry[]): NavEntry[] => {
     const filtered: NavEntry[] = [];
     for (const item of items) {
       if (!roleVisible(item)) continue;
       if (isSubGroup(item)) {
-        const visibleChildren = item.items.filter(roleVisible);
+        const visibleChildren = item.items.filter((c) => roleVisible(c) && notHidden(c));
         if (visibleChildren.length > 0) {
           filtered.push({ ...item, items: visibleChildren });
         }
@@ -264,12 +166,13 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         filtered.push(item);
         continue;
       }
+      if (!notHidden(item)) continue;
       filtered.push(item);
     }
     while (filtered[0] && isSeparator(filtered[0])) filtered.shift();
     while (filtered[filtered.length - 1] && isSeparator(filtered[filtered.length - 1])) filtered.pop();
     return filtered;
-  }, [role]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [role, hiddenPaths]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const baseSections = sections
     .map((section) => ({ ...section, items: filterEntries(section.items) }))
@@ -378,7 +281,19 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                   onClick={() => toggleSection(i)}
                   className="flex w-full items-center justify-between px-3 py-2 mt-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/40 hover:text-sidebar-foreground/60 transition-colors"
                 >
-                  {t(section.labelKey)}
+                  <span className="flex items-center gap-1.5">
+                    {t(section.labelKey)}
+                    {section.labelKey === 'nav.section_my_tasks' && myTaskCounts && myTaskCounts.total > 0 && (
+                      <span className={`rounded-full text-primary-foreground text-[9px] font-bold min-w-[14px] h-3.5 px-1 flex items-center justify-center normal-case tracking-normal ${myTaskCounts.has_urgent ? 'bg-destructive' : 'bg-primary'}`}>
+                        {myTaskCounts.total > 99 ? '99+' : myTaskCounts.total}
+                      </span>
+                    )}
+                    {section.labelKey === 'nav.section_operations' && queueCounts && queueCounts.total_open > 0 && (
+                      <span className={`rounded-full text-primary-foreground text-[9px] font-bold min-w-[14px] h-3.5 px-1 flex items-center justify-center normal-case tracking-normal ${queueCounts.urgent > 0 ? 'bg-destructive' : 'bg-primary'}`}>
+                        {queueCounts.total_open > 99 ? '99+' : queueCounts.total_open}
+                      </span>
+                    )}
+                  </span>
                   <svg
                     viewBox="0 0 24 24"
                     className={cn('h-3.5 w-3.5 transition-transform duration-200', isOpen ? 'rotate-0' : '-rotate-90')}
@@ -446,6 +361,7 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                         </div>
                       );
                     }
+                    const badgeCount = navBadgeCounts[item.to] ?? 0;
                     return (
                       <NavLink
                         key={item.to}
@@ -463,6 +379,11 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                       >
                         {icons[item.to]}
                         {t(item.labelKey)}
+                        {badgeCount > 0 && (
+                          <span className={`ml-auto rounded-full text-primary-foreground text-[9px] font-bold min-w-[14px] h-3.5 px-1 flex items-center justify-center ${item.to === '/requests' ? (queueCounts?.urgent ? 'bg-destructive' : 'bg-primary') : (myTaskCounts?.has_urgent ? 'bg-destructive' : 'bg-primary')}`}>
+                            {badgeCount > 99 ? '99+' : badgeCount}
+                          </span>
+                        )}
                       </NavLink>
                     );
                   })}

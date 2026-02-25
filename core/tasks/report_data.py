@@ -22,6 +22,8 @@ from src.request_bc.request.infrastructure.repository import RequestRepository
 def collect_asset_inventory(
     company_id: str, params: Optional[dict], session: Session
 ) -> dict[str, Any]:
+    from src.asset_bc.asset.infrastructure.models import AssetLocationModel
+
     asset_repo = AssetRepository(session)
     company_repo = CompanyRepository(session)
 
@@ -34,12 +36,32 @@ def collect_asset_inventory(
     cf_def_repo = CustomFieldDefinitionRepository(session)
     cf_definitions = cf_def_repo.find_active_by_entity_type(company_id, "asset")
 
+    # Build location name map
+    location_rows = (
+        session.query(AssetLocationModel.id, AssetLocationModel.name)
+        .filter(AssetLocationModel.company_id == company_id)
+        .all()
+    )
+    location_names: dict[str, str] = {row.id: row.name for row in location_rows}
+
+    # Group assets by location
+    by_location: dict[str, list] = {}
+    for asset in assets:
+        loc_name = location_names.get(asset.location_id, "Unassigned") if asset.location_id else "Unassigned"
+        by_location.setdefault(loc_name, []).append(asset)
+    # Sort: Unassigned last, rest alphabetical
+    sorted_locations = sorted(
+        by_location.items(),
+        key=lambda x: (x[0] == "Unassigned", x[0]),
+    )
+
     return {
         "company_name": company.name if company else "Unknown",
         "total_assets": sum(by_status.values()),
         "by_status": by_status,
         "by_type": by_type,
         "assets": assets,
+        "by_location": sorted_locations,
         "expiring_warranties": expiring,
         "cf_definitions": [
             {"key": d.field_key, "label": d.label, "field_type": d.field_type}

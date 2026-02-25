@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -49,3 +49,4 @@ class UserResponse(BaseModel):
     is_active: bool
     password_set: bool = False
     has_oauth: bool = False
+    hidden_nav_items: Optional[Dict[str, List[str]]] = None

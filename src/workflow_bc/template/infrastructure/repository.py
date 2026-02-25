@@ -55,6 +55,7 @@ class WorkflowTemplateRepository(WorkflowTemplateRepositoryInterface):
                     name=s.name,
                     description=s.description,
                     sort_order=s.sort_order,
+                    is_active=s.is_active,
                 )
                 for s in subtypes
             ],
@@ -124,10 +125,10 @@ class WorkflowTemplateRepository(WorkflowTemplateRepositoryInterface):
         existing_by_id = {m.id: m for m in existing_models}
         new_ids = {s.id for s in subtypes}
 
-        # Delete removed
+        # Disable removed (not in the incoming list)
         for m in existing_models:
             if m.id not in new_ids:
-                self.session.delete(m)
+                m.is_active = False
 
         # Upsert current
         for s in subtypes:
@@ -136,6 +137,7 @@ class WorkflowTemplateRepository(WorkflowTemplateRepositoryInterface):
                 m.name = s.name
                 m.description = s.description
                 m.sort_order = s.sort_order
+                m.is_active = s.is_active
             else:
                 self.session.add(
                     WorkflowSubtypeModel(
@@ -144,6 +146,7 @@ class WorkflowTemplateRepository(WorkflowTemplateRepositoryInterface):
                         name=s.name,
                         description=s.description,
                         sort_order=s.sort_order,
+                        is_active=s.is_active,
                     )
                 )
         self.session.flush()

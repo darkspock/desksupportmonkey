@@ -50,6 +50,8 @@
 | E43 | Billing & Subscriptions | Stripe-based subscription management — Free/Premium/Enterprise/Open Source plans, usage limits enforcement, Stripe Checkout for upgrades, Stripe Customer Portal for invoices, grace period and suspension on payment failure, feature gating per plan, super admin complimentary plans | Critical | Done |
 | E44 | Super Admin Enhancements | Company list with usage counts and trial visibility, Stripe invoice history per company, revenue overview dashboard (MRR, plan distribution, active trials) | High | Done |
 | E45 | Asset Locations & Movement Tracking | Location entity within asset BC, 3 system locations per company, admin-managed custom locations, automatic location changes on assign/unassign/create/decommission/shipping, movement audit trail, location management UI | High | Done |
+| E47 | Configurable Asset Types | Company-defined asset types replacing hardcoded enum — CRUD, reordering, priority configuration, and integration with asset creation forms | Medium | Done |
+| E48 | Menu Visibility per Role | Admin-configurable sidebar menu visibility per role — blocklist approach, per-company settings stored as JSONB, UI settings page with role columns, applied via /auth/me response | Medium | Done |
 
 ---
 
@@ -327,11 +329,11 @@ E10: Asset QR & Barcodes (depends on E2 + E7)
 | **Phase 6** | E35-E37 + E43-E45 | Platform — MCP server, incidents, risk register, billing, super admin, asset locations | Done |
 | **Phase 7** | E29 | **Compliance foundation** — audit trail, compliance evidence, GDPR, retention | Done |
 | **Phase 8** | E39 + E42 | **Enterprise readiness** — compliance dashboard, SSO & directory sync |  |
-| **Phase 9** | E22 + E30 + E31 | **Operational power** — onboarding/offboarding, custom fields, workflow automations |  |
+| **Phase 9** | E22 + E30 + E31 | **Operational power** — onboarding/offboarding, custom fields, workflow automations | Partial (E30, E31 Done) |
 | **Phase 10** | E20 + E25 + E38 | **Asset & risk maturity** — lifecycle & warranties, vendor risk, CMDB |  |
 | **Phase 11** | E40 + E21 + E23 | **Security & integration** — vulnerability management, license management, multi-channel |  |
 | **Phase 12** | E28 + E32 + E33 | **Advanced** — mobile PWA, asset discovery, ITIL change management |  |
 | **Backlog** | E26 + E27 + E34 | Internal tooling, surveys, feature voting — build when needed |  |
 
-**Completed:** 33 epics (E0-E19, E24, E29-E31, E35-E37, E43-E46)
-**Remaining:** 15 epics (E20-E23, E25-E28, E32-E34, E38-E40, E42)
+**Completed:** 35 epics (E0-E19, E24, E29-E31, E35-E37, E43-E48)
+**Remaining:** 13 epics (E20-E23, E25-E28, E32-E34, E38, E40, E42)

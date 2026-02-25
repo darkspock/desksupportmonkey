@@ -59,6 +59,7 @@ def _to_response(dto) -> dict:
                 name=s.name,
                 description=s.description,
                 sort_order=s.sort_order,
+                is_active=s.is_active,
             )
             for s in dto.subtypes
         ],
@@ -136,6 +137,7 @@ def create_template(
                         name=s.name,
                         description=s.description,
                         sort_order=s.sort_order,
+                        is_active=s.is_active,
                     )
                     for s in body.subtypes
                 ],
@@ -185,9 +187,11 @@ def update_template(
                 sort_order=body.sort_order,
                 subtypes=[
                     SubtypeInput(
+                        id=s.id,
                         name=s.name,
                         description=s.description,
                         sort_order=s.sort_order,
+                        is_active=s.is_active,
                     )
                     for s in body.subtypes
                 ]
@@ -195,6 +199,7 @@ def update_template(
                 else None,
                 checklist_items=[
                     ChecklistItemInput(
+                        id=ci.id,
                         title=ci.title,
                         description=ci.description,
                         assignee_role=ci.assignee_role,

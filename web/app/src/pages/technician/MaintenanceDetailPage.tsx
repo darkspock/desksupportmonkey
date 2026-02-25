@@ -58,6 +58,7 @@ export default function MaintenanceDetailPage() {
     queryClient.invalidateQueries({ queryKey: ['maintenance'] });
     queryClient.invalidateQueries({ queryKey: ['my-maintenance'] });
     queryClient.invalidateQueries({ queryKey: ['dashboard-maintenance'] });
+    void queryClient.invalidateQueries({ queryKey: ['my-task-counts'] });
   };
 
   const errorDetail = (err: unknown) =>

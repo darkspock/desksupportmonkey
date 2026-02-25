@@ -42,6 +42,7 @@ class GetWorkflowTemplateQueryHandler(
                     name=s.name,
                     description=s.description,
                     sort_order=s.sort_order,
+                    is_active=s.is_active,
                 )
                 for s in template.subtypes
             ],

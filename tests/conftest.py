@@ -74,6 +74,9 @@ def tables(test_engine):
     import src.risk_bc.risk.infrastructure.models  # noqa: F401
     import src.audit_bc.audit.infrastructure.models  # noqa: F401
     import src.custom_field_bc.definition.infrastructure.models  # noqa: F401
+    import src.workflow_bc.template.infrastructure.models  # noqa: F401
+    import src.workflow_bc.checklist.infrastructure.models  # noqa: F401
+    import src.company_bc.nav_config.infrastructure.models  # noqa: F401
 
     Base.metadata.create_all(test_engine)
     yield

@@ -49,6 +49,7 @@ const MaintenancePage = lazy(() => import('./pages/technician/MaintenancePage'))
 const MaintenanceDetailPage = lazy(() => import('./pages/technician/MaintenanceDetailPage'));
 const MaintenanceFormPage = lazy(() => import('./pages/technician/MaintenanceFormPage'));
 const MyMaintenancePage = lazy(() => import('./pages/technician/MyMaintenancePage'));
+const MyAssignedRequestsPage = lazy(() => import('./pages/technician/MyAssignedRequestsPage'));
 const MyTaskAppointmentsPage = lazy(() => import('./pages/technician/MyTaskAppointmentsPage'));
 const MaintenanceTemplatesPage = lazy(() => import('./pages/admin/MaintenanceTemplatesPage'));
 const ReportIncidentPage = lazy(() => import('./pages/employee/ReportIncidentPage'));
@@ -86,6 +87,7 @@ const ComplianceDashboardPage = lazy(() => import('./pages/admin/ComplianceDashb
 const CustomFieldsPage = lazy(() => import('./pages/admin/CustomFieldsPage'));
 const AssetTypesPage = lazy(() => import('./pages/admin/AssetTypesPage'));
 const WorkflowTemplatesPage = lazy(() => import('./pages/admin/WorkflowTemplatesPage'));
+const NavVisibilitySettingsPage = lazy(() => import('./pages/admin/NavVisibilitySettingsPage'));
 
 function S({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoading />}>{children}</Suspense>;
@@ -120,6 +122,10 @@ export const router = createBrowserRouter([
       {
         path: 'my/maintenance',
         element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><MyMaintenancePage /></S></RequireRole>,
+      },
+      {
+        path: 'my/tasks/requests',
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><MyAssignedRequestsPage /></S></RequireRole>,
       },
       {
         path: 'my/tasks/appointments',
@@ -373,6 +379,10 @@ export const router = createBrowserRouter([
       {
         path: 'settings/workflow-templates',
         element: <RequireRole roles={['admin', 'super_admin']}><S><WorkflowTemplatesPage /></S></RequireRole>,
+      },
+      {
+        path: 'settings/nav-visibility',
+        element: <RequireRole roles={['admin']}><S><NavVisibilitySettingsPage /></S></RequireRole>,
       },
       // Super Admin
       {

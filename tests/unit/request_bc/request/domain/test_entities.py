@@ -104,6 +104,59 @@ class TestServiceRequestCreate:
         assert req.description == "Screen cracked"
 
 
+class TestServiceRequestWorkflowTemplate:
+    def test_create_with_workflow_template_id(self):
+        req = ServiceRequest.create(
+            company_id="comp1",
+            created_by="user1",
+            type=RequestType.INCIDENT,
+            title="Test",
+            description="Test desc",
+            workflow_template_id="tmpl_123",
+        )
+        assert req.workflow_template_id == "tmpl_123"
+        assert req.workflow_subtype_id is None
+
+    def test_create_with_workflow_template_and_subtype_ids(self):
+        req = ServiceRequest.create(
+            company_id="comp1",
+            created_by="user1",
+            type=RequestType.NEW_EQUIPMENT,
+            title="Need laptop",
+            description="For work",
+            workflow_template_id="tmpl_456",
+            workflow_subtype_id="sub_789",
+            subtype="Computer",
+        )
+        assert req.workflow_template_id == "tmpl_456"
+        assert req.workflow_subtype_id == "sub_789"
+        assert req.subtype == "Computer"
+
+    def test_create_with_template_skips_subtype_enum_validation(self):
+        """When workflow_template_id is set, subtype validation against enum is skipped."""
+        req = ServiceRequest.create(
+            company_id="comp1",
+            created_by="user1",
+            type=RequestType.INCIDENT,
+            title="Test",
+            description="Test desc",
+            workflow_template_id="tmpl_123",
+            subtype="CustomSubtype",  # would fail enum validation without template
+        )
+        assert req.subtype == "CustomSubtype"
+
+    def test_create_without_template_fields_backward_compatible(self):
+        req = ServiceRequest.create(
+            company_id="comp1",
+            created_by="user1",
+            type=RequestType.INCIDENT,
+            title="Test",
+            description="Test desc",
+        )
+        assert req.workflow_template_id is None
+        assert req.workflow_subtype_id is None
+
+
 class TestServiceRequestChangeStatus:
     def _make_request(self, status=RequestStatus.SUBMITTED):
         req = ServiceRequest.create(

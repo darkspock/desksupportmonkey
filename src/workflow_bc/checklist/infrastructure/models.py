@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
@@ -12,9 +12,7 @@ from core.mixins import ULIDMixin
 class RequestChecklistItemModel(ULIDMixin, Base):
     __tablename__ = "request_checklist_items"
 
-    request_id: Mapped[str] = mapped_column(
-        String(26), ForeignKey("service_requests.id", ondelete="CASCADE"), nullable=False
-    )
+    request_id: Mapped[str] = mapped_column(String(26), nullable=False)
     require_all_complete: Mapped[bool] = mapped_column(Boolean, server_default="false")
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

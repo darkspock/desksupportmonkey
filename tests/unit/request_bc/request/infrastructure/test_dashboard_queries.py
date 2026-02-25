@@ -34,15 +34,16 @@ class TestCountByStatus:
 
 
 class TestCountByType:
-    def test_returns_all_types_with_defaults(self):
+    def test_returns_types_from_db(self):
         repo, session = _make_repo()
         session.execute.return_value.all.return_value = [
             ("incident", 10),
+            ("Incidentes", 3),
         ]
         result = repo.count_by_type("comp1")
         assert result["incident"] == 10
-        assert result["new_equipment"] == 0
-        assert result["onboarding"] == 0
+        assert result["Incidentes"] == 3
+        assert result.get("new_equipment") is None
 
 
 class TestCountByPriority:

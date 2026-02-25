@@ -45,6 +45,7 @@ export default function MyTaskAppointmentsPage() {
     onSuccess: () => {
       setCancelId(null);
       queryClient.invalidateQueries({ queryKey: ['my-task-appointments'] });
+      void queryClient.invalidateQueries({ queryKey: ['my-task-counts'] });
       showToast({ title: t('page.my_appointments.toast_cancelled'), variant: 'success' });
     },
     onError: (err: unknown) => {

@@ -1,15 +1,15 @@
 from typing import Optional
 
-from src.request_bc.request.domain.enums import RequestPriority, RequestType
+from src.request_bc.request.domain.enums import RequestPriority
 
 
 TYPE_WEIGHTS: dict[str, int] = {
-    RequestType.INCIDENT.value: 2,
-    RequestType.REPAIR.value: 1,
-    RequestType.ONBOARDING.value: 1,
-    RequestType.NEW_EQUIPMENT.value: 0,
-    RequestType.CONFIGURATION.value: 0,
-    RequestType.ACCESS_REQUEST.value: 0,
+    "incident": 2,
+    "repair": 1,
+    "onboarding": 1,
+    "new_equipment": 0,
+    "configuration": 0,
+    "access_request": 0,
 }
 
 SUBTYPE_WEIGHTS: dict[str, int] = {
@@ -26,13 +26,13 @@ ROLE_WEIGHTS: dict[str, int] = {
 class PriorityScorer:
     def compute(
         self,
-        request_type: RequestType,
+        request_type: str,
         subtype: Optional[str],
         department_priority_weight: int,
         user_role: str,
         ai_priority_hint: int = 0,
     ) -> tuple[RequestPriority, dict]:
-        type_w = TYPE_WEIGHTS.get(request_type.value, 0)
+        type_w = TYPE_WEIGHTS.get(request_type, 0)
         subtype_w = SUBTYPE_WEIGHTS.get(subtype, 0) if subtype else 0
         dept_w = department_priority_weight
         role_w = ROLE_WEIGHTS.get(user_role, 0)
@@ -41,7 +41,7 @@ class PriorityScorer:
         # When AI flags urgency on new equipment/computer requests, boost it so
         # critical language ("starts tomorrow", "cannot work") can reach URGENT.
         if (
-            request_type == RequestType.NEW_EQUIPMENT
+            request_type == "new_equipment"
             and subtype == "computer"
             and ai_hint_w > 0
         ):

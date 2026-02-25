@@ -12,6 +12,7 @@ class SubtypeDto:
     name: str
     description: Optional[str]
     sort_order: int
+    is_active: bool = True
 
 
 @dataclass
@@ -75,6 +76,7 @@ class ListWorkflowTemplatesQueryHandler(
                         name=s.name,
                         description=s.description,
                         sort_order=s.sort_order,
+                        is_active=s.is_active,
                     )
                     for s in t.subtypes
                 ],

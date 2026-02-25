@@ -68,22 +68,37 @@
 ### Headline
 > Si te suena alguno de estos problemas, necesitas DSM Control
 
-### 3 columns (icon + title + description)
+### 3x2 grid (icon + title + description)
 
-**Column 1 — The Spreadsheet**
+**Box 1 — The Spreadsheet**
 - Icon: table/grid
 - Title: "El inventario vive en Excel"
 - Text: "Cada vez que alguien pregunta cuantos portatiles tenemos, la respuesta es 'depende de quien tenga la ultima version del Excel'. No hay fuente unica de verdad."
 
-**Column 2 — The Audit**
-- Icon: clipboard/shield
-- Title: "El auditor ha preguntado y no tienes respuesta"
-- Text: "NIS2 exige documentar que activos tienes, quien los tiene y que incidencias han tenido. Si no puedes mostrarlo, tienes un problema de compliance."
+**Box 2 — The Black Hole**
+- Icon: map-pin-off / package-search
+- Title: "No sabes que tienes, ni cuanto, ni donde"
+- Text: "'¿Cuantos portatiles tenemos en almacen sin asignar?' '¿Donde esta el router que compramos en enero?' '¿Que hay en la oficina de Valencia?' Si contestar requiere hacer llamadas, tienes un problema."
 
-**Column 3 — The Disconnect**
+**Box 3 — The Disconnect**
 - Icon: unlinked chain
 - Title: "Las incidencias no estan vinculadas a los dispositivos"
-- Text: "Cuando un portatil falla 5 veces en un ano, deberia ser visible de un vistazo. Hoy esa informacion esta repartida entre emails, tickets y la memoria del tecnico."
+- Text: "Un portatil falla 5 veces en un ano y nadie conecta los puntos. El tecnico repara y repara sin datos para decir 'esto hay que darlo de baja'. Hoy esa informacion esta repartida entre emails, tickets y la memoria del tecnico."
+
+**Box 4 — The Security Alert**
+- Icon: shield-alert / siren
+- Title: "Alerta de seguridad: ¿tenemos alguno de esos?"
+- Text: "'Hay una vulnerabilidad critica en los routers TapLink RX-500. ¿Tenemos alguno? ¿Donde estan?' Si responder a esa pregunta te lleva mas de 30 segundos, no estas preparado para gestionar un incidente de seguridad."
+
+**Box 5 — The Money Pit**
+- Icon: wallet / receipt
+- Title: "No controlas el coste ni la vida util"
+- Text: "Garantias que caducan sin que nadie lo note. Equipos que se reemplazan cuando se rompen, no cuando deberian. Sin datos de coste por dispositivo, no puedes planificar renovaciones ni justificar presupuesto ante direccion."
+
+**Box 6 — The Audit**
+- Icon: clipboard/shield
+- Title: "El auditor ha preguntado y no tienes respuesta"
+- Text: "NIS2 exige documentar que activos tienes, quien los tiene y que incidencias han tenido. Si no puedes mostrarlo, tienes un problema de compliance. Y el plazo ya ha empezado."
 
 ---
 

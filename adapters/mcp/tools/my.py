@@ -106,7 +106,7 @@ def _serialize_request(
 ) -> dict[str, Any]:
     return {
         "id": req.id,
-        "type": req.type.value,
+        "type": req.type,
         "title": req.title,
         "status": req.status.value,
         "priority": req.priority.value,

@@ -141,18 +141,22 @@ class TestUpdateLocationCommand:
                 )
             )
 
-    def test_system_location_raises(self):
+    def test_system_location_ignores_name_and_in_use(self):
         loc = _make_location(is_system=True, system_key="employee")
+        original_name = loc.name
         repo = MagicMock()
         repo.find_location_by_id.return_value = loc
         handler = UpdateLocationCommandHandler(asset_repo=repo)
 
-        with pytest.raises(SystemLocationError):
-            handler.handle(
-                UpdateLocationCommand(
-                    location_id=loc.id, company_id="comp1", name="Renamed"
-                )
+        handler.handle(
+            UpdateLocationCommand(
+                location_id=loc.id, company_id="comp1", name="Renamed", in_use=False,
+                city="New City",
             )
+        )
+        assert loc.name == original_name
+        assert loc.city == "New City"
+        repo.save_location.assert_called_once()
 
     def test_duplicate_name_raises(self):
         loc = _make_location()

@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, Query
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from core.database import get_db
@@ -76,6 +77,65 @@ from src.request_bc.request.domain.constants import SLA_THRESHOLDS_HOURS
 router = APIRouter(prefix="/api/v1/dashboard", tags=["Dashboard"])
 
 admin_dep = require_role(UserRole.ADMIN)
+tech_dep = require_role(UserRole.TECHNICIAN)
+
+
+@router.get("/requests/queue-counts")
+def request_queue_counts(
+    current_user: User = Depends(tech_dep),
+    repo: RequestRepository = Depends(get_request_repo),
+):
+    counts = repo.queue_counts(current_user.company_id)
+    return {"data": counts}
+
+
+@router.get("/my-tasks/counts")
+def my_task_counts(
+    current_user: User = Depends(tech_dep),
+    db: Session = Depends(get_db),
+):
+    from src.request_bc.request.infrastructure.models import ServiceRequestModel
+    from src.appointment_bc.appointment.infrastructure.models import AppointmentModel
+    from src.maintenance_bc.maintenance_record.infrastructure.models import MaintenanceRecordModel
+
+    open_statuses = ["submitted", "in_review", "in_progress"]
+    base_req = select(func.count()).where(
+        ServiceRequestModel.company_id == current_user.company_id,
+        ServiceRequestModel.assigned_to == current_user.id,
+        ServiceRequestModel.status.in_(open_statuses),
+    )
+
+    requests = db.scalar(base_req) or 0
+
+    requests_urgent = db.scalar(
+        base_req.where(ServiceRequestModel.priority == "urgent")
+    ) or 0
+
+    appointments = db.scalar(
+        select(func.count()).where(
+            AppointmentModel.company_id == current_user.company_id,
+            AppointmentModel.technician_id == current_user.id,
+            AppointmentModel.status.in_(["PENDING", "CONFIRMED"]),
+        )
+    ) or 0
+
+    maintenance = db.scalar(
+        select(func.count()).where(
+            MaintenanceRecordModel.company_id == current_user.company_id,
+            MaintenanceRecordModel.technician_id == current_user.id,
+            MaintenanceRecordModel.status.in_(["scheduled", "in_progress"]),
+        )
+    ) or 0
+
+    total = requests + appointments + maintenance
+    return {"data": {
+        "requests": requests,
+        "requests_urgent": requests_urgent,
+        "appointments": appointments,
+        "maintenance": maintenance,
+        "total": total,
+        "has_urgent": requests_urgent > 0,
+    }}
 
 
 @router.get("/requests/summary")

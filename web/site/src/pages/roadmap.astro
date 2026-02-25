@@ -48,7 +48,15 @@ const day4Epics = [
   { id: 'E45', title: 'Asset Locations & Movement', description: 'Location entity, system locations, movement tracking, automatic location changes' },
   { id: 'E46', title: 'White Label & Multi-Brand', description: 'Runtime brand config API, per-brand assets, branded deployments, database isolation' },
   { id: '', title: 'DSM Control Production Launch', description: 'Full deployment at dsmcontrol.com — 3 subdomains, SSL, nginx, systemd, Stripe billing' },
+];
+
+const day5Epics = [
+  { id: 'E31', title: 'Workflow Templates & Checklists', description: 'Dynamic workflow templates with configurable checklists per request type' },
+  { id: 'E47', title: 'Configurable Asset Types', description: 'Company-defined asset types replacing hardcoded enum — CRUD, reordering, priority' },
+  { id: 'E48', title: 'Menu Visibility per Role', description: 'Admin-configurable nav item visibility per role — blocklist approach with per-company settings' },
   { id: '', title: 'Collapsible Navigation', description: 'Redesigned sidebar with collapsible sub-groups for the Management section' },
+  { id: '', title: 'Inventory Report by Location', description: 'Asset inventory PDF report now groups assets by physical location for easier auditing' },
+  { id: '', title: 'UX Polish & Bug Fixes', description: 'Google OAuth config per brand, navigation improvements, report enhancements, and production fixes' },
 ];
 
 const pendingEpics = [
@@ -60,7 +68,6 @@ const pendingEpics = [
   { id: 'E26', title: 'Observability with Grafana', description: 'Prometheus metrics, Grafana dashboards, infrastructure health', priority: 'Low' },
   { id: 'E27', title: 'Surveys & Feedback', description: 'CSAT and operational feedback loops', priority: 'Medium' },
   { id: 'E28', title: 'Mobile / PWA', description: 'Field workflows, push notifications, offline support', priority: 'High' },
-  { id: 'E31', title: 'Workflow Automations', description: 'Rule engine for assignment, escalation and closure', priority: 'High' },
   { id: 'E32', title: 'Asset Discovery', description: 'Agent and agentless discovery synchronized with inventory', priority: 'Medium' },
   { id: 'E33', title: 'Change Management (ITIL)', description: 'CAB workflow, rollback plans and change calendar', priority: 'Medium' },
   { id: 'E34', title: 'Feature Voting & Roadmap', description: 'In-app idea board and vote-based prioritization', priority: 'Low' },
@@ -69,7 +76,7 @@ const pendingEpics = [
   { id: 'E42', title: 'SSO & Directory Sync', description: 'SAML/OIDC and LDAP/AD synchronization', priority: 'Critical' },
 ];
 
-const completedCount = day1Epics.length + day2Epics.length + day3Items.length + day4Epics.length;
+const completedCount = day1Epics.length + day2Epics.length + day3Items.length + day4Epics.length + day5Epics.length;
 const total = completedCount + pendingEpics.length;
 const progressPercent = Math.round((completedCount / total) * 100);
 
@@ -89,7 +96,7 @@ const priorityStyles: Record<string, { bg: string; text: string }> = {
           {total} Epics
         </span>
         <h1 class="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">Product Roadmap</h1>
-        <p class="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">Real progress broken down by Day 1, Day 2, Day 3, Day 4, and upcoming.</p>
+        <p class="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">Real progress broken down by Day 1, Day 2, Day 3, Day 4, Day 5, and upcoming.</p>
       </div>
 
       <div class="mx-auto max-w-2xl mb-16">
@@ -232,6 +239,39 @@ const priorityStyles: Record<string, { bg: string; text: string }> = {
               <div class="min-w-0">
                 <div class="flex items-center gap-2">
                   {epic.id && <span class="text-xs font-mono font-semibold text-rose-600">{epic.id}</span>}
+                  <span class="text-sm font-semibold text-slate-900 truncate">{epic.title}</span>
+                </div>
+                <p class="mt-0.5 text-xs text-slate-500 line-clamp-2">{epic.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div class="mb-16">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100">
+            <svg class="h-4 w-4 text-amber-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold text-slate-900">Day 5</h2>
+          <span class="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">{day5Epics.length}</span>
+        </div>
+        <p class="text-sm text-slate-500 mb-4 ml-11">UX improvements, new features, and production hardening.</p>
+        <div class="ml-11 mb-6 rounded-xl bg-amber-50/60 border border-amber-200/60 p-4 text-sm text-slate-700 leading-relaxed space-y-2">
+          <p>After Day 4's enterprise push, it was time to <strong>circle back to UX and operational polish</strong>. Workflow templates brought configurable checklists per request type, admin-defined asset types replaced the hardcoded enum, and a new menu visibility system lets admins hide irrelevant sidebar items per role.</p>
+          <p>On the report side, <strong>the inventory report was restructured to group assets by location</strong> &mdash; a small change that makes the PDF actually useful for physical audits. The rest was production fixes, Google OAuth per-brand configuration, and the kind of small improvements that add up to a better daily experience.</p>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {day5Epics.map((epic) => (
+            <div class="flex items-start gap-3 rounded-xl border-l-4 border-amber-400 bg-white py-3 pl-4 pr-4 shadow-sm">
+              <svg class="mt-0.5 h-5 w-5 shrink-0 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0" />
+              </svg>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  {epic.id && <span class="text-xs font-mono font-semibold text-amber-600">{epic.id}</span>}
                   <span class="text-sm font-semibold text-slate-900 truncate">{epic.title}</span>
                 </div>
                 <p class="mt-0.5 text-xs text-slate-500 line-clamp-2">{epic.description}</p>

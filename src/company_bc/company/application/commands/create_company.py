@@ -13,6 +13,7 @@ from src.asset_type_bc.definition.domain.repository import (
 )
 from src.workflow_bc.template.domain.entities import (
     ChecklistItemDefinition,
+    WorkflowSubtype,
     WorkflowTemplate,
 )
 from src.workflow_bc.template.domain.repository import (
@@ -72,7 +73,9 @@ DEFAULT_WORKFLOW_TEMPLATES: list[dict] = [
     {
         "name": "Incident",
         "description": "Report a technical issue or outage",
+        "icon": "alert-circle",
         "require_all_complete": False,
+        "subtypes": [],
         "checklist_items": [
             {"title": "Identify root cause", "is_required": True},
             {"title": "Apply fix or workaround", "is_required": True},
@@ -83,7 +86,15 @@ DEFAULT_WORKFLOW_TEMPLATES: list[dict] = [
     {
         "name": "New Equipment",
         "description": "Request new hardware or software",
+        "icon": "monitor",
         "require_all_complete": True,
+        "subtypes": [
+            {"name": "Computer"},
+            {"name": "Mobile"},
+            {"name": "Peripheral"},
+            {"name": "Monitor"},
+            {"name": "Software License"},
+        ],
         "checklist_items": [
             {"title": "Verify budget approval", "is_required": True},
             {"title": "Place purchase order", "is_required": True},
@@ -94,9 +105,11 @@ DEFAULT_WORKFLOW_TEMPLATES: list[dict] = [
         ],
     },
     {
-        "name": "Employee Onboarding",
+        "name": "Onboarding",
         "description": "Set up accounts, equipment, and access for new hire",
+        "icon": "user-plus",
         "require_all_complete": True,
+        "subtypes": [],
         "checklist_items": [
             {"title": "Create user accounts (email, Slack, etc.)", "is_required": True},
             {"title": "Assign laptop and peripherals", "is_required": True},
@@ -108,23 +121,51 @@ DEFAULT_WORKFLOW_TEMPLATES: list[dict] = [
         ],
     },
     {
-        "name": "Employee Offboarding",
-        "description": "Revoke access and recover equipment for departing employee",
+        "name": "Repair",
+        "description": "Fix or restore malfunctioning hardware or software",
+        "icon": "wrench",
         "require_all_complete": True,
+        "subtypes": [
+            {"name": "Hardware"},
+            {"name": "Software"},
+            {"name": "Network"},
+            {"name": "Security"},
+            {"name": "Other"},
+        ],
         "checklist_items": [
-            {"title": "Disable email account", "is_required": True},
-            {"title": "Revoke VPN and network access", "is_required": True},
-            {"title": "Revoke application permissions", "is_required": True},
-            {"title": "Wipe company data from devices", "is_required": True},
-            {"title": "Collect company equipment", "is_required": True},
-            {"title": "Collect badge and physical keys", "is_required": True},
-            {"title": "Transfer file ownership", "is_required": False},
+            {"title": "Diagnose the issue", "is_required": True},
+            {"title": "Order replacement parts (if needed)", "is_required": False},
+            {"title": "Apply repair or workaround", "is_required": True},
+            {"title": "Test and verify fix", "is_required": True},
+            {"title": "Return equipment to user", "is_required": True},
+        ],
+    },
+    {
+        "name": "Configuration",
+        "description": "Software installation, account setup, or permissions change",
+        "icon": "settings",
+        "require_all_complete": True,
+        "subtypes": [
+            {"name": "Software Install"},
+            {"name": "Account Setup"},
+            {"name": "Permissions"},
+        ],
+        "checklist_items": [
+            {"title": "Review request details", "is_required": True},
+            {"title": "Apply configuration change", "is_required": True},
+            {"title": "Verify with requester", "is_required": True},
         ],
     },
     {
         "name": "Access Request",
         "description": "Request access to systems, applications, or physical spaces",
+        "icon": "lock",
         "require_all_complete": True,
+        "subtypes": [
+            {"name": "System Access"},
+            {"name": "Physical Access"},
+            {"name": "VPN"},
+        ],
         "checklist_items": [
             {"title": "Verify manager approval", "is_required": True},
             {"title": "Provision access", "is_required": True},
@@ -241,6 +282,7 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
                     company_id=company.id,
                     name=spec["name"],
                     description=spec.get("description"),
+                    icon=spec.get("icon"),
                     require_all_complete=spec.get("require_all_complete", False),
                     sort_order=i,
                 )
@@ -253,6 +295,15 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
                         sort_order=j,
                     ))
                 template.set_checklist_items(items)
+                subtypes = []
+                for k, sub_spec in enumerate(spec.get("subtypes", [])):
+                    subtypes.append(WorkflowSubtype.create(
+                        template_id=template.id,
+                        name=sub_spec["name"],
+                        description=sub_spec.get("description"),
+                        sort_order=k,
+                    ))
+                template.set_subtypes(subtypes)
                 self.workflow_template_repo.save(template)
             logger.info("Seeded default workflow templates for company %s", company.id)
 

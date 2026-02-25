@@ -16,6 +16,8 @@ class SubtypeInput:
     name: str
     description: Optional[str] = None
     sort_order: int = 0
+    id: Optional[str] = None
+    is_active: bool = True
 
 
 @dataclass
@@ -25,6 +27,7 @@ class ChecklistItemInput:
     assignee_role: Optional[str] = None
     sort_order: int = 0
     is_required: bool = True
+    id: Optional[str] = None
 
 
 @dataclass

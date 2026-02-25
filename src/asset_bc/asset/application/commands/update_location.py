@@ -37,20 +37,18 @@ class UpdateLocationCommandHandler(CommandHandler[UpdateLocationCommand]):
         if not location:
             raise LocationNotFoundError(f"Location '{command.location_id}' not found")
 
-        if location.is_system:
-            raise SystemLocationError("Cannot modify system locations")
+        if not location.is_system:
+            if command.name is not None:
+                name = command.name.strip()
+                if not name:
+                    raise ValueError("Location name cannot be empty")
+                existing = self.asset_repo.find_location_by_name(name, command.company_id)
+                if existing and existing.id != location.id:
+                    raise LocationNameExistsError(f"Location '{name}' already exists")
+                location.name = name
 
-        if command.name is not None:
-            name = command.name.strip()
-            if not name:
-                raise ValueError("Location name cannot be empty")
-            existing = self.asset_repo.find_location_by_name(name, command.company_id)
-            if existing and existing.id != location.id:
-                raise LocationNameExistsError(f"Location '{name}' already exists")
-            location.name = name
-
-        if command.in_use is not None:
-            location.in_use = command.in_use
+            if command.in_use is not None:
+                location.in_use = command.in_use
 
         if command.street_line_1 is not _UNSET:
             location.street_line_1 = command.street_line_1  # type: ignore[assignment]

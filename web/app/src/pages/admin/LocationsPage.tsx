@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Pencil } from 'lucide-react';
 import api from '../../lib/api';
 import { Loading } from '../../components/ui/Loading';
 import { Table, Th, Td, Tr } from '../../components/ui/Table';
@@ -26,16 +27,28 @@ interface LocationFormFields {
 
 interface EditModalState extends LocationFormFields {
   locationId: string;
+  isSystem: boolean;
 }
+
+const EMPTY_FORM: LocationFormFields = {
+  name: '',
+  inUse: true,
+  street_line_1: '',
+  street_line_2: '',
+  city: '',
+  state: '',
+  postal_code: '',
+  country: '',
+  phone: '',
+};
 
 export default function LocationsPage() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
-  const emptyForm: LocationFormFields = { name: '', inUse: true, street_line_1: '', street_line_2: '', city: '', state: '', postal_code: '', country: '', phone: '' };
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [createForm, setCreateForm] = useState<LocationFormFields>(emptyForm);
+  const [createForm, setCreateForm] = useState<LocationFormFields>(EMPTY_FORM);
   const [createError, setCreateError] = useState('');
   const [editModal, setEditModal] = useState<EditModalState | null>(null);
   const [editError, setEditError] = useState('');
@@ -62,7 +75,7 @@ export default function LocationsPage() {
       phone: form.phone || null,
     }),
     onSuccess: () => {
-      setCreateForm(emptyForm);
+      setCreateForm(EMPTY_FORM);
       setCreateError('');
       setCreateModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ['locations'] });
@@ -143,7 +156,7 @@ export default function LocationsPage() {
       }
       if (createModalOpen && !create.isPending) {
         setCreateModalOpen(false);
-        setCreateForm(emptyForm);
+        setCreateForm(EMPTY_FORM);
         setCreateError('');
       }
     };
@@ -171,7 +184,7 @@ export default function LocationsPage() {
         <button
           type="button"
           onClick={() => {
-            setCreateForm(emptyForm);
+            setCreateForm(EMPTY_FORM);
             setCreateError('');
             setCreateModalOpen(true);
           }}
@@ -196,7 +209,7 @@ export default function LocationsPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setCreateForm(emptyForm);
+                  setCreateForm(EMPTY_FORM);
                   setCreateError('');
                   setCreateModalOpen(true);
                 }}
@@ -262,37 +275,33 @@ export default function LocationsPage() {
                   <span className="text-sm text-muted-foreground">{loc.asset_count}</span>
                 </Td>
                 <Td className="text-right">
-                  {loc.is_system ? (
-                    <span className="text-xs text-muted-foreground">{t('page.locations.system_protected')}</span>
-                  ) : (
-                    <div className="flex items-center justify-end gap-2">
-                      <Tooltip content={t('common.edit')}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditError('');
-                            setEditModal({
-                              locationId: loc.id,
-                              name: loc.name,
-                              inUse: loc.in_use,
-                              street_line_1: loc.street_line_1 ?? '',
-                              street_line_2: loc.street_line_2 ?? '',
-                              city: loc.city ?? '',
-                              state: loc.state ?? '',
-                              postal_code: loc.postal_code ?? '',
-                              country: loc.country ?? '',
-                              phone: loc.phone ?? '',
-                            });
-                          }}
-                          aria-label={t('common.edit')}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-                        >
-                          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M15.2 5.2 18.8 8.8" />
-                            <path d="M4 20h3.4l10-10a2.5 2.5 0 0 0-3.5-3.5L4 16.5V20z" />
-                          </svg>
-                        </button>
-                      </Tooltip>
+                  <div className="flex items-center justify-end gap-2">
+                    <Tooltip content={t('common.edit')}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditError('');
+                          setEditModal({
+                            locationId: loc.id,
+                            isSystem: loc.is_system,
+                            name: loc.name,
+                            inUse: loc.in_use,
+                            street_line_1: loc.street_line_1 ?? '',
+                            street_line_2: loc.street_line_2 ?? '',
+                            city: loc.city ?? '',
+                            state: loc.state ?? '',
+                            postal_code: loc.postal_code ?? '',
+                            country: loc.country ?? '',
+                            phone: loc.phone ?? '',
+                          });
+                        }}
+                        aria-label={t('common.edit')}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    </Tooltip>
+                    {!loc.is_system && (
                       <Tooltip content={loc.asset_count > 0 ? t('page.locations.delete_has_assets') : t('common.delete')}>
                         <button
                           type="button"
@@ -309,8 +318,8 @@ export default function LocationsPage() {
                           </svg>
                         </button>
                       </Tooltip>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </Td>
               </Tr>
             ))}
@@ -339,7 +348,7 @@ export default function LocationsPage() {
             onClick={() => {
               if (create.isPending) return;
               setCreateModalOpen(false);
-              setCreateForm(emptyForm);
+              setCreateForm(EMPTY_FORM);
               setCreateError('');
             }}
             aria-label={t('errors.close_confirmation_dialog')}
@@ -380,7 +389,7 @@ export default function LocationsPage() {
                 </div>
               </div>
               <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => { if (create.isPending) return; setCreateModalOpen(false); setCreateForm(emptyForm); setCreateError(''); }} className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50">
+                <button type="button" onClick={() => { if (create.isPending) return; setCreateModalOpen(false); setCreateForm(EMPTY_FORM); setCreateError(''); }} className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50">
                   {t('common.cancel')}
                 </button>
                 <button type="submit" disabled={create.isPending} className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50">
@@ -421,8 +430,9 @@ export default function LocationsPage() {
               <div>
                 {editError && <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">{editError}</div>}
                 <label className="mb-1.5 block text-muted-foreground">{t('table.name')}</label>
-                <input type="text" value={editModal.name} onChange={(e) => setEditModal({ ...editModal, name: e.target.value })} className="w-full bg-card" required />
+                <input type="text" value={editModal.name} onChange={(e) => setEditModal({ ...editModal, name: e.target.value })} className="w-full bg-card" required disabled={editModal.isSystem} />
               </div>
+              {!editModal.isSystem && (
               <div className="flex items-center gap-3">
                 <label className="relative inline-flex cursor-pointer items-center">
                   <input type="checkbox" checked={editModal.inUse} onChange={(e) => setEditModal({ ...editModal, inUse: e.target.checked })} className="peer sr-only" />
@@ -433,6 +443,7 @@ export default function LocationsPage() {
                   <p className="text-xs text-muted-foreground">{t('page.locations.in_use_help')}</p>
                 </div>
               </div>
+              )}
               <div className="border-t border-border pt-3">
                 <p className="mb-2 text-sm font-medium text-muted-foreground">{t('page.locations.address')}</p>
                 <div className="space-y-2">

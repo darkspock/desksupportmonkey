@@ -1,6 +1,19 @@
 import { useState, useMemo, type DragEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  CircleAlert,
+  CircleCheck,
+  CircleX,
+  ClipboardList,
+  Clock3,
+  EllipsisVertical,
+  Eye,
+  Kanban,
+  List,
+  LoaderCircle,
+  Search,
+} from 'lucide-react';
 import api from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { Loading } from '../../components/ui/Loading';
@@ -13,6 +26,7 @@ import { CustomFieldFilters } from '../../components/custom-fields/CustomFieldFi
 import { formatDate } from '../../lib/date';
 import { useI18n } from '../../lib/i18n';
 import { useToast } from '../../hooks/useToast';
+import { WorkflowIcon } from '../../components/ui/WorkflowIcon';
 import type { ServiceRequest, PaginatedResponse, AssignableUser, RequestStatus } from '../../types';
 import { VALID_SUBTYPES } from '../../types';
 
@@ -217,6 +231,8 @@ export default function RequestQueuePage() {
       void queryClient.invalidateQueries({ queryKey: ['requests'] });
       void queryClient.invalidateQueries({ queryKey: ['requests-kanban'] });
       void queryClient.invalidateQueries({ queryKey: ['requests-stats'] });
+      void queryClient.invalidateQueries({ queryKey: ['queue-counts'] });
+      void queryClient.invalidateQueries({ queryKey: ['my-task-counts'] });
     },
     onError: (err: unknown) => {
       const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
@@ -232,6 +248,8 @@ export default function RequestQueuePage() {
       void queryClient.invalidateQueries({ queryKey: ['requests'] });
       void queryClient.invalidateQueries({ queryKey: ['requests-kanban'] });
       void queryClient.invalidateQueries({ queryKey: ['requests-stats'] });
+      void queryClient.invalidateQueries({ queryKey: ['queue-counts'] });
+      void queryClient.invalidateQueries({ queryKey: ['my-task-counts'] });
     },
     onError: (err: unknown) => {
       const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
@@ -361,60 +379,35 @@ export default function RequestQueuePage() {
       value: statsCounts.total,
       colorClass: 'text-primary',
       bgClass: 'bg-primary/10',
-      icon: (
-        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-          <path d="M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1Z" />
-          <path d="M12 11h4M12 16h4M8 11h.01M8 16h.01" />
-        </svg>
-      ),
+      icon: <ClipboardList className="h-4 w-4" />,
     },
     {
       label: t('page.request_queue.stat_open'),
       value: statsCounts.open,
       colorClass: 'text-warning-foreground',
       bgClass: 'bg-warning/15',
-      icon: (
-        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="12" cy="12" r="10" />
-          <path d="M12 6v6l4 2" />
-        </svg>
-      ),
+      icon: <Clock3 className="h-4 w-4" />,
     },
     {
       label: t('page.request_queue.stat_in_progress'),
       value: statsCounts.in_progress,
       colorClass: 'text-primary',
       bgClass: 'bg-primary/10',
-      icon: (
-        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-        </svg>
-      ),
+      icon: <LoaderCircle className="h-4 w-4" />,
     },
     {
       label: t('page.request_queue.stat_resolved'),
       value: statsCounts.resolved,
       colorClass: 'text-success',
       bgClass: 'bg-success/15',
-      icon: (
-        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-          <path d="m9 11 3 3L22 4" />
-        </svg>
-      ),
+      icon: <CircleCheck className="h-4 w-4" />,
     },
     {
       label: t('page.request_queue.stat_rejected'),
       value: statsCounts.rejected,
       colorClass: 'text-destructive',
       bgClass: 'bg-destructive/10',
-      icon: (
-        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="12" cy="12" r="10" />
-          <path d="m15 9-6 6M9 9l6 6" />
-        </svg>
-      ),
+      icon: <CircleX className="h-4 w-4" />,
     },
   ];
 
@@ -432,30 +425,28 @@ export default function RequestQueuePage() {
         </div>
         <div className="flex items-center gap-2">
           <div className="inline-flex rounded-md border border-border bg-card p-1">
-            <button
-              type="button"
-              onClick={() => setViewMode('list')}
-              aria-label={t('page.request_queue.view_list')}
-              title={t('page.request_queue.view_list')}
-              className={`inline-flex h-8 w-8 items-center justify-center rounded-sm transition-colors ${viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <path d="M3 6h18M3 12h18M3 18h18" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('kanban')}
-              aria-label={t('page.request_queue.view_kanban')}
-              title={t('page.request_queue.view_kanban')}
-              className={`inline-flex h-8 w-8 items-center justify-center rounded-sm transition-colors ${viewMode === 'kanban' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <rect x="3" y="5" width="6" height="14" rx="1.5" />
-                <rect x="10.5" y="5" width="6" height="14" rx="1.5" />
-                <rect x="18" y="5" width="3" height="14" rx="1.5" />
-              </svg>
-            </button>
+            <Tooltip content={t('page.request_queue.view_list')}>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                aria-label={t('page.request_queue.view_list')}
+                title={t('page.request_queue.view_list')}
+                className={`inline-flex h-8 w-8 items-center justify-center rounded-sm transition-colors ${viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <List className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </Tooltip>
+            <Tooltip content={t('page.request_queue.view_kanban')}>
+              <button
+                type="button"
+                onClick={() => setViewMode('kanban')}
+                aria-label={t('page.request_queue.view_kanban')}
+                title={t('page.request_queue.view_kanban')}
+                className={`inline-flex h-8 w-8 items-center justify-center rounded-sm transition-colors ${viewMode === 'kanban' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <Kanban className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </Tooltip>
           </div>
           <button
             type="button"
@@ -488,16 +479,7 @@ export default function RequestQueuePage() {
       {/* Filters */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <svg
-            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.3-4.3" />
-          </svg>
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           <input
             type="search"
             placeholder={t('page.request_queue.search_placeholder')}
@@ -597,8 +579,11 @@ export default function RequestQueuePage() {
                           </p>
                         </Td>
                         <Td>
-                          <span className="text-sm text-muted-foreground">{t(`enum.${r.type}`)}</span>
-                          {r.subtype && <span className="ml-1 text-xs text-muted-foreground">({t(`enum.${r.subtype}`)})</span>}
+                          <div className="flex items-center gap-1.5">
+                            <WorkflowIcon name={r.workflow_template_icon} className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">{r.workflow_template_name || t(`enum.${r.type}`)}</span>
+                            {r.subtype && <span className="text-xs text-muted-foreground">({t(`enum.${r.subtype}`)})</span>}
+                          </div>
                         </Td>
                         <Td><StatusBadge status={r.priority} /></Td>
                         <Td><StatusBadge status={r.status} /></Td>
@@ -616,10 +601,7 @@ export default function RequestQueuePage() {
                                 aria-label={t('table.details')}
                                 className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
                               >
-                                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                                  <circle cx="12" cy="12" r="3" />
-                                </svg>
+                                <Eye className="h-4 w-4" />
                               </Link>
                             </Tooltip>
 
@@ -632,11 +614,7 @@ export default function RequestQueuePage() {
                                     aria-label={t('page.request_queue.more_actions')}
                                     onClick={() => setOpenMenuId((cur) => (cur === r.id ? null : r.id))}
                                   >
-                                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
-                                      <circle cx="12" cy="5" r="2" />
-                                      <circle cx="12" cy="12" r="2" />
-                                      <circle cx="12" cy="19" r="2" />
-                                    </svg>
+                                    <EllipsisVertical className="h-4 w-4" aria-hidden="true" />
                                   </button>
                                 </Tooltip>
                                 {openMenuId === r.id && (
@@ -725,6 +703,10 @@ export default function RequestQueuePage() {
                             <p className="mt-1 text-xs text-muted-foreground">
                               {r.created_by_name || r.created_by_email}
                             </p>
+                            <div className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
+                              <WorkflowIcon name={r.workflow_template_icon} className="h-3 w-3 shrink-0" />
+                              <span>{r.workflow_template_name || t(`enum.${r.type}`)}</span>
+                            </div>
                             <div className="mt-2 flex flex-wrap gap-1.5">
                               <StatusBadge status={r.priority} />
                               <StatusBadge status={r.status} />
@@ -794,10 +776,7 @@ export default function RequestQueuePage() {
               <div className="mt-4 rounded-lg border border-border bg-muted/30 p-3 space-y-2">
                 {newEmpError && (
                   <div className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                    <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10" />
-                      <path d="M12 8v4M12 16h.01" />
-                    </svg>
+                    <CircleAlert className="h-4 w-4 shrink-0" />
                     {newEmpError}
                   </div>
                 )}

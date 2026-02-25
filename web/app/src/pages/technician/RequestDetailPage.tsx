@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import api from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { Loading } from '../../components/ui/Loading';
@@ -11,6 +11,8 @@ import { CustomFieldsDisplay } from '../../components/custom-fields/CustomFields
 import { useToast } from '../../hooks/useToast';
 import { formatDateTime } from '../../lib/date';
 import { humanizeToken, useI18n } from '../../lib/i18n';
+import { WorkflowIcon } from '../../components/ui/WorkflowIcon';
+import { ClipboardList, ChevronRight, Trash2 } from 'lucide-react';
 import type { ServiceRequest, Comment, Note, RequestEventItem, AIClassificationData, RecentPO, Appointment, TimeSlot, Shipment, AssignableUser, PaginatedResponse, User, RequestChecklistItem, ChecklistProgress } from '../../types';
 
 /* ── helper components ────────────────────────────────────────────── */
@@ -191,41 +193,205 @@ function requestEventLabel(
   });
 }
 
-/* ── Type icon map ────────────────────────────────────────────────── */
+/* ── Priority icon ────────────────────────────────────────────── */
 
-const TYPE_ICONS: Record<string, React.ReactNode> = {
-  incident: (
-    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" />
-    </svg>
-  ),
-  new_equipment: (
-    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
-      <rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" />
-    </svg>
-  ),
-  onboarding: (
-    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M19 8v6M22 11h-6" />
-    </svg>
-  ),
-  repair: (
-    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76Z" />
-    </svg>
-  ),
-  configuration: (
-    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  ),
-  access_request: (
-    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
-      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-  ),
+const PRIORITY_CONFIG: Record<string, { color: string; icon: React.ReactNode }> = {
+  urgent: {
+    color: 'text-red-600',
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="m18 15-6-6-6 6" /><path d="m18 9-6-6-6 6" />
+      </svg>
+    ),
+  },
+  high: {
+    color: 'text-orange-500',
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="m18 15-6-6-6 6" />
+      </svg>
+    ),
+  },
+  medium: {
+    color: 'text-yellow-500',
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M5 12h14" />
+      </svg>
+    ),
+  },
+  low: {
+    color: 'text-blue-400',
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="m6 9 6 6 6-6" />
+      </svg>
+    ),
+  },
 };
+
+function PriorityIcon({ priority, t }: { priority: string; t: (key: string, params?: Record<string, string | number>, options?: { defaultValue?: string }) => string }) {
+  const config = PRIORITY_CONFIG[priority] ?? PRIORITY_CONFIG.low;
+  return (
+    <div className={`relative group/prio ${config.color}`}>
+      {config.icon}
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute -top-9 left-1/2 z-30 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-foreground px-2.5 py-1 text-xs text-background shadow-sm group-hover/prio:block"
+      >
+        {t(`enum.${priority}`, undefined, { defaultValue: humanizeToken(priority) })}
+      </span>
+    </div>
+  );
+}
+
+/* ── Status progress tracker ──────────────────────────────────── */
+
+const STATUS_FLOW = ['submitted', 'in_review', 'in_progress', 'resolved'] as const;
+const STATUS_FLOW_WITH_APPROVAL = ['pending_approval', 'submitted', 'in_review', 'in_progress', 'resolved'] as const;
+
+function StatusProgressTracker({
+  currentStatus,
+  events,
+  t,
+  allowedTransitions,
+  onStatusClick,
+}: {
+  currentStatus: string;
+  events: RequestEventItem[] | undefined;
+  t: (key: string, params?: Record<string, string | number>, options?: { defaultValue?: string }) => string;
+  allowedTransitions?: string[];
+  onStatusClick?: (status: string) => void;
+}) {
+  const isRejected = currentStatus === 'rejected';
+  const hadApproval = events?.some(
+    (e) => e.event_type === 'status_changed' && (e.data as Record<string, unknown>)?.old_status === 'pending_approval',
+  ) || currentStatus === 'pending_approval';
+  const flow = hadApproval ? STATUS_FLOW_WITH_APPROVAL : STATUS_FLOW;
+
+  // Build map: status → { date, actor } from events
+  const statusHistory = new Map<string, { date: string | null; actor: string | null }>();
+  // "created" event covers the first status
+  const createdEvent = events?.find((e) => e.event_type === 'created');
+  const firstStatus = hadApproval ? 'pending_approval' : 'submitted';
+  if (createdEvent) {
+    statusHistory.set(firstStatus, {
+      date: createdEvent.created_at ?? null,
+      actor: createdEvent.performed_by_name || createdEvent.performed_by_email || null,
+    });
+  }
+  // status_changed events
+  events?.filter((e) => e.event_type === 'status_changed').forEach((e) => {
+    const data = (e.data ?? {}) as Record<string, unknown>;
+    const newStatus = data.new_status as string;
+    if (newStatus) {
+      statusHistory.set(newStatus, {
+        date: e.created_at ?? null,
+        actor: e.performed_by_name || e.performed_by_email || null,
+      });
+    }
+  });
+
+  const currentIdx = (flow as readonly string[]).indexOf(currentStatus);
+  const activeIdx = isRejected ? -1 : currentIdx;
+
+  return (
+    <div className="rounded-lg border border-border bg-card px-6 py-4">
+      <div className="flex items-center">
+        {flow.map((status, idx) => {
+          const isDone = activeIdx >= 0 && idx < activeIdx;
+          const isCurrent = idx === activeIdx;
+          const history = statusHistory.get(status);
+
+          const isClickable = !isCurrent && !isDone && onStatusClick && allowedTransitions?.includes(status);
+
+          const circleClass = isDone
+            ? 'bg-primary text-primary-foreground'
+            : isCurrent
+              ? 'border-2 border-primary bg-primary/10 text-primary'
+              : isClickable
+                ? 'border-2 border-primary/40 bg-background text-primary/60 cursor-pointer hover:border-primary hover:bg-primary/10'
+                : 'border-2 border-muted-foreground/30 bg-background text-muted-foreground/40';
+
+          const lineClass = isDone
+            ? 'bg-primary'
+            : 'bg-muted-foreground/20';
+
+          const labelClass = isDone || isCurrent
+            ? 'text-foreground font-medium'
+            : 'text-muted-foreground/50';
+
+          const tooltipLines: string[] = [];
+          if (history?.date) tooltipLines.push(formatDateTime(history.date));
+          if (history?.actor) tooltipLines.push(history.actor);
+
+          return (
+            <div key={status} className="flex items-center flex-1 last:flex-none">
+              {/* Circle + label */}
+              <div className="relative group/step flex flex-col items-center">
+                <div
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${circleClass}`}
+                  onClick={isClickable ? () => onStatusClick(status) : undefined}
+                >
+                  {isDone ? (
+                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 6 9 17l-5-5" />
+                    </svg>
+                  ) : (
+                    <span className="text-xs font-bold">{idx + 1}</span>
+                  )}
+                </div>
+                <span className={`mt-1.5 text-[11px] whitespace-nowrap ${labelClass}`}>
+                  {t(`enum.${status}`, undefined, { defaultValue: humanizeToken(status) })}
+                </span>
+                {/* Tooltip */}
+                {tooltipLines.length > 0 && (
+                  <span
+                    role="tooltip"
+                    className="pointer-events-none absolute -top-12 left-1/2 z-30 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-foreground px-2.5 py-1.5 text-xs text-background shadow-sm group-hover/step:block leading-relaxed text-center"
+                  >
+                    {tooltipLines.map((line, i) => (
+                      <span key={i} className="block">{line}</span>
+                    ))}
+                  </span>
+                )}
+              </div>
+              {/* Connector line */}
+              {idx < flow.length - 1 && (
+                <div className={`h-0.5 flex-1 mx-2 rounded-full transition-colors ${lineClass}`} />
+              )}
+            </div>
+          );
+        })}
+        {/* Rejected indicator */}
+        {isRejected && (
+          <div className="flex items-center flex-none ml-2">
+            <div className="h-0.5 w-4 bg-destructive/40 rounded-full mx-2" />
+            <div className="relative group/step flex flex-col items-center">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-destructive text-destructive-foreground">
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+                </svg>
+              </div>
+              <span className="mt-1.5 text-[11px] whitespace-nowrap text-destructive font-medium">
+                {t('enum.rejected', undefined, { defaultValue: 'Rejected' })}
+              </span>
+              {statusHistory.has('rejected') && (
+                <span
+                  role="tooltip"
+                  className="pointer-events-none absolute -top-12 left-1/2 z-30 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-foreground px-2.5 py-1.5 text-xs text-background shadow-sm group-hover/step:block leading-relaxed text-center"
+                >
+                  {statusHistory.get('rejected')!.date && <span className="block">{formatDateTime(statusHistory.get('rejected')!.date)}</span>}
+                  {statusHistory.get('rejected')!.actor && <span className="block">{statusHistory.get('rejected')!.actor}</span>}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 /* ── Main component ───────────────────────────────────────────────── */
 
@@ -348,6 +514,8 @@ export default function RequestDetailPage() {
   const [noteBody, setNoteBody] = useState('');
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectForm, setShowRejectForm] = useState(false);
+  const [reopenReason, setReopenReason] = useState('');
+  const [showReopenForm, setShowReopenForm] = useState(false);
   const [assignUserId, setAssignUserId] = useState('');
   const [newChecklistItem, setNewChecklistItem] = useState('');
   const [showBooking, setShowBooking] = useState(false);
@@ -366,12 +534,14 @@ export default function RequestDetailPage() {
     },
     enabled: !!request?.assigned_to && !!bookingDate && showBooking,
   });
-
-  useEffect(() => {
-    setAssignUserId(request?.assigned_to ?? '');
-  }, [request?.assigned_to]);
+  const selectedAssignUserId = assignUserId || request?.assigned_to || '';
 
   /* ── mutations ─────────────────────────────────────────────── */
+
+  const invalidateDashboardCounts = () => {
+    void queryClient.invalidateQueries({ queryKey: ['queue-counts'] });
+    void queryClient.invalidateQueries({ queryKey: ['my-task-counts'] });
+  };
 
   const scheduleAppointment = useMutation({
     mutationFn: async () => {
@@ -390,6 +560,7 @@ export default function RequestDetailPage() {
       setBookingSlot('');
       setBookingLocation('');
       queryClient.invalidateQueries({ queryKey: ['request-appointments', id] });
+      invalidateDashboardCounts();
       showToast({ title: t('page.request_detail.toast_scheduled'), variant: 'success' });
     },
     onError: (err: unknown) => {
@@ -410,6 +581,7 @@ export default function RequestDetailPage() {
     mutationFn: () => api.post(`/requests/${id}/approve`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['request', id] });
+      invalidateDashboardCounts();
       showToast({ title: t('page.request_detail.toast_approved'), variant: 'success' });
     },
     onError: (err: unknown) => {
@@ -419,11 +591,14 @@ export default function RequestDetailPage() {
   });
 
   const rejectRequest = useMutation({
-    mutationFn: () => api.post(`/requests/${id}/reject`, { reason: rejectReason }),
+    mutationFn: () => isPendingApproval
+      ? api.post(`/requests/${id}/reject`, { reason: rejectReason })
+      : api.patch(`/requests/${id}/status`, { status: 'rejected', reason: rejectReason }),
     onSuccess: () => {
       setRejectReason('');
       setShowRejectForm(false);
       queryClient.invalidateQueries({ queryKey: ['request', id] });
+      invalidateDashboardCounts();
       showToast({ title: t('page.request_detail.toast_rejected'), variant: 'success' });
     },
     onError: (err: unknown) => {
@@ -451,9 +626,13 @@ export default function RequestDetailPage() {
   });
 
   const changeStatus = useMutation({
-    mutationFn: (status: string) => api.patch(`/requests/${id}/status`, { status }),
+    mutationFn: ({ status, reason }: { status: string; reason?: string }) =>
+      api.patch(`/requests/${id}/status`, { status, ...(reason ? { reason } : {}) }),
     onSuccess: () => {
+      setShowReopenForm(false);
+      setReopenReason('');
       queryClient.invalidateQueries({ queryKey: ['request', id] });
+      invalidateDashboardCounts();
       showToast({ title: t('page.request_detail.status_updated'), variant: 'success' });
     },
     onError: (err: unknown) => {
@@ -466,6 +645,7 @@ export default function RequestDetailPage() {
     mutationFn: (priority: string) => api.patch(`/requests/${id}/priority`, { priority }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['request', id] });
+      invalidateDashboardCounts();
       showToast({ title: t('page.request_detail.priority_updated'), variant: 'success' });
     },
     onError: (err: unknown) => {
@@ -478,6 +658,7 @@ export default function RequestDetailPage() {
     mutationFn: (targetUserId: string) => api.patch(`/requests/${id}/assign`, { user_id: targetUserId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['request', id] });
+      invalidateDashboardCounts();
       showToast({ title: t('page.request_detail.assigned'), variant: 'success' });
     },
     onError: (err: unknown) => {
@@ -526,10 +707,21 @@ export default function RequestDetailPage() {
   const statusActions: Record<string, string[]> = {
     submitted: ['in_review', 'rejected'],
     in_review: ['in_progress', 'rejected'],
-    in_progress: ['resolved'],
-    rejected: ['submitted'],
+    in_progress: ['resolved', 'rejected'],
   };
   const nextStatuses = statusActions[request.status] || [];
+
+  // Compute reopen target: last status before resolved/rejected
+  const reopenTarget = (() => {
+    if (request.status !== 'resolved' && request.status !== 'rejected') return null;
+    const statusEvents = (requestEvents ?? [])
+      .filter((e) => e.event_type === 'status_changed')
+      .sort((a, b) => (a.created_at ?? '').localeCompare(b.created_at ?? ''));
+    const lastChange = statusEvents[statusEvents.length - 1];
+    const prev = (lastChange?.data as Record<string, unknown>)?.old_status as string | undefined;
+    if (prev && prev !== 'resolved' && prev !== 'rejected') return prev;
+    return 'in_progress';
+  })();
   const userNextStatusByFlow: Record<string, string | undefined> = {
     pending_approval: 'submitted',
     submitted: 'in_review',
@@ -538,7 +730,9 @@ export default function RequestDetailPage() {
   };
   const userNextStatus = userNextStatusByFlow[request.status];
   const isPendingApproval = request.status === 'pending_approval';
-  const typeIcon = TYPE_ICONS[request.type];
+  const typeIcon = request.workflow_template_icon
+    ? <WorkflowIcon name={request.workflow_template_icon} className="h-6 w-6" />
+    : <ClipboardList className="h-6 w-6" />;
 
   /* ── render ────────────────────────────────────────────────── */
 
@@ -561,6 +755,15 @@ export default function RequestDetailPage() {
         </div>
       </div>
 
+      {/* Status progress tracker */}
+      <StatusProgressTracker
+        currentStatus={request.status}
+        events={requestEvents}
+        t={t}
+        allowedTransitions={isTech ? nextStatuses.filter((s) => s !== 'rejected') : undefined}
+        onStatusClick={isTech ? (status) => changeStatus.mutate({ status }) : undefined}
+      />
+
       {/* Two-column layout */}
       <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
         {/* ── Left column: main content ── */}
@@ -568,20 +771,20 @@ export default function RequestDetailPage() {
           {/* Request info card */}
           <div className="rounded-lg border border-border bg-card p-6 space-y-4">
             <div className="flex items-start gap-3">
-              {typeIcon && (
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  {typeIcon}
-                </div>
-              )}
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                {typeIcon}
+              </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
                   <StatusBadge status={request.type} />
                   {request.subtype && (
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary text-foreground">
-                      {t(`enum.${request.subtype}`)}
+                      {t(`enum.${request.subtype}`, undefined, { defaultValue: request.subtype })}
                     </span>
                   )}
                   <span className="text-xs text-muted-foreground font-mono">{request.id.slice(0, 12)}</span>
+                  <span className="ml-auto" />
+                  <PriorityIcon priority={request.priority} t={t} />
                 </div>
                 <h1 className="text-xl font-bold text-foreground mb-2">{request.title}</h1>
                 <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
@@ -823,35 +1026,64 @@ export default function RequestDetailPage() {
             {/* Status */}
             <div>
               <h3 className="text-sm font-medium text-muted-foreground mb-2">{t('table.status')}</h3>
-              {!isTech && userNextStatus ? (
-                <div className="flex items-center gap-2">
-                  <StatusBadge status={request.status} />
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="h-3.5 w-3.5 text-muted-foreground"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M5 12h14" />
-                    <path d="m13 6 6 6-6 6" />
-                  </svg>
-                  <span className="inline-flex items-center rounded-md border border-dashed border-muted-foreground/60 bg-white px-2 py-0.5 text-xs font-medium text-muted-foreground/90">
-                    {t(`enum.${userNextStatus}`, undefined, { defaultValue: humanizeToken(userNextStatus) })}
-                  </span>
-                </div>
-              ) : (
-                <StatusBadge status={request.status} />
-              )}
+              {(() => {
+                const primaryNext = isTech
+                  ? (nextStatuses.find((s) => s !== 'rejected') ?? reopenTarget)
+                  : userNextStatus;
+                if (!primaryNext) return <StatusBadge status={request.status} />;
+                const canReject = isTech && nextStatuses.includes('rejected');
+                return (
+                  <div className="flex items-center gap-2">
+                    <StatusBadge status={request.status} />
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    {isTech ? (
+                      <button
+                        onClick={() => reopenTarget ? setShowReopenForm(true) : changeStatus.mutate({ status: primaryNext })}
+                        disabled={changeStatus.isPending}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-2.5 py-0.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors disabled:opacity-50"
+                      >
+                        {reopenTarget
+                          ? t('page.request_detail.reopen', undefined, { defaultValue: 'Reopen' })
+                          : t(`enum.${primaryNext}`, undefined, { defaultValue: humanizeToken(primaryNext) })}
+                      </button>
+                    ) : (
+                      <span className="inline-flex items-center rounded-md border border-dashed border-muted-foreground/60 bg-white px-2 py-0.5 text-xs font-medium text-muted-foreground/90">
+                        {t(`enum.${primaryNext}`, undefined, { defaultValue: humanizeToken(primaryNext) })}
+                      </span>
+                    )}
+                    {canReject && (
+                      <button
+                        onClick={() => setShowRejectForm(true)}
+                        disabled={changeStatus.isPending}
+                        className="ml-auto p-1 rounded text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                        title={t('enum.rejected', undefined, { defaultValue: 'Reject' })}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
             <div className="h-px bg-border" />
 
             {/* Priority */}
             <div>
               <h3 className="text-sm font-medium text-muted-foreground mb-2">{t('table.priority')}</h3>
-              <StatusBadge status={request.priority} />
+              {isTech ? (
+                <select
+                  value={request.priority}
+                  onChange={(e) => changePriority.mutate(e.target.value)}
+                  className="text-sm rounded-md border border-border bg-background px-2 py-1"
+                >
+                  <option value="low">{t('enum.low')}</option>
+                  <option value="medium">{t('enum.medium')}</option>
+                  <option value="high">{t('enum.high')}</option>
+                  <option value="urgent">{t('enum.urgent')}</option>
+                </select>
+              ) : (
+                <StatusBadge status={request.priority} />
+              )}
             </div>
             <div className="h-px bg-border" />
 
@@ -949,7 +1181,7 @@ export default function RequestDetailPage() {
                 <div className="mt-2 flex items-center gap-2">
                   <EmployeeSearchSelect
                     users={technicianOptions}
-                    value={assignUserId}
+                    value={selectedAssignUserId}
                     onChange={setAssignUserId}
                     placeholder={t('page.maintenance_detail.assign_placeholder')}
                     allLabel={t('page.asset_list.all_assignees')}
@@ -957,8 +1189,8 @@ export default function RequestDetailPage() {
                     className="min-w-0 flex-1"
                   />
                   <button
-                    onClick={() => assign.mutate(assignUserId || user?.id || '')}
-                    disabled={assign.isPending || (!assignUserId && !user?.id)}
+                    onClick={() => assign.mutate(selectedAssignUserId || user?.id || '')}
+                    disabled={assign.isPending || (!selectedAssignUserId && !user?.id)}
                     className="inline-flex h-9 items-center justify-center rounded-md px-3 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all disabled:opacity-50"
                   >
                     {t('page.maintenance_detail.assign')}
@@ -1005,91 +1237,89 @@ export default function RequestDetailPage() {
             </div>
           </div>
 
-          {/* Actions card (tech only, non-terminal statuses) */}
-          {isTech && (nextStatuses.length > 0 || isPendingApproval) && (
+          {/* Approval card (pending_approval only) */}
+          {isTech && isPendingApproval && (
             <div className="rounded-lg border border-border bg-card p-4 space-y-3">
               <h3 className="text-sm font-medium text-foreground">{t('page.request_detail.actions')}</h3>
+              <button
+                onClick={() => approveRequest.mutate()}
+                disabled={approveRequest.isPending}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-success text-white shadow-xs hover:bg-success/90 disabled:opacity-50"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="m9 11 3 3L22 4" /></svg>
+                {t('page.request_detail.approve')}
+              </button>
+              <button
+                onClick={() => setShowRejectForm(true)}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-destructive/10 hover:text-destructive transition-all"
+              >
+                {t('page.request_detail.reject')}
+              </button>
+            </div>
+          )}
 
-              {/* Approval actions */}
-              {isPendingApproval && (
-                <>
+          {/* Reject modal */}
+          {showRejectForm && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
+              <div className="fixed inset-0 bg-black/50" onClick={() => { setShowRejectForm(false); setRejectReason(''); }} />
+              <div className="relative z-10 w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-lg space-y-4">
+                <h3 className="text-lg font-semibold text-foreground">{t('page.request_detail.reject')}</h3>
+                <p className="text-sm text-muted-foreground">{t('page.request_detail.reject_reason_placeholder')}</p>
+                <textarea
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  rows={3}
+                  autoFocus
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                />
+                <div className="flex justify-end gap-2">
                   <button
-                    onClick={() => approveRequest.mutate()}
-                    disabled={approveRequest.isPending}
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-success text-white shadow-xs hover:bg-success/90 disabled:opacity-50"
+                    onClick={() => { setShowRejectForm(false); setRejectReason(''); }}
+                    className="inline-flex items-center justify-center rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent transition-all"
                   >
-                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="m9 11 3 3L22 4" /></svg>
-                    {t('page.request_detail.approve')}
+                    {t('common.cancel')}
                   </button>
-                  {!showRejectForm ? (
-                    <button
-                      onClick={() => setShowRejectForm(true)}
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-destructive/10 hover:text-destructive transition-all"
-                    >
-                      {t('page.request_detail.reject')}
-                    </button>
-                  ) : (
-                    <div className="space-y-2">
-                      <input
-                        value={rejectReason}
-                        onChange={(e) => setRejectReason(e.target.value)}
-                        placeholder={t('page.request_detail.reject_reason_placeholder')}
-                        className="w-full"
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => rejectRequest.mutate()}
-                          disabled={!rejectReason.trim() || rejectRequest.isPending}
-                          className="flex-1 inline-flex items-center justify-center rounded-md h-9 px-4 text-sm font-medium bg-destructive text-white shadow-xs hover:bg-destructive/90 disabled:opacity-50"
-                        >
-                          {t('page.request_detail.reject')}
-                        </button>
-                        <button
-                          onClick={() => { setShowRejectForm(false); setRejectReason(''); }}
-                          className="inline-flex items-center justify-center rounded-md h-9 px-3 text-sm font-medium border bg-background shadow-xs hover:bg-accent transition-all"
-                        >
-                          {t('common.cancel')}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
+                  <button
+                    onClick={() => rejectRequest.mutate()}
+                    disabled={!rejectReason.trim() || rejectRequest.isPending}
+                    className="inline-flex items-center justify-center rounded-md h-9 px-4 text-sm font-medium bg-destructive text-white shadow-xs hover:bg-destructive/90 disabled:opacity-50"
+                  >
+                    {t('page.request_detail.reject')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
-              {/* Status transitions */}
-              {nextStatuses.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => changeStatus.mutate(s)}
-                  disabled={changeStatus.isPending}
-                  className={`w-full inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium shadow-xs transition-all disabled:opacity-50 ${
-                    s === 'resolved'
-                      ? 'bg-success text-white hover:bg-success/90'
-                      : s === 'rejected'
-                      ? 'border bg-background hover:bg-destructive/10 hover:text-destructive'
-                      : 'border bg-background hover:bg-accent hover:text-accent-foreground'
-                  }`}
-                >
-                  {s === 'resolved' && (
-                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="m9 11 3 3L22 4" /></svg>
-                  )}
-                  {t(`enum.${s}`, undefined, { defaultValue: humanizeToken(s) })}
-                </button>
-              ))}
-
-              {/* Priority change */}
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1">{t('table.priority')}</label>
-                <select
-                  value={request.priority}
-                  onChange={(e) => changePriority.mutate(e.target.value)}
-                  className="w-full text-sm"
-                >
-                  <option value="low">{t('enum.low')}</option>
-                  <option value="medium">{t('enum.medium')}</option>
-                  <option value="high">{t('enum.high')}</option>
-                  <option value="urgent">{t('enum.urgent')}</option>
-                </select>
+          {/* Reopen modal */}
+          {showReopenForm && reopenTarget && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
+              <div className="fixed inset-0 bg-black/50" onClick={() => { setShowReopenForm(false); setReopenReason(''); }} />
+              <div className="relative z-10 w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-lg space-y-4">
+                <h3 className="text-lg font-semibold text-foreground">{t('page.request_detail.reopen', undefined, { defaultValue: 'Reopen' })}</h3>
+                <p className="text-sm text-muted-foreground">{t('page.request_detail.reopen_reason_placeholder', undefined, { defaultValue: 'Why are you reopening this request?' })}</p>
+                <textarea
+                  value={reopenReason}
+                  onChange={(e) => setReopenReason(e.target.value)}
+                  rows={3}
+                  autoFocus
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                />
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => { setShowReopenForm(false); setReopenReason(''); }}
+                    className="inline-flex items-center justify-center rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent transition-all"
+                  >
+                    {t('common.cancel')}
+                  </button>
+                  <button
+                    onClick={() => changeStatus.mutate({ status: reopenTarget, reason: reopenReason })}
+                    disabled={!reopenReason.trim() || changeStatus.isPending}
+                    className="inline-flex items-center justify-center rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    {t('page.request_detail.reopen', undefined, { defaultValue: 'Reopen' })}
+                  </button>
+                </div>
               </div>
             </div>
           )}

@@ -110,32 +110,6 @@ class TestCreateRequestCommandSubtype:
         saved = repo.save.call_args[0][0]
         assert saved.subtype == "hardware"
 
-    def test_create_with_invalid_subtype_raises(self):
-        repo = _make_repo()
-        handler = CreateRequestCommandHandler(request_repo=repo)
-
-        with pytest.raises(ValueError, match="Invalid subtype"):
-            handler.handle(
-                CreateRequestCommand(
-                    company_id="comp1", created_by="user1",
-                    type="repair", title="Broken keyboard", description="Keys fell off",
-                    subtype="vpn",  # vpn is not valid for repair
-                )
-            )
-
-    def test_create_with_subtype_for_type_without_subtypes_raises(self):
-        repo = _make_repo()
-        handler = CreateRequestCommandHandler(request_repo=repo)
-
-        with pytest.raises(ValueError, match="does not support subtypes"):
-            handler.handle(
-                CreateRequestCommand(
-                    company_id="comp1", created_by="user1",
-                    type="incident", title="System down", description="Cannot login",
-                    subtype="hardware",
-                )
-            )
-
     def test_create_without_subtype_backward_compatible(self):
         repo = _make_repo()
         handler = CreateRequestCommandHandler(request_repo=repo)
@@ -218,20 +192,22 @@ class TestCreateRequestCommand:
 
         repo.save.assert_called_once()
 
-    def test_invalid_type_raises(self):
+    def test_free_form_type_accepted(self):
         repo = _make_repo()
         handler = CreateRequestCommandHandler(request_repo=repo)
 
-        with pytest.raises(ValueError):
-            handler.handle(
-                CreateRequestCommand(
-                    company_id="comp1",
-                    created_by="user1",
-                    type="invalid_type",
-                    title="Test",
-                    description="Test",
-                )
+        handler.handle(
+            CreateRequestCommand(
+                company_id="comp1",
+                created_by="user1",
+                type="Custom Workflow Type",
+                title="Test",
+                description="Test",
             )
+        )
+
+        saved = repo.save.call_args[0][0]
+        assert saved.type == "Custom Workflow Type"
 
 
 class TestChangeRequestStatusCommand:
@@ -455,6 +431,75 @@ class TestCreateRequestApprovalRouting:
         saved = repo.save.call_args[0][0]
         from src.request_bc.request.domain.enums import RequestStatus
         assert saved.status == RequestStatus.SUBMITTED
+
+
+class TestCreateRequestWorkflowTemplate:
+    def test_workflow_template_id_passed_to_entity(self):
+        repo = _make_repo()
+        handler = CreateRequestCommandHandler(request_repo=repo)
+
+        handler.handle(
+            CreateRequestCommand(
+                company_id="comp1", created_by="user1",
+                type="incident", title="Test", description="Test description",
+                workflow_template_id="tmpl_123",
+            )
+        )
+
+        saved = repo.save.call_args[0][0]
+        assert saved.workflow_template_id == "tmpl_123"
+        assert saved.workflow_subtype_id is None
+
+    def test_workflow_template_and_subtype_ids_passed(self):
+        repo = _make_repo()
+        handler = CreateRequestCommandHandler(request_repo=repo)
+
+        handler.handle(
+            CreateRequestCommand(
+                company_id="comp1", created_by="user1",
+                type="new_equipment", title="Need laptop", description="For work",
+                workflow_template_id="tmpl_456",
+                workflow_subtype_id="sub_789",
+                subtype="Computer",
+            )
+        )
+
+        saved = repo.save.call_args[0][0]
+        assert saved.workflow_template_id == "tmpl_456"
+        assert saved.workflow_subtype_id == "sub_789"
+        assert saved.subtype == "Computer"
+
+    def test_template_skips_subtype_enum_validation(self):
+        """When workflow_template_id is provided, any subtype string is accepted."""
+        repo = _make_repo()
+        handler = CreateRequestCommandHandler(request_repo=repo)
+
+        handler.handle(
+            CreateRequestCommand(
+                company_id="comp1", created_by="user1",
+                type="incident", title="Test", description="Test description",
+                workflow_template_id="tmpl_123",
+                subtype="CustomSubtype",
+            )
+        )
+
+        saved = repo.save.call_args[0][0]
+        assert saved.subtype == "CustomSubtype"
+
+    def test_without_template_fields_backward_compatible(self):
+        repo = _make_repo()
+        handler = CreateRequestCommandHandler(request_repo=repo)
+
+        handler.handle(
+            CreateRequestCommand(
+                company_id="comp1", created_by="user1",
+                type="incident", title="Test", description="Test description",
+            )
+        )
+
+        saved = repo.save.call_args[0][0]
+        assert saved.workflow_template_id is None
+        assert saved.workflow_subtype_id is None
 
 
 class TestCreateRequestAIClassification:

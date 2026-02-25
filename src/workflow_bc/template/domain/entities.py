@@ -24,11 +24,12 @@ class ChecklistItemDefinition:
         assignee_role: Optional[str] = None,
         sort_order: int = 0,
         is_required: bool = True,
+        id: Optional[str] = None,
     ) -> "ChecklistItemDefinition":
         if not title or not title.strip():
             raise ValueError("Checklist item title is required")
         return cls(
-            id=str(ulid.new()),
+            id=id or str(ulid.new()),
             template_id=template_id,
             title=title.strip(),
             description=description.strip() if description else None,
@@ -45,6 +46,7 @@ class WorkflowSubtype:
     name: str
     description: Optional[str]
     sort_order: int
+    is_active: bool = True
 
     @classmethod
     def create(
@@ -53,15 +55,18 @@ class WorkflowSubtype:
         name: str,
         description: Optional[str] = None,
         sort_order: int = 0,
+        id: Optional[str] = None,
+        is_active: bool = True,
     ) -> "WorkflowSubtype":
         if not name or not name.strip():
             raise ValueError("Subtype name is required")
         return cls(
-            id=str(ulid.new()),
+            id=id or str(ulid.new()),
             template_id=template_id,
             name=name.strip(),
             description=description.strip() if description else None,
             sort_order=sort_order,
+            is_active=is_active,
         )
 
 

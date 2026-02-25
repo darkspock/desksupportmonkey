@@ -13,6 +13,7 @@ export interface User {
   is_active: boolean;
   password_set?: boolean;
   has_oauth?: boolean;
+  hidden_nav_items?: Record<string, string[]> | null;
   street_line_1?: string | null;
   street_line_2?: string | null;
   city?: string | null;
@@ -185,6 +186,9 @@ export interface ServiceRequest {
   resolved_at: string | null;
   comment_count?: number;
   custom_fields?: CustomFieldValue[] | null;
+  workflow_template_id?: string | null;
+  workflow_template_name?: string | null;
+  workflow_template_icon?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -1145,6 +1149,7 @@ export interface WorkflowSubtype {
   name: string;
   description?: string | null;
   sort_order: number;
+  is_active: boolean;
 }
 
 export interface ChecklistItemDefinition {

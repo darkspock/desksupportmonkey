@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useI18n } from '../../lib/i18n';
@@ -10,7 +11,31 @@ interface HeaderProps {
   onMenuToggle?: () => void;
 }
 
+function resolveSectionKey(pathname: string): string | null {
+  const sections: Array<{ key: string; prefixes: string[] }> = [
+    { key: 'nav.section_my_tasks', prefixes: ['/my/tasks/', '/my/maintenance'] },
+    { key: 'nav.section_my_activity', prefixes: ['/my/'] },
+    {
+      key: 'nav.section_operations',
+      prefixes: ['/dashboard', '/requests', '/calendar', '/assets', '/vendors', '/purchase-orders', '/shipments', '/maintenance', '/addresses'],
+    },
+    { key: 'nav.section_knowledge', prefixes: ['/knowledge-base', '/kb', '/kb/categories'] },
+    { key: 'nav.section_security', prefixes: ['/audit', '/incidents', '/risks', '/compliance'] },
+    {
+      key: 'nav.section_management',
+      prefixes: ['/users', '/departments', '/reports', '/billing', '/settings/', '/maintenance-templates', '/sla/'],
+    },
+    { key: 'nav.section_platform', prefixes: ['/overview', '/companies', '/super-admin/'] },
+  ];
+
+  const match = sections.find((section) =>
+    section.prefixes.some((prefix) => pathname.startsWith(prefix)),
+  );
+  return match?.key ?? null;
+}
+
 export function Header({ onMenuToggle }: HeaderProps) {
+  const location = useLocation();
   const { user, logout, refreshUser } = useAuth();
   const { unread } = useNotifications();
   const { language, setLanguage, t } = useI18n();
@@ -20,7 +45,20 @@ export function Header({ onMenuToggle }: HeaderProps) {
   const [savingName, setSavingName] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const companyName = user?.company_name?.trim();
+  const sectionKey = resolveSectionKey(location.pathname);
+  const sectionLabel = sectionKey ? t(sectionKey) : null;
   const canManagePassword = user?.role === 'admin' || user?.role === 'super_admin';
+  const isTech = user?.role === 'technician' || user?.role === 'admin' || user?.role === 'super_admin';
+
+  const { data: queueCounts } = useQuery({
+    queryKey: ['queue-counts'],
+    queryFn: async () => {
+      const { data } = await api.get('/dashboard/requests/queue-counts');
+      return data.data as { urgent: number };
+    },
+    enabled: isTech,
+    refetchInterval: 30_000,
+  });
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -73,35 +111,41 @@ export function Header({ onMenuToggle }: HeaderProps) {
             <svg className="h-4 w-4 shrink-0 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21h18M5 21V7a2 2 0 012-2h10a2 2 0 012 2v14M9 9h1m4 0h1M9 13h1m4 0h1M9 17h1m4 0h1" />
             </svg>
-            <p className="truncate text-xs font-semibold text-secondary-foreground" title={companyName}>{companyName}</p>
+            <div className="flex min-w-0 items-center gap-1 text-xs font-semibold text-secondary-foreground">
+              <span className="truncate" title={companyName}>
+                {companyName}
+              </span>
+              {sectionLabel && (
+                <>
+                  <span className="text-muted-foreground">/</span>
+                  <span className="truncate" title={sectionLabel}>
+                    {sectionLabel}
+                  </span>
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>
 
       <div className="flex items-center gap-3">
-        <div
-          role="group"
-          aria-label={t('header.language')}
-          className="inline-flex items-center rounded-md border border-input bg-card p-0.5"
-        >
-          <button
-            type="button"
-            onClick={() => setLanguage('es')}
-            aria-pressed={language === 'es'}
-            className={`inline-flex h-7 min-w-[34px] items-center justify-center rounded-sm px-2 text-xs font-medium transition-colors ${language === 'es' ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-accent'}`}
+        {isTech && (
+          <Link
+            to="/requests"
+            className="relative text-muted-foreground hover:text-foreground transition-colors"
+            aria-label={t('header.request_queue', undefined, { defaultValue: 'Request Queue' })}
+            title={t('header.request_queue', undefined, { defaultValue: 'Request Queue' })}
           >
-            ES
-          </button>
-          <button
-            type="button"
-            onClick={() => setLanguage('en')}
-            aria-pressed={language === 'en'}
-            className={`inline-flex h-7 min-w-[34px] items-center justify-center rounded-sm px-2 text-xs font-medium transition-colors ${language === 'en' ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-accent'}`}
-          >
-            EN
-          </button>
-        </div>
-
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            {queueCounts && queueCounts.urgent > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-destructive text-primary-foreground text-[9px] font-bold rounded-full min-w-[14px] h-3.5 px-0.5 flex items-center justify-center">
+                {queueCounts.urgent > 9 ? '9+' : queueCounts.urgent}
+              </span>
+            )}
+          </Link>
+        )}
         <Link to="/my/notifications" className="relative text-muted-foreground hover:text-foreground transition-colors" aria-label={t('header.notifications')} title={t('header.notifications')}>
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -137,6 +181,27 @@ export function Header({ onMenuToggle }: HeaderProps) {
               <div className="px-3 py-2 border-b border-border">
                 <div className="text-xs text-muted-foreground">{t(`enum.${user?.role ?? ''}`)}</div>
                 {user?.name && <div className="truncate text-sm text-foreground mt-0.5">{user.name}</div>}
+              </div>
+              <div className="border-b border-border px-3 py-2">
+                <div className="mb-1 text-xs text-muted-foreground">{t('header.language')}</div>
+                <div role="group" aria-label={t('header.language')} className="inline-flex w-full items-center rounded-md border border-input bg-card p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setLanguage('es')}
+                    aria-pressed={language === 'es'}
+                    className={`inline-flex h-7 flex-1 items-center justify-center rounded-sm px-2 text-xs font-medium transition-colors ${language === 'es' ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-accent'}`}
+                  >
+                    ES
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLanguage('en')}
+                    aria-pressed={language === 'en'}
+                    className={`inline-flex h-7 flex-1 items-center justify-center rounded-sm px-2 text-xs font-medium transition-colors ${language === 'en' ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-accent'}`}
+                  >
+                    EN
+                  </button>
+                </div>
               </div>
               <button
                 type="button"

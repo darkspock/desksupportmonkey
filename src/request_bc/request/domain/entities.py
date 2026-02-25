@@ -9,9 +9,7 @@ from src.request_bc.request.domain.enums import (
     InvalidStatusTransitionError,
     RequestPriority,
     RequestStatus,
-    RequestType,
     VALID_STATUS_TRANSITIONS,
-    VALID_SUBTYPES,
 )
 
 
@@ -20,7 +18,7 @@ class ServiceRequest:
     id: str
     company_id: str
     created_by: str
-    type: RequestType
+    type: str
     title: str
     description: str
     status: RequestStatus
@@ -29,6 +27,8 @@ class ServiceRequest:
     subtype: Optional[str] = None
     data: Optional[dict] = field(default=None)
     custom_fields_data: Optional[dict] = field(default=None)
+    workflow_template_id: Optional[str] = None
+    workflow_subtype_id: Optional[str] = None
     resolved_at: Optional[datetime] = None
     first_response_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
@@ -39,7 +39,7 @@ class ServiceRequest:
         cls,
         company_id: str,
         created_by: str,
-        type: RequestType,
+        type: str,
         title: str,
         description: str,
         data: Optional[dict] = None,
@@ -47,17 +47,13 @@ class ServiceRequest:
         id: Optional[str] = None,
         subtype: Optional[str] = None,
         requires_approval: bool = False,
+        workflow_template_id: Optional[str] = None,
+        workflow_subtype_id: Optional[str] = None,
     ) -> "ServiceRequest":
         if not title or not title.strip():
             raise ValueError("Title is required")
         if not description or not description.strip():
             raise ValueError("Description is required")
-        if subtype is not None:
-            valid = [s.value for s in VALID_SUBTYPES.get(type, [])]
-            if not valid:
-                raise ValueError(f"Request type '{type.value}' does not support subtypes")
-            if subtype not in valid:
-                raise ValueError(f"Invalid subtype '{subtype}' for type '{type.value}'")
         initial_status = (
             RequestStatus.PENDING_APPROVAL if requires_approval else RequestStatus.SUBMITTED
         )
@@ -69,10 +65,12 @@ class ServiceRequest:
             title=title.strip(),
             description=description.strip(),
             status=initial_status,
-            priority=DEFAULT_PRIORITY[type],
+            priority=DEFAULT_PRIORITY.get(type, RequestPriority.LOW),
             subtype=subtype,
             data=data,
             custom_fields_data=custom_fields_data or {},
+            workflow_template_id=workflow_template_id,
+            workflow_subtype_id=workflow_subtype_id,
         )
 
     def change_status(self, new_status: RequestStatus) -> None:
