@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useI18n } from '../../lib/i18n';
-import { brand } from '../../config/brand';
+import { brand, getBrandMessages } from '../../config/brand';
 
 interface AuthShellProps {
   title: string;
@@ -11,24 +11,8 @@ interface AuthShellProps {
 }
 
 export function AuthShell({ title, subtitle, children, showBackToLogin = false }: AuthShellProps) {
-  const { t } = useI18n();
-  const metrics = [
-    {
-      value: '<2s',
-      label: t('auth.brand_metric_realtime_label'),
-      description: t('auth.brand_metric_realtime_desc'),
-    },
-    {
-      value: '4',
-      label: t('auth.brand_metric_roles_label'),
-      description: t('auth.brand_metric_roles_desc'),
-    },
-    {
-      value: '24/7',
-      label: t('auth.brand_metric_uptime_label'),
-      description: t('auth.brand_metric_uptime_desc'),
-    },
-  ];
+  const { t, language } = useI18n();
+  const msg = getBrandMessages(language);
 
   return (
     <div className="auth-shell-bg min-h-screen">
@@ -46,21 +30,21 @@ export function AuthShell({ title, subtitle, children, showBackToLogin = false }
               />
               <div className="space-y-0.5">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-100">{brand.name}</p>
-                <p className="text-xs text-slate-300">{t('auth.brand_caption')}</p>
+                <p className="text-xs text-slate-300">{msg.caption}</p>
               </div>
             </div>
 
             <div className="mt-10 max-w-xl">
               <h2 className="text-balance text-4xl font-semibold leading-tight [font-family:var(--dsm-font-display)]">
-                {t('auth.brand_tagline')}
+                {msg.tagline}
               </h2>
               <p className="mt-5 text-base leading-relaxed text-slate-300">
-                {t('auth.brand_subtitle')}
+                {msg.subtitle}
               </p>
             </div>
 
             <div className="mt-8 grid gap-3 sm:grid-cols-3">
-              {metrics.map((metric) => (
+              {msg.metrics.map((metric) => (
                 <div key={metric.label} className="rounded-2xl border border-white/15 bg-card/5 p-4 backdrop-blur-sm">
                   <p className="text-2xl font-semibold text-white">{metric.value}</p>
                   <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-300">{metric.label}</p>
@@ -77,8 +61,8 @@ export function AuthShell({ title, subtitle, children, showBackToLogin = false }
                   className="auth-float h-20 w-auto shrink-0 drop-shadow-[0_8px_18px_rgba(15,23,42,0.55)]"
                 />
                 <div>
-                  <p className="text-sm font-semibold text-slate-100">{t('auth.brand_card_title')}</p>
-                  <p className="mt-1 text-sm leading-relaxed text-slate-300">{t('auth.brand_card_desc')}</p>
+                  <p className="text-sm font-semibold text-slate-100">{msg.card.title}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-300">{msg.card.description}</p>
                 </div>
               </div>
             </div>

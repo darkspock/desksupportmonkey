@@ -80,24 +80,10 @@ const es: Record<string, string> = {
   'nav.subgroup_sla': 'SLA',
   'nav.subgroup_advanced': 'Avanzado',
 
-  'auth.brand_tagline': 'Operaciones IT, mesa de ayuda e inventario en un solo lugar.',
-  'auth.brand_subtitle':
-    'Gestiona solicitudes, activos, usuarios y reportes con control por roles y actualizaciones en tiempo real.',
-  'auth.brand_caption': 'Espacio IT unificado',
-  'auth.brand_metric_realtime_label': 'Actualizaciones en tiempo real',
-  'auth.brand_metric_realtime_desc': 'Notificaciones y estado sincronizado en toda la app.',
-  'auth.brand_metric_roles_label': 'Roles de acceso',
-  'auth.brand_metric_roles_desc': 'Empleado, técnico, admin y super admin.',
-  'auth.brand_metric_uptime_label': 'Acceso al workspace',
-  'auth.brand_metric_uptime_desc': 'Inicio de sesión seguro para equipos distribuidos.',
-  'auth.brand_card_title': 'Diseñado para la operación diaria',
-  'auth.brand_card_desc': 'Gestiona solicitudes, asigna equipos y centraliza cada flujo de trabajo.',
   'auth.secure_access': 'Acceso seguro',
   'auth.help': '¿Necesitas ayuda?',
   'auth.back_to_login': 'Volver al login',
 
-  'auth.login.title': 'Iniciar sesión',
-  'auth.login.subtitle': 'Accede de forma segura al espacio de trabajo de tu compañía.',
   'auth.login.magic_link': 'Empleados',
   'auth.login.password': 'Admins',
   'auth.login.magic_sent': 'Enlace mágico enviado',
@@ -125,8 +111,6 @@ const es: Record<string, string> = {
   'auth.login.microsoft_signin': 'Entrar con Microsoft',
   'auth.login.error_microsoft_failed': 'Falló el inicio de sesión con Microsoft',
 
-  'auth.register.title': 'Registrar tu compañía',
-  'auth.register.subtitle': 'Crea un nuevo espacio de trabajo y cuenta administradora.',
   'auth.register.success_title': 'Compañía registrada',
   'auth.register.success_desc': 'Revisa tu correo para el primer enlace de acceso.',
   'auth.register.company_name': 'Nombre de la compañía',

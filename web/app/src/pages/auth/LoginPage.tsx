@@ -8,6 +8,7 @@ import api from '../../lib/api';
 import { fetchOAuthProviders, loginWithGoogle, loginWithMicrosoft, loginWithMicrosoftPopup } from '../../lib/oauth';
 import { getDefaultRouteForRole, getSafeReturnTo } from '../../lib/navigation';
 import { useI18n } from '../../lib/i18n';
+import { getBrandMessages } from '../../config/brand';
 
 type LoginMode = 'magic-link' | 'password';
 
@@ -63,7 +64,8 @@ function GoogleSignInButton({ onToken }: { onToken: (idToken: string) => void })
 
 export default function LoginPage() {
   const { user, login } = useAuth();
-  const { t } = useI18n();
+  const { t, language } = useI18n();
+  const brandMsg = getBrandMessages(language);
   const navigate = useNavigate();
   const [params] = useSearchParams();
 
@@ -164,7 +166,7 @@ export default function LoginPage() {
 
   return (
     <GoogleOAuthProvider clientId={googleClientId}>
-    <AuthShell title={t('auth.login.title')} subtitle={t('auth.login.subtitle')} showBackToLogin={false}>
+    <AuthShell title={brandMsg.login.title} subtitle={brandMsg.login.subtitle} showBackToLogin={false}>
       <div className="mb-6 grid grid-cols-2 rounded-xl border border-border bg-secondary p-1">
         <button
           type="button"
@@ -298,9 +300,9 @@ export default function LoginPage() {
 
       <p className="mt-4 text-center text-xs text-muted-foreground">
         {t('auth.login.terms_notice')}{' '}
-        <a href="https://www.desksupportmonkey.com/terms/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{t('auth.terms.link')}</a>
+        <a href={brandMsg.termsUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{t('auth.terms.link')}</a>
         {' '}{t('common.and')}{' '}
-        <a href="https://www.desksupportmonkey.com/privacy/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{t('auth.privacy.link')}</a>
+        <a href={brandMsg.privacyUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{t('auth.privacy.link')}</a>
       </p>
     </AuthShell>
     </GoogleOAuthProvider>

@@ -5,12 +5,14 @@ import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
 import { getDefaultRouteForRole } from '../../lib/navigation';
 import { useI18n } from '../../lib/i18n';
+import { getBrandMessages } from '../../config/brand';
 
 const normalizeDomain = (value: string) => value.trim().toLowerCase().replace(/^@+/, '');
 
 export default function RegisterPage() {
   const { user } = useAuth();
-  const { t } = useI18n();
+  const { t, language } = useI18n();
+  const brandMsg = getBrandMessages(language);
   const [name, setName] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [emailDomains, setEmailDomains] = useState('');
@@ -71,7 +73,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <AuthShell title={t('auth.register.title')} subtitle={t('auth.register.subtitle')} showBackToLogin={false}>
+    <AuthShell title={brandMsg.register.title} subtitle={brandMsg.register.subtitle} showBackToLogin={false}>
       {sent ? (
         <div className="rounded-lg border border-success/20 bg-success/10 p-4 text-center">
           <p className="text-sm font-medium text-success">{t('auth.register.success_title')}</p>
@@ -134,9 +136,9 @@ export default function RegisterPage() {
             />
             <span className="text-sm text-muted-foreground">
               {t('auth.register.accept_terms_prefix')}{' '}
-              <a href="https://www.desksupportmonkey.com/terms/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{t('auth.terms.link')}</a>
+              <a href={brandMsg.termsUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{t('auth.terms.link')}</a>
               {' '}{t('common.and')}{' '}
-              <a href="https://www.desksupportmonkey.com/privacy/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{t('auth.privacy.link')}</a>
+              <a href={brandMsg.privacyUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{t('auth.privacy.link')}</a>
             </span>
           </label>
 

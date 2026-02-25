@@ -80,24 +80,10 @@ const en: Record<string, string> = {
   'nav.subgroup_sla': 'SLA',
   'nav.subgroup_advanced': 'Advanced',
 
-  'auth.brand_tagline': 'IT operations, service desk, and inventory in one place.',
-  'auth.brand_subtitle':
-    'Manage requests, assets, users, and reporting workflows with role-based access and realtime updates.',
-  'auth.brand_caption': 'Unified IT workspace',
-  'auth.brand_metric_realtime_label': 'Realtime updates',
-  'auth.brand_metric_realtime_desc': 'Notifications and state sync across the app.',
-  'auth.brand_metric_roles_label': 'Access roles',
-  'auth.brand_metric_roles_desc': 'Employee, technician, admin, and super admin.',
-  'auth.brand_metric_uptime_label': 'Workspace access',
-  'auth.brand_metric_uptime_desc': 'Secure sign-in for teams working across time zones.',
-  'auth.brand_card_title': 'Built for daily operations',
-  'auth.brand_card_desc': 'Track requests, assign devices, and keep every workflow in one place.',
   'auth.secure_access': 'Secure access',
   'auth.help': 'Need help?',
   'auth.back_to_login': 'Back to login',
 
-  'auth.login.title': 'Sign in',
-  'auth.login.subtitle': 'Access your company workspace securely.',
   'auth.login.magic_link': 'Magic Link',
   'auth.login.password': 'Password',
   'auth.login.magic_sent': 'Magic link sent',
@@ -125,8 +111,6 @@ const en: Record<string, string> = {
   'auth.login.microsoft_signin': 'Sign in with Microsoft',
   'auth.login.error_microsoft_failed': 'Microsoft sign-in failed',
 
-  'auth.register.title': 'Register your company',
-  'auth.register.subtitle': 'Create a new company workspace and admin account.',
   'auth.register.success_title': 'Company registered',
   'auth.register.success_desc': 'Check your email for the first login link.',
   'auth.register.company_name': 'Company name',

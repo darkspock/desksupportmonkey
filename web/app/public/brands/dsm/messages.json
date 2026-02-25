@@ -1,0 +1,74 @@
+{
+  "en": {
+    "caption": "Unified IT workspace",
+    "tagline": "IT operations, service desk, and inventory in one place.",
+    "subtitle": "Manage requests, assets, users, and reporting workflows with role-based access and realtime updates.",
+    "metrics": [
+      {
+        "value": "<2s",
+        "label": "Realtime updates",
+        "description": "Notifications and state sync across the app."
+      },
+      {
+        "value": "4",
+        "label": "Access roles",
+        "description": "Employee, technician, admin, and super admin."
+      },
+      {
+        "value": "24/7",
+        "label": "Workspace access",
+        "description": "Secure sign-in for teams working across time zones."
+      }
+    ],
+    "card": {
+      "title": "Built for daily operations",
+      "description": "Track requests, assign devices, and keep every workflow in one place."
+    },
+    "login": {
+      "title": "Sign in",
+      "subtitle": "Access your company workspace securely."
+    },
+    "register": {
+      "title": "Register your company",
+      "subtitle": "Create a workspace for your team."
+    },
+    "termsUrl": "https://www.desksupportmonkey.com/terms/",
+    "privacyUrl": "https://www.desksupportmonkey.com/privacy/"
+  },
+  "es": {
+    "caption": "Espacio IT unificado",
+    "tagline": "Operaciones IT, mesa de ayuda e inventario en un solo lugar.",
+    "subtitle": "Gestiona solicitudes, activos, usuarios y reportes con control por roles y actualizaciones en tiempo real.",
+    "metrics": [
+      {
+        "value": "<2s",
+        "label": "Actualizaciones en tiempo real",
+        "description": "Notificaciones y estado sincronizado en toda la app."
+      },
+      {
+        "value": "4",
+        "label": "Roles de acceso",
+        "description": "Empleado, técnico, admin y super admin."
+      },
+      {
+        "value": "24/7",
+        "label": "Acceso al workspace",
+        "description": "Inicio de sesión seguro para equipos distribuidos."
+      }
+    ],
+    "card": {
+      "title": "Diseñado para la operación diaria",
+      "description": "Gestiona solicitudes, asigna equipos y centraliza cada flujo de trabajo."
+    },
+    "login": {
+      "title": "Iniciar sesión",
+      "subtitle": "Accede de forma segura al espacio de trabajo de tu compañía."
+    },
+    "register": {
+      "title": "Registra tu empresa",
+      "subtitle": "Crea un espacio de trabajo para tu equipo."
+    },
+    "termsUrl": "https://www.desksupportmonkey.com/terms/",
+    "privacyUrl": "https://www.desksupportmonkey.com/privacy/"
+  }
+}

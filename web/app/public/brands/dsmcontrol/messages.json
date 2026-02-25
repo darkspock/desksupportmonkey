@@ -1,0 +1,74 @@
+{
+  "en": {
+    "caption": "IT asset lifecycle management",
+    "tagline": "Total control over your IT assets.",
+    "subtitle": "Manage the complete lifecycle of every device — from purchase to decommission — with full traceability for NIS2, DORA, and CRA audits.",
+    "metrics": [
+      {
+        "value": "100%",
+        "label": "Full audit trail",
+        "description": "Every action on every asset documented and exportable."
+      },
+      {
+        "value": "NIS2",
+        "label": "Compliance ready",
+        "description": "Built-in traceability for European regulatory frameworks."
+      },
+      {
+        "value": "A→Z",
+        "label": "Complete lifecycle",
+        "description": "Purchase, assignment, incidents, maintenance, and decommission."
+      }
+    ],
+    "card": {
+      "title": "From device to auditor — complete traceability",
+      "description": "Every incident linked to the device that caused it. Every device tracked from day one to decommission."
+    },
+    "login": {
+      "title": "Sign in",
+      "subtitle": "Access your company workspace securely."
+    },
+    "register": {
+      "title": "Register your company",
+      "subtitle": "Start managing your IT assets with full compliance from day one."
+    },
+    "termsUrl": "https://dsmcontrol.com/terms/",
+    "privacyUrl": "https://dsmcontrol.com/privacy/"
+  },
+  "es": {
+    "caption": "Gestión del ciclo de vida de activos TIC",
+    "tagline": "Control total de tus activos TIC.",
+    "subtitle": "Gestiona el ciclo de vida completo de cada dispositivo — desde la compra hasta la baja — con trazabilidad completa para auditorías NIS2, DORA y CRA.",
+    "metrics": [
+      {
+        "value": "100%",
+        "label": "Trazabilidad completa",
+        "description": "Cada acción sobre cada activo documentada y exportable."
+      },
+      {
+        "value": "NIS2",
+        "label": "Compliance listo",
+        "description": "Trazabilidad integrada para marcos regulatorios europeos."
+      },
+      {
+        "value": "A→Z",
+        "label": "Ciclo de vida completo",
+        "description": "Compra, asignación, incidencias, mantenimiento y baja."
+      }
+    ],
+    "card": {
+      "title": "Del dispositivo al auditor — trazabilidad completa",
+      "description": "Cada incidencia vinculada al dispositivo que la causa. Cada dispositivo trazado desde el primer día hasta la baja."
+    },
+    "login": {
+      "title": "Iniciar sesión",
+      "subtitle": "Accede de forma segura al espacio de trabajo de tu empresa."
+    },
+    "register": {
+      "title": "Registra tu empresa",
+      "subtitle": "Empieza a gestionar tus activos TIC con compliance desde el primer día."
+    },
+    "termsUrl": "https://dsmcontrol.com/terms/",
+    "privacyUrl": "https://dsmcontrol.com/privacy/"
+  }
+}
