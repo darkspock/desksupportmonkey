@@ -1,7 +1,7 @@
 ---
 const metrics = [
-  { label: 'Total lines of code', value: '~160,000 lines' },
-  { label: 'Backend (Python)', value: '~72,100 lines' },
+  { label: 'Total lines of code', value: '~170,000 lines' },
+  { label: 'Backend (Python)', value: '~72,200 lines' },
   { label: 'Frontend (React/TS)', value: '~36,000 lines' },
   { label: 'Astro sites', value: '~6,000 lines' },
   { label: 'Tests', value: '~44,300 lines' },
@@ -11,17 +11,17 @@ const metrics = [
   { label: 'Documentation', value: '~65,700 lines' },
 ];
 
-// ~160,000 total lines (production + tests)
+// ~170,000 total lines (production + tests)
 // Dev: 100 lines/day, Tech Lead: 100 lines/day -> 200 lines/day combined
-// 160,000 / 200 = 800 working days / 22 days per month ~= 36 months timeline
+// 170,000 / 200 = 850 working days / 22 days per month ~= 39 months timeline
 const teamBreakdown = [
-  { role: 'Developer', allocation: '100%', months: '36', detail: 'Full-stack implementation, ~100 lines/day' },
-  { role: 'Tech Lead', allocation: '100%', months: '36', detail: 'Architecture, code review, ~100 lines/day' },
-  { role: 'Product Manager', allocation: '30%', months: '10.8', detail: 'Requirements, discovery, prioritization' },
-  { role: 'UX Designer', allocation: '25%', months: '9', detail: 'User flows, design, usability' },
-  { role: 'Marketing', allocation: '15%', months: '5.4', detail: 'Marketing sites, content, positioning' },
+  { role: 'Developer', allocation: '100%', months: '39', detail: 'Full-stack implementation, ~100 lines/day' },
+  { role: 'Tech Lead', allocation: '100%', months: '39', detail: 'Architecture, code review, ~100 lines/day' },
+  { role: 'Product Manager', allocation: '30%', months: '11.7', detail: 'Requirements, discovery, prioritization' },
+  { role: 'UX Designer', allocation: '25%', months: '9.8', detail: 'User flows, design, usability' },
+  { role: 'Marketing', allocation: '15%', months: '5.9', detail: 'Marketing sites, content, positioning' },
 ];
-// Total: 36 + 36 + 10.8 + 9 + 5.4 = ~97.2 person-months
+// Total: 39 + 39 + 11.7 + 9.8 + 5.9 = ~105.4 person-months
 ---
 
 <section class="py-20">
@@ -56,7 +56,7 @@ const teamBreakdown = [
               aria-label="View team breakdown"
             >i</button>
           </span>
-          <span class="text-sm font-semibold text-slate-900">~36 months, 5-person team</span>
+          <span class="text-sm font-semibold text-slate-900">~39 months, 5-person team</span>
         </div>
       </div>
     </div>
@@ -70,7 +70,7 @@ const teamBreakdown = [
     <div class="flex items-start justify-between mb-5">
       <div>
         <h3 class="text-lg font-bold text-slate-900">Human Team Estimation</h3>
-        <p class="mt-1 text-xs text-slate-500">~160,000 lines &middot; 2 coders at 100 lines/day &middot; ~36 month timeline</p>
+        <p class="mt-1 text-xs text-slate-500">~170,000 lines &middot; 2 coders at 100 lines/day &middot; ~39 month timeline</p>
       </div>
       <button id="estimate-modal-close" type="button" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors" aria-label="Close">
         <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -98,7 +98,7 @@ const teamBreakdown = [
       <div class="grid grid-cols-[1fr_auto_auto] gap-x-4 px-4 py-3 border-t-2 border-slate-200 bg-slate-50">
         <span class="text-sm font-bold text-slate-900">Total</span>
         <span></span>
-        <span class="text-sm font-bold text-slate-900 text-right">~97.2 person-months</span>
+        <span class="text-sm font-bold text-slate-900 text-right">~105 person-months</span>
       </div>
     </div>
 
@@ -108,7 +108,7 @@ const teamBreakdown = [
       <p class="mt-1 text-sm text-slate-700"><strong>Day 2:</strong> ~79,700 total lines, 11 BCs, 32 migrations, expanded scope on top of Day 1.</p>
       <p class="mt-1 text-sm text-slate-700"><strong>Day 3:</strong> ~84,000 total lines, 11 BCs, 32 migrations, v0 UI redesign + marketing site refresh.</p>
       <p class="mt-1 text-sm text-slate-700"><strong>Day 4:</strong> ~159,000 total lines, 18 BCs, 57 migrations, compliance stack, billing, white-label deployment.</p>
-      <p class="mt-1 text-sm text-slate-700"><strong>Day 5:</strong> ~160,000 total lines, 19 BCs, 60 migrations, workflow templates, nav visibility, UX polish.</p>
+      <p class="mt-1 text-sm text-slate-700"><strong>Day 5:</strong> ~170,000 total lines, 19 BCs, 60 migrations, workflow templates, nav visibility, UX polish.</p>
     </div>
 
     <p class="mt-4 text-xs text-slate-400 text-center">
