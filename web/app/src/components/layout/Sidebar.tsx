@@ -6,7 +6,7 @@ import { cn } from '../../lib/cn';
 import { useI18n } from '../../lib/i18n';
 import { brand } from '../../config/brand';
 import api from '../../lib/api';
-import { sections, type NavEntry, type NavSection, type NavItem, type NavSeparator, type NavSubGroup } from '../../config/navSections';
+import { sections, type NavEntry, type NavItem, type NavSeparator, type NavSubGroup } from '../../config/navSections';
 
 /* ------------------------------------------------------------------ */
 /* Icons – Heroicons-style outline SVGs (24×24, strokeWidth 1.5)      */

@@ -97,9 +97,7 @@ export default function MyAssignedRequestsPage() {
               </tbody>
             </Table>
           </div>
-          {data.total_pages > 1 && (
-            <Pagination currentPage={page} totalPages={data.total_pages} onPageChange={setPage} />
-          )}
+          <Pagination page={page} pageSize={20} total={data.meta.total} onChange={setPage} />
         </>
       )}
     </div>

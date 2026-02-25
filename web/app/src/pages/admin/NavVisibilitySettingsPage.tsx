@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useI18n } from '../../lib/i18n';
 import { Loading } from '../../components/ui/Loading';
 import { ErrorState } from '../../components/ui/StateBlock';
 import api from '../../lib/api';
-import { sections, type NavItem, type NavSubGroup, type NavEntry } from '../../config/navSections';
+import { sections, type NavItem, type NavSubGroup } from '../../config/navSections';
 
 interface NavConfigData {
   id: string;
@@ -62,7 +62,6 @@ function hasRoleAccess(item: FlatNavItem, role: ConfigurableRole): boolean {
 
 export default function NavVisibilitySettingsPage() {
   const { t } = useI18n();
-  const queryClient = useQueryClient();
   const flatItems = useMemo(() => flattenNavItems(), []);
 
   const { data, isLoading, isError, refetch } = useQuery({
