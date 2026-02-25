@@ -11,6 +11,13 @@ from src.asset_type_bc.definition.domain.entities import AssetTypeDefinition
 from src.asset_type_bc.definition.domain.repository import (
     AssetTypeDefinitionRepositoryInterface,
 )
+from src.workflow_bc.template.domain.entities import (
+    ChecklistItemDefinition,
+    WorkflowTemplate,
+)
+from src.workflow_bc.template.domain.repository import (
+    WorkflowTemplateRepositoryInterface,
+)
 from src.auth_bc.magic_link.domain.entities import MagicLink
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
@@ -61,6 +68,71 @@ DEFAULT_ASSET_TYPES: list[tuple[str, str | None, int]] = [
     ("Other", None, 7),
 ]
 
+DEFAULT_WORKFLOW_TEMPLATES: list[dict] = [
+    {
+        "name": "Incident",
+        "description": "Report a technical issue or outage",
+        "require_all_complete": False,
+        "checklist_items": [
+            {"title": "Identify root cause", "is_required": True},
+            {"title": "Apply fix or workaround", "is_required": True},
+            {"title": "Verify resolution with reporter", "is_required": True},
+            {"title": "Update documentation", "is_required": False},
+        ],
+    },
+    {
+        "name": "New Equipment",
+        "description": "Request new hardware or software",
+        "require_all_complete": True,
+        "checklist_items": [
+            {"title": "Verify budget approval", "is_required": True},
+            {"title": "Place purchase order", "is_required": True},
+            {"title": "Receive and inspect equipment", "is_required": True},
+            {"title": "Configure and install", "is_required": True},
+            {"title": "Deliver to employee", "is_required": True},
+            {"title": "Confirm employee acceptance", "is_required": True},
+        ],
+    },
+    {
+        "name": "Employee Onboarding",
+        "description": "Set up accounts, equipment, and access for new hire",
+        "require_all_complete": True,
+        "checklist_items": [
+            {"title": "Create user accounts (email, Slack, etc.)", "is_required": True},
+            {"title": "Assign laptop and peripherals", "is_required": True},
+            {"title": "Set up VPN and network access", "is_required": True},
+            {"title": "Grant application permissions", "is_required": True},
+            {"title": "Ship equipment to employee", "is_required": True},
+            {"title": "Schedule orientation call", "is_required": False},
+            {"title": "Add to team channels", "is_required": False},
+        ],
+    },
+    {
+        "name": "Employee Offboarding",
+        "description": "Revoke access and recover equipment for departing employee",
+        "require_all_complete": True,
+        "checklist_items": [
+            {"title": "Disable email account", "is_required": True},
+            {"title": "Revoke VPN and network access", "is_required": True},
+            {"title": "Revoke application permissions", "is_required": True},
+            {"title": "Wipe company data from devices", "is_required": True},
+            {"title": "Collect company equipment", "is_required": True},
+            {"title": "Collect badge and physical keys", "is_required": True},
+            {"title": "Transfer file ownership", "is_required": False},
+        ],
+    },
+    {
+        "name": "Access Request",
+        "description": "Request access to systems, applications, or physical spaces",
+        "require_all_complete": True,
+        "checklist_items": [
+            {"title": "Verify manager approval", "is_required": True},
+            {"title": "Provision access", "is_required": True},
+            {"title": "Confirm access works", "is_required": True},
+        ],
+    },
+]
+
 
 class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
     def __init__(
@@ -72,6 +144,7 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
         stripe_client: StripeClient,
         asset_repo: Optional[AssetRepositoryInterface] = None,
         asset_type_repo: Optional[AssetTypeDefinitionRepositoryInterface] = None,
+        workflow_template_repo: Optional[WorkflowTemplateRepositoryInterface] = None,
     ):
         self.company_repo = company_repo
         self.user_repo = user_repo
@@ -80,6 +153,7 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
         self.stripe_client = stripe_client
         self.asset_repo = asset_repo
         self.asset_type_repo = asset_type_repo
+        self.workflow_template_repo = workflow_template_repo
 
     def handle(self, command: CreateCompanyCommand) -> None:
         # Check name uniqueness
@@ -159,5 +233,27 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
                 )
                 self.asset_type_repo.save(at)
             logger.info("Seeded default asset types for company %s", company.id)
+
+        # Seed default workflow templates
+        if self.workflow_template_repo:
+            for i, spec in enumerate(DEFAULT_WORKFLOW_TEMPLATES):
+                template = WorkflowTemplate.create(
+                    company_id=company.id,
+                    name=spec["name"],
+                    description=spec.get("description"),
+                    require_all_complete=spec.get("require_all_complete", False),
+                    sort_order=i,
+                )
+                items = []
+                for j, item_spec in enumerate(spec.get("checklist_items", [])):
+                    items.append(ChecklistItemDefinition.create(
+                        template_id=template.id,
+                        title=item_spec["title"],
+                        is_required=item_spec.get("is_required", True),
+                        sort_order=j,
+                    ))
+                template.set_checklist_items(items)
+                self.workflow_template_repo.save(template)
+            logger.info("Seeded default workflow templates for company %s", company.id)
 
         logger.info("Company created: %s (id=%s)", company.name, company.id)

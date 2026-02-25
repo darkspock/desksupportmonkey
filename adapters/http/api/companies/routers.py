@@ -13,6 +13,7 @@ from adapters.http.api.companies.dependencies import (
     get_magic_link_repo,
     get_stripe_client,
     get_user_repo,
+    get_workflow_template_repo,
 )
 import dataclasses
 
@@ -38,6 +39,7 @@ from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
 from src.auth_bc.user.infrastructure.repository import UserRepository
 from core.stripe_client import StripeClient, StripeUnavailableError
+from src.workflow_bc.template.infrastructure.repository import WorkflowTemplateRepository
 from src.company_bc.company.application.commands.create_company import (
     CompanyNameExistsError,
     CreateCompanyCommand,
@@ -174,6 +176,7 @@ def create_company(
     stripe_client: StripeClient = Depends(get_stripe_client),
     asset_repo: AssetRepository = Depends(get_asset_repo),
     asset_type_repo: AssetTypeDefinitionRepository = Depends(get_asset_type_repo),
+    workflow_template_repo: WorkflowTemplateRepository = Depends(get_workflow_template_repo),
 ):
     company_id = str(ulid.new())
     handler = CreateCompanyCommandHandler(
@@ -184,6 +187,7 @@ def create_company(
         stripe_client=stripe_client,
         asset_repo=asset_repo,
         asset_type_repo=asset_type_repo,
+        workflow_template_repo=workflow_template_repo,
     )
     command = CreateCompanyCommand(
         name=body.name,
