@@ -116,6 +116,9 @@ const es: Record<string, string> = {
 
   'auth.register.success_title': 'Compañía registrada',
   'auth.register.success_desc': 'Revisa tu correo para el primer enlace de acceso.',
+  'auth.register.resend_link': 'Reenviar correo de verificación',
+  'auth.register.resending': 'Enviando...',
+  'auth.register.resend_sent': 'Correo enviado! Revisa tu bandeja',
   'auth.register.company_name': 'Nombre de la compañía',
   'auth.register.admin_email': 'Correo del administrador',
   'auth.register.allowed_domains': 'Dominios de correo permitidos',

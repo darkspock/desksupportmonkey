@@ -20,6 +20,8 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resent, setResent] = useState(false);
 
   if (user) return <Navigate to={getDefaultRouteForRole(user.role)} replace />;
 
@@ -78,7 +80,24 @@ export default function RegisterPage() {
         <div className="rounded-lg border border-success/20 bg-success/10 p-4 text-center">
           <p className="text-sm font-medium text-success">{t('auth.register.success_title')}</p>
           <p className="mt-1 text-sm text-success">{t('auth.register.success_desc')}</p>
-          <Link to="/auth/login" className="mt-4 inline-block text-sm font-medium text-primary hover:underline">
+          <button
+            type="button"
+            disabled={resending || resent}
+            onClick={async () => {
+              setResending(true);
+              try {
+                await api.post('/auth/magic-link', { email: adminEmail });
+                setResent(true);
+                setTimeout(() => setResent(false), 30_000);
+              } catch { /* ignore */ }
+              setResending(false);
+            }}
+            className="mt-3 inline-block text-sm font-medium text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {resent ? t('auth.register.resend_sent') : resending ? t('auth.register.resending') : t('auth.register.resend_link')}
+          </button>
+          <br />
+          <Link to="/auth/login" className="mt-2 inline-block text-sm font-medium text-primary hover:underline">
             {t('auth.back_to_login')}
           </Link>
         </div>

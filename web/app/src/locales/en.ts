@@ -116,6 +116,9 @@ const en: Record<string, string> = {
 
   'auth.register.success_title': 'Company registered',
   'auth.register.success_desc': 'Check your email for the first login link.',
+  'auth.register.resend_link': 'Resend verification email',
+  'auth.register.resending': 'Sending...',
+  'auth.register.resend_sent': 'Email sent! Check your inbox',
   'auth.register.company_name': 'Company name',
   'auth.register.admin_email': 'Admin email',
   'auth.register.allowed_domains': 'Allowed email domains',
