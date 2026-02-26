@@ -33,6 +33,8 @@ echo "==> Astro site deployed to $SITE_DIR"
 echo "==> Building React SPA..."
 cd "$WORK_DIR/web/app"
 npm ci --production=false
+export VITE_MICROSOFT_CLIENT_ID=cde6455d-5cea-4f71-8b6e-45402f55d423
+export VITE_MICROSOFT_TENANT_ID=common
 npm run build
 mkdir -p "$APP_DIR"
 rm -rf "${APP_DIR:?}"/*

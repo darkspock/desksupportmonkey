@@ -30,7 +30,7 @@ export function getMsalInstance(clientId: string, tenantId = 'common'): PublicCl
       auth: {
         clientId,
         authority: `https://login.microsoftonline.com/${tenantId}`,
-        redirectUri: window.location.origin,
+        redirectUri: `${window.location.origin}/auth-redirect.html`,
       },
       cache: { cacheLocation: 'sessionStorage' },
     };
