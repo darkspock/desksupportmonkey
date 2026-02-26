@@ -52,6 +52,7 @@
 | E45 | Asset Locations & Movement Tracking | Location entity within asset BC, 3 system locations per company, admin-managed custom locations, automatic location changes on assign/unassign/create/decommission/shipping, movement audit trail, location management UI | High | Done |
 | E47 | Configurable Asset Types | Company-defined asset types replacing hardcoded enum — CRUD, reordering, priority configuration, and integration with asset creation forms | Medium | Done |
 | E48 | Menu Visibility per Role | Admin-configurable sidebar menu visibility per role — blocklist approach, per-company settings stored as JSONB, UI settings page with role columns, applied via /auth/me response | Medium | Done |
+| E49 | Asset Checkout & Custody | Equipment checkout lifecycle — technician-initiated checkout with condition tracking, employee acceptance flow, auto-GDPR-sanitization maintenance on checkin, cancel with auto-revert, custody dashboard widgets, checkout history on asset detail | High | Done |
 
 ---
 

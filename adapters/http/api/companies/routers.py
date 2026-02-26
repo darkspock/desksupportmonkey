@@ -11,6 +11,7 @@ from adapters.http.api.companies.dependencies import (
     get_asset_type_repo,
     get_company_repo,
     get_magic_link_repo,
+    get_maint_template_repo,
     get_stripe_client,
     get_user_repo,
     get_workflow_template_repo,
@@ -39,6 +40,9 @@ from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
 from src.auth_bc.user.infrastructure.repository import UserRepository
 from core.stripe_client import StripeClient, StripeUnavailableError
+from src.maintenance_bc.maintenance_template.infrastructure.repository import (
+    MaintenanceTemplateRepository,
+)
 from src.workflow_bc.template.infrastructure.repository import WorkflowTemplateRepository
 from src.company_bc.company.application.commands.create_company import (
     CompanyNameExistsError,
@@ -177,6 +181,7 @@ def create_company(
     asset_repo: AssetRepository = Depends(get_asset_repo),
     asset_type_repo: AssetTypeDefinitionRepository = Depends(get_asset_type_repo),
     workflow_template_repo: WorkflowTemplateRepository = Depends(get_workflow_template_repo),
+    maint_template_repo: MaintenanceTemplateRepository = Depends(get_maint_template_repo),
 ):
     company_id = str(ulid.new())
     handler = CreateCompanyCommandHandler(
@@ -188,6 +193,7 @@ def create_company(
         asset_repo=asset_repo,
         asset_type_repo=asset_type_repo,
         workflow_template_repo=workflow_template_repo,
+        maint_template_repo=maint_template_repo,
     )
     command = CreateCompanyCommand(
         name=body.name,

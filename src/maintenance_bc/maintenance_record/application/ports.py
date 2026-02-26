@@ -28,6 +28,23 @@ class AssetLookup(ABC):
         ...
 
 
+class AssetStatusUpdater(ABC):
+    """Port for updating asset status from maintenance_bc.
+
+    Satisfied by asset_bc's repository at the router level.
+    """
+
+    @abstractmethod
+    def set_status_in_stock(
+        self,
+        asset_id: str,
+        company_id: str,
+        performed_by: str,
+    ) -> None:
+        """Transition asset to IN_STOCK status and create an event."""
+        ...
+
+
 class UserLookup(ABC):
     """Port for looking up users from maintenance_bc.
 

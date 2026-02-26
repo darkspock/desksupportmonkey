@@ -1175,6 +1175,61 @@ export interface WorkflowTemplate {
   updated_at?: string | null;
 }
 
+// Asset Checkout / Custody
+export type CheckoutStatus = 'open' | 'accepted' | 'checked_in' | 'cancelled';
+
+export interface AssetCheckout {
+  id: string;
+  asset_id: string;
+  user_id: string;
+  checked_out_by: string;
+  checked_out_at: string;
+  condition_out: string;
+  condition_out_notes?: string | null;
+  notes_out?: string | null;
+  accepted_at?: string | null;
+  checked_in_at?: string | null;
+  checked_in_by?: string | null;
+  condition_in?: string | null;
+  condition_in_notes?: string | null;
+  notes_in?: string | null;
+  cancelled_at?: string | null;
+  cancelled_by?: string | null;
+  cancel_reason?: string | null;
+  maintenance_id?: string | null;
+  auto_assigned: boolean;
+  status: CheckoutStatus;
+  created_at?: string | null;
+}
+
+export interface MyCustody {
+  pending_acceptance: MyCustodyItem[];
+  open: MyCustodyItem[];
+}
+
+export interface MyCustodyItem {
+  checkout_id: string;
+  asset_id: string;
+  condition_out: string;
+  checked_out_at: string;
+  accepted_at?: string | null;
+  status: string;
+}
+
+export interface MyCustodyHistoryItem {
+  checkout_id: string;
+  asset_id: string;
+  asset_type?: string | null;
+  asset_brand?: string | null;
+  asset_model?: string | null;
+  condition_out: string;
+  condition_in?: string | null;
+  checked_out_at: string;
+  checked_in_at?: string | null;
+  cancelled_at?: string | null;
+  status: string;
+}
+
 // Request Checklist
 export interface RequestChecklistItem {
   id: string;

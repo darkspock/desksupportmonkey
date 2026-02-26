@@ -51,6 +51,7 @@ class MaintenanceRecordRepository(MaintenanceRecordRepositoryInterface):
             model.actual_findings = record.actual_findings
             model.cancellation_reason = record.cancellation_reason
             model.skip_reason = record.skip_reason
+            model.source_type = record.source_type
             model.reminder_48h_sent = record.reminder_48h_sent
             model.overdue_alert_sent = record.overdue_alert_sent
         else:
@@ -73,6 +74,7 @@ class MaintenanceRecordRepository(MaintenanceRecordRepositoryInterface):
                 actual_findings=record.actual_findings,
                 cancellation_reason=record.cancellation_reason,
                 skip_reason=record.skip_reason,
+                source_type=record.source_type,
                 reminder_48h_sent=record.reminder_48h_sent,
                 overdue_alert_sent=record.overdue_alert_sent,
             )
@@ -312,6 +314,7 @@ class MaintenanceRecordRepository(MaintenanceRecordRepositoryInterface):
             actual_findings=model.actual_findings,
             cancellation_reason=model.cancellation_reason,
             skip_reason=model.skip_reason,
+            source_type=model.source_type,
             reminder_48h_sent=model.reminder_48h_sent,
             overdue_alert_sent=model.overdue_alert_sent,
             created_at=model.created_at,

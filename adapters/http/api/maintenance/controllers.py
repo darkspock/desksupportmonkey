@@ -39,6 +39,7 @@ from src.maintenance_bc.maintenance_record.application.commands.update_maintenan
 )
 from src.maintenance_bc.maintenance_record.application.ports import (
     AssetLookup,
+    AssetStatusUpdater,
     UserLookup,
 )
 from src.maintenance_bc.maintenance_record.application.queries.get_maintenance_record import (
@@ -68,12 +69,14 @@ class MaintenanceController:
         user_lookup: UserLookup,
         event_bus: EventBus,
         db: Session,
+        asset_status_updater: Optional[AssetStatusUpdater] = None,
     ):
         self.record_repo = record_repo
         self.asset_lookup = asset_lookup
         self.user_lookup = user_lookup
         self.event_bus = event_bus
         self.db = db
+        self.asset_status_updater = asset_status_updater
 
     def create(
         self,
@@ -241,11 +244,13 @@ class MaintenanceController:
     ) -> dict:
         handler = CompleteMaintenanceCommandHandler(
             record_repo=self.record_repo,
+            asset_status_updater=self.asset_status_updater,
         )
         handler.handle(
             CompleteMaintenanceCommand(
                 record_id=record_id,
                 company_id=company_id,
+                performed_by=actor_id,
                 completion_notes=completion_notes,
                 actual_findings=actual_findings,
             )

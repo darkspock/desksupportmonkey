@@ -10,6 +10,7 @@ from core.database import get_db
 from adapters.http.api.my.dependencies import (
     get_appointment_repo,
     get_asset_repo,
+    get_checkout_repo,
     get_company_repo,
     get_incident_repo,
     get_maintenance_record_repo,
@@ -19,6 +20,8 @@ from adapters.http.api.my.dependencies import (
     get_user_repo,
 )
 from adapters.http.api.my.schemas import (
+    MyCustodyHistoryResponse,
+    MyCustodyResponse,
     MyEquipmentResponse,
     MyCompanySettingsResponse,
     MyIncidentResponse,
@@ -191,10 +194,151 @@ def my_equipment(
                 brand=a.brand,
                 model=a.model,
                 serial_number=a.serial_number,
+                status=a.status.value,
                 created_at=a.created_at,
             ).model_dump(mode="json")
             for a in assets
         ]
+    }
+
+
+@router.get("/custody")
+def my_custody(
+    current_user: User = Depends(get_current_user),
+    checkout_repo: "CheckoutRepository" = Depends(get_checkout_repo),
+):
+    from src.asset_bc.checkout.application.queries.list_my_equipment import (
+        ListMyEquipmentQuery,
+        ListMyEquipmentQueryHandler,
+    )
+    from src.asset_bc.checkout.infrastructure.repository import CheckoutRepository
+
+    handler = ListMyEquipmentQueryHandler(checkout_repo=checkout_repo)
+    result = handler.handle(
+        ListMyEquipmentQuery(
+            user_id=current_user.id,
+            company_id=current_user.company_id,
+        )
+    )
+    all_checkouts = result.open_checkouts + result.pending_acceptance
+    return {
+        "data": {
+            "open": [
+                MyCustodyResponse(
+                    checkout_id=c.id,
+                    asset_id=c.asset_id,
+                    condition_out=c.condition_out,
+                    checked_out_at=c.checked_out_at,
+                    accepted_at=c.accepted_at,
+                    status=c.status,
+                ).model_dump(mode="json")
+                for c in result.open_checkouts
+            ],
+            "pending_acceptance": [
+                MyCustodyResponse(
+                    checkout_id=c.id,
+                    asset_id=c.asset_id,
+                    condition_out=c.condition_out,
+                    checked_out_at=c.checked_out_at,
+                    accepted_at=c.accepted_at,
+                    status=c.status,
+                ).model_dump(mode="json")
+                for c in result.pending_acceptance
+            ],
+        }
+    }
+
+
+@router.post("/equipment/{asset_id}/accept")
+def accept_equipment(
+    asset_id: str,
+    current_user: User = Depends(get_current_user),
+    asset_repo: AssetRepository = Depends(get_asset_repo),
+    checkout_repo: "CheckoutRepository" = Depends(get_checkout_repo),
+):
+    from src.asset_bc.checkout.application.commands.accept_checkout import (
+        AcceptCheckoutCommand,
+        AcceptCheckoutCommandHandler,
+    )
+    from src.asset_bc.checkout.domain.exceptions import (
+        CheckoutAlreadyAcceptedError,
+        CheckoutNotOpenError,
+        NoActiveCheckoutError,
+        UnauthorizedAcceptError,
+    )
+
+    handler = AcceptCheckoutCommandHandler(
+        asset_repo=asset_repo,
+        checkout_repo=checkout_repo,
+    )
+    try:
+        handler.handle(
+            AcceptCheckoutCommand(
+                asset_id=asset_id,
+                company_id=current_user.company_id,
+                user_id=current_user.id,
+            )
+        )
+    except NoActiveCheckoutError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No active checkout for this asset")
+    except UnauthorizedAcceptError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not the assigned user")
+    except CheckoutAlreadyAcceptedError:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Already accepted")
+    except CheckoutNotOpenError:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Checkout is not open")
+
+    return {"data": {"message": "Equipment accepted"}}
+
+
+@router.get("/custody/history")
+def my_custody_history(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+    checkout_repo: "CheckoutRepository" = Depends(get_checkout_repo),
+    asset_repo: AssetRepository = Depends(get_asset_repo),
+):
+    from src.asset_bc.checkout.application.queries.list_my_custody_history import (
+        ListMyCustodyHistoryQuery,
+        ListMyCustodyHistoryQueryHandler,
+    )
+
+    handler = ListMyCustodyHistoryQueryHandler(checkout_repo=checkout_repo)
+    checkouts, total = handler.handle(
+        ListMyCustodyHistoryQuery(
+            user_id=current_user.id,
+            company_id=current_user.company_id,
+            page=page,
+            page_size=page_size,
+        )
+    )
+
+    asset_ids = list({c.asset_id for c in checkouts})
+    asset_map = {}
+    for aid in asset_ids:
+        a = asset_repo.find_by_id(aid, current_user.company_id)
+        if a:
+            asset_map[aid] = a
+
+    return {
+        "data": [
+            MyCustodyHistoryResponse(
+                checkout_id=c.id,
+                asset_id=c.asset_id,
+                asset_type=asset_map[c.asset_id].type if c.asset_id in asset_map else None,
+                asset_brand=asset_map[c.asset_id].brand if c.asset_id in asset_map else None,
+                asset_model=asset_map[c.asset_id].model if c.asset_id in asset_map else None,
+                condition_out=c.condition_out,
+                condition_in=c.condition_in,
+                checked_out_at=c.checked_out_at,
+                checked_in_at=c.checked_in_at,
+                cancelled_at=c.cancelled_at,
+                status=c.status,
+            ).model_dump(mode="json")
+            for c in checkouts
+        ],
+        "meta": PaginationMeta(page=page, page_size=page_size, total=total).model_dump(),
     }
 
 

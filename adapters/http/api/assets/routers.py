@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, status
 from starlette.requests import Request
 
 from adapters.http.api.auth.dependencies import require_role
-from adapters.http.api.assets.dependencies import get_asset_repo, get_user_repo
+from adapters.http.api.assets.dependencies import get_asset_repo, get_checkout_repo, get_user_repo
 from adapters.http.api.custom_fields.dependencies import (
     get_cf_definition_repo,
     get_cf_enrichment_service,
@@ -81,6 +81,8 @@ from src.asset_bc.asset.application.commands.unassign_asset import (
     UnassignAssetCommand,
     UnassignAssetCommandHandler,
 )
+from src.asset_bc.checkout.domain.exceptions import CannotUnassignWithOpenCheckoutError
+from src.asset_bc.checkout.infrastructure.repository import CheckoutRepository
 from src.asset_bc.asset.application.commands.import_assets import (
     ImportAssetsRequest,
     ImportAssetsService,
@@ -687,8 +689,11 @@ def unassign_asset(
     asset_id: str,
     current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
     asset_repo: AssetRepository = Depends(get_asset_repo),
+    checkout_repo: CheckoutRepository = Depends(get_checkout_repo),
 ):
-    handler = UnassignAssetCommandHandler(asset_repo=asset_repo)
+    handler = UnassignAssetCommandHandler(
+        asset_repo=asset_repo, checkout_repo=checkout_repo,
+    )
     try:
         handler.handle(
             UnassignAssetCommand(
@@ -699,6 +704,11 @@ def unassign_asset(
         )
     except UnassignAssetNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+    except CannotUnassignWithOpenCheckoutError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot unassign asset with an active checkout",
+        )
     except InvalidAssignmentError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     query_handler = GetAssetQueryHandler(asset_repo=asset_repo)

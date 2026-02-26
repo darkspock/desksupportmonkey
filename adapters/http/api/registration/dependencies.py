@@ -11,6 +11,9 @@ from src.asset_type_bc.definition.infrastructure.repository import (
 from src.auth_bc.magic_link.infrastructure.repository import MagicLinkRepository
 from src.auth_bc.user.infrastructure.repository import UserRepository
 from src.company_bc.company.infrastructure.repository import CompanyRepository
+from src.maintenance_bc.maintenance_template.infrastructure.repository import (
+    MaintenanceTemplateRepository,
+)
 from src.workflow_bc.template.infrastructure.repository import WorkflowTemplateRepository
 
 
@@ -36,6 +39,10 @@ def get_asset_type_repo(db: Session = Depends(get_db)) -> AssetTypeDefinitionRep
 
 def get_workflow_template_repo(db: Session = Depends(get_db)) -> WorkflowTemplateRepository:
     return WorkflowTemplateRepository(db)
+
+
+def get_maint_template_repo(db: Session = Depends(get_db)) -> MaintenanceTemplateRepository:
+    return MaintenanceTemplateRepository(db)
 
 
 def get_stripe_client() -> StripeClient:

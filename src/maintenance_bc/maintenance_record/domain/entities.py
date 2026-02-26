@@ -34,6 +34,7 @@ class MaintenanceRecord:
     actual_findings: Optional[str] = None
     cancellation_reason: Optional[str] = None
     skip_reason: Optional[str] = None
+    source_type: Optional[str] = None
     reminder_48h_sent: bool = False
     overdue_alert_sent: bool = False
     created_at: Optional[datetime] = None
@@ -55,6 +56,7 @@ class MaintenanceRecord:
         plan_id: Optional[str] = None,
         checklist_items: Optional[list[str]] = None,
         scheduled_at: Optional[datetime] = None,
+        source_type: Optional[str] = None,
         id: Optional[str] = None,
     ) -> "MaintenanceRecord":
         if not title or not title.strip():
@@ -72,6 +74,7 @@ class MaintenanceRecord:
             plan_id=plan_id,
             checklist_items=checklist_items or [],
             scheduled_at=scheduled_at,
+            source_type=source_type,
         )
 
     def _transition(self, target: MaintenanceStatus) -> None:

@@ -16,6 +16,7 @@ from src.asset_bc.asset.application.commands.unassign_asset import (
 )
 from src.asset_bc.asset.domain.entities import Asset, InvalidAssignmentError
 from src.asset_bc.asset.domain.enums import AssetStatus
+from src.asset_bc.checkout.domain.exceptions import CannotUnassignWithOpenCheckoutError
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
 
@@ -56,10 +57,9 @@ class TestAssignAssetCommand:
         )
 
         asset_repo.save.assert_called_once()
-        # assign emits 'assigned' event + optionally 'location_changed' event
-        assert asset_repo.save_event.call_count >= 1
-        event_types = [call[0][0].event_type for call in asset_repo.save_event.call_args_list]
-        assert "assigned" in event_types
+        asset_repo.save_event.assert_called_once()
+        event = asset_repo.save_event.call_args[0][0]
+        assert event.event_type == "assigned"
 
     def test_asset_not_found_raises(self):
         asset_repo = MagicMock()
@@ -138,7 +138,11 @@ class TestUnassignAssetCommand:
         repo = MagicMock()
         repo.find_by_id.return_value = asset
         repo.save.side_effect = lambda a: a
-        handler = UnassignAssetCommandHandler(asset_repo=repo)
+        checkout_repo = MagicMock()
+        checkout_repo.find_active_by_asset.return_value = None
+        handler = UnassignAssetCommandHandler(
+            asset_repo=repo, checkout_repo=checkout_repo,
+        )
 
         handler.handle(
             UnassignAssetCommand(
@@ -147,20 +151,18 @@ class TestUnassignAssetCommand:
         )
 
         repo.save.assert_called_once()
-        # unassign emits 'unassigned' event + optionally 'location_changed' event
-        assert repo.save_event.call_count >= 1
-        event_types = [call[0][0].event_type for call in repo.save_event.call_args_list]
-        assert "unassigned" in event_types
-        unassigned_event = next(
-            call[0][0] for call in repo.save_event.call_args_list
-            if call[0][0].event_type == "unassigned"
-        )
-        assert unassigned_event.data["previous_user_id"] == "user1"
+        repo.save_event.assert_called_once()
+        event = repo.save_event.call_args[0][0]
+        assert event.event_type == "unassigned"
+        assert event.data["previous_user_id"] == "user1"
 
     def test_asset_not_found_raises(self):
         repo = MagicMock()
         repo.find_by_id.return_value = None
-        handler = UnassignAssetCommandHandler(asset_repo=repo)
+        checkout_repo = MagicMock()
+        handler = UnassignAssetCommandHandler(
+            asset_repo=repo, checkout_repo=checkout_repo,
+        )
 
         with pytest.raises(UnassignAssetNotFoundError):
             handler.handle(
@@ -173,7 +175,11 @@ class TestUnassignAssetCommand:
         asset = _make_asset()
         repo = MagicMock()
         repo.find_by_id.return_value = asset
-        handler = UnassignAssetCommandHandler(asset_repo=repo)
+        checkout_repo = MagicMock()
+        checkout_repo.find_active_by_asset.return_value = None
+        handler = UnassignAssetCommandHandler(
+            asset_repo=repo, checkout_repo=checkout_repo,
+        )
 
         with pytest.raises(InvalidAssignmentError):
             handler.handle(
@@ -181,3 +187,23 @@ class TestUnassignAssetCommand:
                     asset_id=asset.id, company_id="comp1", performed_by="tech1",
                 )
             )
+
+    def test_open_checkout_blocks_unassign(self):
+        asset = _make_asset()
+        asset.assign(user_id="user1", department_id="dept1")
+
+        repo = MagicMock()
+        repo.find_by_id.return_value = asset
+        checkout_repo = MagicMock()
+        checkout_repo.find_active_by_asset.return_value = MagicMock()  # active checkout
+        handler = UnassignAssetCommandHandler(
+            asset_repo=repo, checkout_repo=checkout_repo,
+        )
+
+        with pytest.raises(CannotUnassignWithOpenCheckoutError):
+            handler.handle(
+                UnassignAssetCommand(
+                    asset_id=asset.id, company_id="comp1", performed_by="tech1",
+                )
+            )
+        repo.save.assert_not_called()

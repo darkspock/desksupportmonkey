@@ -15,6 +15,7 @@ from src.procurement_bc.purchase_order.infrastructure.repository import (
 )
 from src.request_bc.request.infrastructure.repository import RequestRepository
 from src.shipping_bc.shipment.infrastructure.repository import ShipmentRepository
+from src.asset_bc.checkout.infrastructure.repository import CheckoutRepository
 from src.maintenance_bc.maintenance_record.infrastructure.repository import (
     MaintenanceRecordRepository,
 )
@@ -51,3 +52,7 @@ def get_maintenance_record_repo(
     db: Session = Depends(get_db),
 ) -> MaintenanceRecordRepository:
     return MaintenanceRecordRepository(db)
+
+
+def get_checkout_repo(db: Session = Depends(get_db)) -> CheckoutRepository:
+    return CheckoutRepository(db)

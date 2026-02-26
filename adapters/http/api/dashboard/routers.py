@@ -11,6 +11,7 @@ from adapters.http.api.dashboard.dependencies import (
     get_asset_repo,
     get_budget_checker,
     get_budget_repo,
+    get_checkout_repo,
     get_maintenance_record_repo,
     get_po_repo,
     get_request_repo,
@@ -56,6 +57,7 @@ from src.procurement_bc.purchase_order.application.queries.get_recent_pos import
 from src.procurement_bc.purchase_order.infrastructure.repository import (
     PurchaseOrderRepository,
 )
+from src.asset_bc.checkout.infrastructure.repository import CheckoutRepository
 from src.request_bc.request.infrastructure.repository import RequestRepository
 from src.shipping_bc.shipment.application.queries.shipment_dashboard import (
     ShipmentDashboardQuery,
@@ -409,5 +411,25 @@ def maintenance_summary(
             "overdue": result.overdue,
             "in_progress": result.in_progress,
             "completed_30d": result.completed_30d,
+        }
+    }
+
+
+# ── GET /dashboard/checkouts — Checkout summary counts ────────────────
+
+
+@router.get("/checkouts")
+def checkout_summary(
+    current_user: User = Depends(admin_dep),
+    checkout_repo: CheckoutRepository = Depends(get_checkout_repo),
+):
+    open_count = checkout_repo.count_open_by_company(current_user.company_id)
+    pending_count = checkout_repo.count_pending_acceptance_by_company(
+        current_user.company_id,
+    )
+    return {
+        "data": {
+            "open_checkouts": open_count,
+            "pending_acceptances": pending_count,
         }
     }

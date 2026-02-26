@@ -16,6 +16,7 @@ import { CustomFieldsDisplay } from '../../components/custom-fields/CustomFields
 import { CustomFieldsForm } from '../../components/custom-fields/CustomFieldsForm';
 import type {
   Asset,
+  AssetCheckout,
   AssetEvent,
   AssetLocation,
   AssetTypeDefinition,
@@ -164,6 +165,14 @@ export default function AssetDetailPage() {
     notes: '',
   });
   const [editCustomFields, setEditCustomFields] = useState<Record<string, unknown>>({});
+  const [checkoutUserId, setCheckoutUserId] = useState('');
+  const [checkoutCondition, setCheckoutCondition] = useState('');
+  const [checkoutNotes, setCheckoutNotes] = useState('');
+  const [showCheckinForm, setShowCheckinForm] = useState(false);
+  const [checkinCondition, setCheckinCondition] = useState('');
+  const [checkinNotes, setCheckinNotes] = useState('');
+  const [showCancelForm, setShowCancelForm] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
 
   const { data: asset, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['asset', id],
@@ -199,6 +208,26 @@ export default function AssetDetailPage() {
         params: { asset_id: id, page: 1, page_size: 20 },
       });
       return data as PaginatedResponse<MaintenanceRecord>;
+    },
+    enabled: Boolean(id),
+  });
+
+  const { data: currentCheckout, refetch: refetchCurrentCheckout } = useQuery({
+    queryKey: ['asset-checkout-current', id],
+    queryFn: async () => {
+      const { data } = await api.get(`/checkouts/assets/${id}/current`);
+      return data.data as AssetCheckout | null;
+    },
+    enabled: Boolean(id),
+  });
+
+  const { data: checkoutHistory } = useQuery({
+    queryKey: ['asset-checkout-history', id],
+    queryFn: async () => {
+      const { data } = await api.get(`/checkouts/assets/${id}`, {
+        params: { page: 1, page_size: 20 },
+      });
+      return data as PaginatedResponse<AssetCheckout>;
     },
     enabled: Boolean(id),
   });
@@ -241,6 +270,8 @@ export default function AssetDetailPage() {
   const refreshAssetQueries = () => {
     queryClient.invalidateQueries({ queryKey: ['asset', id] });
     queryClient.invalidateQueries({ queryKey: ['asset-events', id] });
+    queryClient.invalidateQueries({ queryKey: ['asset-checkout-current', id] });
+    queryClient.invalidateQueries({ queryKey: ['asset-checkout-history', id] });
     queryClient.invalidateQueries({ queryKey: ['assets'] });
   };
 
@@ -363,6 +394,53 @@ export default function AssetDetailPage() {
     },
   });
 
+  const createCheckout = useMutation({
+    mutationFn: (payload: { user_id: string; condition_out: string; notes_out?: string }) =>
+      api.post(`/checkouts/assets/${id}`, payload),
+    onSuccess: () => {
+      refreshAssetQueries();
+      setCheckoutUserId('');
+      setCheckoutCondition('');
+      setCheckoutNotes('');
+      showToast({ title: t('page.asset_detail.toast_checkout_created'), variant: 'success' });
+    },
+    onError: (err: unknown) => {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('page.asset_detail.error_checkout');
+      showToast({ title: t('page.asset_detail.error_checkout_failed'), description: detail, variant: 'error' });
+    },
+  });
+
+  const checkinAsset = useMutation({
+    mutationFn: (payload: { condition_in: string; notes_in?: string }) =>
+      api.post(`/checkouts/assets/${id}/checkin`, payload),
+    onSuccess: () => {
+      refreshAssetQueries();
+      setShowCheckinForm(false);
+      setCheckinCondition('');
+      setCheckinNotes('');
+      showToast({ title: t('page.asset_detail.toast_checkin_success'), variant: 'success' });
+    },
+    onError: (err: unknown) => {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('page.asset_detail.error_checkin');
+      showToast({ title: t('page.asset_detail.error_checkin_failed'), description: detail, variant: 'error' });
+    },
+  });
+
+  const cancelCheckout = useMutation({
+    mutationFn: (payload: { reason?: string }) =>
+      api.post(`/checkouts/assets/${id}/cancel`, payload),
+    onSuccess: () => {
+      refreshAssetQueries();
+      setShowCancelForm(false);
+      setCancelReason('');
+      showToast({ title: t('page.asset_detail.toast_cancel_success'), variant: 'success' });
+    },
+    onError: (err: unknown) => {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('page.asset_detail.error_cancel');
+      showToast({ title: t('page.asset_detail.error_cancel_failed'), description: detail, variant: 'error' });
+    },
+  });
+
   if (isLoading) return <Loading />;
   if (isError) {
     return (
@@ -462,9 +540,9 @@ export default function AssetDetailPage() {
             )}
           </div>
         ) : (
-          <div className="flex flex-wrap items-end gap-3">
-            <div>
-              <label className="block mb-1.5 text-muted-foreground">{t('page.asset_detail.assign_to_user')}</label>
+          <div className="space-y-2">
+            <label className="block text-muted-foreground">{t('page.asset_detail.assign_to_user')}</label>
+            <div className="flex flex-wrap items-center gap-3">
               <select
                 value={assignUserId}
                 onChange={(e) => setAssignUserId(e.target.value)}
@@ -475,32 +553,32 @@ export default function AssetDetailPage() {
                   <option key={u.id} value={u.id}>{u.email}{u.name ? ` (${u.name})` : ''}</option>
                 ))}
               </select>
-              {canInviteUsers && (
+              <button
+                type="button"
+                onClick={() => assignAsset.mutate(assignUserId)}
+                disabled={!assignUserId || assignAsset.isPending}
+                className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+              >
+                {assignAsset.isPending ? t('page.asset_detail.assigning') : t('page.asset_detail.assign')}
+              </button>
+              {asset.status !== 'decommissioned' && (
                 <button
                   type="button"
-                  onClick={() => setInviteModalOpen(true)}
-                  className="mt-2 block text-left text-xs text-primary hover:underline"
+                  onClick={() => changeStatus.mutate('decommissioned')}
+                  disabled={changeStatus.isPending}
+                  className="rounded-md h-9 px-4 text-sm font-medium border border-border bg-background text-foreground shadow-xs hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
                 >
-                  {t('page.asset_detail.invite_user')}
+                  {changeStatus.isPending ? t('auth.set_password.saving') : t('page.asset_detail.decommission')}
                 </button>
               )}
             </div>
-            <button
-              type="button"
-              onClick={() => assignAsset.mutate(assignUserId)}
-              disabled={!assignUserId || assignAsset.isPending}
-              className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
-            >
-              {assignAsset.isPending ? t('page.asset_detail.assigning') : t('page.asset_detail.assign')}
-            </button>
-            {asset.status !== 'decommissioned' && (
+            {canInviteUsers && (
               <button
                 type="button"
-                onClick={() => changeStatus.mutate('decommissioned')}
-                disabled={changeStatus.isPending}
-                className="rounded-md h-9 px-4 text-sm font-medium border border-border bg-background text-foreground shadow-xs hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+                onClick={() => setInviteModalOpen(true)}
+                className="text-xs text-primary hover:underline"
               >
-                {changeStatus.isPending ? t('auth.set_password.saving') : t('page.asset_detail.decommission')}
+                {t('page.asset_detail.invite_user')}
               </button>
             )}
           </div>
@@ -549,6 +627,198 @@ export default function AssetDetailPage() {
           </div>
         </Card>
       )}
+
+      {/* Custody Section */}
+      <Card>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">{t('page.asset_detail.custody')}</h3>
+        {currentCheckout ? (
+          <div className="space-y-4">
+            <div className="rounded-md border border-border bg-secondary/50 p-4">
+              <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+                <div>
+                  <span className="text-muted-foreground">{t('page.asset_detail.checkout_user')}:</span>{' '}
+                  <span className="font-medium">{userEmailById.get(currentCheckout.user_id) || currentCheckout.user_id}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t('page.asset_detail.checkout_date')}:</span>{' '}
+                  <span className="font-medium">{formatDateTime(currentCheckout.checked_out_at)}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t('page.asset_detail.condition_out')}:</span>{' '}
+                  <Badge variant="default">{t(`enum.${currentCheckout.condition_out}`)}</Badge>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t('page.asset_detail.acceptance_status')}:</span>{' '}
+                  {currentCheckout.accepted_at ? (
+                    <Badge variant="success">{t('page.asset_detail.accepted')}</Badge>
+                  ) : (
+                    <Badge variant="warning">{t('page.asset_detail.pending_acceptance')}</Badge>
+                  )}
+                </div>
+                {currentCheckout.auto_assigned && (
+                  <div>
+                    <Badge variant="info">{t('page.asset_detail.auto_assigned')}</Badge>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Checkin form */}
+            {showCheckinForm ? (
+              <div className="rounded-md border border-border bg-background p-4 space-y-3">
+                <h4 className="text-sm font-medium text-foreground">{t('page.asset_detail.checkin_asset')}</h4>
+                <div className="flex flex-wrap items-end gap-3">
+                  <div>
+                    <label className="block mb-1.5 text-xs text-muted-foreground">{t('page.asset_detail.select_condition')}</label>
+                    <select value={checkinCondition} onChange={(e) => setCheckinCondition(e.target.value)} className="min-w-48 text-sm">
+                      <option value="">{t('page.asset_detail.select_condition')}</option>
+                      {['new', 'good', 'fair', 'damaged', 'unusable'].map((c) => (
+                        <option key={c} value={c}>{t(`enum.${c}`)}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block mb-1.5 text-xs text-muted-foreground">{t('page.asset_detail.checkin_notes')}</label>
+                    <input type="text" value={checkinNotes} onChange={(e) => setCheckinNotes(e.target.value)} className="min-w-48 text-sm" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => checkinAsset.mutate({ condition_in: checkinCondition, ...(checkinNotes.trim() ? { notes_in: checkinNotes.trim() } : {}) })}
+                    disabled={!checkinCondition || checkinAsset.isPending}
+                    className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+                  >
+                    {checkinAsset.isPending ? t('auth.set_password.saving') : t('page.asset_detail.checkin_asset')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowCheckinForm(false); setCheckinCondition(''); setCheckinNotes(''); }}
+                    className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all"
+                  >
+                    {t('common.cancel')}
+                  </button>
+                </div>
+              </div>
+            ) : showCancelForm ? (
+              <div className="rounded-md border border-border bg-background p-4 space-y-3">
+                <h4 className="text-sm font-medium text-foreground">{t('page.asset_detail.cancel_checkout')}</h4>
+                <div className="flex flex-wrap items-end gap-3">
+                  <div>
+                    <label className="block mb-1.5 text-xs text-muted-foreground">{t('page.asset_detail.cancel_reason')}</label>
+                    <input type="text" value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} className="min-w-64 text-sm" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => cancelCheckout.mutate({ reason: cancelReason.trim() || undefined })}
+                    disabled={cancelCheckout.isPending}
+                    className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-destructive text-white shadow-xs hover:bg-destructive/90 disabled:pointer-events-none disabled:opacity-50"
+                  >
+                    {cancelCheckout.isPending ? t('auth.set_password.saving') : t('page.asset_detail.cancel_checkout')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowCancelForm(false); setCancelReason(''); }}
+                    className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground transition-all"
+                  >
+                    {t('common.cancel')}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCheckinForm(true)}
+                  className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90"
+                >
+                  {t('page.asset_detail.checkin_asset')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCancelForm(true)}
+                  className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium border border-destructive text-destructive bg-background shadow-xs hover:bg-destructive/10 transition-all"
+                >
+                  {t('page.asset_detail.cancel_checkout')}
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">{t('page.asset_detail.no_active_checkout')}</p>
+            {asset.status !== 'decommissioned' && (
+              <div className="flex flex-wrap items-end gap-3">
+                <div>
+                  <label className="block mb-1.5 text-muted-foreground">{t('page.asset_detail.checkout_user')}</label>
+                  <select value={checkoutUserId} onChange={(e) => setCheckoutUserId(e.target.value)} className="min-w-64 text-sm">
+                    <option value="">{t('page.asset_detail.select_user')}</option>
+                    {(assignableUsers ?? []).map((u) => (
+                      <option key={u.id} value={u.id}>{u.email}{u.name ? ` (${u.name})` : ''}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1.5 text-muted-foreground">{t('page.asset_detail.select_condition')}</label>
+                  <select value={checkoutCondition} onChange={(e) => setCheckoutCondition(e.target.value)} className="min-w-48 text-sm">
+                    <option value="">{t('page.asset_detail.select_condition')}</option>
+                    {['new', 'good', 'fair', 'damaged', 'unusable'].map((c) => (
+                      <option key={c} value={c}>{t(`enum.${c}`)}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1.5 text-muted-foreground">{t('table.notes')}</label>
+                  <input type="text" value={checkoutNotes} onChange={(e) => setCheckoutNotes(e.target.value)} className="min-w-48 text-sm" />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => createCheckout.mutate({
+                    user_id: checkoutUserId,
+                    condition_out: checkoutCondition,
+                    ...(checkoutNotes.trim() ? { notes_out: checkoutNotes.trim() } : {}),
+                  })}
+                  disabled={!checkoutUserId || !checkoutCondition || createCheckout.isPending}
+                  className="inline-flex items-center justify-center gap-2 rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+                >
+                  {createCheckout.isPending ? t('auth.set_password.saving') : t('page.asset_detail.checkout_asset')}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
+
+      {/* Checkout History */}
+      <Card>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">{t('page.asset_detail.checkout_history')}</h3>
+        {!checkoutHistory?.data.length ? (
+          <p className="text-sm text-muted-foreground">{t('page.asset_detail.no_checkout_history')}</p>
+        ) : (
+          <Table>
+            <thead>
+              <tr>
+                <Th>{t('page.asset_detail.checkout_user')}</Th>
+                <Th>{t('page.asset_detail.condition_out')}</Th>
+                <Th>{t('page.asset_detail.checkout_date')}</Th>
+                <Th>{t('table.status')}</Th>
+                <Th>{t('page.asset_detail.condition_in')}</Th>
+                <Th>{t('page.asset_detail.checked_in_at')}</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {checkoutHistory.data.map((co) => (
+                <tr key={co.id}>
+                  <Td>{userEmailById.get(co.user_id) || co.user_id}</Td>
+                  <Td><Badge variant="default">{t(`enum.${co.condition_out}`)}</Badge></Td>
+                  <Td>{formatDateTime(co.checked_out_at)}</Td>
+                  <Td><StatusBadge status={co.status} /></Td>
+                  <Td>{co.condition_in ? <Badge variant="default">{t(`enum.${co.condition_in}`)}</Badge> : '—'}</Td>
+                  <Td>{co.checked_in_at ? formatDateTime(co.checked_in_at) : '—'}</Td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
+      </Card>
 
       <Card>
         <h3 className="mb-3 text-sm font-semibold text-foreground">{t('page.asset_detail.event_history')}</h3>

@@ -43,6 +43,7 @@ class CreateMaintenanceRecordCommand(Command):
     plan_id: Optional[str] = None
     checklist_items: Optional[list[str]] = None
     scheduled_at: Optional[datetime] = None
+    source_type: Optional[str] = None
 
 
 class CreateMaintenanceRecordCommandHandler(
@@ -90,5 +91,6 @@ class CreateMaintenanceRecordCommandHandler(
             plan_id=command.plan_id,
             checklist_items=command.checklist_items,
             scheduled_at=command.scheduled_at,
+            source_type=command.source_type,
         )
         self.record_repo.save(record)

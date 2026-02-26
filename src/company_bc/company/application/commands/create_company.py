@@ -7,6 +7,14 @@ from core.stripe_client import StripeClient
 from src.asset_bc.asset.domain.entities import AssetLocation
 from src.asset_bc.asset.domain.enums import SystemLocation
 from src.asset_bc.asset.domain.repository import AssetRepositoryInterface
+from src.maintenance_bc.maintenance_record.domain.enums import MaintenancePriority
+from src.maintenance_bc.maintenance_template.domain.entities import (
+    ChecklistItem,
+    MaintenanceTemplate,
+)
+from src.maintenance_bc.maintenance_template.domain.repository import (
+    MaintenanceTemplateRepositoryInterface as MaintTemplateRepoInterface,
+)
 from src.asset_type_bc.definition.domain.entities import AssetTypeDefinition
 from src.asset_type_bc.definition.domain.repository import (
     AssetTypeDefinitionRepositoryInterface,
@@ -53,10 +61,18 @@ class CreateCompanyCommand(Command):
 
 
 SYSTEM_LOCATION_NAMES: dict[str, str] = {
-    SystemLocation.EMPLOYEE.value: "Empleado",
     SystemLocation.IN_TRANSIT.value: "En Tránsito",
     SystemLocation.MAIN_WAREHOUSE.value: "Almacén Principal",
 }
+
+GDPR_TEMPLATE_CHECKLIST: list[dict[str, object]] = [
+    {"title": "Wipe local storage / SSD", "is_required": True},
+    {"title": "Remove browser profiles and cookies", "is_required": True},
+    {"title": "Revoke device certificates", "is_required": True},
+    {"title": "Remove from MDM enrollment", "is_required": True},
+    {"title": "Factory-reset mobile devices", "is_required": True},
+    {"title": "Verify data erasure and document result", "is_required": True},
+]
 
 DEFAULT_ASSET_TYPES: list[tuple[str, str | None, int]] = [
     ("Laptop", "laptop", 0),
@@ -186,6 +202,7 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
         asset_repo: Optional[AssetRepositoryInterface] = None,
         asset_type_repo: Optional[AssetTypeDefinitionRepositoryInterface] = None,
         workflow_template_repo: Optional[WorkflowTemplateRepositoryInterface] = None,
+        maint_template_repo: Optional[MaintTemplateRepoInterface] = None,
     ):
         self.company_repo = company_repo
         self.user_repo = user_repo
@@ -195,6 +212,7 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
         self.asset_repo = asset_repo
         self.asset_type_repo = asset_type_repo
         self.workflow_template_repo = workflow_template_repo
+        self.maint_template_repo = maint_template_repo
 
     def handle(self, command: CreateCompanyCommand) -> None:
         # Check name uniqueness
@@ -306,5 +324,24 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
                 template.set_subtypes(subtypes)
                 self.workflow_template_repo.save(template)
             logger.info("Seeded default workflow templates for company %s", company.id)
+
+        # Seed GDPR sanitization maintenance template
+        if self.maint_template_repo:
+            checklist_items = [
+                ChecklistItem.create(
+                    title=item["title"],  # type: ignore[arg-type]
+                    is_required=bool(item.get("is_required", True)),
+                )
+                for item in GDPR_TEMPLATE_CHECKLIST
+            ]
+            gdpr_template = MaintenanceTemplate.create(
+                company_id=company.id,
+                name="GDPR Sanitization",
+                description="Mandatory data sanitization after equipment return",
+                default_priority=MaintenancePriority.HIGH,
+                checklist_items=checklist_items,
+            )
+            self.maint_template_repo.save(gdpr_template)
+            logger.info("Seeded GDPR sanitization template for company %s", company.id)
 
         logger.info("Company created: %s (id=%s)", company.name, company.id)

@@ -59,6 +59,9 @@ class MaintenanceRecordModel(ULIDMixin, TimestampMixin, Base):
     actual_findings: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     cancellation_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     skip_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    source_type: Mapped[Optional[str]] = mapped_column(
+        String(30), nullable=True, index=True,
+    )
     reminder_48h_sent: Mapped[bool] = mapped_column(
         Boolean,
         server_default="false",

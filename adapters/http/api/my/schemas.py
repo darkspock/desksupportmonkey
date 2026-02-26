@@ -10,7 +10,31 @@ class MyEquipmentResponse(BaseModel):
     brand: str
     model: str
     serial_number: str
+    status: str
     created_at: Optional[datetime] = None
+
+
+class MyCustodyResponse(BaseModel):
+    checkout_id: str
+    asset_id: str
+    condition_out: str
+    checked_out_at: datetime
+    accepted_at: Optional[datetime] = None
+    status: str
+
+
+class MyCustodyHistoryResponse(BaseModel):
+    checkout_id: str
+    asset_id: str
+    asset_type: Optional[str] = None
+    asset_brand: Optional[str] = None
+    asset_model: Optional[str] = None
+    condition_out: str
+    condition_in: Optional[str] = None
+    checked_out_at: datetime
+    checked_in_at: Optional[datetime] = None
+    cancelled_at: Optional[datetime] = None
+    status: str
 
 
 class MyRequestResponse(BaseModel):

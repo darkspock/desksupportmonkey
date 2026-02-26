@@ -110,6 +110,11 @@ export default function DashboardPage() {
     queryFn: async () => (await api.get('/dashboard/maintenance')).data.data as MaintenanceDashboard,
   });
 
+  const { data: checkoutDashboard, isLoading: l13, isError: e13, error: err13 } = useQuery({
+    queryKey: ['dashboard-checkouts'],
+    queryFn: async () => (await api.get('/dashboard/checkouts')).data.data as { open_checkouts: number; pending_acceptances: number },
+  });
+
   const statusData = reqSummary
     ? Object.entries(reqSummary.by_status).map(([name, value]) => ({
       name: t(`enum.${name}`, undefined, { defaultValue: humanizeToken(name) }),
@@ -124,7 +129,7 @@ export default function DashboardPage() {
     : [];
   const breachedAlerts = slaAlerts?.filter((a) => a.breached) || [];
   const userById = new Map((users?.data ?? []).map((u) => [u.id, u.email]));
-  const hasAnyError = [e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12].some(Boolean);
+  const hasAnyError = [e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13].some(Boolean);
   const errorDetail = (err: unknown) =>
     (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('errors.unexpected_detail');
   const retryAll = () => {
@@ -155,6 +160,8 @@ export default function DashboardPage() {
         <StatCard label={t('page.dashboard.resolved')} value={e1 ? t('common.na') : reqSummary?.total_resolved ?? 0} />
         <StatCard label={t('page.dashboard.avg_resolution')} value={e2 ? t('common.na') : (resTime?.avg_hours ? `${resTime.avg_hours}h` : t('common.na'))} />
         <StatCard label={t('page.dashboard.total_assets')} value={e3 ? t('common.na') : assetSummary?.total ?? 0} />
+        <StatCard label={t('page.dashboard.open_checkouts')} value={e13 ? t('common.na') : checkoutDashboard?.open_checkouts ?? 0} />
+        <StatCard label={t('page.dashboard.pending_acceptances')} value={e13 ? t('common.na') : checkoutDashboard?.pending_acceptances ?? 0} />
       </div>
 
       {(maintenanceDashboard || l12 || e12) && (

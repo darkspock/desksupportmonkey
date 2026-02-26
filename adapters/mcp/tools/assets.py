@@ -53,6 +53,7 @@ from src.asset_bc.asset.application.queries.list_assets import (
 from src.asset_bc.asset.domain.entities import Asset, InvalidAssignmentError
 from src.asset_bc.asset.domain.enums import InvalidStatusTransitionError
 from src.asset_bc.asset.infrastructure.repository import AssetRepository
+from src.asset_bc.checkout.infrastructure.repository import CheckoutRepository
 from src.auth_bc.user.domain.enums import UserRole
 from src.auth_bc.user.infrastructure.repository import UserRepository
 from src.custom_field_bc.definition.application.services.enrichment_service import (
@@ -382,7 +383,8 @@ async def handle_unassign_asset(arguments: dict) -> list[TextContent]:
             performed_by=tenant.user_id,
         )
 
-        handler = UnassignAssetCommandHandler(asset_repo)
+        checkout_repo = CheckoutRepository(db)
+        handler = UnassignAssetCommandHandler(asset_repo, checkout_repo)
         handler.handle(command)
         db.commit()
 

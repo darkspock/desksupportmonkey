@@ -44,6 +44,7 @@ from adapters.http.api.audit.routers import router as audit_router
 from adapters.http.api.asset_types.routers import router as asset_types_router
 from adapters.http.api.custom_fields.routers import router as custom_fields_router
 from adapters.http.api.workflow_templates.routers import router as workflow_templates_router
+from adapters.http.api.checkouts.routers import router as checkouts_router
 from adapters.http.api.checklist.routers import router as checklist_router
 from adapters.http.api.brand import router as brand_router
 from adapters.http.api.super_admin.routers import router as super_admin_router
@@ -135,6 +136,7 @@ def create_app() -> FastAPI:
     application.include_router(asset_types_router)
     application.include_router(custom_fields_router)
     application.include_router(workflow_templates_router)
+    application.include_router(checkouts_router)
     application.include_router(checklist_router)
     application.include_router(super_admin_router)
     application.include_router(ws_router)

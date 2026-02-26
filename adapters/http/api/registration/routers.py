@@ -7,6 +7,7 @@ from adapters.http.api.registration.dependencies import (
     get_asset_type_repo,
     get_company_repo,
     get_magic_link_repo,
+    get_maint_template_repo,
     get_stripe_client,
     get_user_repo,
     get_workflow_template_repo,
@@ -17,6 +18,9 @@ from core.stripe_client import StripeClient, StripeUnavailableError
 from src.asset_bc.asset.infrastructure.repository import AssetRepository
 from src.asset_type_bc.definition.infrastructure.repository import (
     AssetTypeDefinitionRepository,
+)
+from src.maintenance_bc.maintenance_template.infrastructure.repository import (
+    MaintenanceTemplateRepository,
 )
 from src.workflow_bc.template.infrastructure.repository import WorkflowTemplateRepository
 from src.auth_bc.magic_link.infrastructure.repository import MagicLinkRepository
@@ -45,6 +49,7 @@ def register_company(
     asset_repo: AssetRepository = Depends(get_asset_repo),
     asset_type_repo: AssetTypeDefinitionRepository = Depends(get_asset_type_repo),
     workflow_template_repo: WorkflowTemplateRepository = Depends(get_workflow_template_repo),
+    maint_template_repo: MaintenanceTemplateRepository = Depends(get_maint_template_repo),
 ):
     """Public endpoint for self-service company registration."""
     handler = CreateCompanyCommandHandler(
@@ -56,6 +61,7 @@ def register_company(
         asset_repo=asset_repo,
         asset_type_repo=asset_type_repo,
         workflow_template_repo=workflow_template_repo,
+        maint_template_repo=maint_template_repo,
     )
     cmd = CreateCompanyCommand(
         name=body.name, email_domains=body.email_domains, admin_email=body.admin_email,
