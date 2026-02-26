@@ -40,7 +40,22 @@ const featuresPath = lang === 'es' ? '/funcionalidades' : '/en/features';
           </div>
         </div>
       </div>
-      <a href={prefix + '/#compliance'} class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">{t.nav.compliance}</a>
+      <!-- Compliance dropdown -->
+      <div class="relative group">
+        <button class="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">
+          {t.nav.compliance}
+          <svg class="h-3.5 w-3.5 opacity-60" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <div class="absolute left-0 top-full hidden group-hover:block pt-1 w-48">
+          <div class="rounded-xl border border-slate-200 bg-white py-1.5 shadow-lg">
+            <a href={prefix + '/compliance/nis2'} class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">NIS2</a>
+            <a href={prefix + '/compliance/iso27001'} class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">ISO 27001</a>
+            <a href={prefix + '/compliance/cra'} class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">CRA</a>
+          </div>
+        </div>
+      </div>
       <a href={prefix + '/#sectores'} class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">{t.nav.sectores}</a>
       <a href={prefix + '/#pricing'} class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">{t.nav.pricing}</a>
       <a href="mailto:sales@dsmcontrol.com" class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">{t.nav.contacto}</a>
@@ -87,7 +102,10 @@ const featuresPath = lang === 'es' ? '/funcionalidades' : '/en/features';
     <a href={featuresPath} class="block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100">{t.nav.funcionalidades}</a>
     <a href={prefix + '/vs'} class="block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100">{t.nav.comparativas}</a>
     <div class="py-1 text-xs font-semibold uppercase tracking-wider text-slate-400 mt-3"></div>
-    <a href={prefix + '/#compliance'} class="block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100">{t.nav.compliance}</a>
+    <div class="py-1 text-xs font-semibold uppercase tracking-wider text-slate-400 mt-3">{t.nav.compliance}</div>
+    <a href={prefix + '/compliance/nis2'} class="block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100">NIS2</a>
+    <a href={prefix + '/compliance/iso27001'} class="block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100">ISO 27001</a>
+    <a href={prefix + '/compliance/cra'} class="block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100">CRA</a>
     <a href={prefix + '/#sectores'} class="block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100">{t.nav.sectores}</a>
     <a href={prefix + '/#pricing'} class="block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100">{t.nav.pricing}</a>
     <a href="mailto:sales@dsmcontrol.com" class="block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100">{t.nav.contacto}</a>

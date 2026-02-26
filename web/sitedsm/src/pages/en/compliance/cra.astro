@@ -1,0 +1,14 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import CompliancePage from '../../../components/CompliancePage.astro';
+import { translations } from '../../../i18n/translations';
+import { complianceData } from '../../../data/compliance';
+
+const lang = 'en';
+const t = translations[lang];
+const data = complianceData.find(c => c.slug === 'cra')!;
+---
+
+<BaseLayout title={`${data.headline[lang]} — DSM Control`} lang={lang} t={t}>
+  <CompliancePage lang={lang} data={data} />
+</BaseLayout>
