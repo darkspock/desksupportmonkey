@@ -1,8 +1,3 @@
-import {
-  PublicClientApplication,
-  type Configuration,
-  type AuthenticationResult,
-} from '@azure/msal-browser';
 import api from './api';
 
 export interface OAuthProviders {
@@ -22,30 +17,60 @@ export async function loginWithGoogle(idToken: string): Promise<string> {
   return data.data.access_token;
 }
 
-let _msalInstance: PublicClientApplication | null = null;
-
-export function getMsalInstance(clientId: string, tenantId = 'common'): PublicClientApplication {
-  if (!_msalInstance) {
-    const config: Configuration = {
-      auth: {
-        clientId,
-        authority: `https://login.microsoftonline.com/${tenantId}`,
-        redirectUri: `${window.location.origin}/auth-redirect.html`,
-      },
-      cache: { cacheLocation: 'sessionStorage' },
-    };
-    _msalInstance = new PublicClientApplication(config);
-  }
-  return _msalInstance;
-}
-
-export async function loginWithMicrosoftPopup(
+/**
+ * Open a popup to Microsoft's OAuth authorize endpoint and poll for the
+ * id_token in the hash fragment. No MSAL library needed.
+ */
+export function loginWithMicrosoftPopup(
   clientId: string,
   tenantId = 'common',
-): Promise<AuthenticationResult> {
-  const msal = getMsalInstance(clientId, tenantId);
-  await msal.initialize();
-  return msal.loginPopup({ scopes: ['openid', 'profile', 'email'] });
+): Promise<string> {
+  const redirectUri = `${window.location.origin}/auth-redirect.html`;
+  const nonce = crypto.randomUUID();
+  const params = new URLSearchParams({
+    client_id: clientId,
+    response_type: 'id_token',
+    redirect_uri: redirectUri,
+    scope: 'openid profile email',
+    response_mode: 'fragment',
+    nonce,
+  });
+
+  const url = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?${params}`;
+  const popup = window.open(url, 'microsoft-login', 'width=500,height=700,left=200,top=100');
+
+  return new Promise((resolve, reject) => {
+    if (!popup) {
+      reject(new Error('Popup blocked'));
+      return;
+    }
+    const interval = setInterval(() => {
+      try {
+        if (popup.closed) {
+          clearInterval(interval);
+          reject(new Error('Popup closed by user'));
+          return;
+        }
+        const popupUrl = popup.location.href;
+        if (popupUrl.includes('#')) {
+          const hash = new URLSearchParams(popupUrl.split('#')[1]);
+          const idToken = hash.get('id_token');
+          const error = hash.get('error');
+          if (idToken) {
+            clearInterval(interval);
+            popup.close();
+            resolve(idToken);
+          } else if (error) {
+            clearInterval(interval);
+            popup.close();
+            reject(new Error(hash.get('error_description') || error));
+          }
+        }
+      } catch {
+        // Cross-origin — popup still on Microsoft's domain, keep polling
+      }
+    }, 300);
+  });
 }
 
 export async function loginWithMicrosoft(idToken: string): Promise<string> {

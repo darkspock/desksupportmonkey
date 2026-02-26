@@ -2,17 +2,10 @@
 <html>
 <head><title>Authenticating...</title></head>
 <body>
-<script src="https://alcdn.msftauth.net/browser/5.3.0/js/msal-browser.min.js"></script>
 <script>
-  const msalInstance = new msal.PublicClientApplication({
-    auth: {
-      clientId: "cde6455d-5cea-4f71-8b6e-45402f55d423",
-      authority: "https://login.microsoftonline.com/common",
-    },
-  });
-  msalInstance.initialize().then(function() {
-    msalInstance.handleRedirectPromise();
-  });
+  // Redirect target for Microsoft OAuth popup.
+  // The parent window polls this popup's URL for the #id_token fragment.
+  // No additional code needed — just needs to land on our origin.
 </script>
 </body>
 </html>

@@ -112,8 +112,7 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const result = await loginWithMicrosoftPopup(microsoftClientId, microsoftTenantId);
-      const idToken = result.idToken;
+      const idToken = await loginWithMicrosoftPopup(microsoftClientId, microsoftTenantId);
       const accessToken = await loginWithMicrosoft(idToken);
       await login(accessToken);
       navigate(returnTo ?? '/', { replace: true });
