@@ -110,7 +110,7 @@ export default function DashboardPage() {
     queryFn: async () => (await api.get('/dashboard/maintenance')).data.data as MaintenanceDashboard,
   });
 
-  const { data: checkoutDashboard, isLoading: l13, isError: e13, error: err13 } = useQuery({
+  const { data: checkoutDashboard, isLoading: _l13, isError: e13, error: _err13 } = useQuery({
     queryKey: ['dashboard-checkouts'],
     queryFn: async () => (await api.get('/dashboard/checkouts')).data.data as { open_checkouts: number; pending_acceptances: number },
   });

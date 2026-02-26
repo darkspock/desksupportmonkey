@@ -212,7 +212,7 @@ export default function AssetDetailPage() {
     enabled: Boolean(id),
   });
 
-  const { data: currentCheckout, refetch: refetchCurrentCheckout } = useQuery({
+  const { data: currentCheckout } = useQuery({
     queryKey: ['asset-checkout-current', id],
     queryFn: async () => {
       const { data } = await api.get(`/checkouts/assets/${id}/current`);

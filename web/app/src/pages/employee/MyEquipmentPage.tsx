@@ -17,7 +17,7 @@ type Tab = 'current' | 'history';
 export default function MyEquipmentPage() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
+  const { showToast } = useToast();
   const [tab, setTab] = useState<Tab>('current');
   const [historyPage, setHistoryPage] = useState(1);
 
@@ -51,13 +51,13 @@ export default function MyEquipmentPage() {
       await api.post(`/my/equipment/${assetId}/accept`);
     },
     onSuccess: () => {
-      toast({ title: t('page.my_equipment.accept_success'), variant: 'success' });
+      showToast({ title: t('page.my_equipment.accept_success'), variant: 'success' });
       void queryClient.invalidateQueries({ queryKey: ['my-custody'] });
       void queryClient.invalidateQueries({ queryKey: ['my-equipment'] });
       void queryClient.invalidateQueries({ queryKey: ['my-custody-history'] });
     },
     onError: () => {
-      toast({ title: t('page.my_equipment.accept_error'), variant: 'destructive' });
+      showToast({ title: t('page.my_equipment.accept_error'), variant: 'error' });
     },
   });
 
