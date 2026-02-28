@@ -128,7 +128,7 @@ class GetFounderDashboardQueryHandler(
 
         mrr_cents = sum(
             stats["plan_counts"].get(plan, 0) * PLAN_PRICE_CENTS[plan]
-            for plan in [PlanTier.PREMIUM, PlanTier.ENTERPRISE]
+            for plan in [PlanTier.STARTER, PlanTier.PREMIUM, PlanTier.ENTERPRISE]
         )
 
         failed_payments = 0
@@ -161,7 +161,7 @@ class GetFounderDashboardQueryHandler(
                     count=stats["plan_counts"].get(p, 0),
                     mrr_cents=stats["plan_counts"].get(p, 0) * PLAN_PRICE_CENTS[p],
                 )
-                for p in [PlanTier.PREMIUM, PlanTier.ENTERPRISE]
+                for p in [PlanTier.STARTER, PlanTier.PREMIUM, PlanTier.ENTERPRISE]
             ],
         )
 

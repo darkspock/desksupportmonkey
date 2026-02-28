@@ -3,6 +3,7 @@ from enum import Enum
 
 class PlanTier(str, Enum):
     FREE = "free"
+    STARTER = "starter"
     PREMIUM = "premium"
     ENTERPRISE = "enterprise"
     OPEN_SOURCE = "open_source"

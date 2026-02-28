@@ -123,11 +123,17 @@ def create_checkout_session(
             detail="invalid_plan",
         )
 
-    price_id = (
-        settings.stripe.STRIPE_PRICE_ENTERPRISE
-        if target_plan == PlanTier.ENTERPRISE
-        else settings.stripe.STRIPE_PRICE_PREMIUM
-    )
+    price_map = {
+        PlanTier.STARTER: settings.stripe.STRIPE_PRICE_STARTER,
+        PlanTier.PREMIUM: settings.stripe.STRIPE_PRICE_PREMIUM,
+        PlanTier.ENTERPRISE: settings.stripe.STRIPE_PRICE_ENTERPRISE,
+    }
+    price_id = price_map.get(target_plan)
+    if not price_id:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="invalid_plan",
+        )
 
     try:
         checkout_url = billing_service.create_checkout_session(

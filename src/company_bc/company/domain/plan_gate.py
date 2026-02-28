@@ -6,8 +6,11 @@ from src.company_bc.company.domain.billing_enums import BillingStatus, PlanTier
 _FREE_FEATURES: set[str] = {
     "core", "assets", "requests", "dashboard", "magic_link", "password_login",
 }
-_PREMIUM_FEATURES: set[str] = _FREE_FEATURES | {
-    "reports", "oauth_login", "api_keys", "ai_classification",
+_STARTER_FEATURES: set[str] = _FREE_FEATURES | {
+    "reports", "oauth_login",
+}
+_PREMIUM_FEATURES: set[str] = _STARTER_FEATURES | {
+    "api_keys", "ai_classification",
     "appointments", "shipments", "maintenance", "procurement",
 }
 _ENTERPRISE_FEATURES: set[str] = _PREMIUM_FEATURES | {
@@ -17,6 +20,7 @@ _ENTERPRISE_FEATURES: set[str] = _PREMIUM_FEATURES | {
 
 PLAN_FEATURES: dict[PlanTier, set[str]] = {
     PlanTier.FREE: _FREE_FEATURES,
+    PlanTier.STARTER: _STARTER_FEATURES,
     PlanTier.PREMIUM: _PREMIUM_FEATURES,
     PlanTier.ENTERPRISE: _ENTERPRISE_FEATURES,
     PlanTier.OPEN_SOURCE: set(),  # all allowed — bypass in logic
@@ -24,6 +28,7 @@ PLAN_FEATURES: dict[PlanTier, set[str]] = {
 
 PLAN_USER_LIMITS: dict[PlanTier, Optional[int]] = {
     PlanTier.FREE: 5,
+    PlanTier.STARTER: 25,
     PlanTier.PREMIUM: 100,
     PlanTier.ENTERPRISE: None,
     PlanTier.OPEN_SOURCE: None,
@@ -31,6 +36,7 @@ PLAN_USER_LIMITS: dict[PlanTier, Optional[int]] = {
 
 PLAN_ASSET_LIMITS: dict[PlanTier, Optional[int]] = {
     PlanTier.FREE: 50,
+    PlanTier.STARTER: None,
     PlanTier.PREMIUM: None,
     PlanTier.ENTERPRISE: None,
     PlanTier.OPEN_SOURCE: None,
@@ -38,6 +44,7 @@ PLAN_ASSET_LIMITS: dict[PlanTier, Optional[int]] = {
 
 PLAN_PRICE_CENTS: dict[PlanTier, int] = {
     PlanTier.FREE: 0,
+    PlanTier.STARTER: 4900,       # €49/month (Starter)
     PlanTier.PREMIUM: 9900,       # €99/month (Growth)
     PlanTier.ENTERPRISE: 19900,   # €199/month (Scale)
     PlanTier.OPEN_SOURCE: 0,
