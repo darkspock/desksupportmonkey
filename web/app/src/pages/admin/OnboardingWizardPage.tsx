@@ -12,6 +12,7 @@ import {
   FRAMEWORKS,
   type ModuleDefinition,
 } from '../../config/moduleConfig';
+import { brand } from '../../config/brand';
 
 const PREDEFINED_CONTROLS: Record<string, Array<{ code: string; name: string }>> = {
   NIS2: [
@@ -240,7 +241,7 @@ export default function OnboardingWizardPage() {
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
-            {t('onboarding.title')}
+            {t('onboarding.title', { brandName: brand.name })}
           </h1>
           <p className="mt-2 text-gray-500 dark:text-gray-400">
             {t('onboarding.subtitle')}
