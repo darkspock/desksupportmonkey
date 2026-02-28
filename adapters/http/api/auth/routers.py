@@ -105,6 +105,7 @@ def _user_response(
     user: User,
     company_name: Optional[str] = None,
     hidden_nav_items: Optional[dict] = None,
+    needs_onboarding: bool = False,
 ) -> dict:
     return UserResponse(
         id=user.id,
@@ -118,6 +119,7 @@ def _user_response(
         password_set=user.has_password,
         has_oauth=bool(user.google_id or user.microsoft_id),
         hidden_nav_items=hidden_nav_items,
+        needs_onboarding=needs_onboarding,
     ).model_dump()
 
 
@@ -331,9 +333,14 @@ def get_me(
     """Get current authenticated user profile."""
     company_name: Optional[str] = None
     hidden_nav_items = None
+    needs_onboarding = False
     if current_user.company_id:
         company = company_repo.find_by_id(current_user.company_id)
         company_name = company.name if company else None
+
+        from src.auth_bc.user.domain.enums import UserRole
+        if current_user.role == UserRole.ADMIN and company:
+            needs_onboarding = company.onboarding_completed_at is None
 
         # Load nav visibility config
         from src.company_bc.nav_config.infrastructure.repository import NavConfigRepository
@@ -345,4 +352,5 @@ def get_me(
         current_user,
         company_name=company_name,
         hidden_nav_items=hidden_nav_items,
+        needs_onboarding=needs_onboarding,
     )}

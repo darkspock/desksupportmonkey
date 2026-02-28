@@ -25,8 +25,14 @@ export default function VerifyPage() {
       .then(async (res) => {
         const { access_token } = res.data.data;
         await login(access_token);
-        // Password-gate is enforced centrally in AppLayout by role.
-        setRedirect(returnTo ?? '/');
+        // After login, fetch fresh user data to check onboarding
+        const meRes = await api.get('/auth/me');
+        const me = meRes.data.data;
+        if (me.role === 'admin' && me.needs_onboarding) {
+          setRedirect('/onboarding');
+        } else {
+          setRedirect(returnTo ?? '/');
+        }
       })
       .catch((err) => {
         setError(err.response?.data?.detail || t('auth.verify.error_failed'));
@@ -34,7 +40,12 @@ export default function VerifyPage() {
   }, [login, returnTo, t, token]);
 
   if (redirect) return <Navigate to={redirect} replace />;
-  if (user && !redirect) return <Navigate to={returnTo ?? getDefaultRouteForRole(user.role)} replace />;
+  if (user && !redirect) {
+    if (user.role === 'admin' && user.needs_onboarding) {
+      return <Navigate to="/onboarding" replace />;
+    }
+    return <Navigate to={returnTo ?? getDefaultRouteForRole(user.role)} replace />;
+  }
 
   return (
     <AuthShell title={t('auth.verify.title')} subtitle={t('auth.verify.subtitle')} showBackToLogin={false}>

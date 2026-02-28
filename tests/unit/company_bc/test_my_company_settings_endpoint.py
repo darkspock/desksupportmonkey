@@ -54,6 +54,7 @@ class TestMyCompanySettingsEndpoint:
                 id="comp1",
                 name="Acme Corp",
                 email_domains=["company.com", "company.org"],
+                sector=None,
             )
         )
 
@@ -73,6 +74,7 @@ class TestMyCompanySettingsEndpoint:
                 id="comp1",
                 name="Acme Corp",
                 email_domains=["company.com", "new.company.com"],
+                sector=None,
             )
         )
 

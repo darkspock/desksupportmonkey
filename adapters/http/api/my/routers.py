@@ -20,6 +20,7 @@ from adapters.http.api.my.dependencies import (
     get_user_repo,
 )
 from adapters.http.api.my.schemas import (
+    CompleteOnboardingRequest,
     MyCustodyHistoryResponse,
     MyCustodyResponse,
     MyEquipmentResponse,
@@ -30,6 +31,7 @@ from adapters.http.api.my.schemas import (
     MyRequestResponse,
     NotificationListMeta,
     NotificationResponse,
+    OnboardingStatusResponse,
     ReportIncidentRequest,
     UpdateMyCompanySettingsRequest,
     UpdateMyProfileRequest,
@@ -156,6 +158,7 @@ def _to_company_settings(detail: object) -> dict:
             id=detail.company.id,
             name=detail.company.name,
             email_domains=detail.company.email_domains,
+            sector=detail.company.sector,
         ).model_dump(mode="json")
     }
 
@@ -448,6 +451,8 @@ def update_my_company_settings(
     current_user: User = Depends(require_role(UserRole.ADMIN)),
     company_repo: CompanyRepository = Depends(get_company_repo),
 ):
+    from src.company_bc.company.domain.entities import InvalidSectorError
+
     _validate_admin_with_company(current_user)
 
     handler = UpdateCompanyCommandHandler(company_repo=company_repo)
@@ -463,10 +468,97 @@ def update_my_company_settings(
     except UpdateDomainTakenError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
+    if body.sector is not None:
+        company = company_repo.find_by_id(current_user.company_id)
+        if company:
+            try:
+                company.set_sector(body.sector)
+            except InvalidSectorError:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Invalid sector value",
+                )
+            company_repo.save(company)
+
     query_handler = GetCompanyQueryHandler(company_repo=company_repo)
     detail = query_handler.handle(GetCompanyQuery(company_id=current_user.company_id))
 
     return _to_company_settings(detail)
+
+
+@router.get("/onboarding/status")
+def get_onboarding_status(
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
+    company_repo: CompanyRepository = Depends(get_company_repo),
+):
+    from src.company_bc.company.application.queries.get_onboarding_status import (
+        CompanyNotFoundError as OnboardingCompanyNotFoundError,
+        GetOnboardingStatusQuery,
+        GetOnboardingStatusQueryHandler,
+    )
+
+    _validate_admin_with_company(current_user)
+
+    handler = GetOnboardingStatusQueryHandler(company_repo=company_repo)
+    try:
+        result = handler.handle(GetOnboardingStatusQuery(company_id=current_user.company_id))
+    except OnboardingCompanyNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
+
+    return {
+        "data": OnboardingStatusResponse(
+            sector=result.sector,
+            onboarding_completed_at=(
+                result.onboarding_completed_at.isoformat()
+                if result.onboarding_completed_at else None
+            ),
+            needs_onboarding=result.needs_onboarding,
+        ).model_dump(mode="json")
+    }
+
+
+@router.post("/onboarding/complete")
+def complete_onboarding(
+    body: CompleteOnboardingRequest,
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
+    company_repo: CompanyRepository = Depends(get_company_repo),
+):
+    from src.company_bc.company.application.commands.complete_onboarding import (
+        CompanyNotFoundError as OnboardingCompanyNotFoundError,
+        CompleteOnboardingCommand,
+        CompleteOnboardingCommandHandler,
+    )
+    from src.company_bc.company.domain.entities import InvalidSectorError
+
+    _validate_admin_with_company(current_user)
+
+    handler = CompleteOnboardingCommandHandler(company_repo=company_repo)
+    try:
+        handler.handle(
+            CompleteOnboardingCommand(
+                company_id=current_user.company_id,
+                sector=body.sector,
+            )
+        )
+    except OnboardingCompanyNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
+    except InvalidSectorError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Invalid sector value",
+        )
+
+    company = company_repo.find_by_id(current_user.company_id)
+    return {
+        "data": OnboardingStatusResponse(
+            sector=company.sector if company else None,
+            onboarding_completed_at=(
+                company.onboarding_completed_at.isoformat()
+                if company and company.onboarding_completed_at else None
+            ),
+            needs_onboarding=False,
+        ).model_dump(mode="json")
+    }
 
 
 @router.get("/appointments")

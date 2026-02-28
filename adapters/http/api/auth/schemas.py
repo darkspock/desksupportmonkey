@@ -50,3 +50,4 @@ class UserResponse(BaseModel):
     password_set: bool = False
     has_oauth: bool = False
     hidden_nav_items: Optional[Dict[str, List[str]]] = None
+    needs_onboarding: bool = False

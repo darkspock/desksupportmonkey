@@ -90,8 +90,21 @@ export default function LoginPage() {
   }, []);
 
   if (user) {
+    if (user.role === 'admin' && user.needs_onboarding) {
+      return <Navigate to="/onboarding" replace />;
+    }
     return <Navigate to={returnTo ?? getDefaultRouteForRole(user.role)} replace />;
   }
+
+  const navigateAfterLogin = async () => {
+    const { data } = await api.get('/auth/me');
+    const me = data.data;
+    if (me.role === 'admin' && me.needs_onboarding) {
+      navigate('/onboarding', { replace: true });
+    } else {
+      navigate(returnTo ?? '/', { replace: true });
+    }
+  };
 
   const handleGoogleToken = async (token: string) => {
     setError('');
@@ -99,7 +112,7 @@ export default function LoginPage() {
     try {
       const accessToken = await loginWithGoogle(token);
       await login(accessToken);
-      navigate(returnTo ?? '/', { replace: true });
+      await navigateAfterLogin();
     } catch (err: unknown) {
       const msg = getAuthErrorMessage(err, t('auth.login.error_google_failed'), t('auth.login.error_invalid_email'));
       setError(msg);
@@ -115,7 +128,7 @@ export default function LoginPage() {
       const idToken = await loginWithMicrosoftPopup(microsoftClientId, microsoftTenantId);
       const accessToken = await loginWithMicrosoft(idToken);
       await login(accessToken);
-      navigate(returnTo ?? '/', { replace: true });
+      await navigateAfterLogin();
     } catch (err: unknown) {
       const msg = getAuthErrorMessage(err, t('auth.login.error_microsoft_failed'), t('auth.login.error_invalid_email'));
       setError(msg);
@@ -150,7 +163,7 @@ export default function LoginPage() {
     try {
       const { data } = await api.post('/auth/login', { email, password });
       await login(data.data.access_token);
-      navigate(returnTo ?? '/', { replace: true });
+      await navigateAfterLogin();
     } catch (err: unknown) {
       const msg = getAuthErrorMessage(
         err,

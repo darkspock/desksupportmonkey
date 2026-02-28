@@ -71,10 +71,12 @@ class MyCompanySettingsResponse(BaseModel):
     id: str
     name: str
     email_domains: list[str]
+    sector: Optional[str] = None
 
 
 class UpdateMyCompanySettingsRequest(BaseModel):
     email_domains: list[str] = Field(min_length=1)
+    sector: Optional[str] = None
 
 
 class UpdateMyProfileRequest(BaseModel):
@@ -113,3 +115,13 @@ class MyMaintenanceResponse(BaseModel):
     scheduled_at: Optional[datetime] = None
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
+
+
+class CompleteOnboardingRequest(BaseModel):
+    sector: Optional[str] = None
+
+
+class OnboardingStatusResponse(BaseModel):
+    sector: Optional[str] = None
+    onboarding_completed_at: Optional[str] = None
+    needs_onboarding: bool

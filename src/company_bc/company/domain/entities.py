@@ -5,10 +5,14 @@ from typing import Optional
 import ulid
 
 from src.company_bc.company.domain.billing_enums import BillingStatus, PlanTier
-from src.company_bc.company.domain.enums import VALID_TRANSITIONS, CompanyStatus
+from src.company_bc.company.domain.enums import VALID_TRANSITIONS, CompanyStatus, CompanySector
 
 
 class InvalidStatusTransitionError(Exception):
+    pass
+
+
+class InvalidSectorError(Exception):
     pass
 
 
@@ -54,6 +58,9 @@ class Company:
     pending_downgrade_plan: Optional[PlanTier] = None
     complimentary: bool = False
     trial_ends_at: Optional[datetime] = None
+    # Onboarding fields
+    sector: Optional[str] = None
+    onboarding_completed_at: Optional[datetime] = None
 
     def is_in_trial(self) -> bool:
         if self.trial_ends_at is None:
@@ -144,3 +151,17 @@ class Company:
         self.complimentary = False
         self.plan = PlanTier.FREE
         self.billing_status = BillingStatus.OVER_LIMIT
+
+    # ------------------------------------------------------------------
+    # Onboarding domain methods
+    # ------------------------------------------------------------------
+
+    def set_sector(self, sector: Optional[str]) -> None:
+        if sector is not None:
+            valid = {s.value for s in CompanySector}
+            if sector not in valid:
+                raise InvalidSectorError(f"Invalid sector: '{sector}'")
+        self.sector = sector
+
+    def complete_onboarding(self) -> None:
+        self.onboarding_completed_at = datetime.now(timezone.utc)

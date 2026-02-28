@@ -40,6 +40,8 @@ class CompanyRepository(CompanyRepositoryInterface):
             )
             existing.complimentary = company.complimentary
             existing.trial_ends_at = company.trial_ends_at
+            existing.sector = company.sector
+            existing.onboarding_completed_at = company.onboarding_completed_at
         else:
             model = CompanyModel(
                 id=company.id,
@@ -58,6 +60,8 @@ class CompanyRepository(CompanyRepositoryInterface):
                 ),
                 complimentary=company.complimentary,
                 trial_ends_at=company.trial_ends_at,
+                sector=company.sector,
+                onboarding_completed_at=company.onboarding_completed_at,
             )
             self.session.add(model)
         self.session.flush()
@@ -378,4 +382,6 @@ class CompanyRepository(CompanyRepositoryInterface):
             ),
             complimentary=model.complimentary,
             trial_ends_at=model.trial_ends_at,
+            sector=model.sector,
+            onboarding_completed_at=model.onboarding_completed_at,
         )

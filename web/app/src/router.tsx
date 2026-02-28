@@ -34,6 +34,7 @@ const AssignmentAISettingsPage = lazy(() => import('./pages/admin/AssignmentAISe
 const ClassificationSettingsPage = lazy(() => import('./pages/admin/ClassificationSettingsPage'));
 const ProcurementSettingsPage = lazy(() => import('./pages/admin/ProcurementSettingsPage'));
 const VendorListPage = lazy(() => import('./pages/admin/VendorListPage'));
+const VendorDetailPage = lazy(() => import('./pages/admin/VendorDetailPage'));
 const PurchaseOrderListPage = lazy(() => import('./pages/admin/PurchaseOrderListPage'));
 const PurchaseOrderDetailPage = lazy(() => import('./pages/admin/PurchaseOrderDetailPage'));
 const PurchaseOrderFormPage = lazy(() => import('./pages/admin/PurchaseOrderFormPage'));
@@ -88,6 +89,15 @@ const CustomFieldsPage = lazy(() => import('./pages/admin/CustomFieldsPage'));
 const AssetTypesPage = lazy(() => import('./pages/admin/AssetTypesPage'));
 const WorkflowTemplatesPage = lazy(() => import('./pages/admin/WorkflowTemplatesPage'));
 const NavVisibilitySettingsPage = lazy(() => import('./pages/admin/NavVisibilitySettingsPage'));
+const SupplyChainDashboardPage = lazy(() => import('./pages/admin/SupplyChainDashboardPage'));
+const VulnerabilitiesPage = lazy(() => import('./pages/admin/VulnerabilitiesPage'));
+const VulnerabilityDetailPage = lazy(() => import('./pages/admin/VulnerabilityDetailPage'));
+const CMDBDashboardPage = lazy(() => import('./pages/admin/CMDBDashboardPage'));
+const VulnerabilityDashboardPage = lazy(() => import('./pages/admin/VulnerabilityDashboardPage'));
+const ChangeListPage = lazy(() => import('./pages/admin/ChangeListPage'));
+const ChangeDetailPage = lazy(() => import('./pages/admin/ChangeDetailPage'));
+const ChangeDashboardPage = lazy(() => import('./pages/admin/ChangeDashboardPage'));
+const OnboardingWizardPage = lazy(() => import('./pages/admin/OnboardingWizardPage'));
 
 function S({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoading />}>{children}</Suspense>;
@@ -141,6 +151,18 @@ export const router = createBrowserRouter([
       {
         path: 'vendors',
         element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><VendorListPage /></S></RequireRole>,
+      },
+      {
+        path: 'vendors/supply-chain',
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><SupplyChainDashboardPage /></S></RequireRole>,
+      },
+      {
+        path: 'cmdb/dashboard',
+        element: <RequireRole roles={['admin', 'super_admin']}><S><CMDBDashboardPage /></S></RequireRole>,
+      },
+      {
+        path: 'vendors/:id',
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><VendorDetailPage /></S></RequireRole>,
       },
       {
         path: 'purchase-orders',
@@ -259,6 +281,30 @@ export const router = createBrowserRouter([
         element: <RequireRole roles={['admin', 'super_admin']}><S><EditRiskPage /></S></RequireRole>,
       },
       {
+        path: 'vulnerabilities',
+        element: <RequireRole roles={['admin', 'super_admin']}><S><VulnerabilitiesPage /></S></RequireRole>,
+      },
+      {
+        path: 'vulnerabilities/dashboard',
+        element: <RequireRole roles={['admin', 'super_admin']}><S><VulnerabilityDashboardPage /></S></RequireRole>,
+      },
+      {
+        path: 'vulnerabilities/:id',
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><VulnerabilityDetailPage /></S></RequireRole>,
+      },
+      {
+        path: 'changes',
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><ChangeListPage /></S></RequireRole>,
+      },
+      {
+        path: 'changes/dashboard',
+        element: <RequireRole roles={['admin', 'super_admin']}><S><ChangeDashboardPage /></S></RequireRole>,
+      },
+      {
+        path: 'changes/:id',
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><ChangeDetailPage /></S></RequireRole>,
+      },
+      {
         path: 'assets',
         element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><AssetListPage /></S></RequireRole>,
       },
@@ -273,6 +319,11 @@ export const router = createBrowserRouter([
       {
         path: 'assets/:id',
         element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><AssetDetailPage /></S></RequireRole>,
+      },
+      // Onboarding wizard (admin only)
+      {
+        path: 'onboarding',
+        element: <RequireRole roles={['admin']}><S><OnboardingWizardPage /></S></RequireRole>,
       },
       // Admin+
       {

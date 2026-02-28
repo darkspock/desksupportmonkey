@@ -14,6 +14,7 @@ export interface User {
   password_set?: boolean;
   has_oauth?: boolean;
   hidden_nav_items?: Record<string, string[]> | null;
+  needs_onboarding?: boolean;
   street_line_1?: string | null;
   street_line_2?: string | null;
   city?: string | null;
@@ -61,6 +62,7 @@ export interface CompanySettings {
   id: string;
   name: string;
   email_domains: string[];
+  sector?: string | null;
 }
 
 // Department
@@ -109,9 +111,18 @@ export interface Asset {
   warranty_expiration: string | null;
   notes: string | null;
   custom_fields?: CustomFieldValue[] | null;
+  criticality: string | null;
+  impact_score: number | null;
+  rto_minutes: number | null;
+  rpo_minutes: number | null;
+  bia_justification: string | null;
+  bia_reviewed_at: string | null;
+  bia_reviewed_by: string | null;
   created_at: string;
   updated_at: string;
 }
+
+export type AssetCriticality = 'critical' | 'high' | 'medium' | 'low';
 
 export interface AssetLocation {
   id: string;
@@ -385,6 +396,11 @@ export interface AIClassificationData {
 }
 
 // Vendor
+export type VendorCategory = 'hardware' | 'software' | 'saas' | 'consulting' | 'telecom' | 'cloud' | 'managed_services' | 'other';
+export type VendorRiskLevel = 'low' | 'medium' | 'high' | 'critical';
+export type ContractType = 'service' | 'supply' | 'licensing' | 'saas';
+export type ContractStatus = 'draft' | 'active' | 'expired' | 'terminated';
+
 export interface Vendor {
   id: string;
   company_id: string;
@@ -394,8 +410,142 @@ export interface Vendor {
   address?: string | null;
   notes?: string | null;
   is_active: boolean;
+  is_critical_ict: boolean;
+  risk_level?: VendorRiskLevel | null;
+  website?: string | null;
+  category?: VendorCategory | null;
   created_at?: string | null;
   updated_at?: string | null;
+}
+
+export interface VendorContract {
+  id: string;
+  vendor_id: string;
+  company_id: string;
+  contract_type: ContractType;
+  title: string;
+  start_date: string;
+  end_date?: string | null;
+  renewal_date?: string | null;
+  auto_renewal: boolean;
+  annual_value?: string | null;
+  currency?: string | null;
+  security_clauses: Record<string, boolean>;
+  notes?: string | null;
+  status: ContractStatus;
+  document_count?: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface VendorContractDocument {
+  id: string;
+  contract_id: string;
+  company_id: string;
+  filename: string;
+  content_type: string;
+  size_bytes: number;
+  uploaded_by: string;
+  created_at?: string | null;
+}
+
+export interface VendorRiskAssessment {
+  id: string;
+  vendor_id: string;
+  company_id: string;
+  assessed_by: string;
+  assessment_date: string;
+  next_review_date?: string | null;
+  data_handling_score: number;
+  security_certs_score: number;
+  incident_response_score: number;
+  business_continuity_score: number;
+  subcontractor_score: number;
+  overall_risk_level: VendorRiskLevel;
+  justification?: string | null;
+  created_at?: string | null;
+}
+
+export type BusinessFunction =
+  | 'it_operations'
+  | 'security'
+  | 'communications'
+  | 'data_storage'
+  | 'cloud_infrastructure'
+  | 'software'
+  | 'hardware_supply'
+  | 'consulting'
+  | 'other';
+
+export interface VendorDependency {
+  id: string;
+  vendor_id: string;
+  company_id: string;
+  service_description: string;
+  business_function: BusinessFunction;
+  is_critical: boolean;
+  notes?: string | null;
+  created_at?: string | null;
+}
+
+export interface ConcentrationRiskItem {
+  vendor_id: string;
+  vendor_name: string;
+  critical_count: number;
+  total_critical: number;
+  percentage: number;
+  is_above_threshold: boolean;
+}
+
+// Vendor Risk Profile
+export interface VendorLatestAssessment {
+  id: string;
+  assessment_date: string;
+  next_review_date?: string | null;
+  data_handling_score: number;
+  security_certs_score: number;
+  incident_response_score: number;
+  business_continuity_score: number;
+  subcontractor_score: number;
+  overall_risk_level: string;
+  justification?: string | null;
+}
+
+export interface VendorIncidentSummary {
+  id: string;
+  title: string;
+  severity: string;
+  status: string;
+  created_at?: string | null;
+}
+
+export interface VendorRiskSummary {
+  id: string;
+  title: string;
+  risk_level?: string | null;
+  status: string;
+}
+
+export interface VendorRiskProfile {
+  id: string;
+  name: string;
+  contact_email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  website?: string | null;
+  category?: string | null;
+  is_critical_ict: boolean;
+  risk_level?: string | null;
+  is_active: boolean;
+  latest_assessment?: VendorLatestAssessment | null;
+  active_contracts_count: number;
+  total_contracts_count: number;
+  dependency_count: number;
+  critical_dependency_count: number;
+  incident_count: number;
+  risk_count: number;
+  incidents: VendorIncidentSummary[];
+  risks: VendorRiskSummary[];
 }
 
 // Procurement Config
@@ -1249,4 +1399,255 @@ export interface ChecklistProgress {
   total: number;
   completed: number;
   required_remaining: number;
+}
+
+// CI Relationships
+export interface CIRelationship {
+  id: string;
+  source_asset_id: string;
+  target_asset_id: string;
+  relationship_type: string;
+  description: string | null;
+  created_at: string;
+  created_by: string;
+  target_asset_name: string | null;
+  target_asset_serial: string | null;
+  target_asset_type: string | null;
+  target_asset_criticality: string | null;
+  target_asset_status: string | null;
+  source_asset_name: string | null;
+  source_asset_serial: string | null;
+  source_asset_type: string | null;
+  source_asset_criticality: string | null;
+  source_asset_status: string | null;
+}
+
+// Affected Assets
+export interface RequesterAsset {
+  id: string;
+  brand: string;
+  model: string;
+  serial_number: string;
+  type: string;
+  criticality: string | null;
+  status: string;
+  is_affected: boolean;
+}
+
+// Vulnerability
+export interface Vulnerability {
+  id: string;
+  cve_id?: string | null;
+  title: string;
+  description?: string | null;
+  source: string;
+  cvss_score?: number | null;
+  severity: string;
+  status: string;
+  affected_software?: string | null;
+  affected_versions?: string | null;
+  published_at?: string | null;
+  discovered_at?: string | null;
+  remediation_notes?: string | null;
+  vendor_id?: string | null;
+  created_by: string;
+  created_by_name?: string | null;
+  created_at?: string;
+  updated_at?: string | null;
+}
+
+export interface VulnerabilityEvent {
+  id: string;
+  event_type: string;
+  data?: Record<string, unknown> | null;
+  performed_by: string;
+  performed_by_name?: string | null;
+  created_at?: string;
+}
+
+export interface VulnerabilityAsset {
+  id: string;
+  asset_id: string;
+  asset_name?: string | null;
+  asset_tag?: string | null;
+  asset_criticality?: string | null;
+  status: string;
+  notes?: string | null;
+  remediation_request_id?: string | null;
+  patched_at?: string | null;
+  patched_by?: string | null;
+  patched_by_name?: string | null;
+  created_at?: string | null;
+}
+
+export interface VulnerabilityDetail extends Vulnerability {
+  events: VulnerabilityEvent[];
+  affected_assets: VulnerabilityAsset[];
+  all_assets_remediated: boolean;
+}
+
+// CMDB Dashboard
+export interface ImpactAsset {
+  id: string;
+  name: string;
+  asset_tag: string | null;
+  criticality: string | null;
+  depth: number;
+  relationship_type: string;
+}
+
+export interface ImpactRadius {
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+  unclassified: number;
+  total: number;
+}
+
+export interface AssetImpact {
+  asset_id: string;
+  upstream: ImpactAsset[];
+  downstream: ImpactAsset[];
+  radius: ImpactRadius;
+}
+
+export interface MostDependedAsset {
+  asset_id: string;
+  asset_name: string;
+  asset_tag: string | null;
+  incoming_count: number;
+}
+
+export interface OverdueBIAReview {
+  asset_id: string;
+  asset_name: string;
+  asset_tag: string | null;
+  criticality: string;
+  bia_reviewed_at: string | null;
+}
+
+export interface CMDBDashboard {
+  criticality_distribution: Record<string, number>;
+  orphan_critical_count: number;
+  bia_total_critical_high: number;
+  bia_has_coverage: number;
+  bia_coverage_pct: number;
+  total_relationships: number;
+  relationships_by_type: Record<string, number>;
+  most_depended_upon: MostDependedAsset[];
+  overdue_bia_reviews: OverdueBIAReview[];
+}
+
+// Post-Implementation Review
+export interface PIR {
+  id: string;
+  outcome: string;
+  issues_found: string | null;
+  lessons_learned: string | null;
+  follow_up_actions: string | null;
+  created_by: string;
+  created_by_name: string | null;
+  created_at: string | null;
+}
+
+// Change Management
+export interface ChangeRequest {
+  id: string;
+  title: string;
+  change_type: string;
+  status: string;
+  planned_date: string | null;
+  assigned_to: string | null;
+  assigned_to_name: string | null;
+  requested_by: string;
+  requested_by_name: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface ChangeEvent {
+  id: string;
+  event_type: string;
+  description: string;
+  actor_id: string;
+  actor_name: string | null;
+  created_at: string | null;
+  metadata: Record<string, unknown> | null;
+}
+
+export interface ChangeAsset {
+  id: string;
+  asset_id: string;
+  asset_name: string | null;
+  asset_tag: string | null;
+  asset_brand: string | null;
+  asset_model: string | null;
+  created_at: string | null;
+}
+
+export interface ChangeRequestDetail {
+  id: string;
+  company_id: string;
+  title: string;
+  description: string | null;
+  change_type: string;
+  status: string;
+  business_justification: string | null;
+  risk_assessment: string | null;
+  rollback_plan: string | null;
+  planned_date: string | null;
+  requested_by: string;
+  requested_by_name: string | null;
+  assigned_to: string | null;
+  assigned_to_name: string | null;
+  approved_by: string | null;
+  approved_by_name: string | null;
+  approved_at: string | null;
+  rejected_by: string | null;
+  rejected_by_name: string | null;
+  rejected_at: string | null;
+  rejection_reason: string | null;
+  started_at: string | null;
+  implemented_at: string | null;
+  implementation_notes: string | null;
+  rolled_back_at: string | null;
+  rollback_reason: string | null;
+  closed_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  timeline: ChangeEvent[];
+  affected_assets: ChangeAsset[];
+  pir: PIR | null;
+}
+
+// Change Dashboard
+export interface UpcomingChange {
+  id: string;
+  title: string;
+  change_type: string;
+  planned_date: string | null;
+  assigned_to: string | null;
+  assigned_to_name: string | null;
+}
+
+export interface RecentImplemented {
+  id: string;
+  title: string;
+  change_type: string;
+  implemented_at: string | null;
+  pir_outcome: string | null;
+}
+
+export interface ChangeDashboard {
+  total_open: number;
+  pending_approval: number;
+  in_progress: number;
+  implemented: number;
+  scheduled_this_week: number;
+  status_counts: Record<string, number>;
+  type_counts: Record<string, number>;
+  upcoming_scheduled: UpcomingChange[];
+  recently_implemented: RecentImplemented[];
+  rolled_back_90_days: number;
 }
