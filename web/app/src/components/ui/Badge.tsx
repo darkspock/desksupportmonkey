@@ -10,9 +10,9 @@ const variants: Record<string, string> = {
   purple: 'bg-purple-500/10 text-purple-600 border-purple-500/30',
 };
 
-export function Badge({ children, variant = 'default' }: { children: React.ReactNode; variant?: string }) {
+export function Badge({ children, variant = 'default', className }: { children: React.ReactNode; variant?: string; className?: string }) {
   return (
-    <span className={cn('inline-flex items-center px-2 py-0.5 rounded-md border text-xs font-medium', variants[variant] || variants.default)}>
+    <span className={cn('inline-flex items-center px-2 py-0.5 rounded-md border text-xs font-medium', variants[variant] || variants.default, className)}>
       {children}
     </span>
   );
