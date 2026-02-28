@@ -22,6 +22,21 @@ VALID_TRANSITIONS: dict[AssetStatus, list[AssetStatus]] = {
 }
 
 
+class CIRelationshipType(str, Enum):
+    RUNS_ON = "runs_on"
+    DEPENDS_ON = "depends_on"
+    CONNECTED_TO = "connected_to"
+    PART_OF = "part_of"
+    BACKS_UP = "backs_up"
+
+
+class AssetCriticality(str, Enum):
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
 class InvalidStatusTransitionError(Exception):
     def __init__(self, current: AssetStatus, target: AssetStatus):
         self.current = current

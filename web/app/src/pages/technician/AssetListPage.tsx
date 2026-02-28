@@ -13,6 +13,28 @@ import { CustomFieldFilters } from '../../components/custom-fields/CustomFieldFi
 import { useI18n } from '../../lib/i18n';
 import type { Asset, AssetLocation, AssignableUser, PaginatedResponse } from '../../types';
 
+function criticalityBadgeClass(criticality: string | null): string {
+  switch (criticality) {
+    case 'critical': return 'bg-red-100 text-red-800';
+    case 'high': return 'bg-orange-100 text-orange-800';
+    case 'medium': return 'bg-yellow-100 text-yellow-800';
+    case 'low': return 'bg-green-100 text-green-800';
+    default: return 'bg-gray-100 text-gray-800';
+  }
+}
+
+function CriticalityBadge({ criticality }: { criticality: string | null }) {
+  const { t } = useI18n();
+  const label = criticality
+    ? t(`enum.criticality.${criticality}`)
+    : t('page.asset_list.criticality_unclassified');
+  return (
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${criticalityBadgeClass(criticality)}`}>
+      {label}
+    </span>
+  );
+}
+
 export default function AssetListPage() {
   const { t } = useI18n();
   const [page, setPage] = useState(1);
@@ -21,10 +43,11 @@ export default function AssetListPage() {
   const [status, setStatus] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
   const [locationId, setLocationId] = useState('');
+  const [criticality, setCriticality] = useState('');
   const [cfFilters, setCfFilters] = useState<Record<string, string>>({});
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['assets', page, search, type, status, assignedTo, locationId, cfFilters],
+    queryKey: ['assets', page, search, type, status, assignedTo, locationId, criticality, cfFilters],
     queryFn: async () => {
       const params: Record<string, unknown> = { page, page_size: 20 };
       if (search) params.search = search;
@@ -32,6 +55,7 @@ export default function AssetListPage() {
       if (status) params.status = status;
       if (assignedTo) params.assigned_to = assignedTo;
       if (locationId) params.location_id = locationId;
+      if (criticality) params.criticality = criticality;
       Object.entries(cfFilters).forEach(([k, v]) => { if (v) params[k] = v; });
       const { data } = await api.get('/assets', { params });
       return data as PaginatedResponse<Asset>;
@@ -152,6 +176,17 @@ export default function AssetListPage() {
               <option key={loc.id} value={loc.id}>{loc.name}</option>
             ))}
           </select>
+          <select
+            value={criticality}
+            onChange={(e) => { setCriticality(e.target.value); setPage(1); }}
+            className="w-[160px] bg-card"
+          >
+            <option value="">{t('page.asset_list.all_criticalities')}</option>
+            {['critical', 'high', 'medium', 'low'].map((c) => (
+              <option key={c} value={c}>{t(`enum.criticality.${c}`)}</option>
+            ))}
+            <option value="unclassified">{t('page.asset_list.criticality_unclassified')}</option>
+          </select>
           <CustomFieldFilters
             entityType="asset"
             filters={cfFilters}
@@ -177,6 +212,7 @@ export default function AssetListPage() {
                 <Th className="hidden sm:table-cell">{t('table.serial')}</Th>
                 <Th>{t('table.type')}</Th>
                 <Th>{t('table.status')}</Th>
+                <Th className="hidden md:table-cell">{t('page.asset_detail.criticality')}</Th>
                 <Th className="hidden lg:table-cell">{t('table.location')}</Th>
                 <Th className="hidden lg:table-cell">{t('table.assigned')}</Th>
                 <Th className="w-[88px] pr-4">
@@ -196,6 +232,9 @@ export default function AssetListPage() {
                   <Td className="hidden sm:table-cell"><span className="text-sm font-mono text-muted-foreground">{a.serial_number}</span></Td>
                   <Td><span className="text-sm text-muted-foreground">{t(`enum.${a.type}`)}</span></Td>
                   <Td><StatusBadge status={a.status} /></Td>
+                  <Td className="hidden md:table-cell">
+                    <CriticalityBadge criticality={a.criticality} />
+                  </Td>
                   <Td className="hidden lg:table-cell">
                     <span className="text-sm text-muted-foreground">{a.location_name || '—'}</span>
                   </Td>

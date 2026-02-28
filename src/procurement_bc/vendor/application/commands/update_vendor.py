@@ -6,15 +6,13 @@ from src.framework.application.command_bus import (
     Command,
     CommandHandler,
 )
+from src.procurement_bc.vendor.domain.enums import VendorCategory
+from src.procurement_bc.vendor.domain.exceptions import VendorNotFoundError
 from src.procurement_bc.vendor.domain.repository import (
     VendorRepositoryInterface,
 )
 
 logger = logging.getLogger(__name__)
-
-
-class VendorNotFoundError(Exception):
-    pass
 
 
 @dataclass
@@ -26,6 +24,9 @@ class UpdateVendorCommand(Command):
     phone: Optional[str] = None
     address: Optional[str] = None
     notes: Optional[str] = None
+    category: Optional[str] = None
+    website: Optional[str] = None
+    is_critical_ict: Optional[bool] = None
     performed_by: str = ""
 
 
@@ -57,6 +58,11 @@ class UpdateVendorCommandHandler(
         vendor.phone = command.phone
         vendor.address = command.address
         vendor.notes = command.notes
+        vendor.update_extended_fields(
+            category=VendorCategory(command.category) if command.category else None,
+            website=command.website,
+            is_critical_ict=command.is_critical_ict,
+        )
         self.vendor_repo.save(vendor)
         logger.info(
             "Vendor %s updated", command.vendor_id,

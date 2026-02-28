@@ -60,6 +60,7 @@ class TestListAssetsQuery:
             location_id=None,
             sort_by="created_at", sort_order="desc",
             custom_field_filters=None, custom_field_search_keys=None,
+            criticality=None,
         )
 
     def test_with_search_param(self):

@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import Any, Optional
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, JSON, String, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, JSON, String, Text, UniqueConstraint, func, or_
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.base import Base
@@ -51,9 +51,35 @@ class AssetModel(ULIDMixin, TimestampMixin, Base):
         Integer, nullable=True,
     )
     custom_fields_data: Mapped[Any] = mapped_column(JSON, server_default="{}", nullable=False)
+    criticality: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    impact_score: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    rto_minutes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    rpo_minutes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    bia_justification: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    bia_reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    bia_reviewed_by: Mapped[Optional[str]] = mapped_column(String(26), ForeignKey("users.id"), nullable=True)
 
     __table_args__ = (
         UniqueConstraint("company_id", "serial_number", name="uq_asset_company_serial"),
+    )
+
+
+class CIRelationshipModel(ULIDMixin, TimestampMixin, Base):
+    __tablename__ = "ci_relationships"
+
+    company_id: Mapped[str] = mapped_column(String(26), ForeignKey("companies.id"), index=True)
+    source_asset_id: Mapped[str] = mapped_column(String(26), ForeignKey("assets.id"), index=True)
+    target_asset_id: Mapped[str] = mapped_column(String(26), ForeignKey("assets.id"), index=True)
+    relationship_type: Mapped[str] = mapped_column(String(20))
+    description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    created_by: Mapped[str] = mapped_column(String(26))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        UniqueConstraint(
+            "source_asset_id", "target_asset_id", "relationship_type",
+            name="uq_ci_rel_source_target_type",
+        ),
     )
 
 

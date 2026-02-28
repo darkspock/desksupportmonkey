@@ -26,6 +26,14 @@ class VendorUpdateRequest(BaseModel):
     )
     address: Optional[str] = None
     notes: Optional[str] = None
+    category: Optional[str] = Field(
+        default=None,
+        pattern="^(hardware|software|saas|consulting|telecom|cloud|managed_services|other)$",
+    )
+    website: Optional[str] = Field(
+        default=None, max_length=500,
+    )
+    is_critical_ict: Optional[bool] = None
 
 
 class VendorResponse(BaseModel):
@@ -37,5 +45,9 @@ class VendorResponse(BaseModel):
     address: Optional[str] = None
     notes: Optional[str] = None
     is_active: bool
+    is_critical_ict: bool = False
+    risk_level: Optional[str] = None
+    website: Optional[str] = None
+    category: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

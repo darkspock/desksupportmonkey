@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import api from '../../lib/api';
 import { Loading } from '../../components/ui/Loading';
 import { Table, Th, Td } from '../../components/ui/Table';
@@ -13,9 +14,9 @@ import { useToast } from '../../hooks/useToast';
 import { formatDate } from '../../lib/date';
 import { useI18n } from '../../lib/i18n';
 import { useAuth } from '../../contexts/AuthContext';
-import type { Vendor, PaginatedResponse } from '../../types';
+import type { Vendor, PaginatedResponse, VendorCategory } from '../../types';
 
-type FormField = 'name' | 'contact_email' | 'phone' | 'address' | 'notes';
+type FormField = 'name' | 'contact_email' | 'phone' | 'address' | 'notes' | 'category' | 'website' | 'is_critical_ict';
 
 interface VendorFormValues {
   name: string;
@@ -23,6 +24,9 @@ interface VendorFormValues {
   phone: string;
   address: string;
   notes: string;
+  category: string;
+  website: string;
+  is_critical_ict: boolean;
 }
 
 interface VendorFormErrors {
@@ -36,6 +40,27 @@ const EMPTY_FORM: VendorFormValues = {
   phone: '',
   address: '',
   notes: '',
+  category: '',
+  website: '',
+  is_critical_ict: false,
+};
+
+const CATEGORY_OPTIONS: { value: VendorCategory; label: string }[] = [
+  { value: 'hardware', label: 'Hardware' },
+  { value: 'software', label: 'Software' },
+  { value: 'saas', label: 'SaaS' },
+  { value: 'consulting', label: 'Consulting' },
+  { value: 'telecom', label: 'Telecom' },
+  { value: 'cloud', label: 'Cloud' },
+  { value: 'managed_services', label: 'Managed Services' },
+  { value: 'other', label: 'Other' },
+];
+
+const RISK_LEVEL_VARIANT: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
+  low: 'success',
+  medium: 'warning',
+  high: 'danger',
+  critical: 'danger',
 };
 
 function DeactivateIcon() {
@@ -146,6 +171,9 @@ export default function VendorListPage() {
       phone: v.phone || '',
       address: v.address || '',
       notes: v.notes || '',
+      category: v.category || '',
+      website: v.website || '',
+      is_critical_ict: v.is_critical_ict ?? false,
     });
     setFormErrors({});
     setFormTouched({});
@@ -184,6 +212,9 @@ export default function VendorListPage() {
         phone: formValues.phone.trim() || null,
         address: formValues.address.trim() || null,
         notes: formValues.notes.trim() || null,
+        category: formValues.category || null,
+        website: formValues.website.trim() || null,
+        is_critical_ict: formValues.is_critical_ict,
       });
     },
     onSuccess: () => {
@@ -298,8 +329,8 @@ export default function VendorListPage() {
               <thead>
                 <tr>
                   <Th>{t('page.vendors.name')}</Th>
-                  <Th>{t('page.vendors.email')}</Th>
-                  <Th>{t('page.vendors.phone')}</Th>
+                  <Th>{t('page.vendors.category')}</Th>
+                  <Th>{t('page.vendors.risk_level')}</Th>
                   <Th>{t('table.status')}</Th>
                   <Th>{t('page.vendors.created')}</Th>
                   <th className="px-4 py-2 text-right font-medium text-foreground">{t('table.actions')}</th>
@@ -308,9 +339,26 @@ export default function VendorListPage() {
               <tbody>
                 {vendors.map((v) => (
                   <tr key={v.id}>
-                    <Td>{v.name}</Td>
-                    <Td>{v.contact_email || '—'}</Td>
-                    <Td>{v.phone || '—'}</Td>
+                    <Td>
+                      <Link to={`/vendors/${v.id}`} className="text-primary hover:underline font-medium">
+                        {v.name}
+                      </Link>
+                      {v.is_critical_ict && (
+                        <Badge variant="danger" className="ml-2 text-[10px]">ICT</Badge>
+                      )}
+                    </Td>
+                    <Td>
+                      {v.category ? (
+                        <Badge variant="info">{t(`page.vendors.cat_${v.category}`)}</Badge>
+                      ) : '—'}
+                    </Td>
+                    <Td>
+                      {v.risk_level ? (
+                        <Badge variant={RISK_LEVEL_VARIANT[v.risk_level] ?? 'info'}>
+                          {t(`page.vendors.risk_${v.risk_level}`)}
+                        </Badge>
+                      ) : '—'}
+                    </Td>
                     <Td>
                       <Badge variant={v.is_active ? 'success' : 'danger'}>
                         {v.is_active ? t('page.vendors.active') : t('page.vendors.inactive')}
@@ -445,6 +493,51 @@ export default function VendorListPage() {
                     className="w-full bg-card"
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label className="block mb-1.5 text-muted-foreground">{t('page.vendors.category')}</label>
+                  <select
+                    value={formValues.category}
+                    onChange={(e) => updateField('category', e.target.value)}
+                    className="w-full bg-card"
+                  >
+                    <option value="">{t('page.vendors.no_category')}</option>
+                    {CATEGORY_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {t(`page.vendors.cat_${opt.value}`)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block mb-1.5 text-muted-foreground">{t('page.vendors.website')}</label>
+                  <input
+                    value={formValues.website}
+                    onChange={(e) => updateField('website', e.target.value)}
+                    onBlur={() => touchField('website')}
+                    maxLength={500}
+                    placeholder="https://"
+                    className="w-full bg-card"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="is_critical_ict"
+                  checked={formValues.is_critical_ict}
+                  onChange={(e) => {
+                    setFormValues((prev) => ({ ...prev, is_critical_ict: e.target.checked }));
+                  }}
+                  className="h-4 w-4 rounded border-input"
+                />
+                <label htmlFor="is_critical_ict" className="text-sm text-muted-foreground">
+                  {t('page.vendors.is_critical_ict')}
+                </label>
               </div>
 
               <div>

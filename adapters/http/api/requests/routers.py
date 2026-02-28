@@ -40,6 +40,8 @@ from adapters.http.api.requests.schemas import (
     RequestEventResponse,
     RequestListItemResponse,
     RequestResponse,
+    RequesterAssetResponse,
+    SetAffectedAssetsRequest,
 )
 from adapters.http.schemas.responses import PaginationMeta
 from core.database import get_db
@@ -473,6 +475,22 @@ def create_request(
     cf_validator: CustomFieldValidationService = Depends(get_cf_validation_service),
     cf_enricher: CustomFieldEnrichmentService = Depends(get_cf_enrichment_service),
 ):
+    # Validate subtype against type
+    if body.subtype:
+        from src.request_bc.request.domain.enums import RequestType
+        try:
+            req_type_enum = RequestType(body.type)
+        except ValueError:
+            req_type_enum = None
+        if req_type_enum and req_type_enum in VALID_SUBTYPES:
+            valid_subs = [s.value for s in VALID_SUBTYPES[req_type_enum]]
+            if body.subtype not in valid_subs:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"Invalid subtype '{body.subtype}' for type '{body.type}'. "
+                    f"Valid subtypes: {valid_subs}",
+                )
+
     # Resolve effective user (on_behalf_of for technician/admin)
     effective_user = current_user
     effective_role = current_user.role.value
@@ -1135,5 +1153,88 @@ def list_notes(
                 author_email=email_map.get(n.author_id), body=n.body, created_at=n.created_at,
             ).model_dump(mode="json")
             for n in notes
+        ]
+    }
+
+
+# ---- Affected Assets ----
+
+
+@router.patch("/{request_id}/affected-assets")
+def set_affected_assets(
+    request_id: str,
+    body: SetAffectedAssetsRequest,
+    current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
+    request_repo: RequestRepository = Depends(get_request_repo),
+    asset_repo: AssetRepository = Depends(get_asset_repo),
+):
+    from src.request_bc.request.application.commands.set_affected_assets import (
+        AssetNotFoundError,
+        RequestNotFoundError as AffectedRequestNotFoundError,
+        SetAffectedAssetsCommand,
+        SetAffectedAssetsCommandHandler,
+    )
+
+    handler = SetAffectedAssetsCommandHandler(
+        request_repo=request_repo,
+        asset_repo=asset_repo,
+    )
+    try:
+        handler.handle(SetAffectedAssetsCommand(
+            request_id=request_id,
+            company_id=current_user.company_id,
+            asset_ids=body.asset_ids,
+            performed_by=current_user.id,
+        ))
+    except AffectedRequestNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Request not found",
+        )
+    except AssetNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+
+    request = _get_refreshed_request(
+        request_repo, request_id, current_user.company_id,
+    )
+    return {"data": _to_response(request).model_dump(mode="json")}
+
+
+@router.get("/{request_id}/requester-assets")
+def get_requester_assets(
+    request_id: str,
+    current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
+    request_repo: RequestRepository = Depends(get_request_repo),
+    asset_repo: AssetRepository = Depends(get_asset_repo),
+):
+    from src.request_bc.request.application.queries.get_requester_assets import (
+        GetRequesterAssetsQuery,
+        GetRequesterAssetsQueryHandler,
+    )
+
+    handler = GetRequesterAssetsQueryHandler(
+        request_repo=request_repo,
+        asset_repo=asset_repo,
+    )
+    dtos = handler.handle(GetRequesterAssetsQuery(
+        request_id=request_id,
+        company_id=current_user.company_id,
+    ))
+    return {
+        "data": [
+            RequesterAssetResponse(
+                id=d.id,
+                brand=d.brand,
+                model=d.model,
+                serial_number=d.serial_number,
+                type=d.type,
+                criticality=d.criticality,
+                status=d.status,
+                is_affected=d.is_affected,
+            ).model_dump(mode="json")
+            for d in dtos
         ]
     }

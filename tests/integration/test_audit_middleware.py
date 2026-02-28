@@ -101,11 +101,19 @@ class TestAuditMiddlewareCapture:
     def test_audit_entry_contains_correct_actor(
         self, client, db_session, admin_user, auth_as
     ):
+        from core.jwt import JWTService
+
         auth_as(admin_user)
+        token = JWTService().create_token(
+            user_id=admin_user.id,
+            company_id=str(admin_user.company_id),
+            role=admin_user.role.value,
+        )
 
         client.post(
             "/api/v1/assets/locations",
             json={"name": "Actor Test Location"},
+            headers={"Authorization": f"Bearer {token}"},
         )
 
         entry = _get_last_audit_entry(db_session)
@@ -168,7 +176,7 @@ class TestAuditMiddlewareCapture:
             json={"name": "To Delete Location"},
         )
         if resp.status_code == 201:
-            loc_id = resp.json()["id"]
+            loc_id = resp.json()["data"]["id"]
             before = _count_audit_entries(db_session)
             client.delete(f"/api/v1/assets/locations/{loc_id}")
             after = _count_audit_entries(db_session)

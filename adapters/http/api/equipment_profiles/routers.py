@@ -96,7 +96,7 @@ def _to_response(
         items=[
             ProfileItemResponse(
                 id=item.id,
-                asset_type=item.asset_type.value,
+                asset_type=item.asset_type.value if hasattr(item.asset_type, 'value') else item.asset_type,
                 quantity=item.quantity,
                 preferred_brand=item.preferred_brand,
                 preferred_model=item.preferred_model,

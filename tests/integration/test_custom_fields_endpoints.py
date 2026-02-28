@@ -135,7 +135,7 @@ class TestCreateDefinition:
         )
 
         assert resp.status_code == 422
-        assert "Maximum" in resp.json()["detail"]
+        assert "Maximum" in resp.json()["error"]["message"]
 
     def test_create_duplicate_slug_409(
         self, client, db_session, admin_user, auth_as, company
@@ -157,7 +157,7 @@ class TestCreateDefinition:
         )
 
         assert resp.status_code == 409
-        assert "already exists" in resp.json()["detail"]
+        assert "already exists" in resp.json()["error"]["message"]
 
     def test_create_select_without_options_422(
         self, client, db_session, admin_user, auth_as, company

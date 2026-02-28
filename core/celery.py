@@ -80,6 +80,22 @@ celery_app.conf.update(
                 hour=3, minute=0, day_of_week="sunday"
             ),  # Weekly Sunday 03:00 UTC
         },
+        "expire-vendor-contracts": {
+            "task": "core.tasks.vendor_contracts.expire_active_contracts",
+            "schedule": crontab(hour=1, minute=0),  # Daily at 01:00 UTC
+        },
+        "check-contract-renewals": {
+            "task": "core.tasks.vendor_contracts.send_contract_renewal_reminders",
+            "schedule": crontab(hour=6, minute=0),  # Daily at 06:00 UTC
+        },
+        "check-concentration-risk": {
+            "task": "core.tasks.vendor_contracts.check_concentration_risk",
+            "schedule": crontab(hour=7, minute=0),  # Daily at 07:00 UTC
+        },
+        "check-stale-assessments": {
+            "task": "core.tasks.vendor_contracts.check_stale_assessments",
+            "schedule": crontab(hour=7, minute=30),  # Daily at 07:30 UTC
+        },
     },
 )
 

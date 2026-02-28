@@ -50,6 +50,10 @@ class TargetResolver:
             EventType.SLA_WARNING: self._resolve_sla_warning,
             EventType.SLA_RESPONSE_BREACHED: self._resolve_sla_breach,
             EventType.SLA_RESOLUTION_BREACHED: self._resolve_sla_breach,
+            EventType.VULNERABILITY_CRITICAL_REGISTERED: self._resolve_vuln_critical,
+            EventType.VULNERABILITY_REMEDIATION_OVERDUE: self._resolve_vuln_critical,
+            EventType.CHANGE_APPROVED: self._resolve_change_requester,
+            EventType.CHANGE_REJECTED: self._resolve_change_requester,
         }
         resolver = resolvers.get(event.event_type)  # type: ignore[call-overload]
         if resolver is None:
@@ -328,3 +332,15 @@ class TargetResolver:
         admin_ids = self.user_repo.find_admin_ids_by_company(event.company_id)
         targets.update(admin_ids)
         return targets
+
+    # --- Vulnerability events ---
+
+    def _resolve_vuln_critical(self, event: DomainEvent) -> set[str]:
+        admin_ids = self.user_repo.find_admin_ids_by_company(event.company_id)
+        return set(admin_ids)
+
+    # --- Change events ---
+
+    def _resolve_change_requester(self, event: DomainEvent) -> set[str]:
+        requested_by = event.payload.get("requested_by") if event.payload else None
+        return {requested_by} if requested_by else set()

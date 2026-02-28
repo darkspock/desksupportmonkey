@@ -37,7 +37,10 @@ class UpdateLocationCommandHandler(CommandHandler[UpdateLocationCommand]):
         if not location:
             raise LocationNotFoundError(f"Location '{command.location_id}' not found")
 
-        if not location.is_system:
+        if location.is_system:
+            if command.name is not None or command.in_use is not None:
+                raise SystemLocationError("Cannot modify a system location")
+        else:
             if command.name is not None:
                 name = command.name.strip()
                 if not name:

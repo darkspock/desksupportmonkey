@@ -109,3 +109,18 @@ class RequestResponse(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     comment_count: int = 0
+
+
+class SetAffectedAssetsRequest(BaseModel):
+    asset_ids: list[str]
+
+
+class RequesterAssetResponse(BaseModel):
+    id: str
+    brand: str
+    model: str
+    serial_number: str
+    type: str
+    criticality: Optional[str] = None
+    status: str
+    is_affected: bool

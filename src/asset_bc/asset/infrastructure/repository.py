@@ -1,13 +1,13 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Optional
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import case, func, literal, not_, or_, select
 from sqlalchemy.orm import Session
 
 from src.asset_bc.asset.domain.entities import Asset, AssetEvent, AssetLocation
-from src.asset_bc.asset.domain.enums import AssetStatus
+from src.asset_bc.asset.domain.enums import AssetCriticality, AssetStatus
 from src.asset_bc.asset.domain.repository import AssetRepositoryInterface
-from src.asset_bc.asset.infrastructure.models import AssetLocationModel, AssetModel, AssetEventModel
+from src.asset_bc.asset.infrastructure.models import AssetLocationModel, AssetModel, AssetEventModel, CIRelationshipModel
 
 
 class AssetRepository(AssetRepositoryInterface):
@@ -31,6 +31,13 @@ class AssetRepository(AssetRepositoryInterface):
             existing.warranty_expiration = asset.warranty_expiration
             existing.notes = asset.notes
             existing.custom_fields_data = asset.custom_fields_data or {}
+            existing.criticality = asset.criticality.value if asset.criticality else None
+            existing.impact_score = asset.impact_score
+            existing.rto_minutes = asset.rto_minutes
+            existing.rpo_minutes = asset.rpo_minutes
+            existing.bia_justification = asset.bia_justification
+            existing.bia_reviewed_at = asset.bia_reviewed_at
+            existing.bia_reviewed_by = asset.bia_reviewed_by
         else:
             model = AssetModel(
                 id=asset.id,
@@ -47,6 +54,13 @@ class AssetRepository(AssetRepositoryInterface):
                 warranty_expiration=asset.warranty_expiration,
                 notes=asset.notes,
                 custom_fields_data=asset.custom_fields_data or {},
+                criticality=asset.criticality.value if asset.criticality else None,
+                impact_score=asset.impact_score,
+                rto_minutes=asset.rto_minutes,
+                rpo_minutes=asset.rpo_minutes,
+                bia_justification=asset.bia_justification,
+                bia_reviewed_at=asset.bia_reviewed_at,
+                bia_reviewed_by=asset.bia_reviewed_by,
             )
             self.session.add(model)
             existing = model
@@ -92,6 +106,7 @@ class AssetRepository(AssetRepositoryInterface):
         sort_order: str = "desc",
         custom_field_filters: Optional[dict[str, str]] = None,
         custom_field_search_keys: Optional[list[str]] = None,
+        criticality: Optional[str] = None,
     ) -> tuple[list[Asset], int]:
         stmt = select(AssetModel).where(AssetModel.company_id == company_id)
 
@@ -128,6 +143,11 @@ class AssetRepository(AssetRepositoryInterface):
                 stmt = stmt.where(AssetModel.assigned_to == assigned_to)
         if location_id is not None:
             stmt = stmt.where(AssetModel.location_id == location_id)
+        if criticality is not None:
+            if criticality == "unclassified":
+                stmt = stmt.where(AssetModel.criticality.is_(None))
+            else:
+                stmt = stmt.where(AssetModel.criticality == criticality)
 
         total = self.session.execute(
             select(func.count()).select_from(stmt.subquery())
@@ -142,6 +162,16 @@ class AssetRepository(AssetRepositoryInterface):
             .limit(page_size)
         ).scalars().all()
         return [self._to_entity(m) for m in models], total or 0
+
+    def find_by_ids(self, asset_ids: list[str], company_id: str) -> list[Asset]:
+        if not asset_ids:
+            return []
+        stmt = select(AssetModel).where(
+            AssetModel.company_id == company_id,
+            AssetModel.id.in_(asset_ids),
+        )
+        models = self.session.execute(stmt).scalars().all()
+        return [self._to_entity(m) for m in models]
 
     def find_by_assigned_to(self, user_id: str, company_id: str) -> list[Asset]:
         models = self.session.execute(
@@ -283,6 +313,93 @@ class AssetRepository(AssetRepositoryInterface):
             .order_by(AssetModel.type.asc(), AssetModel.brand.asc())
         ).scalars().all()
         return [self._to_entity(m) for m in models]
+
+    def count_by_criticality(self, company_id: str) -> dict[str, int]:
+        label_col = case(
+            (AssetModel.criticality.is_(None), literal("unclassified")),
+            else_=AssetModel.criticality,
+        )
+        rows = self.session.execute(
+            select(label_col.label("level"), func.count().label("cnt"))
+            .where(
+                AssetModel.company_id == company_id,
+                AssetModel.status != AssetStatus.DECOMMISSIONED.value,
+            )
+            .group_by(label_col)
+        ).all()
+        return {row[0]: row[1] for row in rows}
+
+    def bia_coverage_stats(self, company_id: str) -> dict:
+        base = select(AssetModel).where(
+            AssetModel.company_id == company_id,
+            AssetModel.status != AssetStatus.DECOMMISSIONED.value,
+        ).subquery()
+        row = self.session.execute(
+            select(
+                func.count().filter(
+                    base.c.criticality.in_(["critical", "high"])
+                ).label("total"),
+                func.count().filter(
+                    base.c.criticality.in_(["critical", "high"]),
+                    base.c.impact_score.isnot(None),
+                    base.c.rto_minutes.isnot(None),
+                ).label("has_bia"),
+            ).select_from(base)
+        ).one()
+        total = row[0] or 0
+        has_bia = row[1] or 0
+        return {
+            "total_critical_high": total,
+            "has_bia": has_bia,
+            "coverage_pct": round((has_bia / total * 100), 1) if total > 0 else 0.0,
+        }
+
+    def count_orphan_critical_assets(self, company_id: str) -> int:
+        ci_sub = select(literal(1)).where(
+            CIRelationshipModel.company_id == company_id,
+            or_(
+                CIRelationshipModel.source_asset_id == AssetModel.id,
+                CIRelationshipModel.target_asset_id == AssetModel.id,
+            ),
+        ).correlate(AssetModel)
+        result = self.session.execute(
+            select(func.count()).where(
+                AssetModel.company_id == company_id,
+                AssetModel.criticality == "critical",
+                AssetModel.status != AssetStatus.DECOMMISSIONED.value,
+                not_(ci_sub.exists()),
+            )
+        ).scalar()
+        return result or 0
+
+    def find_overdue_bia_reviews(self, company_id: str, months: int) -> list[dict]:
+        cutoff = datetime.utcnow() - timedelta(days=months * 30)
+        stmt = select(
+            AssetModel.id,
+            AssetModel.brand.concat(" ").concat(AssetModel.model).label("name"),
+            AssetModel.serial_number.label("asset_tag"),
+            AssetModel.criticality,
+            AssetModel.bia_reviewed_at,
+        ).where(
+            AssetModel.company_id == company_id,
+            AssetModel.criticality.in_(["critical", "high"]),
+            AssetModel.status != AssetStatus.DECOMMISSIONED.value,
+            or_(
+                AssetModel.bia_reviewed_at.is_(None),
+                AssetModel.bia_reviewed_at < cutoff,
+            ),
+        ).order_by(AssetModel.criticality.asc(), AssetModel.brand.asc())
+        rows = self.session.execute(stmt).all()
+        return [
+            {
+                "id": row[0],
+                "name": row[1],
+                "asset_tag": row[2],
+                "criticality": row[3],
+                "bia_reviewed_at": row[4],
+            }
+            for row in rows
+        ]
 
     # --- Location methods ---
 
@@ -426,6 +543,13 @@ class AssetRepository(AssetRepositoryInterface):
             warranty_expiration=model.warranty_expiration,
             notes=model.notes,
             custom_fields_data=model.custom_fields_data or {},
+            criticality=AssetCriticality(model.criticality) if model.criticality else None,
+            impact_score=model.impact_score,
+            rto_minutes=model.rto_minutes,
+            rpo_minutes=model.rpo_minutes,
+            bia_justification=model.bia_justification,
+            bia_reviewed_at=model.bia_reviewed_at,
+            bia_reviewed_by=model.bia_reviewed_by,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )

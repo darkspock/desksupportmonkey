@@ -41,6 +41,8 @@ from src.procurement_bc.vendor.application.commands.deactivate_vendor import (  
 from src.procurement_bc.vendor.application.commands.update_vendor import (  # noqa: E501
     UpdateVendorCommand,
     UpdateVendorCommandHandler,
+)
+from src.procurement_bc.vendor.domain.exceptions import (
     VendorNotFoundError as UpdateNotFoundError,
 )
 from src.procurement_bc.vendor.application.queries.get_vendor import (  # noqa: E501
@@ -77,6 +79,10 @@ def _to_response(vendor: Vendor) -> VendorResponse:
         address=vendor.address,
         notes=vendor.notes,
         is_active=vendor.is_active,
+        is_critical_ict=vendor.is_critical_ict,
+        risk_level=vendor.risk_level.value if vendor.risk_level else None,
+        website=vendor.website,
+        category=vendor.category.value if vendor.category else None,
         created_at=vendor.created_at,
         updated_at=vendor.updated_at,
     )
@@ -245,6 +251,9 @@ def update_vendor(
                 phone=body.phone,
                 address=body.address,
                 notes=body.notes,
+                category=body.category,
+                website=body.website,
+                is_critical_ict=body.is_critical_ict,
                 performed_by=current_user.id,
             )
         )

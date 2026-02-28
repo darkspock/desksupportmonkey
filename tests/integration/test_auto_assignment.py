@@ -6,7 +6,7 @@ class TestAutoAssignment:
         self, client, auth_as, db_session, company,
         make_user,
     ):
-        """new_equipment request with profile -> auto_assignment."""
+        """onboarding request with profile -> auto_assignment at creation."""
         from src.asset_bc.asset.domain.entities import Asset
         from src.asset_bc.asset.infrastructure.repository import (  # noqa: E501
             AssetRepository,
@@ -84,12 +84,12 @@ class TestAutoAssignment:
         AssetRepository(db_session).save(asset)
         db_session.flush()
 
-        # Create request
+        # Create request (onboarding auto-assigns at creation)
         auth_as(user)
         resp = client.post(
             "/api/v1/requests",
             json={
-                "type": "new_equipment",
+                "type": "onboarding",
                 "title": "Need a laptop",
                 "description": "New hire laptop request",
             },
@@ -107,7 +107,7 @@ class TestAutoAssignment:
         self, client, auth_as, db_session, company,
         make_user,
     ):
-        """new_equipment request with no profile -> fallback metadata."""
+        """onboarding request with no profile -> fallback metadata."""
         from src.auth_bc.user.domain.enums import UserRole
         from src.company_bc.department.domain.entities import (
             Department,
@@ -147,7 +147,7 @@ class TestAutoAssignment:
         resp = client.post(
             "/api/v1/requests",
             json={
-                "type": "new_equipment",
+                "type": "onboarding",
                 "title": "Need equipment",
                 "description": "Equipment request",
             },

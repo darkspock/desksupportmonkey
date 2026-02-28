@@ -24,7 +24,14 @@ from adapters.http.api.settings.routers import router as settings_router
 from adapters.http.api.settings.classification_router import router as classification_settings_router
 from adapters.http.api.settings.procurement_routers import router as procurement_settings_router
 from adapters.http.api.settings.nav_config_router import router as nav_config_router
+from adapters.http.api.settings.sla_escalation_router import router as sla_escalation_router
 from adapters.http.api.vendors.routers import router as vendors_router
+from adapters.http.api.vendors.contract_router import router as vendor_contracts_router
+from adapters.http.api.vendors.contract_document_router import router as vendor_contract_docs_router
+from adapters.http.api.vendors.assessment_router import router as vendor_assessments_router
+from adapters.http.api.vendors.dependency_router import router as vendor_dependencies_router
+from adapters.http.api.vendors.risk_profile_router import router as vendor_risk_profile_router
+from adapters.http.api.vendors.dashboard_router import router as vendor_dashboard_router
 from adapters.http.api.purchase_orders.routers import router as purchase_orders_router
 from adapters.http.api.appointments.routers import router as appointments_router
 from adapters.http.api.shipments.routers import router as shipments_router
@@ -38,6 +45,8 @@ from adapters.http.api.maintenance_templates.routers import (
 from adapters.http.api.billing.routers import router as billing_router
 from adapters.http.api.incidents.routers import router as incidents_router
 from adapters.http.api.risks.routers import router as risks_router
+from adapters.http.api.changes.routers import router as changes_router
+from adapters.http.api.vulnerabilities.routers import router as vulnerabilities_router
 from adapters.http.api.kb.routers import router as kb_router
 from adapters.http.api.sla.routers import router as sla_router
 from adapters.http.api.audit.routers import router as audit_router
@@ -118,7 +127,14 @@ def create_app() -> FastAPI:
     application.include_router(classification_settings_router)
     application.include_router(procurement_settings_router)
     application.include_router(nav_config_router)
+    application.include_router(sla_escalation_router)
+    application.include_router(vendor_dashboard_router)
+    application.include_router(vendor_dependencies_router)
+    application.include_router(vendor_risk_profile_router)
     application.include_router(vendors_router)
+    application.include_router(vendor_contracts_router)
+    application.include_router(vendor_contract_docs_router)
+    application.include_router(vendor_assessments_router)
     application.include_router(purchase_orders_router)
     application.include_router(appointments_router)
     application.include_router(shipments_router)
@@ -130,6 +146,8 @@ def create_app() -> FastAPI:
     application.include_router(billing_router)
     application.include_router(incidents_router)
     application.include_router(risks_router)
+    application.include_router(changes_router)
+    application.include_router(vulnerabilities_router)
     application.include_router(kb_router)
     application.include_router(sla_router)
     application.include_router(audit_router)

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from src.asset_bc.asset.domain.entities import Asset, AssetEvent, AssetLocation
+from src.asset_bc.asset.domain.entities import Asset, AssetEvent, AssetLocation, CIRelationship
 
 
 class AssetRepositoryInterface(ABC):
@@ -55,6 +55,7 @@ class AssetRepositoryInterface(ABC):
         sort_order: str = "desc",
         custom_field_filters: Optional[dict[str, str]] = None,
         custom_field_search_keys: Optional[list[str]] = None,
+        criticality: Optional[str] = None,
     ) -> tuple[list[Asset], int]: ...
 
     @abstractmethod
@@ -82,6 +83,55 @@ class AssetRepositoryInterface(ABC):
     def find_all_by_company(self, company_id: str) -> list[Asset]: ...
 
     @abstractmethod
+    def find_by_ids(
+        self, asset_ids: list[str], company_id: str,
+    ) -> list[Asset]: ...
+
+    @abstractmethod
     def find_in_stock_by_type(
         self, company_id: str, asset_type: str,
     ) -> list[Asset]: ...
+
+    @abstractmethod
+    def count_by_criticality(self, company_id: str) -> dict[str, int]: ...
+
+    @abstractmethod
+    def bia_coverage_stats(self, company_id: str) -> dict: ...
+
+    @abstractmethod
+    def count_orphan_critical_assets(self, company_id: str) -> int: ...
+
+    @abstractmethod
+    def find_overdue_bia_reviews(self, company_id: str, months: int) -> list[dict]: ...
+
+
+class CIRelationshipRepositoryInterface(ABC):
+
+    @abstractmethod
+    def save(self, relationship: CIRelationship) -> CIRelationship: ...
+
+    @abstractmethod
+    def find_by_id(self, relationship_id: str, company_id: str) -> Optional[CIRelationship]: ...
+
+    @abstractmethod
+    def find_by_asset(self, asset_id: str, company_id: str) -> list[CIRelationship]: ...
+
+    @abstractmethod
+    def find_duplicate(
+        self, source_asset_id: str, target_asset_id: str, relationship_type: str, company_id: str,
+    ) -> Optional[CIRelationship]: ...
+
+    @abstractmethod
+    def delete(self, relationship_id: str) -> None: ...
+
+    @abstractmethod
+    def find_all_by_company(self, company_id: str) -> list[CIRelationship]: ...
+
+    @abstractmethod
+    def count_all(self, company_id: str) -> int: ...
+
+    @abstractmethod
+    def count_by_type(self, company_id: str) -> dict[str, int]: ...
+
+    @abstractmethod
+    def count_incoming_by_asset(self, company_id: str, limit: int = 10) -> list[dict]: ...

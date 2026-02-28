@@ -18,6 +18,6 @@ def get_audit_repo(db: Session = Depends(get_db)) -> AuditRepository:
 
 def get_stripe_client() -> StripeClient:
     return StripeClient(
-        secret_key=settings.stripe.SECRET_KEY,
+        secret_key=settings.stripe.STRIPE_SECRET_KEY,
         open_source_mode=settings.stripe.OPEN_SOURCE_MODE,
     )

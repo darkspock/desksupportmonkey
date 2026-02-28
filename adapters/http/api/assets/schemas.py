@@ -50,6 +50,13 @@ class AssetResponse(BaseModel):
     warranty_expiration: Optional[date] = None
     notes: Optional[str] = None
     custom_fields: Optional[list[dict[str, Any]]] = None
+    criticality: Optional[str] = None
+    impact_score: Optional[int] = None
+    rto_minutes: Optional[int] = None
+    rpo_minutes: Optional[int] = None
+    bia_justification: Optional[str] = None
+    bia_reviewed_at: Optional[datetime] = None
+    bia_reviewed_by: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -124,6 +131,99 @@ class AssetLocationResponse(BaseModel):
     created_at: Optional[datetime] = None
 
 
+class CreateCIRelationshipRequest(BaseModel):
+    target_asset_id: str = Field(..., min_length=1, max_length=26)
+    relationship_type: str = Field(...)
+    description: Optional[str] = Field(None, max_length=500)
+
+
+class UpdateCIRelationshipRequest(BaseModel):
+    description: Optional[str] = Field(None, max_length=500)
+
+
+class CIRelationshipResponse(BaseModel):
+    id: str
+    source_asset_id: str
+    target_asset_id: str
+    relationship_type: str
+    description: Optional[str] = None
+    created_at: Optional[datetime] = None
+    created_by: str
+    target_asset_name: Optional[str] = None
+    target_asset_serial: Optional[str] = None
+    target_asset_type: Optional[str] = None
+    target_asset_criticality: Optional[str] = None
+    target_asset_status: Optional[str] = None
+    source_asset_name: Optional[str] = None
+    source_asset_serial: Optional[str] = None
+    source_asset_type: Optional[str] = None
+    source_asset_criticality: Optional[str] = None
+    source_asset_status: Optional[str] = None
+
+
+class ImpactAssetResponse(BaseModel):
+    id: str
+    name: str
+    asset_tag: Optional[str] = None
+    criticality: Optional[str] = None
+    depth: int
+    relationship_type: str
+
+
+class ImpactRadiusResponse(BaseModel):
+    critical: int
+    high: int
+    medium: int
+    low: int
+    unclassified: int
+    total: int
+
+
+class AssetImpactResponse(BaseModel):
+    asset_id: str
+    upstream: list[ImpactAssetResponse]
+    downstream: list[ImpactAssetResponse]
+    radius: ImpactRadiusResponse
+
+
+class MostDependedAssetResponse(BaseModel):
+    asset_id: str
+    asset_name: str
+    asset_tag: Optional[str] = None
+    incoming_count: int
+
+
+class OverdueBIAReviewResponse(BaseModel):
+    asset_id: str
+    asset_name: str
+    asset_tag: Optional[str] = None
+    criticality: str
+    bia_reviewed_at: Optional[datetime] = None
+
+
+class CMDBDashboardResponse(BaseModel):
+    criticality_distribution: dict[str, int]
+    orphan_critical_count: int
+    bia_total_critical_high: int
+    bia_has_coverage: int
+    bia_coverage_pct: float
+    total_relationships: int
+    relationships_by_type: dict[str, int]
+    most_depended_upon: list[MostDependedAssetResponse]
+    overdue_bia_reviews: list[OverdueBIAReviewResponse]
+
+
 class MoveAssetRequest(BaseModel):
     location_id: str = Field(min_length=1)
     notes: Optional[str] = None
+
+
+class SetCriticalityRequest(BaseModel):
+    criticality: Optional[str] = None
+
+
+class UpdateBiaRequest(BaseModel):
+    impact_score: Optional[int] = Field(None, ge=1, le=10)
+    rto_minutes: Optional[int] = Field(None, gt=0)
+    rpo_minutes: Optional[int] = Field(None, ge=0)
+    bia_justification: Optional[str] = None

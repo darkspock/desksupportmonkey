@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, status
 from starlette.requests import Request
 
 from adapters.http.api.auth.dependencies import require_role
-from adapters.http.api.assets.dependencies import get_asset_repo, get_checkout_repo, get_user_repo
+from adapters.http.api.assets.dependencies import get_asset_repo, get_checkout_repo, get_ci_relationship_repo, get_user_repo
 from adapters.http.api.custom_fields.dependencies import (
     get_cf_definition_repo,
     get_cf_enrichment_service,
@@ -25,16 +25,24 @@ from src.custom_field_bc.definition.application.services.validation_service impo
 from adapters.http.api.assets.schemas import (
     AssignableUserResponse,
     AssetEventResponse,
+    AssetImpactResponse,
     AssetLocationResponse,
     AssetResponse,
     AssignAssetRequest,
     ChangeStatusRequest,
+    CMDBDashboardResponse,
     CreateAssetRequest,
     CreateLocationRequest,
+    ImpactAssetResponse,
+    ImpactRadiusResponse,
     ImportResponse,
     ImportRowErrorResponse,
+    MostDependedAssetResponse,
     MoveAssetRequest,
+    OverdueBIAReviewResponse,
+    SetCriticalityRequest,
     UpdateAssetRequest,
+    UpdateBiaRequest,
     UpdateLocationRequest,
 )
 from adapters.http.schemas.responses import PaginationMeta
@@ -108,7 +116,26 @@ from src.asset_bc.asset.application.queries.list_locations import (
     ListLocationsQuery,
     ListLocationsQueryHandler,
 )
-from src.asset_bc.asset.domain.entities import Asset, AssetEvent, AssetLocation, InvalidAssignmentError
+from src.asset_bc.asset.application.queries.get_asset_impact import (
+    AssetNotFoundError as ImpactAssetNotFoundError,
+    GetAssetImpactQuery,
+    GetAssetImpactQueryHandler,
+)
+from src.asset_bc.asset.application.queries.cmdb_dashboard import (
+    GetCMDBDashboardQuery,
+    GetCMDBDashboardQueryHandler,
+)
+from src.asset_bc.asset.application.commands.set_criticality import (
+    AssetNotFoundError as CriticalityAssetNotFoundError,
+    SetCriticalityCommand,
+    SetCriticalityCommandHandler,
+)
+from src.asset_bc.asset.application.commands.update_bia import (
+    AssetNotFoundError as BiaAssetNotFoundError,
+    UpdateBiaCommand,
+    UpdateBiaCommandHandler,
+)
+from src.asset_bc.asset.domain.entities import Asset, AssetEvent, AssetLocation, AssetDecommissionedError, InvalidAssignmentError
 from src.asset_bc.asset.domain.enums import AssetStatus as AssetStatusEnum, InvalidStatusTransitionError
 from src.asset_bc.asset.domain.exceptions import (
     LocationHasAssetsError,
@@ -119,9 +146,17 @@ from src.asset_bc.asset.domain.exceptions import (
 from src.asset_bc.asset.infrastructure.repository import AssetRepository
 from src.auth_bc.user.infrastructure.repository import UserRepository
 
+from adapters.http.api.assets.relationship_router import relationship_router
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/assets", tags=["assets"])
+
+router.include_router(
+    relationship_router,
+    prefix="/{asset_id}/relationships",
+    tags=["asset-relationships"],
+)
 
 
 def _to_response(
@@ -147,6 +182,13 @@ def _to_response(
         warranty_expiration=asset.warranty_expiration,
         notes=asset.notes,
         custom_fields=custom_fields,
+        criticality=asset.criticality.value if asset.criticality else None,
+        impact_score=asset.impact_score,
+        rto_minutes=asset.rto_minutes,
+        rpo_minutes=asset.rpo_minutes,
+        bia_justification=asset.bia_justification,
+        bia_reviewed_at=asset.bia_reviewed_at,
+        bia_reviewed_by=asset.bia_reviewed_by,
         created_at=asset.created_at,
         updated_at=asset.updated_at,
     )
@@ -302,6 +344,7 @@ def list_assets(
     department_id: Optional[str] = Query(None),
     assigned_to: Optional[str] = Query(None),
     location_id: Optional[str] = Query(None),
+    criticality: Optional[str] = Query(None),
     sort_by: str = Query("created_at"),
     sort_order: str = Query("desc"),
     current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
@@ -327,6 +370,7 @@ def list_assets(
             sort_by=sort_by, sort_order=sort_order,
             custom_field_filters=cf_filters or None,
             custom_field_search_keys=cf_search_keys,
+            criticality=criticality,
         )
     )
     email_map = _resolve_assigned_emails(user_repo, assets)
@@ -499,6 +543,42 @@ def delete_location(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
 
+@router.get("/cmdb-dashboard")
+def get_cmdb_dashboard(
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
+    asset_repo: AssetRepository = Depends(get_asset_repo),
+    ci_repo=Depends(get_ci_relationship_repo),
+):
+    handler = GetCMDBDashboardQueryHandler(asset_repo=asset_repo, ci_repo=ci_repo)
+    dto = handler.handle(GetCMDBDashboardQuery(company_id=current_user.company_id))
+    return {"data": CMDBDashboardResponse(
+        criticality_distribution=dto.criticality_distribution,
+        orphan_critical_count=dto.orphan_critical_count,
+        bia_total_critical_high=dto.bia_total_critical_high,
+        bia_has_coverage=dto.bia_has_coverage,
+        bia_coverage_pct=dto.bia_coverage_pct,
+        total_relationships=dto.total_relationships,
+        relationships_by_type=dto.relationships_by_type,
+        most_depended_upon=[
+            MostDependedAssetResponse(
+                asset_id=m.asset_id,
+                asset_name=m.asset_name,
+                asset_tag=m.asset_tag,
+                incoming_count=m.incoming_count,
+            ) for m in dto.most_depended_upon
+        ],
+        overdue_bia_reviews=[
+            OverdueBIAReviewResponse(
+                asset_id=o.asset_id,
+                asset_name=o.asset_name,
+                asset_tag=o.asset_tag,
+                criticality=o.criticality,
+                bia_reviewed_at=o.bia_reviewed_at,
+            ) for o in dto.overdue_bia_reviews
+        ],
+    ).model_dump(mode="json")}
+
+
 @router.get("/{asset_id}")
 def get_asset(
     asset_id: str,
@@ -621,6 +701,50 @@ def get_asset_history(
     }
 
 
+@router.get("/{asset_id}/impact")
+def get_asset_impact(
+    asset_id: str,
+    max_depth: int = Query(default=5, ge=1, le=10),
+    current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
+    asset_repo: AssetRepository = Depends(get_asset_repo),
+    ci_repo=Depends(get_ci_relationship_repo),
+):
+    handler = GetAssetImpactQueryHandler(asset_repo=asset_repo, ci_repo=ci_repo)
+    try:
+        dto = handler.handle(GetAssetImpactQuery(
+            asset_id=asset_id,
+            company_id=current_user.company_id,
+            max_depth=max_depth,
+        ))
+    except ImpactAssetNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+    return {"data": AssetImpactResponse(
+        asset_id=dto.asset_id,
+        upstream=[
+            ImpactAssetResponse(
+                id=a.id, name=a.name, asset_tag=a.asset_tag,
+                criticality=a.criticality, depth=a.depth,
+                relationship_type=a.relationship_type,
+            ) for a in dto.upstream
+        ],
+        downstream=[
+            ImpactAssetResponse(
+                id=a.id, name=a.name, asset_tag=a.asset_tag,
+                criticality=a.criticality, depth=a.depth,
+                relationship_type=a.relationship_type,
+            ) for a in dto.downstream
+        ],
+        radius=ImpactRadiusResponse(
+            critical=dto.radius.critical,
+            high=dto.radius.high,
+            medium=dto.radius.medium,
+            low=dto.radius.low,
+            unclassified=dto.radius.unclassified,
+            total=dto.radius.total,
+        ),
+    ).model_dump(mode="json")}
+
+
 @router.patch("/{asset_id}/move")
 def move_asset(
     asset_id: str,
@@ -714,3 +838,62 @@ def unassign_asset(
     query_handler = GetAssetQueryHandler(asset_repo=asset_repo)
     asset = query_handler.handle(GetAssetQuery(asset_id=asset_id, company_id=current_user.company_id))
     return {"data": _to_response(asset, assigned_to_email=None).model_dump(mode="json")}
+
+
+@router.patch("/{asset_id}/criticality")
+def set_criticality(
+    asset_id: str,
+    body: SetCriticalityRequest,
+    current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
+    asset_repo: AssetRepository = Depends(get_asset_repo),
+    user_repo: UserRepository = Depends(get_user_repo),
+    cf_enricher: CustomFieldEnrichmentService = Depends(get_cf_enrichment_service),
+):
+    handler = SetCriticalityCommandHandler(asset_repo=asset_repo)
+    try:
+        handler.handle(
+            SetCriticalityCommand(
+                asset_id=asset_id,
+                company_id=current_user.company_id,
+                criticality=body.criticality,
+                performed_by=current_user.id,
+            )
+        )
+    except CriticalityAssetNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+    except AssetDecommissionedError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+    return _fetch_asset_response(asset_repo, user_repo, asset_id, current_user.company_id, cf_enricher=cf_enricher)
+
+
+@router.patch("/{asset_id}/bia")
+def update_bia(
+    asset_id: str,
+    body: UpdateBiaRequest,
+    current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
+    asset_repo: AssetRepository = Depends(get_asset_repo),
+    user_repo: UserRepository = Depends(get_user_repo),
+    cf_enricher: CustomFieldEnrichmentService = Depends(get_cf_enrichment_service),
+):
+    handler = UpdateBiaCommandHandler(asset_repo=asset_repo)
+    try:
+        handler.handle(
+            UpdateBiaCommand(
+                asset_id=asset_id,
+                company_id=current_user.company_id,
+                performed_by=current_user.id,
+                impact_score=body.impact_score,
+                rto_minutes=body.rto_minutes,
+                rpo_minutes=body.rpo_minutes,
+                bia_justification=body.bia_justification,
+            )
+        )
+    except BiaAssetNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+    except AssetDecommissionedError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+    return _fetch_asset_response(asset_repo, user_repo, asset_id, current_user.company_id, cf_enricher=cf_enricher)

@@ -2,8 +2,13 @@ from datetime import date
 
 import pytest
 
-from src.asset_bc.asset.domain.entities import Asset, AssetEvent, InvalidAssignmentError
-from src.asset_bc.asset.domain.enums import AssetStatus, InvalidStatusTransitionError
+from src.asset_bc.asset.domain.entities import (
+    Asset,
+    AssetDecommissionedError,
+    AssetEvent,
+    InvalidAssignmentError,
+)
+from src.asset_bc.asset.domain.enums import AssetCriticality, AssetStatus, InvalidStatusTransitionError
 
 
 class TestAsset:
@@ -188,6 +193,163 @@ class TestAsset:
         assert asset.assigned_to is None
         assert asset.department_id is None
         assert asset.status == AssetStatus.DECOMMISSIONED
+
+
+class TestSetCriticality:
+    def _make_asset(self, **overrides):
+        defaults = dict(
+            company_id="comp1",
+            type="laptop",
+            brand="Dell",
+            model="Latitude",
+            serial_number="SN001",
+        )
+        defaults.update(overrides)
+        return Asset.create(**defaults)
+
+    def test_set_to_critical(self):
+        asset = self._make_asset()
+        changes = asset.set_criticality(AssetCriticality.CRITICAL)
+        assert asset.criticality == AssetCriticality.CRITICAL
+        assert changes == {"old": None, "new": "critical"}
+
+    def test_set_to_high(self):
+        asset = self._make_asset()
+        changes = asset.set_criticality(AssetCriticality.HIGH)
+        assert asset.criticality == AssetCriticality.HIGH
+        assert changes == {"old": None, "new": "high"}
+
+    def test_set_to_medium(self):
+        asset = self._make_asset()
+        changes = asset.set_criticality(AssetCriticality.MEDIUM)
+        assert asset.criticality == AssetCriticality.MEDIUM
+        assert changes == {"old": None, "new": "medium"}
+
+    def test_set_to_low(self):
+        asset = self._make_asset()
+        changes = asset.set_criticality(AssetCriticality.LOW)
+        assert asset.criticality == AssetCriticality.LOW
+        assert changes == {"old": None, "new": "low"}
+
+    def test_clear_to_none(self):
+        asset = self._make_asset()
+        asset.criticality = AssetCriticality.HIGH
+        changes = asset.set_criticality(None)
+        assert asset.criticality is None
+        assert changes == {"old": "high", "new": None}
+
+    def test_same_value_returns_empty(self):
+        asset = self._make_asset()
+        asset.criticality = AssetCriticality.MEDIUM
+        changes = asset.set_criticality(AssetCriticality.MEDIUM)
+        assert changes == {}
+        assert asset.criticality == AssetCriticality.MEDIUM
+
+    def test_decommissioned_raises(self):
+        asset = self._make_asset()
+        asset.status = AssetStatus.DECOMMISSIONED
+        with pytest.raises(AssetDecommissionedError, match="Cannot set criticality"):
+            asset.set_criticality(AssetCriticality.CRITICAL)
+
+
+class TestUpdateBia:
+    def _make_asset(self, **overrides):
+        defaults = dict(
+            company_id="comp1",
+            type="laptop",
+            brand="Dell",
+            model="Latitude",
+            serial_number="SN001",
+        )
+        defaults.update(overrides)
+        return Asset.create(**defaults)
+
+    def test_valid_bia_update(self):
+        asset = self._make_asset()
+        changes = asset.update_bia(
+            impact_score=5,
+            rto_minutes=60,
+            rpo_minutes=30,
+            justification="test",
+            reviewed_by="user1",
+        )
+        assert asset.impact_score == 5
+        assert asset.rto_minutes == 60
+        assert asset.rpo_minutes == 30
+        assert asset.bia_justification == "test"
+        assert asset.bia_reviewed_by == "user1"
+        assert asset.bia_reviewed_at is not None
+        assert "impact_score" in changes
+        assert "rto_minutes" in changes
+        assert "rpo_minutes" in changes
+        assert "bia_justification" in changes
+
+    def test_impact_score_zero_raises(self):
+        asset = self._make_asset()
+        with pytest.raises(ValueError, match="impact_score must be between 1 and 10"):
+            asset.update_bia(
+                impact_score=0,
+                rto_minutes=60,
+                rpo_minutes=30,
+                justification="test",
+                reviewed_by="user1",
+            )
+
+    def test_impact_score_eleven_raises(self):
+        asset = self._make_asset()
+        with pytest.raises(ValueError, match="impact_score must be between 1 and 10"):
+            asset.update_bia(
+                impact_score=11,
+                rto_minutes=60,
+                rpo_minutes=30,
+                justification="test",
+                reviewed_by="user1",
+            )
+
+    def test_rto_minutes_zero_raises(self):
+        asset = self._make_asset()
+        with pytest.raises(ValueError, match="rto_minutes must be greater than 0"):
+            asset.update_bia(
+                impact_score=5,
+                rto_minutes=0,
+                rpo_minutes=30,
+                justification="test",
+                reviewed_by="user1",
+            )
+
+    def test_rto_minutes_negative_raises(self):
+        asset = self._make_asset()
+        with pytest.raises(ValueError, match="rto_minutes must be greater than 0"):
+            asset.update_bia(
+                impact_score=5,
+                rto_minutes=-1,
+                rpo_minutes=30,
+                justification="test",
+                reviewed_by="user1",
+            )
+
+    def test_rpo_minutes_negative_raises(self):
+        asset = self._make_asset()
+        with pytest.raises(ValueError, match="rpo_minutes must be 0 or greater"):
+            asset.update_bia(
+                impact_score=5,
+                rto_minutes=60,
+                rpo_minutes=-1,
+                justification="test",
+                reviewed_by="user1",
+            )
+
+    def test_decommissioned_raises(self):
+        asset = self._make_asset()
+        asset.status = AssetStatus.DECOMMISSIONED
+        with pytest.raises(AssetDecommissionedError, match="Cannot update BIA"):
+            asset.update_bia(
+                impact_score=5,
+                rto_minutes=60,
+                rpo_minutes=30,
+                justification="test",
+                reviewed_by="user1",
+            )
 
 
 class TestAssetEvent:

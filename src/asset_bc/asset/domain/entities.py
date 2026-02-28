@@ -5,13 +5,19 @@ from typing import Optional
 import ulid
 
 from src.asset_bc.asset.domain.enums import (
+    AssetCriticality,
     AssetStatus,
+    CIRelationshipType,
     InvalidStatusTransitionError,
     VALID_TRANSITIONS,
 )
 
 
 class InvalidAssignmentError(Exception):
+    pass
+
+
+class AssetDecommissionedError(Exception):
     pass
 
 
@@ -96,6 +102,13 @@ class Asset:
     purchase_cost_cents: Optional[int] = None
     location_id: Optional[str] = None
     custom_fields_data: Optional[dict] = None
+    criticality: Optional[AssetCriticality] = None
+    impact_score: Optional[int] = None
+    rto_minutes: Optional[int] = None
+    rpo_minutes: Optional[int] = None
+    bia_justification: Optional[str] = None
+    bia_reviewed_at: Optional[datetime] = None
+    bia_reviewed_by: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -214,6 +227,91 @@ class Asset:
             self.assigned_to = None
             self.department_id = None
             self.location_id = None
+
+    def set_criticality(self, criticality: Optional[AssetCriticality]) -> dict:
+        if self.status == AssetStatus.DECOMMISSIONED:
+            raise AssetDecommissionedError("Cannot set criticality on decommissioned asset")
+        old = self.criticality
+        self.criticality = criticality
+        if old != criticality:
+            return {
+                "old": old.value if old else None,
+                "new": criticality.value if criticality else None,
+            }
+        return {}
+
+    def update_bia(
+        self,
+        impact_score: Optional[int],
+        rto_minutes: Optional[int],
+        rpo_minutes: Optional[int],
+        justification: Optional[str],
+        reviewed_by: str,
+    ) -> dict:
+        if self.status == AssetStatus.DECOMMISSIONED:
+            raise AssetDecommissionedError("Cannot update BIA on decommissioned asset")
+        if impact_score is not None and (impact_score < 1 or impact_score > 10):
+            raise ValueError("impact_score must be between 1 and 10")
+        if rto_minutes is not None and rto_minutes <= 0:
+            raise ValueError("rto_minutes must be greater than 0")
+        if rpo_minutes is not None and rpo_minutes < 0:
+            raise ValueError("rpo_minutes must be 0 or greater")
+        changes: dict = {}
+        if impact_score is not None and impact_score != self.impact_score:
+            changes["impact_score"] = {"old": self.impact_score, "new": impact_score}
+            self.impact_score = impact_score
+        if rto_minutes is not None and rto_minutes != self.rto_minutes:
+            changes["rto_minutes"] = {"old": self.rto_minutes, "new": rto_minutes}
+            self.rto_minutes = rto_minutes
+        if rpo_minutes is not None and rpo_minutes != self.rpo_minutes:
+            changes["rpo_minutes"] = {"old": self.rpo_minutes, "new": rpo_minutes}
+            self.rpo_minutes = rpo_minutes
+        if justification is not None and justification != self.bia_justification:
+            changes["bia_justification"] = {"old": self.bia_justification, "new": justification}
+            self.bia_justification = justification
+        self.bia_reviewed_at = datetime.utcnow()
+        self.bia_reviewed_by = reviewed_by
+        return changes
+
+
+@dataclass
+class CIRelationship:
+    id: str
+    company_id: str
+    source_asset_id: str
+    target_asset_id: str
+    relationship_type: CIRelationshipType
+    description: Optional[str]
+    created_at: datetime
+    created_by: str
+
+    @classmethod
+    def create(
+        cls,
+        company_id: str,
+        source_asset_id: str,
+        target_asset_id: str,
+        relationship_type: CIRelationshipType,
+        created_by: str,
+        description: Optional[str] = None,
+    ) -> "CIRelationship":
+        return cls(
+            id=str(ulid.new()),
+            company_id=company_id,
+            source_asset_id=source_asset_id,
+            target_asset_id=target_asset_id,
+            relationship_type=relationship_type,
+            description=description,
+            created_at=datetime.utcnow(),
+            created_by=created_by,
+        )
+
+    def update_description(self, description: Optional[str]) -> dict:
+        old = self.description
+        self.description = description
+        if old != description:
+            return {"description": {"old": old, "new": description}}
+        return {}
 
 
 @dataclass

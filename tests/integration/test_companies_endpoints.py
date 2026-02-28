@@ -80,14 +80,14 @@ class TestCreateCompany:
         assert resp.status_code == 409
 
     @patch("core.email.get_email_service")
-    def test_create_company_duplicate_domain(self, mock_email, client, auth_as, super_admin_user, company):
+    def test_create_company_duplicate_domain(self, mock_email, client, auth_as, super_admin_user, company, admin_user):
         mock_email.return_value = MagicMock()
         auth_as(super_admin_user)
 
         resp = client.post("/api/v1/companies", json={
             "name": "Other Corp",
             "email_domains": ["testco.com"],  # already taken by company fixture
-            "admin_email": "admin@testco.com",
+            "admin_email": "other@testco.com",
         })
 
         assert resp.status_code == 409

@@ -106,6 +106,16 @@ class TestFindAllByCompany:
         mock_model.purchase_date = None
         mock_model.warranty_expiration = None
         mock_model.notes = None
+        mock_model.purchase_cost_cents = None
+        mock_model.location_id = None
+        mock_model.custom_fields_data = None
+        mock_model.criticality = None
+        mock_model.impact_score = None
+        mock_model.rto_minutes = None
+        mock_model.rpo_minutes = None
+        mock_model.bia_justification = None
+        mock_model.bia_reviewed_at = None
+        mock_model.bia_reviewed_by = None
         mock_model.created_at = None
         mock_model.updated_at = None
         session.execute.return_value.scalars.return_value.all.return_value = [mock_model]

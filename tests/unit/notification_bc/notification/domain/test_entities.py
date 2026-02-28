@@ -98,4 +98,4 @@ class TestEventType:
         assert EventType.REQUEST_APPROVED == "request.approved"
 
     def test_count(self):
-        assert len(EventType) == 46
+        assert len(EventType) == 53

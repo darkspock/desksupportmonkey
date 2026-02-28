@@ -142,15 +142,15 @@ class TestApiKeysEndpoints:
         assert delete_resp.status_code == 404
 
     def test_unauthenticated_rejected(self, client):
-        """Requests without authentication should fail with 403."""
+        """Requests without authentication should fail with 401."""
         # POST without auth
         resp = client.post("/api/v1/auth/api-keys", json={"name": "Test"})
-        assert resp.status_code == 403
+        assert resp.status_code == 401
 
         # GET without auth
         resp = client.get("/api/v1/auth/api-keys")
-        assert resp.status_code == 403
+        assert resp.status_code == 401
 
         # DELETE without auth
         resp = client.delete("/api/v1/auth/api-keys/01HWKX4T6QRANDOMRANDOM1234")
-        assert resp.status_code == 403
+        assert resp.status_code == 401

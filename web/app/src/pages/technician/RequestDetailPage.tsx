@@ -13,7 +13,7 @@ import { formatDateTime } from '../../lib/date';
 import { humanizeToken, useI18n } from '../../lib/i18n';
 import { WorkflowIcon } from '../../components/ui/WorkflowIcon';
 import { ClipboardList, ChevronRight, Trash2 } from 'lucide-react';
-import type { ServiceRequest, Comment, Note, RequestEventItem, AIClassificationData, RecentPO, Appointment, TimeSlot, Shipment, AssignableUser, PaginatedResponse, User, RequestChecklistItem, ChecklistProgress } from '../../types';
+import type { ServiceRequest, Comment, Note, RequestEventItem, AIClassificationData, RecentPO, Appointment, TimeSlot, Shipment, AssignableUser, PaginatedResponse, User, RequestChecklistItem, ChecklistProgress, RequesterAsset } from '../../types';
 
 /* ── helper components ────────────────────────────────────────────── */
 
@@ -481,7 +481,19 @@ export default function RequestDetailPage() {
         resolution_status: string;
         response_remaining_hours: number | null;
         resolution_remaining_hours: number | null;
+        escalated: boolean;
+        effective_priority: string | null;
+        original_priority: string | null;
       } | null;
+    },
+    enabled: isTech && !!id,
+  });
+
+  const { data: requesterAssets } = useQuery({
+    queryKey: ['requester-assets', id],
+    queryFn: async () => {
+      const { data } = await api.get(`/requests/${id}/requester-assets`);
+      return data.data as RequesterAsset[];
     },
     enabled: isTech && !!id,
   });
@@ -688,6 +700,15 @@ export default function RequestDetailPage() {
     mutationFn: (itemId: string) => api.delete(`/requests/${id}/checklist/${itemId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['request-checklist', id] });
+    },
+  });
+
+  const setAffectedAssets = useMutation({
+    mutationFn: (assetIds: string[]) => api.patch(`/requests/${id}/affected-assets`, { asset_ids: assetIds }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['requester-assets', id] });
+      queryClient.invalidateQueries({ queryKey: ['request-sla-status', id] });
+      showToast({ title: t('page.request_detail.affected_assets_saved'), variant: 'success' });
     },
   });
 
@@ -1124,7 +1145,67 @@ export default function RequestDetailPage() {
                         {t('page.sla.resolution_remaining', { hours: Math.max(0, slaStatus.resolution_remaining_hours).toFixed(1) })}
                       </p>
                     )}
+                    {slaStatus.escalated && (
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
+                          {t('page.sla.escalated')}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {t(`enum.${slaStatus.original_priority}`, undefined, { defaultValue: slaStatus.original_priority ?? '' })}
+                          {' \u2192 '}
+                          {t(`enum.${slaStatus.effective_priority}`, undefined, { defaultValue: slaStatus.effective_priority ?? '' })}
+                        </span>
+                      </div>
+                    )}
                   </div>
+                </div>
+                <div className="h-px bg-border" />
+              </>
+            )}
+
+            {/* Affected Assets (tech only) */}
+            {isTech && requesterAssets !== undefined && (
+              <>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">{t('page.request_detail.affected_assets')}</h3>
+                  {requesterAssets.length > 0 ? (
+                    <div className="space-y-1.5">
+                      {requesterAssets.map((asset) => (
+                        <label key={asset.id} className="flex items-center gap-2 py-1 cursor-pointer group">
+                          <input
+                            type="checkbox"
+                            checked={asset.is_affected}
+                            onChange={() => {
+                              const currentAffected = requesterAssets.filter(a => a.is_affected).map(a => a.id);
+                              const newAffected = asset.is_affected
+                                ? currentAffected.filter(aid => aid !== asset.id)
+                                : [...currentAffected, asset.id];
+                              setAffectedAssets.mutate(newAffected);
+                            }}
+                            className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-medium text-foreground truncate">{asset.brand} {asset.model}</span>
+                              {asset.criticality && (
+                                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                                  asset.criticality === 'critical' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
+                                  asset.criticality === 'high' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' :
+                                  asset.criticality === 'medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                                  'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                }`}>
+                                  {t(`enum.${asset.criticality}`, undefined, { defaultValue: asset.criticality })}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-muted-foreground">{asset.serial_number} · {asset.type}</span>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">{t('page.request_detail.no_requester_assets')}</p>
+                  )}
                 </div>
                 <div className="h-px bg-border" />
               </>

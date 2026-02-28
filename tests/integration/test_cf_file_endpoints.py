@@ -101,7 +101,7 @@ class TestFileUpload:
             files={"file": ("big.pdf", io.BytesIO(big_content), "application/pdf")},
         )
         assert resp.status_code == 422
-        assert "maximum size" in resp.json()["detail"].lower()
+        assert "maximum size" in resp.json()["error"]["message"].lower()
 
 
 class TestFileDownload:
@@ -142,4 +142,4 @@ class TestFileDownload:
         )
 
         assert resp.status_code == 403
-        assert "access denied" in resp.json()["detail"].lower()
+        assert "access denied" in resp.json()["error"]["message"].lower()

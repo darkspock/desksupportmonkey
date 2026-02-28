@@ -72,6 +72,8 @@ export const sections: NavSection[] = [
       { to: '/incidents/dashboard', labelKey: 'nav.incident_dashboard', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
       { to: '/risks', labelKey: 'nav.risks', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
       { to: '/risks/dashboard', labelKey: 'nav.risk_dashboard', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
+      { to: '/vulnerabilities', labelKey: 'nav.vulnerabilities', roles: ['admin', 'super_admin'] },
+      { to: '/vulnerabilities/dashboard', labelKey: 'nav.vulnerability_dashboard', roles: ['admin', 'super_admin'] },
       { to: '/compliance/dashboard', labelKey: 'nav.compliance_dashboard', roles: ['admin', 'super_admin'] },
     ],
   },
@@ -128,8 +130,22 @@ export const sections: NavSection[] = [
           { to: '/sla/dashboard', labelKey: 'nav.sla_dashboard', roles: ['admin', 'super_admin'] },
         ],
       },
+      {
+        type: 'subgroup', labelKey: 'nav.subgroup_changes', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'],
+        items: [
+          { to: '/changes', labelKey: 'nav.changes', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
+          { to: '/changes/dashboard', labelKey: 'nav.change_dashboard', roles: ['admin', 'super_admin'] },
+        ],
+      },
       { to: '/billing', labelKey: 'nav.billing', roles: ['admin'] },
-      { to: '/reports', labelKey: 'nav.reports', roles: ['admin', 'super_admin'] },
+      {
+        type: 'subgroup', labelKey: 'nav.subgroup_reports', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'],
+        items: [
+          { to: '/reports', labelKey: 'nav.reports', roles: ['admin', 'super_admin'] },
+          { to: '/vendors/supply-chain', labelKey: 'nav.supply_chain_risk', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'] },
+          { to: '/cmdb/dashboard', labelKey: 'nav.cmdb_dashboard', roles: ['admin', 'super_admin'] },
+        ],
+      },
     ],
   },
   {

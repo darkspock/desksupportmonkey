@@ -102,6 +102,31 @@ def list_definitions(
     return {"data": [_to_response(d) for d in definitions]}
 
 
+@router.put("/definitions/reorder")
+def reorder_definitions(
+    body: ReorderRequest,
+    current_user: User = Depends(require_plan_feature("custom_fields")),
+    _admin: User = Depends(require_role(UserRole.ADMIN)),
+    repo: CustomFieldDefinitionRepository = Depends(get_cf_definition_repo),
+):
+    handler = ReorderFieldDefinitionsCommandHandler(repo=repo)
+    handler.handle(
+        ReorderFieldDefinitionsCommand(
+            company_id=current_user.company_id,
+            entity_type=body.entity_type,
+            field_ids=body.field_ids,
+        )
+    )
+    list_handler = ListFieldDefinitionsQueryHandler(repo=repo)
+    definitions = list_handler.handle(
+        ListFieldDefinitionsQuery(
+            company_id=current_user.company_id,
+            entity_type=body.entity_type,
+        )
+    )
+    return {"data": [_to_response(d) for d in definitions]}
+
+
 @router.get("/definitions/{definition_id}")
 def get_definition(
     definition_id: str,
@@ -271,31 +296,6 @@ def activate_definition(
         )
     )
     return {"data": _to_response(dto)}
-
-
-@router.put("/definitions/reorder")
-def reorder_definitions(
-    body: ReorderRequest,
-    current_user: User = Depends(require_plan_feature("custom_fields")),
-    _admin: User = Depends(require_role(UserRole.ADMIN)),
-    repo: CustomFieldDefinitionRepository = Depends(get_cf_definition_repo),
-):
-    handler = ReorderFieldDefinitionsCommandHandler(repo=repo)
-    handler.handle(
-        ReorderFieldDefinitionsCommand(
-            company_id=current_user.company_id,
-            entity_type=body.entity_type,
-            field_ids=body.field_ids,
-        )
-    )
-    list_handler = ListFieldDefinitionsQueryHandler(repo=repo)
-    definitions = list_handler.handle(
-        ListFieldDefinitionsQuery(
-            company_id=current_user.company_id,
-            entity_type=body.entity_type,
-        )
-    )
-    return {"data": [_to_response(d) for d in definitions]}
 
 
 # ── File upload / download ───────────────────────────────────────────

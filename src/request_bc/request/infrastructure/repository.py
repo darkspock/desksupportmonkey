@@ -35,6 +35,7 @@ class RequestRepository(RequestRepositoryInterface):
             existing.priority = request.priority.value
             existing.resolved_at = request.resolved_at
             existing.first_response_at = request.first_response_at
+            existing.data = request.data
             existing.custom_fields_data = request.custom_fields_data or {}
         else:
             model = ServiceRequestModel(

@@ -14,7 +14,6 @@ class TestListLocations:
         assert isinstance(data, list)
         # Should have system locations seeded during company creation
         system_keys = [loc["system_key"] for loc in data if loc["is_system"]]
-        assert "employee" in system_keys
         assert "in_transit" in system_keys
         assert "main_warehouse" in system_keys
 

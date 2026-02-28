@@ -77,7 +77,12 @@ def tables(test_engine):
     import src.workflow_bc.template.infrastructure.models  # noqa: F401
     import src.workflow_bc.checklist.infrastructure.models  # noqa: F401
     import src.company_bc.nav_config.infrastructure.models  # noqa: F401
+    import src.company_bc.sla_escalation_config.infrastructure.models  # noqa: F401
+    import src.sla_bc.sla.infrastructure.models  # noqa: F401
     import src.asset_bc.checkout.infrastructure.models  # noqa: F401
+    import src.asset_type_bc.definition.infrastructure.models  # noqa: F401
+    import src.vulnerability_bc.vulnerability.infrastructure.models  # noqa: F401
+    import src.change_bc.change_request.infrastructure.models  # noqa: F401
 
     Base.metadata.create_all(test_engine)
     yield
@@ -134,6 +139,7 @@ def client(db_session):
     from adapters.http.api.registration.dependencies import get_stripe_client as get_stripe_client_registration
     from adapters.http.api.billing.dependencies import get_stripe_client as get_stripe_client_billing
     from adapters.http.api.billing.dependencies import get_billing_service
+    from adapters.http.api.super_admin.dependencies import get_stripe_client as get_stripe_client_super_admin
     from src.notification_bc.notification.application.services.event_bus import EventBus
 
     application = create_app()
@@ -149,6 +155,7 @@ def client(db_session):
     application.dependency_overrides[get_stripe_client_companies] = lambda: mock_stripe
     application.dependency_overrides[get_stripe_client_registration] = lambda: mock_stripe
     application.dependency_overrides[get_stripe_client_billing] = lambda: mock_stripe
+    application.dependency_overrides[get_stripe_client_super_admin] = lambda: mock_stripe
 
     mock_billing_service = MagicMock()
     mock_billing_service.create_checkout_session.return_value = "https://checkout.stripe.com/test"
@@ -191,14 +198,30 @@ def auth_as(client):
 
 @pytest.fixture()
 def company(db_session):
-    """Create a real company in the test DB (with email domains persisted)."""
+    """Create a real company in the test DB (with email domains and system locations)."""
     from src.company_bc.company.domain.entities import Company
     from src.company_bc.company.infrastructure.repository import CompanyRepository
+    from src.asset_bc.asset.domain.entities import AssetLocation
+    from src.asset_bc.asset.domain.enums import SystemLocation
+    from src.asset_bc.asset.infrastructure.repository import AssetRepository
 
     c = Company.create(name="Test Company", email_domains=["testco.com"])
     repo = CompanyRepository(db_session)
     repo.save(c)
     repo.save_domains(c.id, c.email_domains)
+
+    # Seed system locations (same as CreateCompanyCommandHandler)
+    asset_repo = AssetRepository(db_session)
+    system_names = {
+        SystemLocation.IN_TRANSIT.value: "In Transit",
+        SystemLocation.MAIN_WAREHOUSE.value: "Main Warehouse",
+    }
+    for key, name in system_names.items():
+        loc = AssetLocation.create(
+            company_id=c.id, name=name, is_system=True, system_key=key,
+        )
+        asset_repo.save_location(loc)
+
     db_session.flush()
     return c
 
@@ -219,11 +242,13 @@ def super_admin_user(db_session):
 @pytest.fixture()
 def admin_user(db_session, company):
     """Create an admin user belonging to the test company."""
+    from datetime import datetime, timezone
     from src.auth_bc.user.domain.entities import User
     from src.auth_bc.user.domain.enums import UserRole
     from src.auth_bc.user.infrastructure.repository import UserRepository
 
     u = User.create(email="admin@testco.com", role=UserRole.ADMIN, company_id=company.id)
+    u.email_verified_at = datetime.now(timezone.utc)
     UserRepository(db_session).save(u)
     db_session.flush()
     return u

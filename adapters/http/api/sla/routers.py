@@ -5,7 +5,12 @@ import ulid
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from adapters.http.api.auth.dependencies import require_role
-from adapters.http.api.sla.dependencies import get_request_repo, get_sla_repo
+from adapters.http.api.sla.dependencies import (
+    get_asset_repo,
+    get_request_repo,
+    get_sla_escalation_config_repo,
+    get_sla_repo,
+)
 from adapters.http.api.sla.schemas import (
     BreachTrendPointResponse,
     ComplianceByGroupResponse,
@@ -205,10 +210,14 @@ def get_request_sla_status(
     current_user: User = Depends(require_role(UserRole.TECHNICIAN)),
     sla_repo: SlaRepository = Depends(get_sla_repo),
     request_repo=Depends(get_request_repo),
+    asset_repo=Depends(get_asset_repo),
+    escalation_config_repo=Depends(get_sla_escalation_config_repo),
 ):
     handler = GetRequestSlaStatusQueryHandler(
         sla_repo=sla_repo,
         request_repo=request_repo,
+        asset_repo=asset_repo,
+        escalation_config_repo=escalation_config_repo,
     )
     dto = handler.handle(
         GetRequestSlaStatusQuery(
@@ -229,6 +238,9 @@ def get_request_sla_status(
             "resolution_status": dto.resolution_status,
             "response_remaining_hours": dto.response_remaining_hours,
             "resolution_remaining_hours": dto.resolution_remaining_hours,
+            "escalated": dto.escalated,
+            "effective_priority": dto.effective_priority,
+            "original_priority": dto.original_priority,
         }
     }
 

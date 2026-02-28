@@ -1,6 +1,7 @@
+from datetime import date
 from typing import Optional
 
-from sqlalchemy import func, select, update
+from sqlalchemy import cast, func, select, update
 from sqlalchemy.orm import Session
 
 from src.notification_bc.notification.domain.entities import Notification
@@ -101,6 +102,25 @@ class NotificationRepository(NotificationRepositoryInterface):
         )
         self.session.flush()
         return result.rowcount
+
+    def find_by_data_key(
+        self,
+        event_type: str,
+        data_key: str,
+        data_value: str,
+        date_check: date,
+    ) -> bool:
+        stmt = (
+            select(func.count())
+            .select_from(NotificationModel)
+            .where(
+                NotificationModel.event_type == event_type,
+                NotificationModel.data[data_key].as_string() == str(data_value),
+                func.date(NotificationModel.created_at) == date_check,
+            )
+        )
+        result = self.session.execute(stmt).scalar()
+        return (result or 0) > 0
 
     @staticmethod
     def _to_entity(model: NotificationModel) -> Notification:

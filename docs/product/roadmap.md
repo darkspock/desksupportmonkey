@@ -26,26 +26,26 @@
 | E19 | SLA Management | Configurable SLA policies per priority and category — response/resolution time targets, automatic escalation rules, breach notifications to managers, and SLA compliance reports | High | Done |
 | E20 | Asset Lifecycle & Warranties | Asset depreciation tracking, end-of-life planning, renewal/refresh cycles, lease vs purchase tracking, warranty management with vendor contacts, and warranty claim workflow | Medium | Pending |
 | E21 | Software License Management | Track software licenses per user and department — seat compliance (used vs purchased), renewal alerts, cost allocation per department, and license audit reports | Medium | Pending |
-| E22 | Employee Onboarding/Offboarding | Automated workflows for new hires (equipment pack based on department + role from E11) and departures (return checklist, account deactivation, asset recovery tracking) | High | Pending |
+| E22 | Employee Onboarding/Offboarding | Automated workflows for new hires (equipment pack based on department + role from E11) and departures (return checklist, account deactivation, asset recovery tracking) | Low | Dropped — covered by E31 workflow templates |
 | E23 | Multi-channel Intake | Email-to-ticket conversion, Slack/Teams integration for creating and tracking requests, and chatbot for guided ticket creation without entering the app | Medium | Pending |
 | E24 | Google & Microsoft Login | Google and Microsoft OAuth2 login buttons, backend token verification, account linking by email, new user auto-creation by domain match | High | Done |
-| E25 | Vendor & Supply Chain Risk | Vendor directory with contacts and contracts, vendor SLA tracking, incident history per vendor, warranty claim routing, vendor performance reports, third-party risk assessment questionnaires (NIS2/DORA Article 28), supply chain security scoring, and critical ICT provider dependency mapping | Medium | Pending |
+| E25 | Vendor & Supply Chain Risk | Vendor directory with contacts and contracts, vendor SLA tracking, incident history per vendor, warranty claim routing, vendor performance reports, third-party risk assessment questionnaires (NIS2/DORA Article 28), supply chain security scoring, and critical ICT provider dependency mapping | Medium | Done |
 | E26 | Observability with Grafana | Prometheus metrics for FastAPI, Celery, PostgreSQL, and Redis — Grafana dashboards for infrastructure health, request rates, queue depth, and business metrics. Sentry already covers error tracking and basic performance monitoring | Low | Pending |
 | E27 | Surveys & Feedback | CSAT surveys after ticket resolution (star rating + comment), decision polls for purchase planning (connects with E14), onboarding feedback after equipment delivery (connects with E22), and satisfaction metrics per technician, department, and category | Low | Pending |
 | E28 | Mobile / PWA | Progressive Web App for technicians and employees — QR scanning with camera, ticket updates from the field, push notifications, offline support, and responsive mobile-first UI | Low | Pending |
 | E29 | Audit Trail & Compliance Evidence | Complete audit log of all user actions (who did what, when), immutable append-only log storage, GDPR data export and deletion requests, compliance evidence tagging (link audit entries to NIS2/DORA/ISO 27001 controls), regulatory data retention policies per company, and audit-ready evidence export for external auditors | Critical | Done |
 | E30 | Custom Fields | Admin-defined custom fields for assets, tickets, and companies — text, number, date, dropdown, and multi-select types with validation rules and visibility per role | High | Done |
 | E31 | Workflow Templates & Checklists | Dynamic workflow templates with configurable checklist items per request type — admin-defined templates with subtypes, required/optional checklist items, resolution guard (block resolve until required items complete), auto-generate checklist on request creation, and inline checklist management on request detail | High | Done |
-| E32 | Asset Discovery | Automatic network device discovery — agent-based and agentless scanning, sync discovered devices with asset inventory, detect new/removed devices, and scheduled discovery scans | Low | Pending |
-| E33 | Change Management (ITIL) | Change request workflow — request, risk assessment, CAB approval board, scheduled implementation, rollback plan, post-implementation review, and change calendar integration | Low | Pending |
+| E32 | Asset Discovery | Standalone Go scanner CLI (single binary, zero deps, cross-platform) that scans local network (ARP + ping + DNS + MAC OUI + port heuristics) and outputs a CSV compatible with DSM's existing import. Phase 2 adds SNMP/WMI for deep data. Phase 3 adds direct API sync and scheduled scanning | Medium | Pending |
+| E33 | Change Management (ITIL) | Change request workflow — request, risk assessment, CAB approval board, scheduled implementation, rollback plan, post-implementation review, and change calendar integration. Scoped to endpoint/microinformática changes (OS rollouts, software updates, configuration changes) | High (DORA) | Done |
 | E34 | Feature Voting & Roadmap | In-app feature request board — users submit and upvote ideas, admin reviews and prioritizes, public roadmap view with status (planned, in progress, shipped), and vote-based priority scoring for product decisions | Low | Pending |
 | E35 | MCP Server | Expose DSM as an MCP server so AI assistants can manage assets, requests, users, reports, and dashboard data via tool calls — multi-tenant auth, role-based tool visibility, and streaming support | High | Done |
 | E36 | Security Incident Management | Security incident lifecycle distinct from service requests — severity classification (P1-P4), mandatory fields (attack vector, affected systems, data breach scope), NIS2 24h/72h regulatory reporting timeline enforcement, auto-generated CSIRT notification reports, and incident post-mortem with root cause analysis | High | Done |
 | E37 | Risk Register | Organizational risk management — risk entries linked to assets, departments, and vendors, likelihood-impact scoring matrix, mitigation plan tracking with owner assignment, periodic review cadence enforcement, and risk dashboard with heat map visualization | High | Done |
-| E38 | Asset Criticality & CMDB | Asset criticality classification (Critical/High/Medium/Low), Configuration Item (CI) relationship mapping (asset-to-service, asset-to-asset dependencies), business impact analysis per asset, criticality-based SLA escalation rules, and dependency graph visualization | Medium | Pending |
+| E38 | Asset Criticality & CMDB | Asset criticality classification (Critical/High/Medium/Low), Configuration Item (CI) relationship mapping (asset-to-service, asset-to-asset dependencies), business impact analysis per asset, criticality-based SLA escalation rules, and dependency graph visualization | Medium | Done |
 | E39 | Compliance Dashboard | Compliance posture management — control mapping to NIS2, DORA, and ISO 27001 articles, compliance status per control (compliant/partial/non-compliant), evidence collection linking controls to audit logs, incidents, and change records, compliance gap analysis reports, and audit-ready PDF export per framework | Critical | Done |
-| E40 | Vulnerability Management | Track known vulnerabilities per asset — CVE tracking linked to asset brand/model/OS, severity scoring (CVSS), remediation ticket auto-creation from vulnerabilities, patch status tracking, vulnerability scan result import (CSV/API), and vulnerability-to-asset exposure dashboard | Medium | Pending |
-| E42 | SSO & Directory Sync | SAML/OIDC enterprise single sign-on configuration, LDAP/Active Directory synchronization of users, departments, and roles, automatic provisioning/deprovisioning, group-to-role mapping from identity provider | Critical | Pending |
+| E40 | Vulnerability Management | Track known vulnerabilities per asset — CVE tracking linked to asset brand/model/OS, severity scoring (CVSS), remediation ticket auto-creation from vulnerabilities, patch status tracking, vulnerability scan result import (CSV/API), and vulnerability-to-asset exposure dashboard | Critical (DORA) | Done |
+| E42 | SSO & Directory Sync | SAML/OIDC enterprise single sign-on configuration, LDAP/Active Directory synchronization of users, departments, and roles, automatic provisioning/deprovisioning, group-to-role mapping from identity provider | Low | Pending |
 | E46 | White Label & Multi-Brand | Build-time brand configuration (name, logo, colors), per-brand asset folders, branded build scripts, database isolation per deployment | High | Done |
 | E43 | Billing & Subscriptions | Stripe-based subscription management — Free/Premium/Enterprise/Open Source plans, usage limits enforcement, Stripe Checkout for upgrades, Stripe Customer Portal for invoices, grace period and suspension on payment failure, feature gating per plan, super admin complimentary plans | Critical | Done |
 | E44 | Super Admin Enhancements | Company list with usage counts and trial visibility, Stripe invoice history per company, revenue overview dashboard (MRR, plan distribution, active trials) | High | Done |
@@ -53,6 +53,7 @@
 | E47 | Configurable Asset Types | Company-defined asset types replacing hardcoded enum — CRUD, reordering, priority configuration, and integration with asset creation forms | Medium | Done |
 | E48 | Menu Visibility per Role | Admin-configurable sidebar menu visibility per role — blocklist approach, per-company settings stored as JSONB, UI settings page with role columns, applied via /auth/me response | Medium | Done |
 | E49 | Asset Checkout & Custody | Equipment checkout lifecycle — technician-initiated checkout with condition tracking, employee acceptance flow, auto-GDPR-sanitization maintenance on checkin, cancel with auto-revert, custody dashboard widgets, checkout history on asset detail | High | Done |
+| E50 | Onboarding Wizard | 4-step admin onboarding wizard (sector selection, compliance framework recommendations, module activation, summary) — post-login redirect for new companies, sector-based framework suggestions, nav visibility toggling for deselected modules, re-run from company settings | High | Done |
 
 ---
 
@@ -330,11 +331,35 @@ E10: Asset QR & Barcodes (depends on E2 + E7)
 | **Phase 6** | E35-E37 + E43-E45 | Platform — MCP server, incidents, risk register, billing, super admin, asset locations | Done |
 | **Phase 7** | E29 | **Compliance foundation** — audit trail, compliance evidence, GDPR, retention | Done |
 | **Phase 8** | E39 + E42 | **Enterprise readiness** — compliance dashboard, SSO & directory sync |  |
-| **Phase 9** | E22 + E30 + E31 | **Operational power** — onboarding/offboarding, custom fields, workflow automations | Partial (E30, E31 Done) |
+| **Phase 9** | E22 + E30 + E31 | **Operational power** — onboarding/offboarding, custom fields, workflow automations | Done (E22 dropped — covered by E31) |
 | **Phase 10** | E20 + E25 + E38 | **Asset & risk maturity** — lifecycle & warranties, vendor risk, CMDB |  |
-| **Phase 11** | E40 + E21 + E23 | **Security & integration** — vulnerability management, license management, multi-channel |  |
-| **Phase 12** | E28 + E32 + E33 | **Advanced** — mobile PWA, asset discovery, ITIL change management |  |
+| **Phase 10.5** | E40 + E33 | **DORA compliance (microinformática)** — vulnerability management (complete), endpoint change management | **URGENT** |
+| **Phase 11** | E21 + E23 | **Integration** — license management, multi-channel |  |
+| **Phase 12** | E28 + E32 | **Advanced** — mobile PWA, asset discovery |  |
 | **Backlog** | E26 + E27 + E34 | Internal tooling, surveys, feature voting — build when needed |  |
 
-**Completed:** 35 epics (E0-E19, E24, E29-E31, E35-E37, E43-E48)
-**Remaining:** 13 epics (E20-E23, E25-E28, E32-E34, E38, E40, E42)
+**Completed:** 40 epics (E0-E19, E24, E25, E29-E31, E35-E40, E43-E50)
+**Dropped:** 1 epic (E22 — covered by E31 workflow templates)
+**Remaining:** 9 epics (E20, E21, E23, E26-E28, E32-E34, E42)
+
+---
+
+## DORA Compliance — Microinformática Scope
+
+DSM covers the **endpoint/microinformática** domain (laptops, desktops, mobile devices, peripherals, user software). Server infrastructure, network, and SIEM are managed by a separate application.
+
+### Current DORA Coverage (~80-85% for micro scope)
+
+| DORA Pillar | Coverage | Epics |
+|---|---|---|
+| Cap. II — ICT Risk Management (Art. 5-16) | 85% | E37, E38, E29 |
+| Cap. III — Incident Reporting (Art. 17-23) | 80% | E36 (NIS2 timelines) |
+| Cap. IV — Resilience Testing (Art. 24-27) | N/A | Server/infra scope — not this app |
+| Cap. V — Third-Party Risk (Art. 28-44) | 75% | E25 (vendor risk, contracts, Art.28 clauses) |
+| Cap. VI — Information Sharing (Art. 45) | N/A | CSIRT integration is infra scope |
+
+### Urgent DORA Actions
+
+1. ~~**Complete E40**~~ ✅ (Vulnerability Management) — CSV import, remediation ticket creation, exposure dashboard, critical vuln notifications. Done.
+2. **E33 Simplified** (Endpoint Change Management) — Track OS rollouts, software updates, configuration changes on endpoints. DORA Cap. II requires formal change procedures.
+3. **Expand E39 DORA controls** — Current catalog has 4 DORA controls, needs ~15-20 covering micro-relevant articles.

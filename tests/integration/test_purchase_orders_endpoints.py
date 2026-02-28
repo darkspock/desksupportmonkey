@@ -13,6 +13,7 @@ def department(db_session, company):
         name="Engineering",
         company_id=company.id,
     )
+    d.budget_enforcement_enabled = True
     DepartmentRepository(db_session).save(d)
     db_session.flush()
     return d

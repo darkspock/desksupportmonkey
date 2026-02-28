@@ -31,12 +31,12 @@ class TestRegisterCompany:
         assert resp.status_code == 409
 
     @patch("core.email.get_email_service")
-    def test_register_duplicate_domain(self, mock_email, client, company):
+    def test_register_duplicate_domain(self, mock_email, client, company, admin_user):
         mock_email.return_value = MagicMock()
 
         resp = client.post("/api/v1/register", json={
             "name": "Other Company",
-            "admin_email": "admin@testco.com",
+            "admin_email": "other@testco.com",
             "email_domains": ["testco.com"],  # already taken
         })
 

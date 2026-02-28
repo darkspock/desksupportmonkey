@@ -21,6 +21,7 @@ class ListAssetsQuery(Query):
     sort_order: str = "desc"
     custom_field_filters: Optional[dict[str, str]] = None
     custom_field_search_keys: Optional[list[str]] = None
+    criticality: Optional[str] = None
 
 
 class ListAssetsQueryHandler(QueryHandler[ListAssetsQuery, tuple[list[Asset], int]]):
@@ -42,4 +43,5 @@ class ListAssetsQueryHandler(QueryHandler[ListAssetsQuery, tuple[list[Asset], in
             sort_order=query.sort_order,
             custom_field_filters=query.custom_field_filters,
             custom_field_search_keys=query.custom_field_search_keys,
+            criticality=query.criticality,
         )

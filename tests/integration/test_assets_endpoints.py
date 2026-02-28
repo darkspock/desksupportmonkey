@@ -258,3 +258,194 @@ class TestImportAssets:
         )
 
         assert resp.status_code == 422
+
+
+class TestSetCriticality:
+    def _create_asset(self, client, serial):
+        resp = client.post("/api/v1/assets", json={
+            "type": "laptop", "brand": "Dell", "model": "Latitude", "serial_number": serial,
+        })
+        return resp.json()["data"]["id"]
+
+    def test_set_criticality(self, client, auth_as, technician_user):
+        auth_as(technician_user)
+        asset_id = self._create_asset(client, "CRIT001")
+
+        resp = client.patch(f"/api/v1/assets/{asset_id}/criticality", json={"criticality": "critical"})
+
+        assert resp.status_code == 200
+        assert resp.json()["data"]["criticality"] == "critical"
+
+    def test_set_criticality_high(self, client, auth_as, technician_user):
+        auth_as(technician_user)
+        asset_id = self._create_asset(client, "CRIT002")
+
+        resp = client.patch(f"/api/v1/assets/{asset_id}/criticality", json={"criticality": "high"})
+
+        assert resp.status_code == 200
+        assert resp.json()["data"]["criticality"] == "high"
+
+    def test_clear_criticality(self, client, auth_as, technician_user):
+        auth_as(technician_user)
+        asset_id = self._create_asset(client, "CRIT003")
+        client.patch(f"/api/v1/assets/{asset_id}/criticality", json={"criticality": "medium"})
+
+        resp = client.patch(f"/api/v1/assets/{asset_id}/criticality", json={"criticality": None})
+
+        assert resp.status_code == 200
+        assert resp.json()["data"]["criticality"] is None
+
+    def test_criticality_asset_not_found(self, client, auth_as, technician_user):
+        auth_as(technician_user)
+
+        resp = client.patch("/api/v1/assets/nonexistent/criticality", json={"criticality": "high"})
+
+        assert resp.status_code == 404
+
+    def test_criticality_decommissioned(self, client, auth_as, technician_user):
+        auth_as(technician_user)
+        asset_id = self._create_asset(client, "CRIT004")
+        client.patch(f"/api/v1/assets/{asset_id}/status", json={"status": "decommissioned"})
+
+        resp = client.patch(f"/api/v1/assets/{asset_id}/criticality", json={"criticality": "critical"})
+
+        assert resp.status_code == 422
+
+    def test_criticality_event_recorded(self, client, auth_as, technician_user):
+        auth_as(technician_user)
+        asset_id = self._create_asset(client, "CRIT005")
+
+        client.patch(f"/api/v1/assets/{asset_id}/criticality", json={"criticality": "low"})
+
+        history = client.get(f"/api/v1/assets/{asset_id}/history")
+        events = history.json()["data"]
+        crit_events = [e for e in events if e["event_type"] == "criticality_set"]
+        assert len(crit_events) == 1
+        assert crit_events[0]["data"]["new"] == "low"
+
+
+class TestUpdateBia:
+    def _create_asset(self, client, serial):
+        resp = client.post("/api/v1/assets", json={
+            "type": "server", "brand": "HP", "model": "ProLiant", "serial_number": serial,
+        })
+        return resp.json()["data"]["id"]
+
+    def test_update_bia(self, client, auth_as, technician_user):
+        auth_as(technician_user)
+        asset_id = self._create_asset(client, "BIA001")
+
+        resp = client.patch(f"/api/v1/assets/{asset_id}/bia", json={
+            "impact_score": 8,
+            "rto_minutes": 240,
+            "rpo_minutes": 60,
+            "bia_justification": "Core database server",
+        })
+
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert data["impact_score"] == 8
+        assert data["rto_minutes"] == 240
+        assert data["rpo_minutes"] == 60
+        assert data["bia_justification"] == "Core database server"
+        assert data["bia_reviewed_at"] is not None
+        assert data["bia_reviewed_by"] is not None
+
+    def test_bia_invalid_impact_score(self, client, auth_as, technician_user):
+        auth_as(technician_user)
+        asset_id = self._create_asset(client, "BIA002")
+
+        resp = client.patch(f"/api/v1/assets/{asset_id}/bia", json={
+            "impact_score": 11,
+            "rto_minutes": 60,
+            "rpo_minutes": 30,
+        })
+
+        assert resp.status_code == 422
+
+    def test_bia_invalid_rto(self, client, auth_as, technician_user):
+        auth_as(technician_user)
+        asset_id = self._create_asset(client, "BIA003")
+
+        resp = client.patch(f"/api/v1/assets/{asset_id}/bia", json={
+            "impact_score": 5,
+            "rto_minutes": 0,
+            "rpo_minutes": 30,
+        })
+
+        assert resp.status_code == 422
+
+    def test_bia_asset_not_found(self, client, auth_as, technician_user):
+        auth_as(technician_user)
+
+        resp = client.patch("/api/v1/assets/nonexistent/bia", json={
+            "impact_score": 5, "rto_minutes": 60, "rpo_minutes": 30,
+        })
+
+        assert resp.status_code == 404
+
+    def test_bia_decommissioned(self, client, auth_as, technician_user):
+        auth_as(technician_user)
+        asset_id = self._create_asset(client, "BIA004")
+        client.patch(f"/api/v1/assets/{asset_id}/status", json={"status": "decommissioned"})
+
+        resp = client.patch(f"/api/v1/assets/{asset_id}/bia", json={
+            "impact_score": 5, "rto_minutes": 60, "rpo_minutes": 30,
+        })
+
+        assert resp.status_code == 422
+
+    def test_bia_event_recorded(self, client, auth_as, technician_user):
+        auth_as(technician_user)
+        asset_id = self._create_asset(client, "BIA005")
+
+        client.patch(f"/api/v1/assets/{asset_id}/bia", json={
+            "impact_score": 7, "rto_minutes": 120, "rpo_minutes": 0,
+        })
+
+        history = client.get(f"/api/v1/assets/{asset_id}/history")
+        events = history.json()["data"]
+        bia_events = [e for e in events if e["event_type"] == "bia_updated"]
+        assert len(bia_events) == 1
+
+
+class TestCriticalityFilter:
+    def test_filter_by_criticality(self, client, auth_as, technician_user):
+        auth_as(technician_user)
+        # Create two assets with different criticalities
+        r1 = client.post("/api/v1/assets", json={
+            "type": "laptop", "brand": "Dell", "model": "M1", "serial_number": "FLTC001",
+        })
+        r2 = client.post("/api/v1/assets", json={
+            "type": "laptop", "brand": "Dell", "model": "M2", "serial_number": "FLTC002",
+        })
+        id1 = r1.json()["data"]["id"]
+        id2 = r2.json()["data"]["id"]
+        client.patch(f"/api/v1/assets/{id1}/criticality", json={"criticality": "critical"})
+        client.patch(f"/api/v1/assets/{id2}/criticality", json={"criticality": "low"})
+
+        resp = client.get("/api/v1/assets?criticality=critical")
+
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert all(a["criticality"] == "critical" for a in data)
+
+    def test_get_asset_includes_new_fields(self, client, auth_as, technician_user):
+        """GET /assets/{id} response includes criticality and BIA fields (null by default)."""
+        auth_as(technician_user)
+        create_resp = client.post("/api/v1/assets", json={
+            "type": "laptop", "brand": "Dell", "model": "M1", "serial_number": "FLTC003",
+        })
+        asset_id = create_resp.json()["data"]["id"]
+
+        resp = client.get(f"/api/v1/assets/{asset_id}")
+
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert data["criticality"] is None
+        assert data["impact_score"] is None
+        assert data["rto_minutes"] is None
+        assert data["rpo_minutes"] is None
+        assert data["bia_justification"] is None
+        assert data["bia_reviewed_at"] is None
+        assert data["bia_reviewed_by"] is None
