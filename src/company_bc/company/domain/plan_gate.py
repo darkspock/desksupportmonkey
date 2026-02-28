@@ -24,22 +24,22 @@ PLAN_FEATURES: dict[PlanTier, set[str]] = {
 
 PLAN_USER_LIMITS: dict[PlanTier, Optional[int]] = {
     PlanTier.FREE: 5,
-    PlanTier.PREMIUM: 25,
+    PlanTier.PREMIUM: 100,
     PlanTier.ENTERPRISE: None,
     PlanTier.OPEN_SOURCE: None,
 }
 
 PLAN_ASSET_LIMITS: dict[PlanTier, Optional[int]] = {
     PlanTier.FREE: 50,
-    PlanTier.PREMIUM: 500,
+    PlanTier.PREMIUM: None,
     PlanTier.ENTERPRISE: None,
     PlanTier.OPEN_SOURCE: None,
 }
 
 PLAN_PRICE_CENTS: dict[PlanTier, int] = {
     PlanTier.FREE: 0,
-    PlanTier.PREMIUM: 4900,       # $49/month
-    PlanTier.ENTERPRISE: 14900,   # $149/month
+    PlanTier.PREMIUM: 9900,       # €99/month (Growth)
+    PlanTier.ENTERPRISE: 19900,   # €199/month (Scale)
     PlanTier.OPEN_SOURCE: 0,
 }
 

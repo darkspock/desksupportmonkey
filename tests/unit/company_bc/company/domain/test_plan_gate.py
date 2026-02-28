@@ -73,7 +73,7 @@ class TestPlanGateLimits:
         assert PlanGate.get_user_limit(PlanTier.FREE) == 5
 
     def test_premium_user_limit(self):
-        assert PlanGate.get_user_limit(PlanTier.PREMIUM) == 25
+        assert PlanGate.get_user_limit(PlanTier.PREMIUM) == 100
 
     def test_enterprise_user_limit_unlimited(self):
         assert PlanGate.get_user_limit(PlanTier.ENTERPRISE) is None
@@ -84,8 +84,8 @@ class TestPlanGateLimits:
     def test_free_asset_limit(self):
         assert PlanGate.get_asset_limit(PlanTier.FREE) == 50
 
-    def test_premium_asset_limit(self):
-        assert PlanGate.get_asset_limit(PlanTier.PREMIUM) == 500
+    def test_premium_asset_limit_unlimited(self):
+        assert PlanGate.get_asset_limit(PlanTier.PREMIUM) is None
 
     def test_enterprise_asset_limit_unlimited(self):
         assert PlanGate.get_asset_limit(PlanTier.ENTERPRISE) is None

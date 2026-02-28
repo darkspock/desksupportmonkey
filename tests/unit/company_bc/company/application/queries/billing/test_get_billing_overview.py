@@ -50,8 +50,8 @@ class TestGetBillingOverview:
 
         dto = handler.handle(GetBillingOverviewQuery(company_id="c1"))
 
-        assert dto.user_limit == 25
-        assert dto.asset_limit == 500
+        assert dto.user_limit == 100
+        assert dto.asset_limit is None
 
     def test_enterprise_plan_unlimited(self, handler):
         company = _make_company(PlanTier.ENTERPRISE)

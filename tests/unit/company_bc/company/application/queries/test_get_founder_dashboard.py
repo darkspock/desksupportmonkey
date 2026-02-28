@@ -50,13 +50,13 @@ class TestGetFounderDashboardQueryHandler:
     def test_mrr_calculated_correctly(self):
         handler = _make_handler()
         dto = handler.handle(GetFounderDashboardQuery())
-        # 3 premium * 4900 + 1 enterprise * 14900 = 29600
-        assert dto.revenue.mrr_cents == 29600
+        # 3 premium * 9900 + 1 enterprise * 19900 = 49600
+        assert dto.revenue.mrr_cents == 49600
 
     def test_mrr_formatted(self):
         handler = _make_handler()
         dto = handler.handle(GetFounderDashboardQuery())
-        assert dto.revenue.mrr_formatted == "€296"
+        assert dto.revenue.mrr_formatted == "€496"
 
     def test_trial_pipeline_populated(self):
         handler = _make_handler()
