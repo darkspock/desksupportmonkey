@@ -11,7 +11,7 @@ import { useI18n } from '../../lib/i18n';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/useToast';
 import { Pencil } from 'lucide-react';
-import type { ChangeRequestDetail, ChangeAsset, PIR } from '../../types';
+import type { ChangeRequestDetail, ChangeAsset } from '../../types';
 
 const statusVariant: Record<string, 'default' | 'info' | 'success' | 'warning' | 'danger'> = {
   draft: 'default',
@@ -651,8 +651,8 @@ export default function ChangeDetailPage() {
                     )}
                     {event.metadata && Object.keys(event.metadata).length > 0 && (
                       <div className="mt-1 text-xs text-muted-foreground">
-                        {event.metadata.notes && <span className="italic">&quot;{String(event.metadata.notes)}&quot;</span>}
-                        {event.metadata.reason && <span className="italic">&quot;{String(event.metadata.reason)}&quot;</span>}
+                        {!!event.metadata.notes && <span className="italic">&quot;{String(event.metadata.notes)}&quot;</span>}
+                        {!!event.metadata.reason && <span className="italic">&quot;{String(event.metadata.reason)}&quot;</span>}
                         {event.metadata.auto_approved !== undefined && (
                           <span>{event.metadata.auto_approved ? t('page.change_detail.auto_approved') : ''}</span>
                         )}

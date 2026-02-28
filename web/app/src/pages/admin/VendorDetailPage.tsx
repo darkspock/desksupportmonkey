@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Shield, ShieldAlert, FileText, ClipboardCheck, Network, AlertTriangle, Bug } from 'lucide-react';
+import { ArrowLeft, Shield, ShieldAlert, FileText, Network, AlertTriangle, Bug } from 'lucide-react';
 import api from '../../lib/api';
 import { Loading } from '../../components/ui/Loading';
 import { ErrorState, EmptyState } from '../../components/ui/StateBlock';
@@ -230,7 +230,7 @@ function StatBlock({ icon, label, value }: { icon: React.ReactNode; label: strin
 // ═══════════════════════════════════════════════════════
 function ContractsTab({ vendorId, isAdmin, t, queryClient, showToast }: {
   vendorId: string; isAdmin: boolean; t: (k: string, p?: Record<string, string>) => string;
-  queryClient: ReturnType<typeof useQueryClient>; showToast: (o: { title: string; variant?: string }) => void;
+  queryClient: ReturnType<typeof useQueryClient>; showToast: (o: { title: string; variant?: 'success' | 'error' | 'info' }) => void;
 }) {
   const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
@@ -492,7 +492,7 @@ function ContractsTab({ vendorId, isAdmin, t, queryClient, showToast }: {
 // ═══════════════════════════════════════════════════════
 function AssessmentsTab({ vendorId, isAdmin, t, queryClient, showToast }: {
   vendorId: string; isAdmin: boolean; t: (k: string) => string;
-  queryClient: ReturnType<typeof useQueryClient>; showToast: (o: { title: string; variant?: string }) => void;
+  queryClient: ReturnType<typeof useQueryClient>; showToast: (o: { title: string; variant?: 'success' | 'error' | 'info' }) => void;
 }) {
   const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
@@ -665,7 +665,7 @@ function AssessmentsTab({ vendorId, isAdmin, t, queryClient, showToast }: {
 // ═══════════════════════════════════════════════════════
 function DependenciesTab({ vendorId, isAdmin, t, queryClient, showToast }: {
   vendorId: string; isAdmin: boolean; t: (k: string) => string;
-  queryClient: ReturnType<typeof useQueryClient>; showToast: (o: { title: string; variant?: string }) => void;
+  queryClient: ReturnType<typeof useQueryClient>; showToast: (o: { title: string; variant?: 'success' | 'error' | 'info' }) => void;
 }) {
   const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);

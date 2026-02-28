@@ -37,13 +37,6 @@ interface DashboardData {
   stale_assessment_count: number;
 }
 
-const levelVariant: Record<string, 'default' | 'info' | 'success' | 'warning' | 'danger'> = {
-  low: 'success',
-  medium: 'info',
-  high: 'warning',
-  critical: 'danger',
-};
-
 function StatCard({ label, value, color }: { label: string; value: number | string; color?: string }) {
   return (
     <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 text-center">
