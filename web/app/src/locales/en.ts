@@ -1626,6 +1626,9 @@ const en: Record<string, string> = {
   'page.billing.plan_feat.enterprise_1': 'Unlimited users',
   'page.billing.plan_feat.enterprise_2': 'SSO, audit trail & SLA',
   'page.billing.plan_feat.enterprise_3': 'Automations & custom fields',
+  'page.billing.open_source_title': 'Open Source Plan',
+  'page.billing.open_source_desc': 'You are on the Open Source plan — free for teams up to 20 users with all features included.',
+  'page.billing.open_source_upgrade_cta': 'Upgrade to DSM Control →',
 
   // E43-F5: Super Admin Billing Management
   'page.companies.billing_action': 'Billing',

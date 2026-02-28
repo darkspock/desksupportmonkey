@@ -7,6 +7,7 @@ import { Card } from '../../components/ui/Card';
 import { ErrorState } from '../../components/ui/StateBlock';
 import { useI18n } from '../../lib/i18n';
 import { useToast } from '../../hooks/useToast';
+import { brand } from '../../config/brand';
 
 interface BillingOverview {
   plan: string;
@@ -270,6 +271,26 @@ export default function BillingPage() {
       {isSuspended && (
         <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800 dark:border-red-700 dark:bg-red-900/30 dark:text-red-300">
           {t('page.billing.suspended_warning')}
+        </div>
+      )}
+
+      {/* Open Source info panel */}
+      {brand.openSourceMode && brand.upgradeUrl && (
+        <div className="rounded-lg border border-green-300 bg-green-50 p-4 dark:border-green-700 dark:bg-green-900/20">
+          <h3 className="text-sm font-semibold text-green-800 dark:text-green-300">
+            {t('page.billing.open_source_title')}
+          </h3>
+          <p className="mt-1 text-sm text-green-700 dark:text-green-400">
+            {t('page.billing.open_source_desc')}
+          </p>
+          <a
+            href={brand.upgradeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex items-center justify-center rounded-md h-9 px-4 text-sm font-medium shadow-xs transition-all bg-green-600 text-white hover:bg-green-700"
+          >
+            {t('page.billing.open_source_upgrade_cta')}
+          </a>
         </div>
       )}
 

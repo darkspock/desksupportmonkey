@@ -24,6 +24,8 @@ export interface BrandConfig {
   faviconPath: string;
   loginImagePath: string;
   themePath: string;
+  openSourceMode: boolean;
+  upgradeUrl: string;
 }
 
 // Mutable singleton — updated in-place by loadBrand() so every importer
@@ -36,6 +38,8 @@ export const brand: BrandConfig = {
   faviconPath: '/brands/dsm/favicon.png',
   loginImagePath: '/brands/dsm/brand-login.png',
   themePath: '/brands/dsm/theme.css',
+  openSourceMode: false,
+  upgradeUrl: '',
 };
 
 // Brand messages loaded per locale. Stored separately so they can be

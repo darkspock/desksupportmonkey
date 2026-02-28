@@ -72,18 +72,31 @@ class Company:
         return datetime.now(timezone.utc) < trial_end
 
     @classmethod
-    def create(cls, name: str, email_domains: list[str], id: Optional[str] = None) -> "Company":
+    def create(
+        cls,
+        name: str,
+        email_domains: list[str],
+        id: Optional[str] = None,
+        open_source_mode: bool = False,
+    ) -> "Company":
         if not name or not name.strip():
             raise ValueError("Company name is required")
         if not email_domains:
             raise ValueError("At least one email domain is required")
+        if open_source_mode:
+            plan = PlanTier.OPEN_SOURCE
+            trial_ends_at = None
+        else:
+            plan = PlanTier.FREE
+            trial_ends_at = datetime.now(timezone.utc) + timedelta(days=15)
         return cls(
             id=id or str(ulid.new()),
             name=name.strip(),
             status=CompanyStatus.ACTIVE,
             email_domains=[_normalize_domain(d) for d in email_domains],
             is_active=True,
-            trial_ends_at=datetime.now(timezone.utc) + timedelta(days=15),
+            plan=plan,
+            trial_ends_at=trial_ends_at,
         )
 
     def update(

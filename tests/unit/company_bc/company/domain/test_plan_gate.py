@@ -78,8 +78,8 @@ class TestPlanGateLimits:
     def test_enterprise_user_limit_unlimited(self):
         assert PlanGate.get_user_limit(PlanTier.ENTERPRISE) is None
 
-    def test_open_source_user_limit_unlimited(self):
-        assert PlanGate.get_user_limit(PlanTier.OPEN_SOURCE) is None
+    def test_open_source_user_limit_20(self):
+        assert PlanGate.get_user_limit(PlanTier.OPEN_SOURCE) == 20
 
     def test_free_asset_limit(self):
         assert PlanGate.get_asset_limit(PlanTier.FREE) == 50
@@ -89,3 +89,19 @@ class TestPlanGateLimits:
 
     def test_enterprise_asset_limit_unlimited(self):
         assert PlanGate.get_asset_limit(PlanTier.ENTERPRISE) is None
+
+
+class TestPlanGateOpenSource:
+    def test_open_source_has_enterprise_features(self):
+        from src.company_bc.company.domain.plan_gate import PLAN_FEATURES, _ENTERPRISE_FEATURES
+        assert PLAN_FEATURES[PlanTier.OPEN_SOURCE] == _ENTERPRISE_FEATURES
+
+    def test_open_source_allows_mcp_server(self):
+        assert PlanGate.is_feature_available(
+            PlanTier.OPEN_SOURCE, BillingStatus.ACTIVE, False, False, "mcp_server"
+        ) is True
+
+    def test_open_source_allows_reports(self):
+        assert PlanGate.is_feature_available(
+            PlanTier.OPEN_SOURCE, BillingStatus.ACTIVE, False, False, "reports"
+        ) is True

@@ -69,6 +69,7 @@ class StripeSettings(BaseSettings):
     STRIPE_PRICE_PREMIUM: str = ""
     STRIPE_PRICE_ENTERPRISE: str = ""
     OPEN_SOURCE_MODE: bool = False
+    UPGRADE_URL: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

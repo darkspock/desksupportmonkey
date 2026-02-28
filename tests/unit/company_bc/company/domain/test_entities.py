@@ -1,5 +1,6 @@
 import pytest
 
+from src.company_bc.company.domain.billing_enums import PlanTier
 from src.company_bc.company.domain.entities import Company
 from src.company_bc.company.domain.enums import CompanyStatus
 
@@ -38,6 +39,21 @@ class TestCompanyCreate:
     def test_create_with_no_domains_raises(self):
         with pytest.raises(ValueError, match="At least one email domain"):
             Company.create(name="Acme", email_domains=[])
+
+    def test_create_default_is_free_plan_with_trial(self):
+        company = Company.create(name="Acme", email_domains=["acme.com"])
+        assert company.plan == PlanTier.FREE
+        assert company.trial_ends_at is not None
+
+    def test_create_open_source_mode_sets_open_source_plan(self):
+        company = Company.create(name="Acme", email_domains=["acme.com"], open_source_mode=True)
+        assert company.plan == PlanTier.OPEN_SOURCE
+        assert company.trial_ends_at is None
+
+    def test_create_open_source_false_sets_free_plan(self):
+        company = Company.create(name="Acme", email_domains=["acme.com"], open_source_mode=False)
+        assert company.plan == PlanTier.FREE
+        assert company.trial_ends_at is not None
 
 
 class TestCompanyUpdate:

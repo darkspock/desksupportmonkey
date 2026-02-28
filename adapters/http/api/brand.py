@@ -26,6 +26,8 @@ def get_brand_config():
             "faviconPath": f"/api/v1/brand/assets/favicon.{settings.BRAND_FAVICON_EXT}",
             "loginImagePath": f"/api/v1/brand/assets/brand-login.{settings.BRAND_LOGIN_EXT}",
             "themePath": "/api/v1/brand/assets/theme.css",
+            "openSourceMode": settings.stripe.OPEN_SOURCE_MODE,
+            "upgradeUrl": settings.stripe.UPGRADE_URL,
         }
     }
 

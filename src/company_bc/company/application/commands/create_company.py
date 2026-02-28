@@ -2,6 +2,7 @@ import logging
 from dataclasses import dataclass
 from typing import Optional
 
+from core.config import settings
 from core.email import EmailServiceInterface, send_magic_link_email
 from core.stripe_client import StripeClient
 from src.asset_bc.asset.domain.entities import AssetLocation
@@ -222,7 +223,10 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
 
         # Validate + normalize domains early so uniqueness checks are canonical
         company = Company.create(
-            name=command.name, email_domains=command.email_domains, id=command.id,
+            name=command.name,
+            email_domains=command.email_domains,
+            id=command.id,
+            open_source_mode=settings.stripe.OPEN_SOURCE_MODE,
         )
 
         # Check domain uniqueness — allow reclaiming if the owning company has no confirmed users

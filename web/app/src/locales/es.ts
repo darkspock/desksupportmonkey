@@ -1626,6 +1626,9 @@ const es: Record<string, string> = {
   'page.billing.plan_feat.enterprise_1': 'Usuarios ilimitados',
   'page.billing.plan_feat.enterprise_2': 'SSO, auditoría y SLA',
   'page.billing.plan_feat.enterprise_3': 'Automatizaciones y campos personalizados',
+  'page.billing.open_source_title': 'Plan Código Abierto',
+  'page.billing.open_source_desc': 'Estás en el plan Código Abierto — gratuito para equipos de hasta 20 usuarios con todas las funciones incluidas.',
+  'page.billing.open_source_upgrade_cta': 'Actualizar a DSM Control →',
 
   // E43-F5: Super Admin Billing Management
   'page.companies.billing_action': 'Facturación',

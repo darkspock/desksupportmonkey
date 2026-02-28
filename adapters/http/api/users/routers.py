@@ -87,10 +87,7 @@ router = APIRouter(prefix="/api/v1/users", tags=["users"])
 
 
 def _check_user_limit_not_reached(company_id: str, company_repo: CompanyRepository) -> None:
-    """Block adding new users when the plan limit is reached (skip for open source / complimentary)."""
-    from core.config import settings as _settings
-    if _settings.stripe.OPEN_SOURCE_MODE:
-        return
+    """Block adding new users when the plan limit is reached (skip for complimentary / trial)."""
     from src.company_bc.company.domain.plan_gate import PlanGate
     company = company_repo.find_by_id(company_id)
     if not company or company.complimentary or company.is_in_trial():

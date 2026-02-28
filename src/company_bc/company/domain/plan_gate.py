@@ -23,7 +23,7 @@ PLAN_FEATURES: dict[PlanTier, set[str]] = {
     PlanTier.STARTER: _STARTER_FEATURES,
     PlanTier.PREMIUM: _PREMIUM_FEATURES,
     PlanTier.ENTERPRISE: _ENTERPRISE_FEATURES,
-    PlanTier.OPEN_SOURCE: set(),  # all allowed — bypass in logic
+    PlanTier.OPEN_SOURCE: _ENTERPRISE_FEATURES,
 }
 
 PLAN_USER_LIMITS: dict[PlanTier, Optional[int]] = {
@@ -31,7 +31,7 @@ PLAN_USER_LIMITS: dict[PlanTier, Optional[int]] = {
     PlanTier.STARTER: 25,
     PlanTier.PREMIUM: 100,
     PlanTier.ENTERPRISE: None,
-    PlanTier.OPEN_SOURCE: None,
+    PlanTier.OPEN_SOURCE: 20,
 }
 
 PLAN_ASSET_LIMITS: dict[PlanTier, Optional[int]] = {
