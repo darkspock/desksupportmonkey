@@ -54,6 +54,7 @@
 | E48 | Menu Visibility per Role | Admin-configurable sidebar menu visibility per role — blocklist approach, per-company settings stored as JSONB, UI settings page with role columns, applied via /auth/me response | Medium | Done |
 | E49 | Asset Checkout & Custody | Equipment checkout lifecycle — technician-initiated checkout with condition tracking, employee acceptance flow, auto-GDPR-sanitization maintenance on checkin, cancel with auto-revert, custody dashboard widgets, checkout history on asset detail | High | Done |
 | E50 | Onboarding Wizard | 4-step admin onboarding wizard (sector selection, compliance framework recommendations, module activation, summary) — post-login redirect for new companies, sector-based framework suggestions, nav visibility toggling for deselected modules, re-run from company settings | High | Done |
+| E51 | Contextual Help System | Floating help button with slide-in panel showing page-specific guidance and support contact — route-aware content, i18n support (EN/ES), bottom padding for scroll clearance | Medium | Done |
 
 ---
 
@@ -338,7 +339,7 @@ E10: Asset QR & Barcodes (depends on E2 + E7)
 | **Phase 12** | E28 + E32 | **Advanced** — mobile PWA, asset discovery |  |
 | **Backlog** | E26 + E27 + E34 | Internal tooling, surveys, feature voting — build when needed |  |
 
-**Completed:** 40 epics (E0-E19, E24, E25, E29-E31, E35-E40, E43-E50)
+**Completed:** 41 epics (E0-E19, E24, E25, E29-E31, E35-E40, E43-E51)
 **Dropped:** 1 epic (E22 — covered by E31 workflow templates)
 **Remaining:** 9 epics (E20, E21, E23, E26-E28, E32-E34, E42)
 

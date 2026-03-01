@@ -9,6 +9,7 @@ import { getDefaultRouteForRole } from '../../lib/navigation';
 import { useNotificationRealtime } from '../../hooks/useNotificationRealtime';
 import { useI18n } from '../../lib/i18n';
 import api from '../../lib/api';
+import { HelpPanel } from '../help/HelpPanel';
 
 interface BillingStatus {
   billing_status: string;
@@ -119,12 +120,14 @@ export function AppLayout() {
       <div className="min-w-0 flex-1 flex flex-col">
         <Header onMenuToggle={() => setMobileNavOpen(true)} />
         {user.role === 'admin' && <BillingBanner role={user.role} />}
-        <main className="min-w-0 flex-1 p-4 md:p-6">
+        <main className="min-w-0 flex-1 p-4 pb-20 md:p-6 md:pb-20">
           <div className="mx-auto w-full max-w-7xl">
             <Outlet />
           </div>
         </main>
       </div>
+
+      <HelpPanel />
 
       {showNameModal && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
