@@ -113,6 +113,13 @@ export const SECTOR_FRAMEWORKS: Record<string, string[]> = {
   other: [],
 };
 
+export const FRAMEWORK_MODULES: Record<string, string[]> = {
+  NIS2: ['compliance_audit', 'security', 'change_management'],
+  DORA: ['compliance_audit', 'security', 'change_management'],
+  'ISO 27001': ['compliance_audit', 'security', 'change_management', 'asset_inventory'],
+  GDPR: ['compliance_audit'],
+};
+
 export const FRAMEWORKS: FrameworkDefinition[] = [
   { key: 'NIS2', name: 'NIS2', color: 'blue' },
   { key: 'DORA', name: 'DORA', color: 'purple' },

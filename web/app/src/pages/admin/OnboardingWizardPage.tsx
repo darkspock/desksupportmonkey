@@ -9,6 +9,7 @@ import {
   MODULES,
   SECTORS,
   SECTOR_FRAMEWORKS,
+  FRAMEWORK_MODULES,
   FRAMEWORKS,
   type ModuleDefinition,
 } from '../../config/moduleConfig';
@@ -156,6 +157,18 @@ export default function OnboardingWizardPage() {
     );
   };
 
+  const handleNext = useCallback(() => {
+    if (step === 2) {
+      // Pre-select modules required by the chosen frameworks
+      const alwaysOn = MODULES.filter((m) => m.always_on).map((m) => m.id);
+      const fromFrameworks = selectedFrameworks.flatMap(
+        (fw) => FRAMEWORK_MODULES[fw] || [],
+      );
+      setSelectedModules([...new Set([...alwaysOn, ...fromFrameworks])]);
+    }
+    setStep((s) => s + 1);
+  }, [step, selectedFrameworks]);
+
   const handleSkip = async () => {
     setSubmitting(true);
     try {
@@ -237,9 +250,9 @@ export default function OnboardingWizardPage() {
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-white dark:bg-gray-950">
-      <div className="mx-auto flex min-h-full max-w-2xl flex-col px-4 py-8 sm:py-12">
+      <div className="mx-auto flex min-h-full max-w-2xl flex-col px-4 py-6 sm:py-8">
         {/* Header */}
-        <div className="mb-8 text-center">
+        <div className="mb-4 text-center">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
             {t('onboarding.title', { brandName: brand.name })}
           </h1>
@@ -249,7 +262,7 @@ export default function OnboardingWizardPage() {
         </div>
 
         {/* Progress */}
-        <div className="mb-8">
+        <div className="mb-4">
           <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-2">
             <span>{t('onboarding.step_of', { current: String(step), total: String(TOTAL_STEPS) })}</span>
             <button
@@ -270,7 +283,7 @@ export default function OnboardingWizardPage() {
         </div>
 
         {/* Step content */}
-        <div className="flex-1">
+        <div>
           {step === 1 && (
             <SectorStep
               selected={selectedSector}
@@ -304,7 +317,7 @@ export default function OnboardingWizardPage() {
         </div>
 
         {/* Navigation */}
-        <div className="mt-8 flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-6">
+        <div className="mt-4 flex items-center justify-between">
           <div>
             {step > 1 && (
               <button
@@ -324,7 +337,7 @@ export default function OnboardingWizardPage() {
             {step < TOTAL_STEPS ? (
               <button
                 type="button"
-                onClick={() => setStep((s) => s + 1)}
+                onClick={handleNext}
                 className="inline-flex items-center gap-1 rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground shadow-xs hover:bg-primary/90 transition-colors"
               >
                 {t('onboarding.next')}
@@ -369,10 +382,10 @@ function SectorStep({
       <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
         {t('onboarding.sector.title')}
       </h2>
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
         {t('onboarding.sector.subtitle')}
       </p>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {SECTORS.map((sector) => {
           const isSelected = selected === sector.id;
           const icon = SECTOR_ICONS[sector.id] || SECTOR_ICONS.other;
@@ -381,7 +394,7 @@ function SectorStep({
               key={sector.id}
               type="button"
               onClick={() => onSelect(sector.id)}
-              className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 text-center transition-all ${
+              className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 text-center transition-all ${
                 isSelected
                   ? 'border-primary bg-primary/5 dark:bg-primary/10'
                   : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
