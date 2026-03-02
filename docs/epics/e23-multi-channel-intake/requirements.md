@@ -12,7 +12,7 @@
 
 ### Objective
 
-Enable ticket creation from external channels (email, Slack, Teams, chatbot) so employees can submit requests without logging into the web application, increasing adoption and reducing friction.
+Enable ticket creation from external channels (email, Slack, Teams, Jira, Salesforce, chatbot) so employees can submit requests without logging into the web application — and sync with existing Jira projects or Salesforce Service Cloud — increasing adoption and reducing friction.
 
 ### KPI Targets
 
@@ -29,6 +29,8 @@ Enable ticket creation from external channels (email, Slack, Teams, chatbot) so 
 - Users report friction logging into the portal for quick requests
 - Email-to-ticket is the #1 requested feature for IT service desks
 - DORA/NIS2 benefit: faster incident reporting when employees can email directly
+- Many companies already use Jira for project management and want their IT requests visible alongside development work
+- Enterprise customers use Salesforce Service Cloud as their CRM/support platform and need IT asset requests to flow into their existing Salesforce workflows
 
 ---
 
@@ -48,6 +50,8 @@ Employees must log into the web application to create service requests. This cre
 | Web-only intake | Low adoption from non-technical staff |
 | No email integration | Support teams maintain parallel email inbox manually |
 | No chat integration | Employees switch context between Slack/Teams and DSM |
+| No Jira integration | Teams using Jira for project management can't see IT requests in their boards |
+| No Salesforce integration | Companies using Salesforce Service Cloud must duplicate cases manually between systems |
 | No guided creation | Employees often submit incomplete or miscategorized requests |
 
 ### Who Is Affected
@@ -72,6 +76,8 @@ Add external intake channels that funnel into the existing `request_bc` request 
 |---------|-----------|----------|
 | Email (Google Workspace) | IMAP polling via Celery beat | High — first to implement |
 | Slack | Slack Events API webhook | Medium |
+| Jira (Cloud) | Jira REST API + webhooks (bidirectional sync) | Medium |
+| Salesforce Service Cloud | Salesforce REST API + Platform Events (bidirectional sync) | Medium |
 | Microsoft Teams | Teams Bot Framework webhook | Medium |
 | Chatbot (web widget) | WebSocket + guided flow | Low |
 
@@ -290,6 +296,274 @@ Slack bot that listens for commands and events to create/track tickets. Uses Sla
 
 ---
 
+## Feature: Jira Cloud Sync (Future)
+
+### Overview
+
+Bidirectional sync between DSM Control and Jira Cloud. Issues created in a configured Jira project are imported as service requests in DSM Control. Requests created in DSM can optionally be pushed to Jira. Status changes and comments sync in both directions, so teams using Jira for project management have full visibility of IT support activity.
+
+Unlike email or Slack (unidirectional intake), Jira sync is **bidirectional**: DSM → Jira and Jira → DSM.
+
+### User Stories (High-level)
+
+- As an admin, I can connect a Jira Cloud instance to DSM in company settings via OAuth 2.0 (3LO), so that issues can flow between both systems
+- As an admin, I can configure which Jira project(s) sync with DSM, and map Jira issue types to DSM request types
+- As an admin, I can choose sync direction: Jira→DSM only (intake), DSM→Jira only (push), or bidirectional
+- As an employee, when I create a Jira issue in a synced project, a corresponding service request is created in DSM automatically
+- As a technician, when I update request status in DSM, the linked Jira issue status transitions accordingly (if bidirectional enabled)
+- As a technician, I can see that a request was created via Jira sync, with a direct link to the original Jira issue
+- As a system, comments added to a Jira issue are synced as request comments in DSM (and vice versa if bidirectional)
+
+### Entities
+
+#### JiraIntakeConfig (per company)
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| id | ULID | Yes | Primary key |
+| company_id | ULID | Yes | FK to company |
+| jira_site_url | str(255) | Yes | Jira Cloud site URL (e.g., https://acme.atlassian.net) |
+| cloud_id | str(100) | Yes | Jira Cloud ID (from accessible-resources API) |
+| access_token_encrypted | text | Yes | Encrypted OAuth 2.0 access token |
+| refresh_token_encrypted | text | Yes | Encrypted OAuth 2.0 refresh token |
+| token_expires_at | datetime | Yes | Access token expiry |
+| sync_direction | enum | Yes | jira_to_dsm / dsm_to_jira / bidirectional |
+| is_active | bool | Yes | Enable/disable sync |
+| last_sync_at | datetime | No | Last successful sync timestamp |
+| consecutive_failures | int | Yes | Counter for alerting (default 0) |
+| created_at | datetime | Yes | Record creation |
+| updated_at | datetime | Yes | Last modification |
+
+#### JiraProjectMapping (which Jira projects sync)
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| id | ULID | Yes | Primary key |
+| config_id | ULID | Yes | FK to JiraIntakeConfig |
+| jira_project_key | str(20) | Yes | Jira project key (e.g., "IT", "SUPPORT") |
+| jira_project_name | str(255) | Yes | Display name |
+| default_request_type | str(50) | No | DSM request type for imported issues |
+| jira_issue_type_filter | text | No | JSON array of Jira issue type IDs to sync (null = all) |
+| is_active | bool | Yes | Enable/disable this project mapping |
+
+#### JiraSyncLog (audit log of sync events)
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| id | ULID | Yes | Primary key |
+| company_id | ULID | Yes | FK to company |
+| direction | enum | Yes | jira_to_dsm / dsm_to_jira |
+| jira_issue_key | str(50) | Yes | e.g., "IT-123" |
+| jira_issue_id | str(50) | Yes | Jira issue numeric ID |
+| request_id | ULID | No | FK to DSM request (if linked) |
+| event_type | enum | Yes | issue_created / issue_updated / comment_synced / status_changed / sync_failed |
+| status | enum | Yes | processed / failed / skipped |
+| error_message | text | No | Error details if failed |
+| payload_hash | str(64) | No | SHA-256 hash of webhook payload (for dedup) |
+| created_at | datetime | Yes | Record creation |
+
+### Enums
+
+```
+JiraSyncDirection: jira_to_dsm, dsm_to_jira, bidirectional
+JiraSyncEventType: issue_created, issue_updated, comment_synced, status_changed, sync_failed
+JiraSyncLogStatus: processed, failed, skipped
+```
+
+### Technical Notes
+
+- **Authentication:** Jira Cloud OAuth 2.0 (3LO) — admin authorizes DSM as an Atlassian app. Tokens stored encrypted (Fernet, same key as email intake)
+- **Jira → DSM (intake):** Jira webhooks (project-scoped) fire on issue creation/update/comment. DSM receives via a dedicated webhook endpoint, validates signature, and processes
+- **DSM → Jira (push):** Domain events from `request_bc` trigger a Celery task that calls Jira REST API v3 to create/update issues
+- **Status mapping:** Configurable mapping between Jira workflow statuses and DSM request statuses. Default: "To Do"→open, "In Progress"→in_progress, "Done"→resolved
+- **Deduplication:** Webhook payload hash + jira_issue_id + event_type prevent duplicate processing
+- **Rate limiting:** Jira Cloud API rate limit is ~100 req/s per app — Celery task with rate limiter for outbound calls
+- **Atlassian Connect / Forge:** Register DSM as an Atlassian Connect app (or Forge app) for marketplace listing and easy install. Initial implementation uses OAuth 2.0 (3LO) with manual webhook registration; Forge migration deferred
+
+### API Endpoints
+
+| Method | Path | Role | Description |
+|--------|------|------|-------------|
+| GET | /api/v1/settings/jira-intake | admin | Get Jira sync config |
+| POST | /api/v1/settings/jira-intake/connect | admin | Start OAuth 2.0 flow (returns redirect URL) |
+| GET | /api/v1/settings/jira-intake/callback | system | OAuth 2.0 callback (stores tokens) |
+| PUT | /api/v1/settings/jira-intake | admin | Update config (sync direction, active) |
+| DELETE | /api/v1/settings/jira-intake | admin | Disconnect Jira (revoke tokens, remove webhooks) |
+| GET | /api/v1/settings/jira-intake/projects | admin | List available Jira projects (from connected instance) |
+| POST | /api/v1/settings/jira-intake/projects | admin | Create/update project mapping |
+| DELETE | /api/v1/settings/jira-intake/projects/{id} | admin | Remove project mapping |
+| GET | /api/v1/settings/jira-intake/log | admin | List sync log (paginated) |
+| POST | /api/v1/settings/jira-intake/log/{id}/retry | admin | Retry failed sync event |
+| POST | /api/v1/webhooks/jira/{company_id} | system | Jira webhook receiver (no auth — signature validated) |
+
+### Architecture
+
+```
+[Jira Cloud]
+     │
+     ├── Webhook (issue_created, issue_updated, comment_created)
+     │         │
+     │         ▼
+     │   [POST /api/v1/webhooks/jira/{company_id}]
+     │         │
+     │         ├── Validate webhook (Jira signature or shared secret)
+     │         ├── Deduplicate by payload hash
+     │         ├── Map Jira issue → CreateRequestCommand / UpdateRequestCommand
+     │         │
+     │         ▼
+     │   [request_bc command handlers] ← existing
+     │
+     └── REST API v3 (create/update issue)
+               ▲
+               │
+         [Celery task: sync_request_to_jira]
+               │
+               ├── Triggered by domain event (RequestCreated, RequestStatusChanged, CommentAdded)
+               ├── Only fires if company has active Jira config with dsm_to_jira or bidirectional
+               ├── Maps DSM request → Jira issue fields
+               └── Logs result in JiraSyncLog
+```
+
+---
+
+## Feature: Salesforce Service Cloud Sync (Future)
+
+### Overview
+
+Bidirectional sync between DSM Control and Salesforce Service Cloud. Cases created in Salesforce are imported as service requests in DSM Control. Requests created in DSM can optionally be pushed to Salesforce as Cases. Status changes and comments sync in both directions, so organizations using Salesforce as their CRM/support backbone have unified visibility across IT operations and customer support.
+
+Like Jira sync, Salesforce sync is **bidirectional**: DSM → Salesforce and Salesforce → DSM.
+
+### User Stories (High-level)
+
+- As an admin, I can connect a Salesforce org to DSM in company settings via OAuth 2.0 (Web Server Flow), so that cases can flow between both systems
+- As an admin, I can configure which Salesforce Record Types or Case origins sync with DSM, and map them to DSM request types
+- As an admin, I can choose sync direction: SF→DSM only (intake), DSM→SF only (push), or bidirectional
+- As an admin, I can map Salesforce Case statuses to DSM request statuses (e.g., "New"→open, "Working"→in_progress, "Closed"→resolved)
+- As an employee, when a Case is created in Salesforce matching the configured criteria, a corresponding service request is created in DSM automatically
+- As a technician, when I update request status in DSM, the linked Salesforce Case status transitions accordingly (if bidirectional enabled)
+- As a technician, I can see that a request was created via Salesforce sync, with a direct link to the original Case in Salesforce
+- As a system, Case comments (CaseComment / FeedItem) added in Salesforce are synced as request comments in DSM (and vice versa if bidirectional)
+
+### Entities
+
+#### SalesforceIntakeConfig (per company)
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| id | ULID | Yes | Primary key |
+| company_id | ULID | Yes | FK to company |
+| instance_url | str(255) | Yes | Salesforce org URL (e.g., https://acme.my.salesforce.com) |
+| org_id | str(18) | Yes | Salesforce Organization ID |
+| access_token_encrypted | text | Yes | Encrypted OAuth 2.0 access token |
+| refresh_token_encrypted | text | Yes | Encrypted OAuth 2.0 refresh token |
+| token_expires_at | datetime | Yes | Access token expiry |
+| sync_direction | enum | Yes | sf_to_dsm / dsm_to_sf / bidirectional |
+| case_origin_filter | text | No | JSON array of Case Origin values to sync (null = all) |
+| case_record_type_filter | text | No | JSON array of Record Type IDs to sync (null = all) |
+| default_request_type | str(50) | No | DSM request type for imported Cases |
+| is_active | bool | Yes | Enable/disable sync |
+| last_sync_at | datetime | No | Last successful sync timestamp |
+| consecutive_failures | int | Yes | Counter for alerting (default 0) |
+| created_at | datetime | Yes | Record creation |
+| updated_at | datetime | Yes | Last modification |
+
+#### SalesforceStatusMapping (configurable status mapping)
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| id | ULID | Yes | Primary key |
+| config_id | ULID | Yes | FK to SalesforceIntakeConfig |
+| sf_status | str(100) | Yes | Salesforce Case status value (e.g., "New", "Working", "Escalated") |
+| dsm_status | str(50) | Yes | Corresponding DSM request status |
+| direction | enum | Yes | sf_to_dsm / dsm_to_sf / both |
+
+#### SalesforceSyncLog (audit log of sync events)
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| id | ULID | Yes | Primary key |
+| company_id | ULID | Yes | FK to company |
+| direction | enum | Yes | sf_to_dsm / dsm_to_sf |
+| sf_case_id | str(18) | Yes | Salesforce Case ID (15 or 18 char) |
+| sf_case_number | str(20) | No | Salesforce Case Number (human-readable) |
+| request_id | ULID | No | FK to DSM request (if linked) |
+| event_type | enum | Yes | case_created / case_updated / comment_synced / status_changed / sync_failed |
+| status | enum | Yes | processed / failed / skipped |
+| error_message | text | No | Error details if failed |
+| replay_id | str(50) | No | Platform Event replay ID (for dedup and resume) |
+| created_at | datetime | Yes | Record creation |
+
+### Enums
+
+```
+SalesforceSyncDirection: sf_to_dsm, dsm_to_sf, bidirectional
+SalesforceSyncEventType: case_created, case_updated, comment_synced, status_changed, sync_failed
+SalesforceSyncLogStatus: processed, failed, skipped
+```
+
+### Technical Notes
+
+- **Authentication:** Salesforce OAuth 2.0 Web Server Flow — admin authorizes DSM as a Connected App. Tokens stored encrypted (Fernet, same key as other integrations)
+- **SF → DSM (intake):** Two options evaluated:
+  - **Platform Events (preferred):** Define a custom Platform Event in Salesforce (e.g., `DSM_Case_Event__e`) published by a Flow/Trigger on Case creation/update. DSM subscribes via CometD long-polling (Bayeux protocol) or polls the event bus. Replay ID ensures no missed events on reconnection
+  - **Outbound Messages (alternative):** Workflow Rule → Outbound Message sends SOAP XML to DSM webhook. Simpler but less flexible and being deprecated in favor of Platform Events
+  - **Decision:** Use Platform Events with CometD subscription via a Celery long-running task. Fallback to polling `/services/data/vXX.0/sobjects/Case` with `LastModifiedDate` filter if Platform Events are not available in the customer's Salesforce edition
+- **DSM → SF (push):** Domain events from `request_bc` trigger a Celery task that calls Salesforce REST API to create/update Cases via `/services/data/vXX.0/sobjects/Case`
+- **Status mapping:** Fully configurable per company via `SalesforceStatusMapping` table. Default: "New"→open, "Working"→in_progress, "Escalated"→in_progress, "Closed"→resolved
+- **Deduplication:** Platform Event replay ID + sf_case_id + event_type prevent duplicate processing
+- **Rate limiting:** Salesforce API daily limits vary by edition (Enterprise: 100k/day, Unlimited: 500k/day). Celery task tracks API call count and backs off when approaching limits
+- **Salesforce editions:** Platform Events require Enterprise Edition or higher. Integration should degrade gracefully for Professional Edition (polling fallback)
+- **Connected App:** DSM registered as a Salesforce Connected App with `api`, `refresh_token`, and `offline_access` scopes
+
+### API Endpoints
+
+| Method | Path | Role | Description |
+|--------|------|------|-------------|
+| GET | /api/v1/settings/salesforce-intake | admin | Get Salesforce sync config |
+| POST | /api/v1/settings/salesforce-intake/connect | admin | Start OAuth 2.0 flow (returns redirect URL) |
+| GET | /api/v1/settings/salesforce-intake/callback | system | OAuth 2.0 callback (stores tokens) |
+| PUT | /api/v1/settings/salesforce-intake | admin | Update config (sync direction, filters, active) |
+| DELETE | /api/v1/settings/salesforce-intake | admin | Disconnect Salesforce (revoke tokens) |
+| GET | /api/v1/settings/salesforce-intake/status-mapping | admin | Get status mappings |
+| PUT | /api/v1/settings/salesforce-intake/status-mapping | admin | Update status mappings (bulk replace) |
+| POST | /api/v1/settings/salesforce-intake/test | admin | Test Salesforce connection (verify token, query org info) |
+| GET | /api/v1/settings/salesforce-intake/metadata | admin | Fetch available Case Record Types, Origins, and Statuses from connected org |
+| GET | /api/v1/settings/salesforce-intake/log | admin | List sync log (paginated) |
+| POST | /api/v1/settings/salesforce-intake/log/{id}/retry | admin | Retry failed sync event |
+
+### Architecture
+
+```
+[Salesforce Service Cloud]
+     │
+     ├── Platform Event (DSM_Case_Event__e)
+     │         │
+     │         ▼
+     │   [Celery long-running task: subscribe_salesforce_events]
+     │         │  (CometD / Bayeux long-polling on /event/DSM_Case_Event__e)
+     │         │
+     │         ├── Deduplicate by replay ID
+     │         ├── Fetch full Case data via REST API
+     │         ├── Map Case → CreateRequestCommand / UpdateRequestCommand
+     │         │
+     │         ▼
+     │   [request_bc command handlers] ← existing
+     │
+     └── REST API vXX.0 (create/update Case)
+               ▲
+               │
+         [Celery task: sync_request_to_salesforce]
+               │
+               ├── Triggered by domain event (RequestCreated, RequestStatusChanged, CommentAdded)
+               ├── Only fires if company has active SF config with dsm_to_sf or bidirectional
+               ├── Maps DSM request → Salesforce Case fields
+               ├── Creates/updates CaseComment for comment sync
+               └── Logs result in SalesforceSyncLog
+```
+
+---
+
 ## Feature: Microsoft Teams Integration (Future)
 
 ### Overview
@@ -330,8 +604,12 @@ Embeddable web widget with guided ticket creation flow. Uses WebSocket for real-
 | core/celery.py | Add beat schedule for email polling task | Register poll_email_intake task |
 | alembic | New migration for email_intake_config and inbound_email tables | Create migration |
 | settings | New env vars for credential encryption key | Add INTAKE_ENCRYPTION_KEY |
+| settings | Jira OAuth 2.0 app credentials | Add JIRA_CLIENT_ID, JIRA_CLIENT_SECRET env vars |
+| settings | Salesforce Connected App credentials | Add SF_CLIENT_ID, SF_CLIENT_SECRET env vars |
 | Docker Compose | Mailpit already present — verify IMAP port 1143 exposed | Check docker-compose.yml |
 | Frontend | New admin settings pages for email intake config and log | New pages under /settings |
+| Frontend | New admin settings page for Jira sync config, project mappings, and sync log | New pages under /settings |
+| Frontend | New admin settings page for Salesforce sync config, status mappings, and sync log | New pages under /settings |
 
 ---
 
@@ -373,7 +651,12 @@ Embeddable web widget with guided ticket creation flow. Uses WebSocket for real-
 | Polling frequency | 60 seconds | Balance between latency and API load. Google allows 2500 MB/day IMAP bandwidth |
 | Authentication | OAuth2 refresh token (prod), plain (Mailpit dev) | Google requires OAuth2 for IMAP. Mailpit has no auth |
 | Multi-tenant mailboxes | Deferred — single catch-all for now | If per-tenant mailboxes needed later, upgrade to receive-only SMTP (Haraka/Stalwart) with wildcard MX |
-| Channels priority | Email first, then Slack, Teams, Chatbot | Email is highest value and most requested. Others can be added incrementally |
+| Channels priority | Email first, then Slack, Jira, Salesforce, Teams, Chatbot | Email is highest value and most requested. Jira, Salesforce, and Slack are medium priority. Others added incrementally |
+| Jira sync approach | OAuth 2.0 (3LO) + webhooks + REST API | Standard Atlassian integration pattern. Webhook for inbound, REST API for outbound. Forge migration deferred |
+| Jira sync direction | Configurable per company (intake-only, push-only, or bidirectional) | Different companies have different needs — some only want Jira→DSM, others want full sync |
+| Salesforce sync approach | OAuth 2.0 Web Server Flow + Platform Events + REST API | Standard Salesforce integration pattern. Platform Events for inbound (CometD), REST API for outbound |
+| Salesforce sync direction | Configurable per company (intake-only, push-only, or bidirectional) | Same flexibility as Jira — some only want SF→DSM, others want full sync |
+| Salesforce inbound mechanism | Platform Events with CometD (preferred), polling fallback for lower editions | Platform Events provide near-real-time delivery with replay for resilience. Polling fallback for Professional Edition |
 
 ---
 
@@ -383,3 +666,11 @@ Embeddable web widget with guided ticket creation flow. Uses WebSocket for real-
 2. **Attachment size limit:** What's the max attachment size to accept via email? Suggest 25 MB (Gmail's limit)
 3. **Spam filtering:** Should the system implement any spam detection, or rely on Google Workspace's built-in spam filter? Recommend relying on Google's filter
 4. **CC handling:** If an email has CC recipients, should they be added as watchers to the ticket? — defer to follow-up feature
+5. **Jira custom fields:** Should the sync map Jira custom fields to DSM custom fields (E30)? — defer until E30 is implemented
+6. **Jira Server/Data Center:** Initial implementation targets Jira Cloud only. Jira Server/Data Center support (different auth, on-premise webhooks) deferred
+7. **Jira attachment sync:** Should attachments on Jira issues be downloaded and stored in MinIO? Suggest yes, with same size limit as email (25 MB)
+8. **Conflict resolution:** If a request is updated in both DSM and Jira simultaneously, which wins? Suggest last-write-wins with sync log entry for audit
+9. **Salesforce edition requirements:** Platform Events require Enterprise Edition or higher. Should DSM support Professional Edition with a polling fallback, or require Enterprise+?
+10. **Salesforce custom objects:** Some orgs use custom objects instead of standard Case. Should DSM support mapping to custom objects? — defer to follow-up feature
+11. **Salesforce Knowledge sync:** Should Salesforce Knowledge articles sync with DSM knowledge base (E18)? — defer until E18 is implemented
+12. **Salesforce sandbox testing:** Integration tests should run against a Salesforce Developer Edition org (free). Document setup steps for contributors

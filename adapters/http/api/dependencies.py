@@ -6,6 +6,9 @@ from src.notification_bc.notification.application.services.notification_subscrib
 from src.notification_bc.notification.application.services.websocket_subscriber import (
     WebSocketSubscriber,
 )
+from src.notification_bc.notification.application.services.email_subscriber import (
+    EmailSubscriber,
+)
 from src.notification_bc.notification.infrastructure.repository import NotificationRepository
 
 _event_bus = EventBus()
@@ -21,6 +24,7 @@ _event_bus.subscribe(
         notification_repo_factory=NotificationRepository,
     )
 )
+_event_bus.subscribe(EmailSubscriber())
 
 
 def get_event_bus() -> EventBus:

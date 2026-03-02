@@ -293,12 +293,15 @@ def _verify_request_access(
 
 def _build_comment_response(
     comment_id: str, request_id: str, author_id: str, author_email: str, body: str,
+    author_name: str | None = None, author_role: str | None = None,
 ) -> dict:
     return CommentResponse(
         id=comment_id,
         request_id=request_id,
         author_id=author_id,
         author_email=author_email,
+        author_name=author_name,
+        author_role=author_role,
         body=body.strip(),
         created_at=datetime.now(timezone.utc),
     ).model_dump(mode="json")
@@ -306,12 +309,15 @@ def _build_comment_response(
 
 def _build_note_response(
     note_id: str, request_id: str, author_id: str, author_email: str, body: str,
+    author_name: str | None = None, author_role: str | None = None,
 ) -> dict:
     return NoteResponse(
         id=note_id,
         request_id=request_id,
         author_id=author_id,
         author_email=author_email,
+        author_name=author_name,
+        author_role=author_role,
         body=body.strip(),
         created_at=datetime.now(timezone.utc),
     ).model_dump(mode="json")
@@ -1055,6 +1061,7 @@ def add_comment(
     event_bus: EventBus = Depends(get_event_bus),
 ):
     sr = _verify_request_access(request_id, current_user.company_id, current_user, request_repo)
+    old_status = sr.status.value  # capture before command for auto-transition detection
     comment_id = str(ulid.new())
     handler = AddCommentCommandHandler(request_repo=request_repo)
     try:
@@ -1069,9 +1076,22 @@ def add_comment(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
 
-    event = RequestEventFactory.comment_added(sr, actor_id=current_user.id)
+    event = RequestEventFactory.comment_added(sr, actor_id=current_user.id, comment_body=body.body)
     event_bus.publish(event, db)
-    return {"data": _build_comment_response(comment_id, request_id, current_user.id, current_user.email, body.body)}
+
+    # Check for auto-transition (waiting_for_employee → in_progress) and publish event
+    sr_after = request_repo.find_by_id(request_id, current_user.company_id)
+    if sr_after and sr_after.status.value != old_status:
+        auto_event = RequestEventFactory.status_changed(
+            sr_after, old_status=old_status, new_status=sr_after.status.value,
+            actor_id=current_user.id,
+        )
+        event_bus.publish(auto_event, db)
+
+    return {"data": _build_comment_response(
+        comment_id, request_id, current_user.id, current_user.email, body.body,
+        author_name=_display_name(current_user), author_role=current_user.role.value,
+    )}
 
 
 @router.get("/{request_id}/comments")
@@ -1089,12 +1109,15 @@ def list_comments(
         )
     except ListCommentsRequestNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
-    email_map = _user_email_map(user_repo, [c.author_id for c in comments])
+    users = user_repo.find_by_ids([c.author_id for c in comments])
     return {
         "data": [
             CommentResponse(
                 id=c.id, request_id=c.request_id, author_id=c.author_id,
-                author_email=email_map.get(c.author_id), body=c.body, created_at=c.created_at,
+                author_email=users[c.author_id].email if c.author_id in users else None,
+                author_name=_display_name(users[c.author_id]) if c.author_id in users else None,
+                author_role=users[c.author_id].role.value if c.author_id in users else None,
+                body=c.body, created_at=c.created_at,
             ).model_dump(mode="json")
             for c in comments
         ]
@@ -1128,7 +1151,10 @@ def add_note(
     if sr:
         event = RequestEventFactory.note_added(sr, actor_id=current_user.id)
         event_bus.publish(event, db)
-    return {"data": _build_note_response(note_id, request_id, current_user.id, current_user.email, body.body)}
+    return {"data": _build_note_response(
+        note_id, request_id, current_user.id, current_user.email, body.body,
+        author_name=_display_name(current_user), author_role=current_user.role.value,
+    )}
 
 
 @router.get("/{request_id}/notes")
@@ -1145,12 +1171,15 @@ def list_notes(
         )
     except ListNotesRequestNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
-    email_map = _user_email_map(user_repo, [n.author_id for n in notes])
+    users = user_repo.find_by_ids([n.author_id for n in notes])
     return {
         "data": [
             NoteResponse(
                 id=n.id, request_id=n.request_id, author_id=n.author_id,
-                author_email=email_map.get(n.author_id), body=n.body, created_at=n.created_at,
+                author_email=users[n.author_id].email if n.author_id in users else None,
+                author_name=_display_name(users[n.author_id]) if n.author_id in users else None,
+                author_role=users[n.author_id].role.value if n.author_id in users else None,
+                body=n.body, created_at=n.created_at,
             ).model_dump(mode="json")
             for n in notes
         ]

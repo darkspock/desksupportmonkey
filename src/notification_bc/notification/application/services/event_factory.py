@@ -33,6 +33,7 @@ class RequestEventFactory:
             "assigned_to": request.assigned_to,
             "old_status": old_status,
             "new_status": new_status,
+            "title": request.title,
         }
         if reason:
             payload["reason"] = reason
@@ -80,7 +81,10 @@ class RequestEventFactory:
         )
 
     @staticmethod
-    def comment_added(request: ServiceRequest, actor_id: str) -> DomainEvent:
+    def comment_added(
+        request: ServiceRequest, actor_id: str,
+        comment_body: str = "",
+    ) -> DomainEvent:
         return DomainEvent(
             event_type=EventType.REQUEST_COMMENT_ADDED,
             company_id=request.company_id,
@@ -89,6 +93,8 @@ class RequestEventFactory:
                 "request_id": request.id,
                 "created_by": request.created_by,
                 "assigned_to": request.assigned_to,
+                "title": request.title,
+                "comment_body": comment_body,
             },
             title="New comment",
             body=f"Comment on: {request.title}",

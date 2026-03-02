@@ -368,19 +368,19 @@ MCP_SSE_PATH=/mcp/sse              # SSE endpoint path
 
 ## Definition of Done
 
-- [ ] `mcp` Python SDK added to dependencies
-- [ ] `api_keys` table created via Alembic migration
-- [ ] API key CRUD endpoints implemented and tested
-- [ ] MCP server boots in both SSE and stdio modes
-- [ ] All 57 existing endpoints exposed as MCP tools (+ 3 API key tools = 60 total)
-- [ ] Role-based tool filtering verified for all 4 roles
-- [ ] Multi-tenant isolation verified (company_id scoping)
-- [ ] Authentication via API key works end-to-end
-- [ ] Error handling maps domain exceptions to MCP error responses
-- [ ] Unit tests for API key BC and tool registration
-- [ ] Integration tests for end-to-end MCP tool calls
-- [ ] Tested with at least one MCP client (Claude Desktop or Cursor)
-- [ ] `make test` and `make lint` pass
-- [ ] Frontend API Keys page for admin users (create, list, revoke)
-- [ ] Documentation updated (README, .env.example)
-- [ ] Zero changes to existing HTTP adapter, domain, or application code
+- [x] `mcp` Python SDK added to dependencies
+- [x] `api_keys` table created via Alembic migration
+- [x] API key CRUD endpoints implemented and tested
+- [x] MCP server boots in both SSE and stdio modes
+- [x] All 57 existing endpoints exposed as MCP tools (+ 3 API key tools = 60 total)
+- [x] Role-based tool filtering verified for all 4 roles
+- [x] Multi-tenant isolation verified (company_id scoping)
+- [x] Authentication via API key works end-to-end
+- [x] Error handling maps domain exceptions to MCP error responses
+- [x] Unit tests for API key BC and tool registration
+- [x] Integration tests for end-to-end MCP tool calls
+- [x] Tested with at least one MCP client (Claude Desktop or Cursor)
+- [x] `make test` and `make lint` pass
+- [x] Frontend API Keys page for admin users (create, list, revoke)
+- [x] Documentation updated (README, .env.example)
+- [x] Zero changes to existing HTTP adapter, domain, or application code

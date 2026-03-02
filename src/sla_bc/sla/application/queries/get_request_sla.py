@@ -153,16 +153,25 @@ class GetRequestSlaStatusQueryHandler(
         else:
             response_elapsed = (now - created).total_seconds() / 3600
 
-        # Resolution time
+        # Resolution time (subtract SLA paused time)
+        paused_seconds = request.sla_paused_total_seconds or 0
+        if request.sla_paused_at:
+            sla_paused_at = request.sla_paused_at
+            if sla_paused_at.tzinfo is None:
+                sla_paused_at = sla_paused_at.replace(tzinfo=timezone.utc)
+            paused_seconds += int((now - sla_paused_at).total_seconds())
+
         if request.resolved_at:
             resolution_elapsed = (
-                request.resolved_at - created
-            ).total_seconds() / 3600
+                (request.resolved_at - created).total_seconds() - paused_seconds
+            ) / 3600
         else:
-            resolution_elapsed = (now - created).total_seconds() / 3600
+            resolution_elapsed = (
+                (now - created).total_seconds() - paused_seconds
+            ) / 3600
 
         response_elapsed = round(response_elapsed, 2)
-        resolution_elapsed = round(resolution_elapsed, 2)
+        resolution_elapsed = max(0, round(resolution_elapsed, 2))
 
         # Determine response status
         warning_pct = policy.warning_threshold_pct / 100

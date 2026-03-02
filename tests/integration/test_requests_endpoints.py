@@ -546,3 +546,202 @@ class TestNotes:
 
         assert resp.status_code == 200
         assert len(resp.json()["data"]) == 2
+
+
+# ── E53-F1: Waiting for employee status ────────────────────────
+
+def _advance_to_in_progress(client, auth_as, employee_user, technician_user):
+    """Helper: create a request and advance it to in_progress."""
+    auth_as(employee_user)
+    create_resp = _create_request(client, title="Waiting test")
+    req_id = create_resp.json()["data"]["id"]
+
+    auth_as(technician_user)
+    client.patch(f"/api/v1/requests/{req_id}/status", json={"status": "in_review"})
+    client.patch(f"/api/v1/requests/{req_id}/status", json={"status": "in_progress"})
+    return req_id
+
+
+class TestWaitingForEmployeeStatus:
+    def test_transition_to_waiting_for_employee(self, client, auth_as, employee_user, technician_user):
+        req_id = _advance_to_in_progress(client, auth_as, employee_user, technician_user)
+
+        resp = client.patch(f"/api/v1/requests/{req_id}/status", json={"status": "waiting_for_employee"})
+
+        assert resp.status_code == 200
+        assert resp.json()["data"]["status"] == "waiting_for_employee"
+
+    def test_invalid_transition_submitted_to_waiting(self, client, auth_as, employee_user, technician_user):
+        auth_as(employee_user)
+        create_resp = _create_request(client, title="Invalid transition test")
+        req_id = create_resp.json()["data"]["id"]
+
+        auth_as(technician_user)
+        resp = client.patch(f"/api/v1/requests/{req_id}/status", json={"status": "waiting_for_employee"})
+
+        assert resp.status_code == 409
+
+    def test_comment_auto_transitions_from_waiting(self, client, auth_as, employee_user, technician_user):
+        req_id = _advance_to_in_progress(client, auth_as, employee_user, technician_user)
+        client.patch(f"/api/v1/requests/{req_id}/status", json={"status": "waiting_for_employee"})
+
+        # Employee adds a comment
+        auth_as(employee_user)
+        resp = client.post(f"/api/v1/requests/{req_id}/comments", json={"body": "Here is the info"})
+        assert resp.status_code == 201
+
+        # Verify status auto-transitioned
+        auth_as(technician_user)
+        get_resp = client.get(f"/api/v1/requests/{req_id}")
+        assert get_resp.status_code == 200
+        assert get_resp.json()["data"]["status"] == "in_progress"
+
+    def test_filter_by_waiting_for_employee(self, client, auth_as, employee_user, technician_user):
+        req_id = _advance_to_in_progress(client, auth_as, employee_user, technician_user)
+        client.patch(f"/api/v1/requests/{req_id}/status", json={"status": "waiting_for_employee"})
+
+        resp = client.get("/api/v1/requests?status=waiting_for_employee")
+
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert any(r["id"] == req_id for r in data)
+        assert all(r["status"] == "waiting_for_employee" for r in data)
+
+    def test_auto_transition_creates_status_changed_event(self, client, auth_as, employee_user, technician_user):
+        req_id = _advance_to_in_progress(client, auth_as, employee_user, technician_user)
+        client.patch(f"/api/v1/requests/{req_id}/status", json={"status": "waiting_for_employee"})
+
+        auth_as(employee_user)
+        client.post(f"/api/v1/requests/{req_id}/comments", json={"body": "Replying"})
+
+        auth_as(technician_user)
+        events_resp = client.get(f"/api/v1/requests/{req_id}/events")
+        assert events_resp.status_code == 200
+        events = events_resp.json()["data"]
+        auto_events = [
+            e for e in events
+            if e["event_type"] == "status_changed"
+            and (e.get("data") or {}).get("old_status") == "waiting_for_employee"
+            and (e.get("data") or {}).get("new_status") == "in_progress"
+        ]
+        assert len(auto_events) >= 1
+
+
+class TestEmailNotifications:
+    @pytest.fixture(autouse=True)
+    def _email_bus(self, client):
+        """Override the no-op EventBus with one that has EmailSubscriber registered."""
+        from adapters.http.api.dependencies import get_event_bus
+        from src.notification_bc.notification.application.services.event_bus import EventBus
+        from src.notification_bc.notification.application.services.email_subscriber import (
+            EmailSubscriber,
+        )
+
+        bus = EventBus()
+        bus.subscribe(EmailSubscriber())
+        client.app.dependency_overrides[get_event_bus] = lambda: bus
+        yield
+        # Restore no-op bus so other tests are unaffected
+        client.app.dependency_overrides[get_event_bus] = lambda: EventBus()
+
+    def test_technician_comment_enqueues_email_for_employee(
+        self, client, auth_as, employee_user, technician_user,
+    ):
+        """Technician comments on request -> email task enqueued for the employee."""
+        auth_as(employee_user)
+        create_resp = _create_request(client, title="Email test request")
+        req_id = create_resp.json()["data"]["id"]
+
+        auth_as(technician_user)
+        client.patch(f"/api/v1/requests/{req_id}/assign", json={"user_id": technician_user.id})
+
+        from unittest.mock import patch
+        with patch(
+            "core.tasks.email_notifications.send_request_notification_email.delay"
+        ) as mock_delay:
+            resp = client.post(
+                f"/api/v1/requests/{req_id}/comments",
+                json={"body": "Please provide more info"},
+            )
+
+            assert resp.status_code == 201
+            mock_delay.assert_called_once()
+            call_kwargs = mock_delay.call_args[1]
+            assert call_kwargs["to_email"] == employee_user.email
+            assert call_kwargs["variant"] == "comment"
+            assert call_kwargs["comment_body"] == "Please provide more info"
+
+    def test_waiting_status_enqueues_action_required_email(
+        self, client, auth_as, employee_user, technician_user,
+    ):
+        """Setting status to waiting_for_employee -> email task with action_required variant."""
+        req_id = _advance_to_in_progress(client, auth_as, employee_user, technician_user)
+
+        from unittest.mock import patch
+        with patch(
+            "core.tasks.email_notifications.send_request_notification_email.delay"
+        ) as mock_delay:
+            resp = client.patch(
+                f"/api/v1/requests/{req_id}/status",
+                json={"status": "waiting_for_employee"},
+            )
+
+            assert resp.status_code == 200
+            # Find the action_required call (there may also be a notification subscriber call)
+            action_calls = [
+                c for c in mock_delay.call_args_list
+                if c[1].get("variant") == "action_required"
+            ]
+            assert len(action_calls) == 1
+            assert action_calls[0][1]["to_email"] == employee_user.email
+
+    def test_employee_comment_no_technician_no_email(
+        self, client, auth_as, employee_user,
+    ):
+        """Employee comments on unassigned request -> no email task enqueued."""
+        auth_as(employee_user)
+        create_resp = _create_request(client, title="Unassigned request")
+        req_id = create_resp.json()["data"]["id"]
+
+        from unittest.mock import patch
+        with patch(
+            "core.tasks.email_notifications.send_request_notification_email.delay"
+        ) as mock_delay:
+            resp = client.post(
+                f"/api/v1/requests/{req_id}/comments",
+                json={"body": "Any update?"},
+            )
+
+            assert resp.status_code == 201
+            mock_delay.assert_not_called()
+
+
+class TestCommentResponseEnrichment:
+    def test_list_comments_includes_author_name_and_role(
+        self, client, auth_as, employee_user,
+    ):
+        """GET comments returns author_name and author_role."""
+        auth_as(employee_user)
+        create_resp = _create_request(client, title="Enrichment test")
+        req_id = create_resp.json()["data"]["id"]
+        client.post(f"/api/v1/requests/{req_id}/comments", json={"body": "Test"})
+
+        resp = client.get(f"/api/v1/requests/{req_id}/comments")
+        assert resp.status_code == 200
+        comment = resp.json()["data"][0]
+        assert "author_name" in comment
+        assert comment["author_role"] == "employee"
+
+    def test_add_comment_returns_author_name_and_role(
+        self, client, auth_as, employee_user,
+    ):
+        """POST comment returns author_name and author_role of current user."""
+        auth_as(employee_user)
+        create_resp = _create_request(client, title="Enrichment test")
+        req_id = create_resp.json()["data"]["id"]
+
+        resp = client.post(f"/api/v1/requests/{req_id}/comments", json={"body": "Test"})
+        assert resp.status_code == 201
+        data = resp.json()["data"]
+        assert data["author_role"] == "employee"
+        assert "author_name" in data

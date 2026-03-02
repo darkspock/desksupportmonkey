@@ -216,7 +216,7 @@ export default function RequestQueuePage() {
     return {
       total: statsData?.meta?.total ?? 0,
       open: all.filter(r => r.status === 'submitted' || r.status === 'in_review' || r.status === 'pending_approval').length,
-      in_progress: all.filter(r => r.status === 'in_progress').length,
+      in_progress: all.filter(r => r.status === 'in_progress' || r.status === 'waiting_for_employee').length,
       resolved: all.filter(r => r.status === 'resolved').length,
       rejected: all.filter(r => r.status === 'rejected').length,
     };
@@ -272,7 +272,7 @@ export default function RequestQueuePage() {
     ];
 
     const isUnassigned = !r.assigned_to;
-    const canAssign = ['submitted', 'in_review', 'in_progress'].includes(r.status);
+    const canAssign = ['submitted', 'in_review', 'in_progress', 'waiting_for_employee'].includes(r.status);
 
     if (isUnassigned && canAssign) {
       actions.push({
@@ -335,7 +335,7 @@ export default function RequestQueuePage() {
     {
       key: 'in_progress' as const,
       title: t('page.request_queue.kanban_in_progress'),
-      items: kanbanRequests.filter((r) => r.status === 'in_progress'),
+      items: kanbanRequests.filter((r) => r.status === 'in_progress' || r.status === 'waiting_for_employee'),
     },
     {
       key: 'finalized' as const,
@@ -344,7 +344,7 @@ export default function RequestQueuePage() {
     },
   ]), [kanbanRequests, t]);
 
-  const canAssignRequest = (r: ServiceRequest) => !r.assigned_to && ['submitted', 'in_review', 'in_progress'].includes(r.status);
+  const canAssignRequest = (r: ServiceRequest) => !r.assigned_to && ['submitted', 'in_review', 'in_progress', 'waiting_for_employee'].includes(r.status);
 
   const getDraggedRequest = () => kanbanRequests.find((r) => r.id === draggedRequestId);
 
@@ -500,6 +500,7 @@ export default function RequestQueuePage() {
               <option value="submitted">{t('enum.submitted')}</option>
               <option value="in_review">{t('enum.in_review')}</option>
               <option value="in_progress">{t('enum.in_progress')}</option>
+              <option value="waiting_for_employee">{t('enum.waiting_for_employee')}</option>
               <option value="resolved">{t('enum.resolved')}</option>
               <option value="rejected">{t('enum.rejected')}</option>
             </select>

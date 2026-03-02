@@ -19,7 +19,7 @@ export function Badge({ children, variant = 'default', className }: { children: 
 }
 
 const statusColors: Record<string, string> = {
-  submitted: 'info', in_review: 'warning', in_progress: 'purple', resolved: 'success', rejected: 'danger',
+  submitted: 'info', in_review: 'warning', in_progress: 'purple', waiting_for_employee: 'warning', resolved: 'success', rejected: 'danger',
   in_stock: 'success', assigned: 'info', in_repair: 'warning', decommissioned: 'default',
   active: 'success', suspended: 'warning', deactivated: 'danger',
   pending: 'warning', processing: 'info', completed: 'success', failed: 'danger',

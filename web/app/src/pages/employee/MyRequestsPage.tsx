@@ -72,7 +72,7 @@ export default function MyRequestsPage() {
                 {data.data.map((r) => (
                   <Tr key={r.id}>
                     <Td className="pl-4">
-                      <Link to={`/requests/${r.id}`} className="text-primary hover:underline">
+                      <Link to={`/my/requests/${r.id}`} className="text-primary hover:underline">
                         {r.title}
                       </Link>
                     </Td>

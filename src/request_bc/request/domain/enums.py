@@ -68,6 +68,7 @@ class RequestStatus(str, Enum):
     SUBMITTED = "submitted"
     IN_REVIEW = "in_review"
     IN_PROGRESS = "in_progress"
+    WAITING_FOR_EMPLOYEE = "waiting_for_employee"
     RESOLVED = "resolved"
     REJECTED = "rejected"
 
@@ -83,7 +84,8 @@ VALID_STATUS_TRANSITIONS: dict[RequestStatus, list[RequestStatus]] = {
     RequestStatus.PENDING_APPROVAL: [RequestStatus.SUBMITTED, RequestStatus.REJECTED],
     RequestStatus.SUBMITTED: [RequestStatus.IN_REVIEW],
     RequestStatus.IN_REVIEW: [RequestStatus.IN_PROGRESS, RequestStatus.REJECTED],
-    RequestStatus.IN_PROGRESS: [RequestStatus.RESOLVED, RequestStatus.IN_REVIEW, RequestStatus.REJECTED],
+    RequestStatus.IN_PROGRESS: [RequestStatus.RESOLVED, RequestStatus.IN_REVIEW, RequestStatus.REJECTED, RequestStatus.WAITING_FOR_EMPLOYEE],
+    RequestStatus.WAITING_FOR_EMPLOYEE: [RequestStatus.IN_PROGRESS, RequestStatus.RESOLVED, RequestStatus.REJECTED],
     RequestStatus.RESOLVED: [RequestStatus.IN_PROGRESS],
     RequestStatus.REJECTED: [RequestStatus.SUBMITTED, RequestStatus.IN_REVIEW, RequestStatus.IN_PROGRESS],
 }

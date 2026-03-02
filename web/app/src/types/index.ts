@@ -161,7 +161,7 @@ export interface AssignableUser {
 
 // Request
 export type RequestType = 'incident' | 'new_equipment' | 'onboarding' | 'repair' | 'configuration' | 'access_request';
-export type RequestStatus = 'pending_approval' | 'submitted' | 'in_review' | 'in_progress' | 'resolved' | 'rejected';
+export type RequestStatus = 'pending_approval' | 'submitted' | 'in_review' | 'in_progress' | 'waiting_for_employee' | 'resolved' | 'rejected';
 export type RequestPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type RequestSubtype =
   | 'hardware' | 'software' | 'network' | 'security' | 'other'
@@ -209,6 +209,8 @@ export interface Comment {
   request_id: string;
   author_id: string;
   author_email?: string | null;
+  author_name?: string | null;
+  author_role?: string | null;
   body: string;
   created_at: string;
 }
@@ -218,6 +220,8 @@ export interface Note {
   request_id: string;
   author_id: string;
   author_email?: string | null;
+  author_name?: string | null;
+  author_role?: string | null;
   body: string;
   created_at: string;
 }

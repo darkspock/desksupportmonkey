@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Optional
 
-from sqlalchemy import DateTime, ForeignKey, Index, JSON, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, JSON, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.base import Base
@@ -26,6 +26,8 @@ class ServiceRequestModel(ULIDMixin, TimestampMixin, Base):
     workflow_subtype_id: Mapped[Optional[str]] = mapped_column(String(26), nullable=True)
     resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     first_response_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    sla_paused_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    sla_paused_total_seconds: Mapped[int] = mapped_column(Integer, server_default="0", nullable=False)
 
     __table_args__ = (
         Index("ix_service_requests_company_status", "company_id", "status"),

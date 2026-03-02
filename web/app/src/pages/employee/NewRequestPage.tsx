@@ -88,7 +88,7 @@ export default function NewRequestPage() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['my-requests'] });
-      navigate(`/requests/${data.id}`);
+      navigate(`/my/requests/${data.id}`);
     },
     onError: (err: unknown) => {
       showError(

@@ -30,7 +30,7 @@ class TestCountByStatus:
         session.execute.return_value.all.return_value = []
         result = repo.count_by_status("comp1")
         assert all(v == 0 for v in result.values())
-        assert len(result) == 6  # pending_approval, submitted, in_review, in_progress, resolved, rejected
+        assert len(result) == 7  # pending_approval, submitted, in_review, in_progress, waiting_for_employee, resolved, rejected
 
 
 class TestCountByType:

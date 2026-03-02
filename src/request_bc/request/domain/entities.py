@@ -31,6 +31,8 @@ class ServiceRequest:
     workflow_subtype_id: Optional[str] = None
     resolved_at: Optional[datetime] = None
     first_response_at: Optional[datetime] = None
+    sla_paused_at: Optional[datetime] = None
+    sla_paused_total_seconds: int = 0
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -77,7 +79,22 @@ class ServiceRequest:
         allowed = VALID_STATUS_TRANSITIONS.get(self.status, [])
         if new_status not in allowed:
             raise InvalidStatusTransitionError(self.status, new_status)
+
+        # SLA clock: accumulate paused time when LEAVING waiting_for_employee
+        if self.status == RequestStatus.WAITING_FOR_EMPLOYEE and self.sla_paused_at:
+            paused_at = self.sla_paused_at
+            if paused_at.tzinfo is None:
+                paused_at = paused_at.replace(tzinfo=timezone.utc)
+            elapsed = (datetime.now(timezone.utc) - paused_at).total_seconds()
+            self.sla_paused_total_seconds = (self.sla_paused_total_seconds or 0) + int(elapsed)
+            self.sla_paused_at = None
+
         self.status = new_status
+
+        # SLA clock: start pausing when ENTERING waiting_for_employee
+        if new_status == RequestStatus.WAITING_FOR_EMPLOYEE:
+            self.sla_paused_at = datetime.now(timezone.utc)
+
         if new_status in (RequestStatus.RESOLVED, RequestStatus.REJECTED):
             self.resolved_at = datetime.now(timezone.utc)
 

@@ -1,0 +1,26 @@
+<html>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 20px; background-color: #f5f5f5;">
+    <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 12px 16px; margin-bottom: 24px;">
+            <strong style="color: #92400e;">Action required</strong>
+        </div>
+        <h2 style="margin-top: 0; color: #1a1a1a;">Your response is needed</h2>
+        <p style="color: #4a4a4a;">Hi {{ to_name }},</p>
+        <p style="color: #4a4a4a;"><strong>{{ actor_name }}</strong> is waiting for your response on <strong>{{ request_title }}</strong>.</p>
+        {% if comment_body %}
+        <div style="background: #f8f9fa; border-left: 4px solid #f59e0b; padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0;">
+            <p style="margin: 0; color: #333; white-space: pre-wrap;">{{ comment_body }}</p>
+        </div>
+        {% endif %}
+        <p style="color: #4a4a4a;">Please reply so the technician can continue working on your request.</p>
+        <p>
+            <a href="{{ request_url }}" style="display: inline-block; padding: 12px 24px; background-color: #f59e0b; color: #1a1a1a; text-decoration: none; border-radius: 6px; font-weight: 600;">
+                Reply in {{ brand_name }}
+            </a>
+        </p>
+        <p style="color: #999; font-size: 12px; margin-top: 32px; border-top: 1px solid #eee; padding-top: 16px;">
+            This email was sent by {{ brand_name }}. You received this because a technician needs your input on a support request.
+        </p>
+    </div>
+</body>
+</html>

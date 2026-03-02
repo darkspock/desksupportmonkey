@@ -61,6 +61,8 @@ class CommentResponse(BaseModel):
     request_id: str
     author_id: str
     author_email: Optional[str] = None
+    author_name: Optional[str] = None
+    author_role: Optional[str] = None
     body: str
     created_at: Optional[datetime] = None
 
@@ -70,6 +72,8 @@ class NoteResponse(BaseModel):
     request_id: str
     author_id: str
     author_email: Optional[str] = None
+    author_name: Optional[str] = None
+    author_role: Optional[str] = None
     body: str
     created_at: Optional[datetime] = None
 

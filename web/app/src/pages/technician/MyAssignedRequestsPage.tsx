@@ -11,7 +11,7 @@ import { formatDate } from '../../lib/date';
 import { humanizeToken, useI18n } from '../../lib/i18n';
 import type { ServiceRequest, PaginatedResponse } from '../../types';
 
-const STATUS_TABS = ['all', 'in_progress', 'in_review', 'submitted', 'resolved', 'rejected'] as const;
+const STATUS_TABS = ['all', 'in_progress', 'waiting_for_employee', 'in_review', 'submitted', 'resolved', 'rejected'] as const;
 
 export default function MyAssignedRequestsPage() {
   const { t } = useI18n();

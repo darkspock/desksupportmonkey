@@ -35,6 +35,8 @@ class RequestRepository(RequestRepositoryInterface):
             existing.priority = request.priority.value
             existing.resolved_at = request.resolved_at
             existing.first_response_at = request.first_response_at
+            existing.sla_paused_at = request.sla_paused_at
+            existing.sla_paused_total_seconds = request.sla_paused_total_seconds
             existing.data = request.data
             existing.custom_fields_data = request.custom_fields_data or {}
         else:
@@ -381,6 +383,7 @@ class RequestRepository(RequestRepositoryInterface):
                 RequestStatus.SUBMITTED.value,
                 RequestStatus.IN_REVIEW.value,
                 RequestStatus.IN_PROGRESS.value,
+                RequestStatus.WAITING_FOR_EMPLOYEE.value,
             ]),
         ).order_by(
             (extract("epoch", func.now() - ServiceRequestModel.created_at) / 3600).desc()
@@ -402,7 +405,7 @@ class RequestRepository(RequestRepositoryInterface):
 
     def queue_counts(self, company_id: str) -> dict[str, int]:
         """Return counts of open requests: total and urgent."""
-        open_statuses = ["submitted", "in_review", "in_progress"]
+        open_statuses = ["submitted", "in_review", "in_progress", "waiting_for_employee"]
         base = select(func.count()).where(
             ServiceRequestModel.company_id == company_id,
             ServiceRequestModel.status.in_(open_statuses),
@@ -432,6 +435,8 @@ class RequestRepository(RequestRepositoryInterface):
             workflow_subtype_id=model.workflow_subtype_id,
             resolved_at=model.resolved_at,
             first_response_at=model.first_response_at,
+            sla_paused_at=model.sla_paused_at,
+            sla_paused_total_seconds=model.sla_paused_total_seconds or 0,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )

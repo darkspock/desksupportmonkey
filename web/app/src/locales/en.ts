@@ -176,6 +176,7 @@ const en: Record<string, string> = {
   'enum.submitted': 'Pending',
   'enum.in_review': 'In Review',
   'enum.in_progress': 'In Progress',
+  'enum.waiting_for_employee': 'Waiting for employee',
   'enum.resolved': 'Resolved',
   'enum.rejected': 'Rejected',
   'enum.in_stock': 'In Stock',
@@ -765,6 +766,19 @@ const en: Record<string, string> = {
   'page.request_detail.department_weight': 'Department weight',
   'page.request_detail.role_weight': 'Role weight',
   'page.request_detail.raw_score': 'Raw score',
+
+  // E53: Conversation UX
+  'page.request_detail.role_employee': 'Employee',
+  'page.request_detail.role_technician': 'Technician',
+  'page.request_detail.role_admin': 'Admin',
+  'page.request_detail.waiting_banner_employee': 'The technician is waiting for your reply',
+  'page.request_detail.waiting_banner_tech': 'Waiting for the employee to reply',
+  'page.request_detail.waiting_dialog_title': 'Set as waiting for employee',
+  'page.request_detail.waiting_dialog_description': 'The employee will be notified that you need their response.',
+  'page.request_detail.waiting_dialog_placeholder': 'What do you need from the employee?',
+  'page.request_detail.waiting_dialog_confirm': 'Set as waiting',
+  'date.today': 'Today',
+  'date.yesterday': 'Yesterday',
 
   // E12: Request queue
   'page.request_queue.all_subtypes': 'All subtypes',

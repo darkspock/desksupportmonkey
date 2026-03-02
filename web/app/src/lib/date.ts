@@ -18,6 +18,25 @@ export function formatDate(value: string | Date | null | undefined): string {
   return `${year}/${month}/${day}`;
 }
 
+export function formatRelativeDate(
+  value: string | Date | null | undefined,
+  t: (key: string) => string,
+): string {
+  if (!value) return '';
+  const date = parseDate(value);
+  if (!date) return '';
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffDays = Math.floor((today.getTime() - target.getTime()) / 86400000);
+
+  if (diffDays === 0) return t('date.today');
+  if (diffDays === 1) return t('date.yesterday');
+
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
 export function formatDateTime(value: string | Date | null | undefined): string {
   if (!value) return '-';
   const date = parseDate(value);

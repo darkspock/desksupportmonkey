@@ -98,7 +98,7 @@ export default function MyAppointmentsPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Link
-                          to={`/requests/${a.request_id}`}
+                          to={`/my/requests/${a.request_id}`}
                           className="text-xs text-primary hover:underline"
                         >
                           {t('table.details')}
@@ -138,7 +138,7 @@ export default function MyAppointmentsPage() {
                         </Badge>
                       </div>
                       <Link
-                        to={`/requests/${a.request_id}`}
+                        to={`/my/requests/${a.request_id}`}
                         className="text-xs text-primary hover:underline"
                       >
                         {t('table.details')}

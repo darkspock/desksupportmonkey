@@ -55,6 +55,8 @@
 | E49 | Asset Checkout & Custody | Equipment checkout lifecycle — technician-initiated checkout with condition tracking, employee acceptance flow, auto-GDPR-sanitization maintenance on checkin, cancel with auto-revert, custody dashboard widgets, checkout history on asset detail | High | Done |
 | E50 | Onboarding Wizard | 4-step admin onboarding wizard (sector selection, compliance framework recommendations, module activation, summary) — post-login redirect for new companies, sector-based framework suggestions, nav visibility toggling for deselected modules, re-run from company settings | High | Done |
 | E51 | Contextual Help System | Floating help button with slide-in panel showing page-specific guidance and support contact — route-aware content, i18n support (EN/ES), bottom padding for scroll clearance | Medium | Done |
+| E52 | MCP Server Update | Expand MCP tool coverage from 60 to ~209 tools — add KB, incidents, SLA, CMDB, vulnerabilities, changes, risks, checkouts, audit, custom fields, procurement, vendors, maintenance, shipping, scheduling, and workflows. 3-phase rollout by priority | High | Pending |
+| E53 | Request Conversation & Email Notifications | Bidirectional messaging with email notifications on comments, new "waiting for employee" status that pauses SLA clock, auto-transition on employee reply, conversation-style UI with chat bubbles, and deep-link emails to request detail | High | Done |
 
 ---
 

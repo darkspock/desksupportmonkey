@@ -9,7 +9,7 @@ import { Badge, StatusBadge } from '../../components/ui/Badge';
 import { EmployeeSearchSelect } from '../../components/ui/EmployeeSearchSelect';
 import { CustomFieldsDisplay } from '../../components/custom-fields/CustomFieldsDisplay';
 import { useToast } from '../../hooks/useToast';
-import { formatDateTime } from '../../lib/date';
+import { formatDateTime, formatRelativeDate } from '../../lib/date';
 import { humanizeToken, useI18n } from '../../lib/i18n';
 import { WorkflowIcon } from '../../components/ui/WorkflowIcon';
 import { ClipboardList, ChevronRight, Trash2 } from 'lucide-react';
@@ -530,6 +530,8 @@ export default function RequestDetailPage() {
   const [showReopenForm, setShowReopenForm] = useState(false);
   const [assignUserId, setAssignUserId] = useState('');
   const [newChecklistItem, setNewChecklistItem] = useState('');
+  const [showWaitingDialog, setShowWaitingDialog] = useState(false);
+  const [waitingMessage, setWaitingMessage] = useState('');
   const [showBooking, setShowBooking] = useState(false);
   const [bookingDate, setBookingDate] = useState('');
   const [bookingSlot, setBookingSlot] = useState('');
@@ -728,7 +730,8 @@ export default function RequestDetailPage() {
   const statusActions: Record<string, string[]> = {
     submitted: ['in_review', 'rejected'],
     in_review: ['in_progress', 'rejected'],
-    in_progress: ['resolved', 'rejected'],
+    in_progress: ['resolved', 'rejected', 'waiting_for_employee'],
+    waiting_for_employee: ['in_progress', 'resolved', 'rejected'],
   };
   const nextStatuses = statusActions[request.status] || [];
 
@@ -748,6 +751,7 @@ export default function RequestDetailPage() {
     submitted: 'in_review',
     in_review: 'in_progress',
     in_progress: 'resolved',
+    waiting_for_employee: 'in_progress',
   };
   const userNextStatus = userNextStatusByFlow[request.status];
   const isPendingApproval = request.status === 'pending_approval';
@@ -782,7 +786,7 @@ export default function RequestDetailPage() {
         events={requestEvents}
         t={t}
         allowedTransitions={isTech ? nextStatuses.filter((s) => s !== 'rejected') : undefined}
-        onStatusClick={isTech ? (status) => changeStatus.mutate({ status }) : undefined}
+        onStatusClick={isTech ? (s) => s === 'waiting_for_employee' ? setShowWaitingDialog(true) : changeStatus.mutate({ status: s }) : undefined}
       />
 
       {/* Two-column layout */}
@@ -874,7 +878,8 @@ export default function RequestDetailPage() {
                       )}
                     </button>
                     <span
-                      className={`flex-1 text-sm ${
+                      onClick={() => toggleChecklistItem.mutate(item.id)}
+                      className={`flex-1 text-sm cursor-pointer select-none ${
                         item.is_completed
                           ? 'line-through text-muted-foreground'
                           : 'text-foreground'
@@ -931,27 +936,57 @@ export default function RequestDetailPage() {
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-foreground">{t('page.request_detail.comments')}</h2>
 
+            {/* Waiting banner */}
+            {request.status === 'waiting_for_employee' && (
+              <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/50 px-4 py-3">
+                <svg viewBox="0 0 24 24" className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                  {isTech ? t('page.request_detail.waiting_banner_tech') : t('page.request_detail.waiting_banner_employee')}
+                </span>
+              </div>
+            )}
+
             {comments?.length ? (
-              <div className="space-y-4">
-                {comments.map((c) => {
-                  const initials = (c.author_email || c.author_id || '?')
-                    .split('@')[0]
-                    .split('.')
-                    .map((part) => part[0]?.toUpperCase() ?? '')
-                    .join('')
-                    .slice(0, 2);
+              <div className="space-y-3">
+                {comments.map((c, idx) => {
+                  const isEmployee = c.author_role === 'employee';
+                  const displayName = c.author_name || c.author_email?.split('@')[0] || c.author_id;
+                  const nameParts = displayName.split(/[\s.]+/);
+                  const initials = nameParts.map((p) => p[0]?.toUpperCase() ?? '').join('').slice(0, 2);
+
+                  const roleKey = c.author_role === 'employee' ? 'role_employee'
+                    : c.author_role === 'admin' || c.author_role === 'super_admin' ? 'role_admin'
+                    : 'role_technician';
+
+                  // Date separator
+                  const prevDate = idx > 0 ? comments[idx - 1].created_at?.split('T')[0] : null;
+                  const curDate = c.created_at?.split('T')[0] ?? '';
+                  const showDateSep = idx === 0 || curDate !== prevDate;
+
                   return (
-                    <div key={c.id} className="flex gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                        <span className="text-xs font-medium text-primary">{initials}</span>
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-sm font-medium text-foreground">{c.author_email || c.author_id}</span>
-                          <span className="text-xs text-muted-foreground">{formatDateTime(c.created_at)}</span>
+                    <div key={c.id}>
+                      {showDateSep && (
+                        <div className="flex items-center gap-3 my-4">
+                          <div className="flex-1 h-px bg-border" />
+                          <span className="text-xs font-medium text-muted-foreground">{formatRelativeDate(c.created_at, t)}</span>
+                          <div className="flex-1 h-px bg-border" />
                         </div>
-                        <div className="rounded-lg border border-border bg-card p-3">
-                          <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{c.body}</p>
+                      )}
+                      <div className={`flex gap-3 ${isEmployee ? 'flex-row-reverse' : ''}`}>
+                        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${isEmployee ? 'bg-muted' : 'bg-primary/10'}`}>
+                          <span className={`text-xs font-medium ${isEmployee ? 'text-muted-foreground' : 'text-primary'}`}>{initials}</span>
+                        </div>
+                        <div className={`max-w-[80%] space-y-1 ${isEmployee ? 'items-end' : ''}`}>
+                          <div className={`flex items-baseline gap-2 ${isEmployee ? 'flex-row-reverse' : ''}`}>
+                            <span className="text-sm font-medium text-foreground">{displayName}</span>
+                            <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ${isEmployee ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary'}`}>
+                              {t(`page.request_detail.${roleKey}`)}
+                            </span>
+                            <span className="text-xs text-muted-foreground">{formatDateTime(c.created_at)}</span>
+                          </div>
+                          <div className={`rounded-lg border p-3 ${isEmployee ? 'bg-muted/50 border-border' : 'bg-primary/5 border-primary/20'}`}>
+                            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{c.body}</p>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -969,7 +1004,7 @@ export default function RequestDetailPage() {
                 onChange={(e) => setCommentBody(e.target.value)}
                 placeholder={t('page.request_detail.add_comment')}
                 rows={4}
-                className="w-full resize-none"
+                className={`w-full resize-none ${request.status === 'waiting_for_employee' && !isTech ? 'ring-2 ring-amber-400 border-amber-400' : ''}`}
               />
               <div className="flex justify-end">
                 <button
@@ -1059,7 +1094,7 @@ export default function RequestDetailPage() {
                     <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     {isTech ? (
                       <button
-                        onClick={() => reopenTarget ? setShowReopenForm(true) : changeStatus.mutate({ status: primaryNext })}
+                        onClick={() => reopenTarget ? setShowReopenForm(true) : primaryNext === 'waiting_for_employee' ? setShowWaitingDialog(true) : changeStatus.mutate({ status: primaryNext })}
                         disabled={changeStatus.isPending}
                         className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-2.5 py-0.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors disabled:opacity-50"
                       >
@@ -1399,6 +1434,48 @@ export default function RequestDetailPage() {
                     className="inline-flex items-center justify-center rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 disabled:opacity-50"
                   >
                     {t('page.request_detail.reopen', undefined, { defaultValue: 'Reopen' })}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Waiting dialog */}
+          {showWaitingDialog && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
+              <div className="fixed inset-0 bg-black/50" onClick={() => { setShowWaitingDialog(false); setWaitingMessage(''); }} />
+              <div className="relative z-10 w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-lg space-y-4">
+                <h3 className="text-lg font-semibold text-foreground">{t('page.request_detail.waiting_dialog_title')}</h3>
+                <p className="text-sm text-muted-foreground">{t('page.request_detail.waiting_dialog_description')}</p>
+                <textarea
+                  value={waitingMessage}
+                  onChange={(e) => setWaitingMessage(e.target.value)}
+                  placeholder={t('page.request_detail.waiting_dialog_placeholder')}
+                  rows={3}
+                  autoFocus
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                />
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => { setShowWaitingDialog(false); setWaitingMessage(''); }}
+                    className="inline-flex items-center justify-center rounded-md h-9 px-4 text-sm font-medium border bg-background shadow-xs hover:bg-accent transition-all"
+                  >
+                    {t('common.cancel')}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (waitingMessage.trim()) {
+                        await api.post(`/requests/${id}/comments`, { body: waitingMessage.trim() });
+                        queryClient.invalidateQueries({ queryKey: ['request-comments', id] });
+                      }
+                      changeStatus.mutate({ status: 'waiting_for_employee' });
+                      setShowWaitingDialog(false);
+                      setWaitingMessage('');
+                    }}
+                    disabled={changeStatus.isPending}
+                    className="inline-flex items-center justify-center rounded-md h-9 px-4 text-sm font-medium bg-amber-500 text-white shadow-xs hover:bg-amber-600 disabled:opacity-50"
+                  >
+                    {t('page.request_detail.waiting_dialog_confirm')}
                   </button>
                 </div>
               </div>

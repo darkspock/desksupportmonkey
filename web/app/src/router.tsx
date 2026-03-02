@@ -41,6 +41,7 @@ const PurchaseOrderFormPage = lazy(() => import('./pages/admin/PurchaseOrderForm
 const CalendarPage = lazy(() => import('./pages/technician/CalendarPage'));
 const AvailabilitySettingsPage = lazy(() => import('./pages/technician/AvailabilitySettingsPage'));
 const MyAppointmentsPage = lazy(() => import('./pages/employee/MyAppointmentsPage'));
+const MyRequestDetailPage = lazy(() => import('./pages/employee/MyRequestDetailPage'));
 const MyShipmentsPage = lazy(() => import('./pages/employee/MyShipmentsPage'));
 const ShipmentsPage = lazy(() => import('./pages/technician/ShipmentsPage'));
 const ShipmentDetailPage = lazy(() => import('./pages/technician/ShipmentDetailPage'));
@@ -125,6 +126,7 @@ export const router = createBrowserRouter([
       { path: 'my/requests/new', element: <S><NewRequestPage /></S> },
       { path: 'my/notifications', element: <S><NotificationsPage /></S> },
       { path: 'my/appointments', element: <S><MyAppointmentsPage /></S> },
+      { path: 'my/requests/:id', element: <S><MyRequestDetailPage /></S> },
       { path: 'my/shipments', element: <S><MyShipmentsPage /></S> },
       { path: 'my/incidents', element: <S><MyIncidentsPage /></S> },
       { path: 'knowledge-base', element: <S><KnowledgeBasePage /></S> },

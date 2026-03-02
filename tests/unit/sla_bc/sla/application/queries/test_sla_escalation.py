@@ -197,6 +197,8 @@ def _make_mock_request(
     req.created_at = now - timedelta(hours=hours_ago)
     req.first_response_at = None
     req.resolved_at = None
+    req.sla_paused_at = None
+    req.sla_paused_total_seconds = 0
     req.data = {}
     if affected_asset_ids:
         req.data["affected_asset_ids"] = affected_asset_ids
