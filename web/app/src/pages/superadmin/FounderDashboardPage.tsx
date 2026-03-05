@@ -95,7 +95,7 @@ export default function FounderDashboardPage() {
     queryKey: ['founder-dashboard'],
     queryFn: async () => {
       const { data } = await api.get('/super-admin/dashboard');
-      return data as DashboardData;
+      return data.data as DashboardData;
     },
     staleTime: 30_000,
   });

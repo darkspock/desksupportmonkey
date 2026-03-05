@@ -29,6 +29,7 @@ const PLAN_VARIANT: Record<string, string> = {
   premium: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
   enterprise: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
   open_source: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+  demo: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
 };
 
 const STATUS_VARIANT: Record<string, string> = {
@@ -240,8 +241,9 @@ export default function BillingPage() {
   const isGrace = data.billing_status === 'grace_period';
   const isSuspended = data.billing_status === 'suspended';
   const inTrial = data.trial_days_remaining !== null && data.trial_days_remaining > 0;
-  const showStripeButtons = !data.complimentary && data.plan !== 'open_source';
-  const isPlanUpgradable = data.plan !== 'enterprise' && data.plan !== 'open_source';
+  const isDemo = data.plan === 'demo';
+  const showStripeButtons = !data.complimentary && data.plan !== 'open_source' && !isDemo;
+  const isPlanUpgradable = data.plan !== 'enterprise' && data.plan !== 'open_source' && !isDemo;
 
   return (
     <div className="space-y-6">
@@ -271,6 +273,25 @@ export default function BillingPage() {
       {isSuspended && (
         <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800 dark:border-red-700 dark:bg-red-900/30 dark:text-red-300">
           {t('page.billing.suspended_warning')}
+        </div>
+      )}
+
+      {/* Demo info panel */}
+      {isDemo && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-900/20">
+          <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+            {t('page.billing.plan_demo')}
+          </h3>
+          <p className="mt-1 text-sm text-amber-700 dark:text-amber-400">
+            {t('demo.activate.subtitle')}
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate('/activate-demo')}
+            className="mt-3 inline-flex items-center justify-center rounded-md h-9 px-4 text-sm font-medium shadow-xs transition-all bg-amber-600 text-white hover:bg-amber-700"
+          >
+            {t('demo.banner.activate')}
+          </button>
         </div>
       )}
 

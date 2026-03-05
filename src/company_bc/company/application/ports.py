@@ -29,6 +29,25 @@ class UserWriter(ABC):
         ...
 
 
+class CompanyUserWriter(ABC):
+    """Port for company_user persistence from company_bc.
+
+    Satisfied by auth_bc's CompanyUserRepository at the router level.
+    """
+
+    @abstractmethod
+    def save(self, company_user: Any) -> None:
+        """Persist a company user membership."""
+        ...
+
+    @abstractmethod
+    def find_by_user_and_company(
+        self, user_id: str, company_id: str
+    ) -> Optional[Any]:
+        """Find membership for a user in a company."""
+        ...
+
+
 class MagicLinkWriter(ABC):
     """Port for magic link persistence from company_bc.
 

@@ -22,8 +22,10 @@ def stripe_client():
 
 @pytest.fixture
 def handler(stripe_client):
+    company_repo = MagicMock()
+    company_repo.slug_exists.return_value = False
     return CreateCompanyCommandHandler(
-        company_repo=MagicMock(),
+        company_repo=company_repo,
         user_repo=MagicMock(),
         magic_link_repo=MagicMock(),
         email_service=MagicMock(),

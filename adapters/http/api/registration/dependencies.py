@@ -14,6 +14,8 @@ from src.company_bc.company.infrastructure.repository import CompanyRepository
 from src.maintenance_bc.maintenance_template.infrastructure.repository import (
     MaintenanceTemplateRepository,
 )
+from src.reseller_bc.client.infrastructure.repository import ResellerClientRepository
+from src.reseller_bc.reseller.infrastructure.repository import ResellerRepository
 from src.workflow_bc.template.infrastructure.repository import WorkflowTemplateRepository
 
 
@@ -43,6 +45,14 @@ def get_workflow_template_repo(db: Session = Depends(get_db)) -> WorkflowTemplat
 
 def get_maint_template_repo(db: Session = Depends(get_db)) -> MaintenanceTemplateRepository:
     return MaintenanceTemplateRepository(db)
+
+
+def get_reseller_repo(db: Session = Depends(get_db)) -> ResellerRepository:
+    return ResellerRepository(db)
+
+
+def get_reseller_client_repo(db: Session = Depends(get_db)) -> ResellerClientRepository:
+    return ResellerClientRepository(db)
 
 
 def get_stripe_client() -> StripeClient:

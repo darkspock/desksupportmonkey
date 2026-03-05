@@ -6,7 +6,7 @@ import pytest
 TEMPLATE_WITH_CHECKLIST = {
     "name": "Incident",
     "description": "Template for checklist testing",
-    "icon": "alert-circle",
+    "icon": "circle-alert",
     "require_all_complete": True,
     "sort_order": 0,
     "subtypes": [],

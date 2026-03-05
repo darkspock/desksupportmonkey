@@ -1,6 +1,7 @@
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 
 from core.email import EmailServiceInterface, send_magic_link_email
 from src.auth_bc.company_lookup.domain.service import CompanyLookupInterface
@@ -27,6 +28,7 @@ class CompanyRestrictedError(Exception):
 @dataclass
 class CreateMagicLinkCommand(Command):
     email: str
+    company_id: Optional[str] = None
 
 
 class CreateMagicLinkCommandHandler(CommandHandler[CreateMagicLinkCommand]):
@@ -48,20 +50,40 @@ class CreateMagicLinkCommandHandler(CommandHandler[CreateMagicLinkCommand]):
         email = command.email.lower().strip()
         logger.info("Creating magic link for %s", email)
 
-        # Check email domain matches a company (with status awareness)
-        result = self.company_lookup.find_company_by_email_domain(email)
-        if result is None:
-            # Allow existing users (e.g. admins registered with non-company domains)
-            if self.user_repo:
-                existing_user = self.user_repo.find_by_email(email)
-                if existing_user and existing_user.is_active:
-                    result = (existing_user.company_id or "", True)
+        if command.company_id:
+            # Scoped flow: validate email is allowed in the specific company
+            allowed = self.company_lookup.is_email_allowed_in_company(
+                email, command.company_id
+            )
+            if not allowed:
+                # Allow existing users (e.g. admins with non-matching domains)
+                if self.user_repo:
+                    existing_user = self.user_repo.find_by_email(email)
+                    if not (existing_user and existing_user.is_active):
+                        raise InvalidEmailDomainError(
+                            "Only corporate email addresses are allowed"
+                        )
+                else:
+                    raise InvalidEmailDomainError(
+                        "Only corporate email addresses are allowed"
+                    )
+        else:
+            # Unscoped flow: check email domain matches a company
+            result = self.company_lookup.find_company_by_email_domain(email)
             if result is None:
-                raise InvalidEmailDomainError("Only corporate email addresses are allowed")
+                # Allow existing users (e.g. admins registered with non-company domains)
+                if self.user_repo:
+                    existing_user = self.user_repo.find_by_email(email)
+                    if existing_user and existing_user.is_active:
+                        result = (existing_user.company_id or "", True)
+                if result is None:
+                    raise InvalidEmailDomainError(
+                        "Only corporate email addresses are allowed"
+                    )
 
-        company_id, is_active = result
-        if not is_active:
-            raise CompanyRestrictedError("Company access is currently restricted")
+            company_id, is_active = result
+            if not is_active:
+                raise CompanyRestrictedError("Company access is currently restricted")
 
         # Check rate limit
         since = datetime.now(timezone.utc) - timedelta(hours=1)
@@ -72,7 +94,9 @@ class CreateMagicLinkCommandHandler(CommandHandler[CreateMagicLinkCommand]):
             )
 
         # Create and save magic link
-        magic_link = MagicLink.create(email, ttl_hours=24)
+        magic_link = MagicLink.create(
+            email, ttl_hours=24, company_id=command.company_id
+        )
         self.magic_link_repo.save(magic_link)
 
         # Send email

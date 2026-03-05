@@ -10,12 +10,25 @@ import { useNotificationRealtime } from '../../hooks/useNotificationRealtime';
 import { useI18n } from '../../lib/i18n';
 import api from '../../lib/api';
 import { HelpPanel } from '../help/HelpPanel';
+import { AIChatWidget } from '../support/AIChatWidget';
 
 interface BillingStatus {
   billing_status: string;
   complimentary: boolean;
   grace_days_remaining: number | null;
   trial_days_remaining: number | null;
+}
+
+function DemoBanner({ daysRemaining }: { daysRemaining: number }) {
+  const { t } = useI18n();
+  return (
+    <div className="w-full bg-amber-500 px-4 py-2 text-center text-sm font-medium text-amber-950">
+      {t('demo.banner.message', { days: String(daysRemaining) })}{' '}
+      <Link to="/activate-demo" className="underline hover:no-underline">
+        {t('demo.banner.activate')}
+      </Link>
+    </div>
+  );
 }
 
 function BillingBanner({ role }: { role: string }) {
@@ -92,9 +105,12 @@ export function AppLayout() {
     return <Navigate to="/auth/set-password" replace />;
   }
 
-  // Super admin workspace is restricted to overview + companies.
-  if (user.role === 'super_admin' && !location.pathname.startsWith('/companies') && !location.pathname.startsWith('/overview')) {
-    return <Navigate to="/overview" replace />;
+  // Super admin workspace is restricted to platform pages.
+  if (user.role === 'super_admin') {
+    const allowed = ['/overview', '/companies', '/resellers', '/payouts', '/platform/', '/super-admin/'];
+    if (!allowed.some((p) => location.pathname.startsWith(p))) {
+      return <Navigate to="/overview" replace />;
+    }
   }
 
   if (location.pathname === '/') {
@@ -119,7 +135,10 @@ export function AppLayout() {
       <Sidebar mobileOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
       <div className="min-w-0 flex-1 flex flex-col">
         <Header onMenuToggle={() => setMobileNavOpen(true)} />
-        {user.role === 'admin' && <BillingBanner role={user.role} />}
+        {user.company_plan === 'demo' && user.demo_days_remaining != null && (
+          <DemoBanner daysRemaining={user.demo_days_remaining} />
+        )}
+        {user.role === 'admin' && user.company_plan !== 'demo' && <BillingBanner role={user.role} />}
         <main className="min-w-0 flex-1 p-4 pb-20 md:p-6 md:pb-20">
           <div className="mx-auto w-full max-w-7xl">
             <Outlet />
@@ -128,6 +147,7 @@ export function AppLayout() {
       </div>
 
       <HelpPanel />
+      <AIChatWidget />
 
       {showNameModal && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">

@@ -39,6 +39,9 @@ class ReportSettings(BaseSettings):
 class AISettings(BaseSettings):
     OPENAI_API_KEY: str = ""
     GROQ_API_KEY: str = ""
+    ANTHROPIC_API_KEY: str = ""
+    AI_SUPPORT_PROVIDER: str = "groq"
+    AI_SUPPORT_MODEL: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env", extra="ignore",
@@ -98,6 +101,7 @@ class Settings(BaseSettings):
     SMTP_FROM_EMAIL: str = "noreply@desksupportmonkey.com"
     SMTP_FROM_NAME: str = ""
     BREVO_API_KEY: str = ""
+    ADMIN_EMAIL: str = "admin@desksupportmonkey.com"
 
     # Monitoring
     SENTRY_DSN: str = ""

@@ -33,11 +33,13 @@ class JWTService:
         user_id: str,
         company_id: Optional[str],
         role: str,
+        type: str = "user",
     ) -> str:
         payload = {
             "sub": user_id,
             "company_id": company_id,
             "role": role,
+            "type": type,
             "exp": datetime.now(timezone.utc) + timedelta(hours=self.expire_hours),
             "iat": datetime.now(timezone.utc),
         }

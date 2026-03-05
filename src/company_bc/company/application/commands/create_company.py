@@ -31,7 +31,11 @@ from src.workflow_bc.template.domain.repository import (
 from src.auth_bc.magic_link.domain.entities import MagicLink
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
-from src.company_bc.company.application.ports import MagicLinkWriter, UserWriter
+from src.company_bc.company.application.ports import (
+    CompanyUserWriter,
+    MagicLinkWriter,
+    UserWriter,
+)
 from src.company_bc.company.domain.entities import Company
 from src.company_bc.company.domain.repository import CompanyRepositoryInterface
 from src.framework.application.command_bus import Command, CommandHandler
@@ -59,6 +63,7 @@ class CreateCompanyCommand(Command):
     email_domains: list[str]
     admin_email: Optional[str] = None
     id: Optional[str] = None
+    is_demo: bool = False
 
 
 SYSTEM_LOCATION_NAMES: dict[str, str] = {
@@ -90,7 +95,7 @@ DEFAULT_WORKFLOW_TEMPLATES: list[dict] = [
     {
         "name": "Incident",
         "description": "Report a technical issue or outage",
-        "icon": "alert-circle",
+        "icon": "circle-alert",
         "require_all_complete": False,
         "subtypes": [],
         "checklist_items": [
@@ -204,6 +209,7 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
         asset_type_repo: Optional[AssetTypeDefinitionRepositoryInterface] = None,
         workflow_template_repo: Optional[WorkflowTemplateRepositoryInterface] = None,
         maint_template_repo: Optional[MaintTemplateRepoInterface] = None,
+        company_user_writer: Optional[CompanyUserWriter] = None,
     ):
         self.company_repo = company_repo
         self.user_repo = user_repo
@@ -214,6 +220,7 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
         self.asset_type_repo = asset_type_repo
         self.workflow_template_repo = workflow_template_repo
         self.maint_template_repo = maint_template_repo
+        self.company_user_writer = company_user_writer
 
     def handle(self, command: CreateCompanyCommand) -> None:
         # Check name uniqueness
@@ -227,6 +234,7 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
             email_domains=command.email_domains,
             id=command.id,
             open_source_mode=settings.stripe.OPEN_SOURCE_MODE,
+            is_demo=command.is_demo,
         )
 
         # Check domain uniqueness — allow reclaiming if the owning company has no confirmed users
@@ -242,17 +250,27 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
                 self.user_repo.delete_by_company(owner_id)
                 self.company_repo.delete(owner_id)
 
+        # Generate slug with collision resolution
+        base_slug = Company.generate_slug(company.name)
+        slug = base_slug
+        counter = 2
+        while self.company_repo.slug_exists(slug) or slug in Company.RESERVED_SLUGS:
+            slug = f"{base_slug[:46]}-{counter}"
+            counter += 1
+        company.slug = slug
+
         self.company_repo.save(company)
         self.company_repo.save_domains(company.id, company.email_domains)
 
-        # Create Stripe customer (no-op if open_source_mode=True)
-        customer_id = self.stripe_client.create_customer(
-            name=company.name,
-            email=command.admin_email or "",
-            metadata={"company_id": company.id},
-        )
-        company.stripe_customer_id = customer_id
-        self.company_repo.save(company)
+        # Create Stripe customer (skip for demo and open_source_mode)
+        if not command.is_demo:
+            customer_id = self.stripe_client.create_customer(
+                name=company.name,
+                email=command.admin_email or "",
+                metadata={"company_id": company.id},
+            )
+            company.stripe_customer_id = customer_id
+            self.company_repo.save(company)
 
         # Handle initial admin
         if command.admin_email:
@@ -267,6 +285,16 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
                 company_id=company.id,
             )
             self.user_repo.save(user)
+
+            # Create CompanyUser membership for initial admin
+            if self.company_user_writer:
+                from src.auth_bc.company_user.domain.entities import CompanyUser
+                membership = CompanyUser.create(
+                    user_id=user.id,
+                    company_id=company.id,
+                    role=UserRole.ADMIN,
+                )
+                self.company_user_writer.save(membership)
 
             magic_link = MagicLink.create(email)
             self.magic_link_repo.save(magic_link)

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
 import { AuthShell } from '../../components/auth/AuthShell';
 import { MicrosoftIcon } from '../../components/icons/MicrosoftIcon';
@@ -9,6 +9,15 @@ import { fetchOAuthProviders, loginWithGoogle, loginWithMicrosoft, loginWithMicr
 import { getDefaultRouteForRole, getSafeReturnTo } from '../../lib/navigation';
 import { useI18n } from '../../lib/i18n';
 import { getBrandMessages } from '../../config/brand';
+
+interface CompanyBySlug {
+  id: string;
+  name: string;
+  slug: string;
+  auth_mode: string;
+  google_enabled: boolean;
+  microsoft_enabled: boolean;
+}
 
 type LoginMode = 'magic-link' | 'password';
 
@@ -68,6 +77,7 @@ export default function LoginPage() {
   const brandMsg = getBrandMessages(language);
   const navigate = useNavigate();
   const [params] = useSearchParams();
+  const { slug } = useParams<{ slug?: string }>();
 
   const returnTo = useMemo(() => getSafeReturnTo(params.get('returnTo')), [params]);
 
@@ -79,15 +89,39 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleEnabled, setGoogleEnabled] = useState(false);
   const [microsoftEnabled, setMicrosoftEnabled] = useState(false);
+  const [companyInfo, setCompanyInfo] = useState<CompanyBySlug | null>(null);
+  const [slugNotFound, setSlugNotFound] = useState(false);
+  const [slugLoading, setSlugLoading] = useState(false);
+  const [slugSearch, setSlugSearch] = useState('');
 
+  // Fetch company info by slug
   useEffect(() => {
+    if (!slug) return;
+    setSlugLoading(true);
+    setSlugNotFound(false);
+    api.get(`/companies/by-slug/${slug}`)
+      .then(({ data }) => {
+        const company = data.data as CompanyBySlug;
+        setCompanyInfo(company);
+        if (googleClientId) setGoogleEnabled(company.google_enabled);
+        if (microsoftClientId) setMicrosoftEnabled(company.microsoft_enabled);
+      })
+      .catch(() => {
+        setSlugNotFound(true);
+      })
+      .finally(() => setSlugLoading(false));
+  }, [slug]);
+
+  // Fetch OAuth providers for non-slug login
+  useEffect(() => {
+    if (slug) return;
     fetchOAuthProviders()
       .then((p) => {
         if (googleClientId) setGoogleEnabled(p.google);
         if (microsoftClientId) setMicrosoftEnabled(p.microsoft);
       })
       .catch(() => {/* ignore */});
-  }, []);
+  }, [slug]);
 
   if (user) {
     if (user.role === 'admin' && user.needs_onboarding) {
@@ -106,16 +140,39 @@ export default function LoginPage() {
     }
   };
 
+  // Build slug-scoped auth paths
+  const authPrefix = slug ? `/auth/${slug}` : '/auth';
+
+  const handleMultiCompanyError = (err: unknown): boolean => {
+    const resp = (err as { response?: { status?: number; data?: { detail?: string } } })?.response;
+    if (resp?.status === 409) {
+      try {
+        const parsed = JSON.parse(resp.data?.detail ?? '{}');
+        if (parsed.error === 'multiple_companies' && Array.isArray(parsed.slugs)) {
+          setError(
+            `Your email matches multiple companies. Please log in via your company page: ${parsed.slugs.join(', ')}`,
+          );
+          return true;
+        }
+      } catch {
+        // Not a multi-company error
+      }
+    }
+    return false;
+  };
+
   const handleGoogleToken = async (token: string) => {
     setError('');
     setLoading(true);
     try {
-      const accessToken = await loginWithGoogle(token);
+      const accessToken = await loginWithGoogle(token, slug);
       await login(accessToken);
       await navigateAfterLogin();
     } catch (err: unknown) {
-      const msg = getAuthErrorMessage(err, t('auth.login.error_google_failed'), t('auth.login.error_invalid_email'));
-      setError(msg);
+      if (!handleMultiCompanyError(err)) {
+        const msg = getAuthErrorMessage(err, t('auth.login.error_google_failed'), t('auth.login.error_invalid_email'));
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -126,12 +183,14 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const idToken = await loginWithMicrosoftPopup(microsoftClientId, microsoftTenantId);
-      const accessToken = await loginWithMicrosoft(idToken);
+      const accessToken = await loginWithMicrosoft(idToken, slug);
       await login(accessToken);
       await navigateAfterLogin();
     } catch (err: unknown) {
-      const msg = getAuthErrorMessage(err, t('auth.login.error_microsoft_failed'), t('auth.login.error_invalid_email'));
-      setError(msg);
+      if (!handleMultiCompanyError(err)) {
+        const msg = getAuthErrorMessage(err, t('auth.login.error_microsoft_failed'), t('auth.login.error_invalid_email'));
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -142,15 +201,17 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      await api.post('/auth/magic-link', { email });
+      await api.post(`${authPrefix}/magic-link`, { email });
       setSent(true);
     } catch (err: unknown) {
-      const msg = getAuthErrorMessage(
-        err,
-        t('auth.login.error_send_magic'),
-        t('auth.login.error_invalid_email'),
-      );
-      setError(msg);
+      if (!handleMultiCompanyError(err)) {
+        const msg = getAuthErrorMessage(
+          err,
+          t('auth.login.error_send_magic'),
+          t('auth.login.error_invalid_email'),
+        );
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -161,24 +222,185 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const { data } = await api.post('/auth/login', { email, password });
+      const { data } = await api.post(`${authPrefix}/login`, { email, password });
       await login(data.data.access_token);
       await navigateAfterLogin();
     } catch (err: unknown) {
-      const msg = getAuthErrorMessage(
-        err,
-        t('auth.login.error_login_failed'),
-        t('auth.login.error_invalid_email'),
-      );
-      setError(msg);
+      if (!handleMultiCompanyError(err)) {
+        const msg = getAuthErrorMessage(
+          err,
+          t('auth.login.error_login_failed'),
+          t('auth.login.error_invalid_email'),
+        );
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSlugSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = slugSearch.trim().toLowerCase();
+    if (trimmed) {
+      navigate(`/auth/login/${trimmed}`);
+    }
+  };
+
+  // Slug loading state
+  if (slug && slugLoading) {
+    return (
+      <AuthShell title={t('auth.slug.loading')} subtitle="" showBackToLogin={false}>
+        <div className="flex justify-center py-8">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      </AuthShell>
+    );
+  }
+
+  // Slug not found state
+  if (slug && slugNotFound) {
+    return (
+      <AuthShell title={t('auth.slug.not_found_title')} subtitle="" showBackToLogin={false}>
+        <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-center">
+          <p className="text-sm font-medium text-destructive">{t('auth.slug.not_found')}</p>
+        </div>
+        <Link
+          to="/auth/login"
+          className="mt-4 block text-center text-sm font-medium text-primary hover:underline"
+        >
+          {t('auth.slug.back_to_login')}
+        </Link>
+      </AuthShell>
+    );
+  }
+
+  // No slug — show company finder
+  if (!slug && !companyInfo) {
+    return (
+      <GoogleOAuthProvider clientId={googleClientId}>
+      <AuthShell title={brandMsg.login.title} subtitle={brandMsg.login.subtitle} showBackToLogin={false}>
+        <form onSubmit={handleSlugSearch} className="mb-6 space-y-3">
+          <label htmlFor="slug-search" className="block text-sm text-muted-foreground">
+            {t('auth.slug.find_company')}
+          </label>
+          <input
+            id="slug-search"
+            type="text"
+            value={slugSearch}
+            onChange={(e) => setSlugSearch(e.target.value)}
+            placeholder={t('auth.slug.find_placeholder')}
+            className="w-full"
+          />
+          <button
+            type="submit"
+            disabled={!slugSearch.trim()}
+            className="h-9 w-full rounded-md bg-primary text-sm font-medium text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+          >
+            {t('auth.slug.find_button')}
+          </button>
+        </form>
+
+        <div className="relative flex items-center gap-3 mb-6">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-xs text-muted-foreground">{t('auth.slug.or_login_directly')}</span>
+          <div className="h-px flex-1 bg-border" />
+        </div>
+
+        <div className="mb-6 grid grid-cols-2 rounded-xl border border-border bg-secondary p-1">
+          <button
+            type="button"
+            onClick={() => { setMode('magic-link'); setError(''); }}
+            className={`rounded-[10px] py-2.5 text-sm font-semibold transition-colors ${mode === 'magic-link' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            {t('auth.login.magic_link')}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setMode('password'); setError(''); }}
+            className={`rounded-[10px] py-2.5 text-sm font-semibold transition-colors ${mode === 'password' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            {t('auth.login.password')}
+          </button>
+        </div>
+
+        {mode === 'magic-link' && sent ? (
+          <div className="rounded-lg border border-success/20 bg-success/10 p-4 text-center">
+            <p className="text-sm font-medium text-success">{t('auth.login.magic_sent')}</p>
+            <p className="mt-1 text-sm text-success">{t('auth.login.magic_sent_desc')}</p>
+            <button type="button" onClick={() => setSent(false)} className="mt-3 text-sm text-primary hover:underline">{t('auth.login.send_another')}</button>
+          </div>
+        ) : mode === 'magic-link' ? (
+          <form onSubmit={handleMagicLink} className="space-y-4">
+            {error && <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
+            <div>
+              <label htmlFor="email" className="block mb-1.5 text-muted-foreground">{t('auth.login.work_email')}</label>
+              <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('common.placeholder_work_email')} required className="w-full" />
+            </div>
+            <button type="submit" disabled={loading} className="h-9 w-full rounded-md bg-primary text-sm font-medium text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50">
+              {loading ? t('auth.login.sending') : t('auth.login.send_magic_link')}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handlePasswordLogin} className="space-y-4">
+            {error && <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
+            <div>
+              <label htmlFor="email-password" className="block mb-1.5 text-muted-foreground">{t('auth.login.email')}</label>
+              <input id="email-password" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('common.placeholder_work_email')} required className="w-full" />
+            </div>
+            <div>
+              <label htmlFor="password" className="block mb-1.5 text-muted-foreground">{t('auth.login.password_label')}</label>
+              <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t('auth.login.password_placeholder')} required className="w-full" />
+            </div>
+            <button type="submit" disabled={loading} className="h-9 w-full rounded-md bg-primary text-sm font-medium text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50">
+              {loading ? t('auth.login.signing_in') : t('auth.login.sign_in')}
+            </button>
+            <p className="text-center text-xs text-muted-foreground">{t('auth.login.password_info')}</p>
+          </form>
+        )}
+
+        {(googleEnabled || microsoftEnabled) && (
+          <div className="mt-6">
+            <div className="relative flex items-center gap-3">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs text-muted-foreground">{t('auth.login.or')}</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+            <div className="mt-3 flex flex-col gap-2">
+              {googleEnabled && googleClientId && <GoogleSignInButton onToken={handleGoogleToken} />}
+              {microsoftEnabled && microsoftClientId && (
+                <button type="button" onClick={handleMicrosoftLogin} disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-md border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-xs transition hover:bg-secondary disabled:pointer-events-none disabled:opacity-50">
+                  <MicrosoftIcon />
+                  {t('auth.login.microsoft_signin')}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        <p className="mt-7 text-center text-sm text-muted-foreground">
+          {t('auth.login.need_workspace')}{' '}
+          <Link to="/auth/register" className="font-medium text-primary hover:underline">{t('auth.login.register_company')}</Link>
+        </p>
+
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          {t('auth.login.terms_notice')}{' '}
+          <a href={brandMsg.termsUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{t('auth.terms.link')}</a>
+          {' '}{t('common.and')}{' '}
+          <a href={brandMsg.privacyUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{t('auth.privacy.link')}</a>
+        </p>
+      </AuthShell>
+      </GoogleOAuthProvider>
+    );
+  }
+
+  // Slug-based login — company resolved
+  const title = companyInfo ? companyInfo.name : brandMsg.login.title;
+  const subtitle = companyInfo ? t('auth.slug.sign_in_to', { company: companyInfo.name }) : brandMsg.login.subtitle;
+
   return (
     <GoogleOAuthProvider clientId={googleClientId}>
-    <AuthShell title={brandMsg.login.title} subtitle={brandMsg.login.subtitle} showBackToLogin={false}>
+    <AuthShell title={title} subtitle={subtitle} showBackToLogin={false}>
       <div className="mb-6 grid grid-cols-2 rounded-xl border border-border bg-secondary p-1">
         <button
           type="button"
@@ -305,7 +527,13 @@ export default function LoginPage() {
         </div>
       )}
 
-      <p className="mt-7 text-center text-sm text-muted-foreground">
+      {slug && (
+        <p className="mt-5 text-center text-sm text-muted-foreground">
+          <Link to="/auth/login" className="font-medium text-primary hover:underline">{t('auth.slug.different_company')}</Link>
+        </p>
+      )}
+
+      <p className="mt-4 text-center text-sm text-muted-foreground">
         {t('auth.login.need_workspace')}{' '}
         <Link to="/auth/register" className="font-medium text-primary hover:underline">{t('auth.login.register_company')}</Link>
       </p>

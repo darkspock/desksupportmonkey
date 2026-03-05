@@ -46,3 +46,15 @@ class TestMagicLink:
         ml.mark_used()
         assert ml.is_used() is True
         assert ml.used_at is not None
+
+    def test_create_without_company_id(self):
+        ml = MagicLink.create(email="test@example.com")
+        assert ml.company_id is None
+
+    def test_create_with_company_id(self):
+        ml = MagicLink.create(email="test@example.com", company_id="comp123")
+        assert ml.company_id == "comp123"
+
+    def test_create_company_id_none_by_default(self):
+        ml = MagicLink.create(email="test@example.com", ttl_hours=12)
+        assert ml.company_id is None

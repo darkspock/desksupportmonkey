@@ -10,11 +10,15 @@ Usage:
     PYTHONPATH=src python scripts/seed_demo_data.py
 
 Idempotent: clears all existing data before seeding.
+
+The ``seed_company_data`` function can also be imported and used to populate
+demo data for a single company (e.g. reseller demo accounts).
 """
 
 import os
 import sys
 import random
+from typing import Any
 from datetime import datetime, date, timedelta
 
 import ulid
@@ -51,6 +55,7 @@ from src.workflow_bc.template.domain.entities import (
     ChecklistItemDefinition,
     WorkflowSubtype,
 )
+from src.workflow_bc.template.infrastructure.models import WorkflowTemplateModel
 from src.workflow_bc.template.infrastructure.repository import WorkflowTemplateRepository
 
 
@@ -147,80 +152,6 @@ NOTE_TEMPLATES = [
     "Checked inventory — have spare units available.",
 ]
 
-# ---------------------------------------------------------------------------
-# Seed functions
-# ---------------------------------------------------------------------------
-
-def clear_all(session):
-    """Delete all data using TRUNCATE CASCADE for reliability."""
-    from sqlalchemy import text
-
-    print("Clearing existing data...")
-    # Get all user tables from the database (not alembic_version)
-    result = session.execute(text(
-        "SELECT tablename FROM pg_tables "
-        "WHERE schemaname = 'public' AND tablename != 'alembic_version'"
-    ))
-    tables = [row[0] for row in result]
-    if tables:
-        table_list = ", ".join(f'"{t}"' for t in tables)
-        session.execute(text(f"TRUNCATE {table_list} CASCADE"))
-        print(f"  Truncated {len(tables)} tables")
-    session.commit()
-
-
-def seed_companies(session) -> list[dict]:
-    """Create companies with email domains. Returns list of {id, name, domains}."""
-    companies = []
-    for i, spec in enumerate(COMPANIES):
-        company = CompanyModel(
-            id=uid(),
-            name=spec["name"],
-            status="active",
-            is_active=True,
-        )
-        session.add(company)
-        session.flush()
-
-        for domain in spec["domains"]:
-            session.add(CompanyEmailDomainModel(
-                id=uid(),
-                company_id=company.id,
-                domain=domain,
-            ))
-
-        companies.append({
-            "id": company.id,
-            "name": spec["name"],
-            "domain": spec["domains"][0],
-        })
-        print(f"  Company: {spec['name']} ({', '.join(spec['domains'])})")
-
-    session.commit()
-    return companies
-
-
-def seed_departments(session, companies: list[dict]) -> dict[str, list[dict]]:
-    """Create departments per company. Returns {company_id: [{id, name}]}."""
-    dept_map = {}
-    for company in companies:
-        depts = []
-        for name in DEPARTMENTS:
-            dept = DepartmentModel(
-                id=uid(),
-                company_id=company["id"],
-                name=name,
-                is_active=True,
-            )
-            session.add(dept)
-            session.flush()
-            depts.append({"id": dept.id, "name": name})
-        dept_map[company["id"]] = depts
-    session.commit()
-    print(f"  Departments: {len(DEPARTMENTS)} per company ({len(DEPARTMENTS) * len(companies)} total)")
-    return dept_map
-
-
 SYSTEM_LOCATIONS = [
     ("employee", "Empleado"),
     ("in_transit", "En Tránsito"),
@@ -255,142 +186,6 @@ CUSTOM_LOCATIONS = [
     },
 ]
 
-
-def seed_locations(session, companies: list[dict]) -> dict[str, dict]:
-    """Create asset locations per company. Returns {company_id: {system_key: id, ...}}."""
-    loc_map = {}
-    for company in companies:
-        cid = company["id"]
-        locs: dict[str, str] = {}
-        # System locations
-        for system_key, name in SYSTEM_LOCATIONS:
-            loc = AssetLocationModel(
-                id=uid(), company_id=cid, name=name,
-                is_system=True, system_key=system_key, in_use=True,
-            )
-            session.add(loc)
-            session.flush()
-            locs[system_key] = loc.id
-        # Custom locations (with addresses)
-        for loc_spec in CUSTOM_LOCATIONS:
-            loc = AssetLocationModel(
-                id=uid(), company_id=cid, name=loc_spec["name"],
-                is_system=False, in_use=True,
-                street_line_1=loc_spec.get("street_line_1"),
-                street_line_2=loc_spec.get("street_line_2"),
-                city=loc_spec.get("city"),
-                state=loc_spec.get("state"),
-                postal_code=loc_spec.get("postal_code"),
-                country=loc_spec.get("country"),
-            )
-            session.add(loc)
-            session.flush()
-            locs[loc_spec["name"]] = loc.id
-        loc_map[cid] = locs
-    session.commit()
-    total = len(SYSTEM_LOCATIONS) + len(CUSTOM_LOCATIONS)
-    print(f"  Locations: {total} per company ({total * len(companies)} total)")
-    return loc_map
-
-
-def seed_users(session, companies: list[dict], dept_map: dict) -> dict:
-    """Create users. Returns {company_id: {role: [user_dicts]}, 'super_admin': user_dict}."""
-    name_idx = 0
-    users = {}
-
-    def next_name():
-        nonlocal name_idx
-        first = FIRST_NAMES[name_idx % len(FIRST_NAMES)]
-        last = LAST_NAMES[name_idx % len(LAST_NAMES)]
-        name_idx += 1
-        return first, last
-
-    # Super admin
-    sa = UserModel(
-        id=uid(),
-        email="admin@desksupportmonkey.com",
-        name="Platform Admin",
-        role="super_admin",
-        company_id=None,
-        department_id=None,
-        is_active=True,
-    )
-    session.add(sa)
-    users["super_admin"] = {"id": sa.id, "email": sa.email, "name": sa.name}
-    print(f"  Super Admin: {sa.email}")
-
-    for company in companies:
-        cid = company["id"]
-        domain = company["domain"]
-        depts = dept_map[cid]
-        company_users: dict[str, list] = {"admin": [], "procurement_manager": [], "technician": [], "employee": []}
-
-        # Admin
-        first, last = next_name()
-        admin = UserModel(
-            id=uid(),
-            email=f"{first.lower()}.{last.lower()}@{domain}",
-            name=f"{first} {last}",
-            role="admin",
-            company_id=cid,
-            department_id=depts[0]["id"],  # Engineering
-            is_active=True,
-        )
-        session.add(admin)
-        company_users["admin"].append({"id": admin.id, "email": admin.email, "name": admin.name})
-
-        # Procurement Manager
-        first, last = next_name()
-        pm = UserModel(
-            id=uid(),
-            email=f"{first.lower()}.{last.lower()}@{domain}",
-            name=f"{first} {last}",
-            role="procurement_manager",
-            company_id=cid,
-            department_id=depts[0]["id"],  # Engineering
-            is_active=True,
-        )
-        session.add(pm)
-        company_users["procurement_manager"].append({"id": pm.id, "email": pm.email, "name": pm.name})
-
-        # Technicians (2)
-        for _ in range(2):
-            first, last = next_name()
-            tech = UserModel(
-                id=uid(),
-                email=f"{first.lower()}.{last.lower()}@{domain}",
-                name=f"{first} {last}",
-                role="technician",
-                company_id=cid,
-                department_id=depts[3]["id"],  # IT
-                is_active=True,
-            )
-            session.add(tech)
-            company_users["technician"].append({"id": tech.id, "email": tech.email, "name": tech.name})
-
-        # Employees (5)
-        for j in range(5):
-            first, last = next_name()
-            dept = depts[j % len(depts)]
-            emp = UserModel(
-                id=uid(),
-                email=f"{first.lower()}.{last.lower()}@{domain}",
-                name=f"{first} {last}",
-                role="employee",
-                company_id=cid,
-                department_id=dept["id"],
-                is_active=True,
-            )
-            session.add(emp)
-            company_users["employee"].append({"id": emp.id, "email": emp.email, "name": emp.name})
-
-        users[cid] = company_users
-        print(f"  Users for {company['name']}: 1 admin, 1 procurement mgr, 2 techs, 5 employees")
-
-    session.commit()
-    return users
-
-
 DEFAULT_ASSET_TYPES = [
     ("laptop", "Laptop", "laptop", 0),
     ("monitor", "Monitor", "monitor", 1),
@@ -402,328 +197,8 @@ DEFAULT_ASSET_TYPES = [
     ("other", "Other", None, 7),
 ]
 
-
-def seed_asset_type_definitions(session, companies: list[dict]):
-    """Create default asset type definitions for each company."""
-    now = datetime.utcnow()
-    for company in companies:
-        cid = company["id"]
-        for code, name, icon, sort_order in DEFAULT_ASSET_TYPES:
-            session.add(AssetTypeDefinitionModel(
-                id=uid(),
-                company_id=cid,
-                code=code,
-                name=name,
-                icon=icon,
-                is_active=True,
-                sort_order=sort_order,
-                created_at=now,
-                updated_at=now,
-            ))
-        print(f"  Asset types for {company['name']}: {len(DEFAULT_ASSET_TYPES)} types")
-    session.commit()
-
-
-def seed_assets(session, companies: list[dict], users: dict, dept_map: dict, loc_map: dict) -> dict[str, list[str]]:
-    """Create assets per company. Returns {company_id: [asset_ids]}."""
-    asset_map = {}
-    serial_counter = 1000
-
-    for company in companies:
-        cid = company["id"]
-        depts = dept_map[cid]
-        locs = loc_map[cid]
-        employees = users[cid]["employee"]
-        technicians = users[cid]["technician"]
-        all_assignable = employees + technicians
-        custom_loc_ids = [v for k, v in locs.items() if k not in ("employee", "in_transit", "main_warehouse")]
-        asset_ids = []
-
-        # Pick ~18 items from the catalog (some repeated types)
-        catalog_items = random.choices(ASSET_CATALOG, k=18)
-
-        for i, (atype, brand, model, serial_prefix) in enumerate(catalog_items):
-            serial_counter += 1
-            serial = f"{serial_prefix}-{serial_counter:06d}"
-
-            # Decide status, assignment, and location
-            rand = random.random()
-            if rand < 0.55:
-                status = "assigned"
-                assigned_to = all_assignable[i % len(all_assignable)]["id"]
-                location_id = locs["employee"]
-            elif rand < 0.80:
-                status = "in_stock"
-                assigned_to = None
-                # Some in-stock assets in warehouse, some in custom locations
-                if random.random() < 0.7:
-                    location_id = locs["main_warehouse"]
-                else:
-                    location_id = random.choice(custom_loc_ids)
-            elif rand < 0.93:
-                status = "in_repair"
-                assigned_to = None
-                location_id = locs["main_warehouse"]
-            else:
-                status = "decommissioned"
-                assigned_to = None
-                location_id = None
-
-            days_ago = random.randint(30, 365)
-            purchase = past_date_only(days_ago)
-            # Some assets with warranty expiring soon (for alerts testing)
-            if i < 3:
-                warranty = date.today() + timedelta(days=random.randint(5, 25))
-            elif i < 6:
-                warranty = date.today() + timedelta(days=random.randint(60, 365))
-            else:
-                warranty = purchase + timedelta(days=random.randint(365, 1095))
-
-            asset = AssetModel(
-                id=uid(),
-                company_id=cid,
-                type=atype,
-                brand=brand,
-                model=model,
-                serial_number=serial,
-                status=status,
-                assigned_to=assigned_to,
-                department_id=depts[i % len(depts)]["id"],
-                location_id=location_id,
-                purchase_date=purchase,
-                warranty_expiration=warranty,
-                notes=f"Demo asset #{i+1}" if i < 3 else None,
-            )
-            session.add(asset)
-            session.flush()
-            asset_ids.append(asset.id)
-
-            # Asset events: created + assigned
-            admin_id = users[cid]["admin"][0]["id"]
-            session.add(AssetEventModel(
-                id=uid(),
-                asset_id=asset.id,
-                event_type="asset.created",
-                data={"type": atype, "brand": brand, "model": model},
-                performed_by=admin_id,
-            ))
-            if status == "assigned":
-                session.add(AssetEventModel(
-                    id=uid(),
-                    asset_id=asset.id,
-                    event_type="asset.assigned",
-                    data={"assigned_to": assigned_to},
-                    performed_by=admin_id,
-                ))
-
-        asset_map[cid] = asset_ids
-        print(f"  Assets for {company['name']}: {len(catalog_items)} assets")
-
-    session.commit()
-    return asset_map
-
-
-def seed_requests(session, companies: list[dict], users: dict) -> dict[str, list[str]]:
-    """Create service requests per company. Returns {company_id: [request_ids]}."""
-    request_map = {}
-    statuses_cycle = ["submitted", "in_review", "in_progress", "resolved", "resolved", "rejected",
-                      "submitted", "in_progress", "resolved", "in_review", "in_progress", "resolved"]
-
-    for company in companies:
-        cid = company["id"]
-        employees = users[cid]["employee"]
-        technicians = users[cid]["technician"]
-        request_ids = []
-
-        templates = list(REQUEST_TEMPLATES)
-        random.shuffle(templates)
-
-        for i, (rtype, title, desc, priority) in enumerate(templates):
-            status = statuses_cycle[i % len(statuses_cycle)]
-            created_by = employees[i % len(employees)]["id"]
-            days_ago = random.randint(1, 80)
-
-            assigned_to = None
-            resolved_at = None
-            if status in ("in_review", "in_progress", "resolved", "rejected"):
-                assigned_to = technicians[i % len(technicians)]["id"]
-            if status == "resolved":
-                resolved_at = past_date(max(days_ago - random.randint(1, 10), 0))
-
-            request = ServiceRequestModel(
-                id=uid(),
-                company_id=cid,
-                created_by=created_by,
-                assigned_to=assigned_to,
-                type=rtype,
-                title=title,
-                description=desc,
-                status=status,
-                priority=priority,
-                data=None,
-                resolved_at=resolved_at,
-            )
-            session.add(request)
-            session.flush()
-            request_ids.append(request.id)
-
-            # Request event: created
-            session.add(RequestEventModel(
-                id=uid(),
-                request_id=request.id,
-                event_type="request.created",
-                data={"type": rtype, "title": title, "priority": priority},
-                performed_by=created_by,
-            ))
-
-            # Status change events
-            if status != "submitted":
-                session.add(RequestEventModel(
-                    id=uid(),
-                    request_id=request.id,
-                    event_type="request.status_changed",
-                    data={"from": "submitted", "to": "in_review"},
-                    performed_by=assigned_to or technicians[0]["id"],
-                ))
-            if status in ("in_progress", "resolved"):
-                session.add(RequestEventModel(
-                    id=uid(),
-                    request_id=request.id,
-                    event_type="request.status_changed",
-                    data={"from": "in_review", "to": "in_progress"},
-                    performed_by=assigned_to or technicians[0]["id"],
-                ))
-            if status == "resolved":
-                session.add(RequestEventModel(
-                    id=uid(),
-                    request_id=request.id,
-                    event_type="request.status_changed",
-                    data={"from": "in_progress", "to": "resolved"},
-                    performed_by=assigned_to or technicians[0]["id"],
-                ))
-            if status == "rejected":
-                session.add(RequestEventModel(
-                    id=uid(),
-                    request_id=request.id,
-                    event_type="request.status_changed",
-                    data={"from": "in_review", "to": "rejected"},
-                    performed_by=assigned_to or technicians[0]["id"],
-                ))
-
-            # Comments on ~60% of requests
-            if random.random() < 0.6:
-                comment_text = random.choice(COMMENT_TEMPLATES)
-                session.add(RequestCommentModel(
-                    id=uid(),
-                    request_id=request.id,
-                    author_id=created_by,
-                    body=comment_text,
-                ))
-                # Technician reply on some
-                if assigned_to and random.random() < 0.5:
-                    session.add(RequestCommentModel(
-                        id=uid(),
-                        request_id=request.id,
-                        author_id=assigned_to,
-                        body="We're looking into this. I'll update you shortly.",
-                    ))
-
-            # Internal notes on ~40% of assigned requests
-            if assigned_to and random.random() < 0.4:
-                note_text = random.choice(NOTE_TEMPLATES)
-                session.add(RequestNoteModel(
-                    id=uid(),
-                    request_id=request.id,
-                    author_id=assigned_to,
-                    body=note_text,
-                ))
-
-        request_map[cid] = request_ids
-        print(f"  Requests for {company['name']}: {len(templates)} requests")
-
-    session.commit()
-    return request_map
-
-
-def seed_notifications(session, companies: list[dict], users: dict):
-    """Create notifications for all users."""
-    total = 0
-    event_types = [
-        "request.created", "request.status_changed", "request.assigned",
-        "request.comment_added", "report.ready",
-    ]
-    notification_templates = [
-        ("New request submitted", "A new service request has been submitted."),
-        ("Request status updated", "Your request status has been changed to in_progress."),
-        ("Request assigned", "A request has been assigned to you."),
-        ("New comment on request", "Someone commented on your service request."),
-        ("Report ready", "Your requested report is ready for download."),
-    ]
-
-    for company in companies:
-        cid = company["id"]
-        all_users = (
-            users[cid]["admin"] + users[cid]["procurement_manager"] + users[cid]["technician"] + users[cid]["employee"]
-        )
-        for user in all_users:
-            count = random.randint(2, 5)
-            for j in range(count):
-                idx = j % len(notification_templates)
-                title, body = notification_templates[idx]
-                event_type = event_types[idx]
-                is_read = random.random() < 0.4
-
-                session.add(NotificationModel(
-                    id=uid(),
-                    user_id=user["id"],
-                    company_id=cid,
-                    event_type=event_type,
-                    title=title,
-                    body=body,
-                    data={"demo": True},
-                    is_read=is_read,
-                ))
-                total += 1
-
-    session.commit()
-    print(f"  Notifications: {total} total")
-
-
-def seed_reports(session, companies: list[dict], users: dict):
-    """Create report records per company."""
-    report_types = ["asset_inventory", "request_summary", "technician_performance"]
-    statuses = ["completed", "pending", "failed"]
-    total = 0
-
-    for company in companies:
-        cid = company["id"]
-        admin_id = users[cid]["admin"][0]["id"]
-
-        for i, rtype in enumerate(report_types):
-            status = statuses[i]
-            report = ReportModel(
-                id=uid(),
-                company_id=cid,
-                requested_by=admin_id,
-                type=rtype,
-                status=status,
-                parameters={"demo": True},
-                storage_key=f"reports/{cid}/{rtype}.pdf" if status == "completed" else None,
-                error_message="Simulated failure for demo" if status == "failed" else None,
-                completed_at=past_date(5) if status == "completed" else None,
-            )
-            session.add(report)
-            total += 1
-
-    session.commit()
-    print(f"  Reports: {total} total")
-
-
-# ---------------------------------------------------------------------------
-# Custom Field Definitions
-# ---------------------------------------------------------------------------
-
-CUSTOM_FIELD_SPECS = {
+# Custom field specs
+CUSTOM_FIELD_SPECS: dict[str, list[dict[str, Any]]] = {
     "asset": [
         {"label": "Cost Center", "field_type": "text", "required": True, "sort_order": 0},
         {"label": "Insurance Policy", "field_type": "text", "required": False, "sort_order": 1},
@@ -741,83 +216,23 @@ CUSTOM_FIELD_SPECS = {
     ],
 }
 
-
-def seed_custom_field_definitions(session, companies: list[dict]) -> None:
-    """Create custom field definitions for each company."""
-    cf_repo = CustomFieldDefinitionRepository(session)
-    total = 0
-
-    for company in companies:
-        cid = company["id"]
-        for entity_type, specs in CUSTOM_FIELD_SPECS.items():
-            for spec in specs:
-                defn = CustomFieldDefinition.create(
-                    company_id=cid,
-                    entity_type=entity_type,
-                    label=spec["label"],
-                    field_type=spec["field_type"],
-                    required=spec.get("required", False),
-                    options=spec.get("options"),
-                    sort_order=spec.get("sort_order", 0),
-                )
-                cf_repo.save(defn)
-                total += 1
-
-    session.commit()
-    per_company = sum(len(specs) for specs in CUSTOM_FIELD_SPECS.values())
-    print(f"  Custom field definitions: {per_company} per company ({total} total)")
-
-
-# Sample custom field values keyed by entity type
-ASSET_CUSTOM_FIELD_SAMPLES = [
+ASSET_CUSTOM_FIELD_SAMPLES: list[dict[str, Any]] = [
     {"cost_center": "IT-001", "insurance_policy": "POL-2024-A1", "building": "HQ", "is_leased": False, "floor": 3},
     {"cost_center": "IT-002", "building": "Branch A", "is_leased": True, "floor": 1},
     {"cost_center": "ENG-010", "building": "Remote", "is_leased": False},
 ]
 
-REQUEST_CUSTOM_FIELD_SAMPLES = [
+REQUEST_CUSTOM_FIELD_SAMPLES: list[dict[str, Any]] = [
     {"budget_code": "BUD-2025-Q1", "urgency_reason": "Business Critical"},
     {"budget_code": "BUD-2025-Q2", "urgency_reason": "Standard"},
     {"budget_code": "BUD-2025-Q3", "urgency_reason": "Low Priority"},
 ]
 
-
-def seed_custom_field_values(session, asset_map: dict[str, list[str]], request_map: dict[str, list[str]]) -> None:
-    """Assign sample custom field values to some demo assets and requests."""
-    asset_count = 0
-    request_count = 0
-
-    for cid, asset_ids in asset_map.items():
-        # Update first 3 assets (or fewer if company has less)
-        for i, sample in enumerate(ASSET_CUSTOM_FIELD_SAMPLES):
-            if i >= len(asset_ids):
-                break
-            asset = session.query(AssetModel).filter_by(id=asset_ids[i]).one()
-            asset.custom_fields_data = sample
-            asset_count += 1
-
-    for cid, request_ids in request_map.items():
-        # Update first 3 requests (or fewer if company has less)
-        for i, sample in enumerate(REQUEST_CUSTOM_FIELD_SAMPLES):
-            if i >= len(request_ids):
-                break
-            request = session.query(ServiceRequestModel).filter_by(id=request_ids[i]).one()
-            request.custom_fields_data = sample
-            request_count += 1
-
-    session.commit()
-    print(f"  Custom field values: {asset_count} assets, {request_count} requests updated")
-
-
-# ---------------------------------------------------------------------------
-# Workflow templates
-# ---------------------------------------------------------------------------
-
-WORKFLOW_TEMPLATE_SPECS = [
+WORKFLOW_TEMPLATE_SPECS: list[dict[str, Any]] = [
     {
         "name": "Incident",
         "description": "Report a technical issue or outage",
-        "icon": "alert-circle",
+        "icon": "circle-alert",
         "require_all_complete": False,
         "subtypes": [],
         "checklist_items": [
@@ -919,44 +334,592 @@ WORKFLOW_TEMPLATE_SPECS = [
 ]
 
 
-def seed_workflow_templates(session, companies: list[dict]) -> None:
-    """Create workflow templates for each company."""
-    repo = WorkflowTemplateRepository(session)
-    total = 0
+# ---------------------------------------------------------------------------
+# Per-company seed functions
+# ---------------------------------------------------------------------------
 
-    for company in companies:
-        cid = company["id"]
-        for i, spec in enumerate(WORKFLOW_TEMPLATE_SPECS):
-            template = WorkflowTemplate.create(
-                company_id=cid,
-                name=spec["name"],
-                description=spec.get("description"),
-                icon=spec.get("icon"),
-                require_all_complete=spec.get("require_all_complete", False),
+def seed_departments_for_company(session, company_id: str) -> list[dict]:
+    """Create departments for a single company (idempotent). Returns [{id, name}]."""
+    existing = {
+        row[0]: row[1]
+        for row in session.query(DepartmentModel.name, DepartmentModel.id).filter_by(
+            company_id=company_id,
+        ).all()
+    }
+    depts = []
+    for name in DEPARTMENTS:
+        if name in existing:
+            depts.append({"id": existing[name], "name": name})
+            continue
+        dept = DepartmentModel(
+            id=uid(), company_id=company_id, name=name, is_active=True,
+        )
+        session.add(dept)
+        session.flush()
+        depts.append({"id": dept.id, "name": name})
+    return depts
+
+
+def seed_locations_for_company(session, company_id: str) -> dict:
+    """Create asset locations for a single company. Returns {key: location_id}."""
+    locs: dict[str, str] = {}
+    for system_key, name in SYSTEM_LOCATIONS:
+        existing = session.query(AssetLocationModel).filter_by(
+            company_id=company_id, system_key=system_key,
+        ).first()
+        if existing:
+            locs[system_key] = existing.id
+        else:
+            loc = AssetLocationModel(
+                id=uid(), company_id=company_id, name=name,
+                is_system=True, system_key=system_key, in_use=True,
             )
-            items = []
-            for j, item_spec in enumerate(spec.get("checklist_items", [])):
-                items.append(ChecklistItemDefinition.create(
-                    template_id=template.id,
-                    title=item_spec["title"],
-                    is_required=item_spec.get("is_required", True),
-                    sort_order=j,
+            session.add(loc)
+            session.flush()
+            locs[system_key] = loc.id
+    for loc_spec in CUSTOM_LOCATIONS:
+        loc = AssetLocationModel(
+            id=uid(), company_id=company_id, name=loc_spec["name"],
+            is_system=False, in_use=True,
+            street_line_1=loc_spec.get("street_line_1"),
+            street_line_2=loc_spec.get("street_line_2"),
+            city=loc_spec.get("city"),
+            state=loc_spec.get("state"),
+            postal_code=loc_spec.get("postal_code"),
+            country=loc_spec.get("country"),
+        )
+        session.add(loc)
+        session.flush()
+        locs[loc_spec["name"]] = loc.id
+    return locs
+
+
+def seed_users_for_company(session, company_id: str, domain: str, dept_map: list[dict]) -> dict:
+    """Create users for a single company.
+
+    Returns {role: [user_dicts]} where each user_dict has {id, email, name}.
+    """
+    name_idx = 0
+
+    def next_name():
+        nonlocal name_idx
+        first = FIRST_NAMES[name_idx % len(FIRST_NAMES)]
+        last = LAST_NAMES[name_idx % len(LAST_NAMES)]
+        name_idx += 1
+        return first, last
+
+    users: dict[str, list] = {
+        "admin": [], "procurement_manager": [], "technician": [], "employee": [],
+    }
+
+    # Admin
+    first, last = next_name()
+    admin = UserModel(
+        id=uid(),
+        email=f"{first.lower()}.{last.lower()}@{domain}",
+        name=f"{first} {last}",
+        role="admin",
+        company_id=company_id,
+        department_id=dept_map[0]["id"],
+        is_active=True,
+    )
+    session.add(admin)
+    users["admin"].append({"id": admin.id, "email": admin.email, "name": admin.name})
+
+    # Procurement Manager
+    first, last = next_name()
+    pm = UserModel(
+        id=uid(),
+        email=f"{first.lower()}.{last.lower()}@{domain}",
+        name=f"{first} {last}",
+        role="procurement_manager",
+        company_id=company_id,
+        department_id=dept_map[0]["id"],
+        is_active=True,
+    )
+    session.add(pm)
+    users["procurement_manager"].append({"id": pm.id, "email": pm.email, "name": pm.name})
+
+    # Technicians (2)
+    for _ in range(2):
+        first, last = next_name()
+        tech = UserModel(
+            id=uid(),
+            email=f"{first.lower()}.{last.lower()}@{domain}",
+            name=f"{first} {last}",
+            role="technician",
+            company_id=company_id,
+            department_id=dept_map[3]["id"],  # IT
+            is_active=True,
+        )
+        session.add(tech)
+        users["technician"].append({"id": tech.id, "email": tech.email, "name": tech.name})
+
+    # Employees (5)
+    for j in range(5):
+        first, last = next_name()
+        dept = dept_map[j % len(dept_map)]
+        emp = UserModel(
+            id=uid(),
+            email=f"{first.lower()}.{last.lower()}@{domain}",
+            name=f"{first} {last}",
+            role="employee",
+            company_id=company_id,
+            department_id=dept["id"],
+            is_active=True,
+        )
+        session.add(emp)
+        users["employee"].append({"id": emp.id, "email": emp.email, "name": emp.name})
+
+    return users
+
+
+def seed_asset_type_definitions_for_company(session, company_id: str) -> None:
+    """Create default asset type definitions for a single company (idempotent)."""
+    existing_codes = {
+        row[0]
+        for row in session.query(AssetTypeDefinitionModel.code).filter_by(
+            company_id=company_id,
+        ).all()
+    }
+    now = datetime.utcnow()
+    for code, name, icon, sort_order in DEFAULT_ASSET_TYPES:
+        if code in existing_codes:
+            continue
+        session.add(AssetTypeDefinitionModel(
+            id=uid(),
+            company_id=company_id,
+            code=code,
+            name=name,
+            icon=icon,
+            is_active=True,
+            sort_order=sort_order,
+            created_at=now,
+            updated_at=now,
+        ))
+
+
+def seed_assets_for_company(
+    session, company_id: str, users: dict, dept_map: list[dict], loc_map: dict,
+) -> list[str]:
+    """Create assets for a single company. Returns list of asset IDs."""
+    serial_counter = 1000
+    employees = users["employee"]
+    technicians = users["technician"]
+    all_assignable = employees + technicians
+    custom_loc_ids = [v for k, v in loc_map.items() if k not in ("employee", "in_transit", "main_warehouse")]
+    asset_ids = []
+
+    catalog_items = random.choices(ASSET_CATALOG, k=18)
+
+    for i, (atype, brand, model, serial_prefix) in enumerate(catalog_items):
+        serial_counter += 1
+        serial = f"{serial_prefix}-{serial_counter:06d}"
+
+        rand = random.random()
+        if rand < 0.55:
+            status = "assigned"
+            assigned_to = all_assignable[i % len(all_assignable)]["id"]
+            location_id = loc_map["employee"]
+        elif rand < 0.80:
+            status = "in_stock"
+            assigned_to = None
+            if random.random() < 0.7:
+                location_id = loc_map["main_warehouse"]
+            else:
+                location_id = random.choice(custom_loc_ids)
+        elif rand < 0.93:
+            status = "in_repair"
+            assigned_to = None
+            location_id = loc_map["main_warehouse"]
+        else:
+            status = "decommissioned"
+            assigned_to = None
+            location_id = None
+
+        days_ago = random.randint(30, 365)
+        purchase = past_date_only(days_ago)
+        if i < 3:
+            warranty = date.today() + timedelta(days=random.randint(5, 25))
+        elif i < 6:
+            warranty = date.today() + timedelta(days=random.randint(60, 365))
+        else:
+            warranty = purchase + timedelta(days=random.randint(365, 1095))
+
+        asset = AssetModel(
+            id=uid(),
+            company_id=company_id,
+            type=atype,
+            brand=brand,
+            model=model,
+            serial_number=serial,
+            status=status,
+            assigned_to=assigned_to,
+            department_id=dept_map[i % len(dept_map)]["id"],
+            location_id=location_id,
+            purchase_date=purchase,
+            warranty_expiration=warranty,
+            notes=f"Demo asset #{i+1}" if i < 3 else None,
+        )
+        session.add(asset)
+        session.flush()
+        asset_ids.append(asset.id)
+
+        admin_id = users["admin"][0]["id"]
+        session.add(AssetEventModel(
+            id=uid(),
+            asset_id=asset.id,
+            event_type="asset.created",
+            data={"type": atype, "brand": brand, "model": model},
+            performed_by=admin_id,
+        ))
+        if status == "assigned":
+            session.add(AssetEventModel(
+                id=uid(),
+                asset_id=asset.id,
+                event_type="asset.assigned",
+                data={"assigned_to": assigned_to},
+                performed_by=admin_id,
+            ))
+
+    return asset_ids
+
+
+def seed_requests_for_company(session, company_id: str, users: dict) -> list[str]:
+    """Create service requests for a single company. Returns list of request IDs."""
+    employees = users["employee"]
+    technicians = users["technician"]
+    request_ids = []
+    statuses_cycle = [
+        "submitted", "in_review", "in_progress", "resolved", "resolved", "rejected",
+        "submitted", "in_progress", "resolved", "in_review", "in_progress", "resolved",
+    ]
+
+    templates = list(REQUEST_TEMPLATES)
+    random.shuffle(templates)
+
+    for i, (rtype, title, desc, priority) in enumerate(templates):
+        status = statuses_cycle[i % len(statuses_cycle)]
+        created_by = employees[i % len(employees)]["id"]
+        days_ago = random.randint(1, 80)
+
+        assigned_to = None
+        resolved_at = None
+        if status in ("in_review", "in_progress", "resolved", "rejected"):
+            assigned_to = technicians[i % len(technicians)]["id"]
+        if status == "resolved":
+            resolved_at = past_date(max(days_ago - random.randint(1, 10), 0))
+
+        request = ServiceRequestModel(
+            id=uid(),
+            company_id=company_id,
+            created_by=created_by,
+            assigned_to=assigned_to,
+            type=rtype,
+            title=title,
+            description=desc,
+            status=status,
+            priority=priority,
+            data=None,
+            resolved_at=resolved_at,
+        )
+        session.add(request)
+        session.flush()
+        request_ids.append(request.id)
+
+        session.add(RequestEventModel(
+            id=uid(),
+            request_id=request.id,
+            event_type="request.created",
+            data={"type": rtype, "title": title, "priority": priority},
+            performed_by=created_by,
+        ))
+
+        if status != "submitted":
+            session.add(RequestEventModel(
+                id=uid(),
+                request_id=request.id,
+                event_type="request.status_changed",
+                data={"from": "submitted", "to": "in_review"},
+                performed_by=assigned_to or technicians[0]["id"],
+            ))
+        if status in ("in_progress", "resolved"):
+            session.add(RequestEventModel(
+                id=uid(),
+                request_id=request.id,
+                event_type="request.status_changed",
+                data={"from": "in_review", "to": "in_progress"},
+                performed_by=assigned_to or technicians[0]["id"],
+            ))
+        if status == "resolved":
+            session.add(RequestEventModel(
+                id=uid(),
+                request_id=request.id,
+                event_type="request.status_changed",
+                data={"from": "in_progress", "to": "resolved"},
+                performed_by=assigned_to or technicians[0]["id"],
+            ))
+        if status == "rejected":
+            session.add(RequestEventModel(
+                id=uid(),
+                request_id=request.id,
+                event_type="request.status_changed",
+                data={"from": "in_review", "to": "rejected"},
+                performed_by=assigned_to or technicians[0]["id"],
+            ))
+
+        if random.random() < 0.6:
+            comment_text = random.choice(COMMENT_TEMPLATES)
+            session.add(RequestCommentModel(
+                id=uid(),
+                request_id=request.id,
+                author_id=created_by,
+                body=comment_text,
+            ))
+            if assigned_to and random.random() < 0.5:
+                session.add(RequestCommentModel(
+                    id=uid(),
+                    request_id=request.id,
+                    author_id=assigned_to,
+                    body="We're looking into this. I'll update you shortly.",
                 ))
-            template.set_checklist_items(items)
-            subtypes = []
-            for k, sub_spec in enumerate(spec.get("subtypes", [])):
-                subtypes.append(WorkflowSubtype.create(
-                    template_id=template.id,
-                    name=sub_spec["name"],
-                    description=sub_spec.get("description"),
-                    sort_order=k,
-                ))
-            template.set_subtypes(subtypes)
-            repo.save(template)
+
+        if assigned_to and random.random() < 0.4:
+            note_text = random.choice(NOTE_TEMPLATES)
+            session.add(RequestNoteModel(
+                id=uid(),
+                request_id=request.id,
+                author_id=assigned_to,
+                body=note_text,
+            ))
+
+    return request_ids
+
+
+def seed_notifications_for_company(session, company_id: str, users: dict) -> int:
+    """Create notifications for all users in a single company. Returns count."""
+    event_types = [
+        "request.created", "request.status_changed", "request.assigned",
+        "request.comment_added", "report.ready",
+    ]
+    notification_templates = [
+        ("New request submitted", "A new service request has been submitted."),
+        ("Request status updated", "Your request status has been changed to in_progress."),
+        ("Request assigned", "A request has been assigned to you."),
+        ("New comment on request", "Someone commented on your service request."),
+        ("Report ready", "Your requested report is ready for download."),
+    ]
+
+    total = 0
+    all_users = (
+        users["admin"] + users["procurement_manager"]
+        + users["technician"] + users["employee"]
+    )
+    for user in all_users:
+        count = random.randint(2, 5)
+        for j in range(count):
+            idx = j % len(notification_templates)
+            title, body = notification_templates[idx]
+            event_type = event_types[idx]
+            is_read = random.random() < 0.4
+
+            session.add(NotificationModel(
+                id=uid(),
+                user_id=user["id"],
+                company_id=company_id,
+                event_type=event_type,
+                title=title,
+                body=body,
+                data={"demo": True},
+                is_read=is_read,
+            ))
             total += 1
+    return total
+
+
+def seed_reports_for_company(session, company_id: str, users: dict) -> int:
+    """Create report records for a single company. Returns count."""
+    report_types = ["asset_inventory", "request_summary", "technician_performance"]
+    statuses = ["completed", "pending", "failed"]
+    total = 0
+    admin_id = users["admin"][0]["id"]
+
+    for i, rtype in enumerate(report_types):
+        status = statuses[i]
+        report = ReportModel(
+            id=uid(),
+            company_id=company_id,
+            requested_by=admin_id,
+            type=rtype,
+            status=status,
+            parameters={"demo": True},
+            storage_key=f"reports/{company_id}/{rtype}.pdf" if status == "completed" else None,
+            error_message="Simulated failure for demo" if status == "failed" else None,
+            completed_at=past_date(5) if status == "completed" else None,
+        )
+        session.add(report)
+        total += 1
+    return total
+
+
+def seed_custom_field_definitions_for_company(session, company_id: str) -> None:
+    """Create custom field definitions for a single company."""
+    cf_repo = CustomFieldDefinitionRepository(session)
+    for entity_type, specs in CUSTOM_FIELD_SPECS.items():
+        for spec in specs:
+            defn = CustomFieldDefinition.create(
+                company_id=company_id,
+                entity_type=entity_type,
+                label=spec["label"],
+                field_type=spec["field_type"],
+                required=spec.get("required", False),
+                options=spec.get("options"),
+                sort_order=spec.get("sort_order", 0),
+            )
+            cf_repo.save(defn)
+
+
+def seed_custom_field_values_for_company(
+    session, asset_ids: list[str], request_ids: list[str],
+) -> None:
+    """Assign sample custom field values to some demo assets and requests."""
+    for i, sample in enumerate(ASSET_CUSTOM_FIELD_SAMPLES):
+        if i >= len(asset_ids):
+            break
+        asset = session.query(AssetModel).filter_by(id=asset_ids[i]).one()
+        asset.custom_fields_data = sample
+
+    for i, sample in enumerate(REQUEST_CUSTOM_FIELD_SAMPLES):
+        if i >= len(request_ids):
+            break
+        request = session.query(ServiceRequestModel).filter_by(id=request_ids[i]).one()
+        request.custom_fields_data = sample
+
+
+def seed_workflow_templates_for_company(session, company_id: str) -> None:
+    """Create workflow templates for a single company (idempotent)."""
+    existing_names = {
+        row[0]
+        for row in session.query(WorkflowTemplateModel.name).filter_by(
+            company_id=company_id,
+        ).all()
+    }
+    repo = WorkflowTemplateRepository(session)
+    for spec in WORKFLOW_TEMPLATE_SPECS:
+        if spec["name"] in existing_names:
+            continue
+        template = WorkflowTemplate.create(
+            company_id=company_id,
+            name=spec["name"],
+            description=spec.get("description"),
+            icon=spec.get("icon"),
+            require_all_complete=spec.get("require_all_complete", False),
+        )
+        items = []
+        for j, item_spec in enumerate(spec.get("checklist_items", [])):
+            items.append(ChecklistItemDefinition.create(
+                template_id=template.id,
+                title=item_spec["title"],
+                is_required=item_spec.get("is_required", True),
+                sort_order=j,
+            ))
+        template.set_checklist_items(items)
+        subtypes = []
+        for k, sub_spec in enumerate(spec.get("subtypes", [])):
+            subtypes.append(WorkflowSubtype.create(
+                template_id=template.id,
+                name=sub_spec["name"],
+                description=sub_spec.get("description"),
+                sort_order=k,
+            ))
+        template.set_subtypes(subtypes)
+        repo.save(template)
+
+
+# ---------------------------------------------------------------------------
+# Orchestrator: seed all data for a single company
+# ---------------------------------------------------------------------------
+
+def seed_company_data(session, company_id: str, company_name: str = "Demo Company") -> dict:
+    """Seed demo data for a single existing company.
+
+    The company and its email domain(s) must already exist in the database.
+    Creates departments, locations, users, asset types, assets, workflow templates,
+    service requests, notifications, reports, custom fields, and custom field values.
+
+    Returns ``{"admin_user_id": ..., "admin_email": ...}``.
+    """
+    # Resolve the company's email domain for user email generation
+    domain_row = session.query(CompanyEmailDomainModel).filter_by(
+        company_id=company_id,
+    ).first()
+    domain = domain_row.domain if domain_row else f"{company_name.lower().replace(' ', '')}.local"
+
+    dept_map = seed_departments_for_company(session, company_id)
+    loc_map = seed_locations_for_company(session, company_id)
+    users = seed_users_for_company(session, company_id, domain, dept_map)
+    seed_asset_type_definitions_for_company(session, company_id)
+    asset_ids = seed_assets_for_company(session, company_id, users, dept_map, loc_map)
+    seed_workflow_templates_for_company(session, company_id)
+    request_ids = seed_requests_for_company(session, company_id, users)
+    seed_notifications_for_company(session, company_id, users)
+    seed_reports_for_company(session, company_id, users)
+    seed_custom_field_definitions_for_company(session, company_id)
+    seed_custom_field_values_for_company(session, asset_ids, request_ids)
+    session.flush()
+    return {"admin_user_id": users["admin"][0]["id"], "admin_email": users["admin"][0]["email"]}
+
+
+# ---------------------------------------------------------------------------
+# Seed-script-only helpers (company creation, cleanup)
+# ---------------------------------------------------------------------------
+
+def clear_all(session):
+    """Delete all data using TRUNCATE CASCADE for reliability."""
+    from sqlalchemy import text
+
+    print("Clearing existing data...")
+    result = session.execute(text(
+        "SELECT tablename FROM pg_tables "
+        "WHERE schemaname = 'public' AND tablename != 'alembic_version'"
+    ))
+    tables = [row[0] for row in result]
+    if tables:
+        table_list = ", ".join(f'"{t}"' for t in tables)
+        session.execute(text(f"TRUNCATE {table_list} CASCADE"))
+        print(f"  Truncated {len(tables)} tables")
+    session.commit()
+
+
+def seed_companies(session) -> list[dict]:
+    """Create companies with email domains. Returns list of {id, name, domain}."""
+    companies = []
+    for spec in COMPANIES:
+        company = CompanyModel(
+            id=uid(),
+            name=spec["name"],
+            status="active",
+            is_active=True,
+        )
+        session.add(company)
+        session.flush()
+
+        for domain in spec["domains"]:
+            session.add(CompanyEmailDomainModel(
+                id=uid(),
+                company_id=company.id,
+                domain=domain,
+            ))
+
+        companies.append({
+            "id": company.id,
+            "name": spec["name"],
+            "domain": spec["domains"][0],
+        })
+        print(f"  Company: {spec['name']} ({', '.join(spec['domains'])})")
 
     session.commit()
-    print(f"  Workflow templates: {len(WORKFLOW_TEMPLATE_SPECS)} per company ({total} total)")
+    return companies
 
 
 # ---------------------------------------------------------------------------
@@ -978,63 +941,41 @@ def main():
         companies = seed_companies(session)
         print()
 
-        print("Creating departments...")
-        dept_map = seed_departments(session, companies)
+        # Super admin (no company)
+        print("Creating super admin...")
+        sa = UserModel(
+            id=uid(),
+            email="admin@desksupportmonkey.com",
+            name="Platform Admin",
+            role="super_admin",
+            company_id=None,
+            department_id=None,
+            is_active=True,
+        )
+        session.add(sa)
+        session.commit()
+        print(f"  Super Admin: {sa.email}")
         print()
 
-        print("Creating asset locations...")
-        loc_map = seed_locations(session, companies)
-        print()
-
-        print("Creating users...")
-        users = seed_users(session, companies, dept_map)
-        print()
-
-        print("Creating asset type definitions...")
-        seed_asset_type_definitions(session, companies)
-        print()
-
-        print("Creating assets...")
-        asset_map = seed_assets(session, companies, users, dept_map, loc_map)
-        print()
-
-        print("Creating service requests...")
-        request_map = seed_requests(session, companies, users)
-        print()
-
-        print("Creating notifications...")
-        seed_notifications(session, companies, users)
-        print()
-
-        print("Creating reports...")
-        seed_reports(session, companies, users)
-        print()
-
-        # --- Custom Field Definitions ---
-        print("Creating custom field definitions...")
-        seed_custom_field_definitions(session, companies)
-        print()
-
-        print("Assigning custom field values...")
-        seed_custom_field_values(session, asset_map, request_map)
-        print()
-
-        # --- Workflow Templates ---
-        print("Creating workflow templates...")
-        seed_workflow_templates(session, companies)
-        print()
+        # Seed per-company data via orchestrator
+        company_results = {}
+        for company in companies:
+            print(f"Seeding data for {company['name']}...")
+            result = seed_company_data(session, company["id"], company["name"])
+            company_results[company["id"]] = result
+            session.commit()
+            print(f"  Done — admin: {result['admin_email']}")
+            print()
 
         print("=" * 60)
         print("Seed complete!")
         print()
         print("Demo login emails:")
-        print(f"  Super Admin:  {users['super_admin']['email']}")
+        print(f"  Super Admin:  {sa.email}")
         for company in companies:
             cid = company["id"]
             print(f"\n  {company['name']}:")
-            print(f"    Admin:      {users[cid]['admin'][0]['email']}")
-            print(f"    Technician: {users[cid]['technician'][0]['email']}")
-            print(f"    Employee:   {users[cid]['employee'][0]['email']}")
+            print(f"    Admin: {company_results[cid]['admin_email']}")
         print()
         print("Use magic link auth — check Mailpit at http://localhost:8028")
         print("=" * 60)

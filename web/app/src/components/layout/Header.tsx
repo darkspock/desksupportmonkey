@@ -36,14 +36,17 @@ function resolveSectionKey(pathname: string): string | null {
 
 export function Header({ onMenuToggle }: HeaderProps) {
   const location = useLocation();
-  const { user, logout, refreshUser } = useAuth();
+  const { user, logout, refreshUser, companies, switchCompany } = useAuth();
   const { unread } = useNotifications();
   const { language, setLanguage, t } = useI18n();
   const [open, setOpen] = useState(false);
   const [nameModalOpen, setNameModalOpen] = useState(false);
   const [nameInput, setNameInput] = useState('');
   const [savingName, setSavingName] = useState(false);
+  const [companyDropdownOpen, setCompanyDropdownOpen] = useState(false);
+  const [switching, setSwitching] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const companyRef = useRef<HTMLDivElement>(null);
   const companyName = user?.company_name?.trim();
   const sectionKey = resolveSectionKey(location.pathname);
   const sectionLabel = sectionKey ? t(sectionKey) : null;
@@ -63,6 +66,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (companyRef.current && !companyRef.current.contains(e.target as Node)) setCompanyDropdownOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -71,6 +75,17 @@ export function Header({ onMenuToggle }: HeaderProps) {
   const initials = user?.email
     ? user.email.substring(0, 2).toUpperCase()
     : '??';
+
+  const handleSwitch = async (companyId: string) => {
+    if (switching) return;
+    setSwitching(true);
+    try {
+      await switchCompany(companyId);
+      window.location.href = '/';
+    } finally {
+      setSwitching(false);
+    }
+  };
 
   const openNameModal = () => {
     setNameInput(user?.name ?? '');
@@ -107,23 +122,81 @@ export function Header({ onMenuToggle }: HeaderProps) {
         </button>
         <p className="text-sm font-semibold text-foreground md:hidden">{brand.name}</p>
         {companyName && (
-          <div className="hidden max-w-[280px] items-center gap-2 rounded-md border border-border bg-secondary px-3 py-1.5 md:flex">
-            <svg className="h-4 w-4 shrink-0 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21h18M5 21V7a2 2 0 012-2h10a2 2 0 012 2v14M9 9h1m4 0h1M9 13h1m4 0h1M9 17h1m4 0h1" />
-            </svg>
-            <div className="flex min-w-0 items-center gap-1 text-xs font-semibold text-secondary-foreground">
-              <span className="truncate" title={companyName}>
-                {companyName}
-              </span>
-              {sectionLabel && (
-                <>
-                  <span className="text-muted-foreground">/</span>
-                  <span className="truncate" title={sectionLabel}>
-                    {sectionLabel}
+          <div className="hidden md:flex items-center gap-2" ref={companyRef}>
+            {companies.length >= 2 ? (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => !switching && setCompanyDropdownOpen(!companyDropdownOpen)}
+                  disabled={switching}
+                  className="flex max-w-[280px] items-center gap-2 rounded-md border border-border bg-secondary px-3 py-1.5 hover:bg-accent transition-colors disabled:opacity-50"
+                >
+                  <svg className="h-4 w-4 shrink-0 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21h18M5 21V7a2 2 0 012-2h10a2 2 0 012 2v14M9 9h1m4 0h1M9 13h1m4 0h1M9 17h1m4 0h1" />
+                  </svg>
+                  <span className="truncate text-xs font-semibold text-secondary-foreground">
+                    {switching ? t('header.switching') : companyName}
                   </span>
-                </>
-              )}
-            </div>
+                  <svg className="h-3 w-3 shrink-0 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {companyDropdownOpen && !switching && (
+                  <div className="absolute left-0 mt-1 w-64 bg-card border border-border rounded-lg shadow-lg py-1 z-50">
+                    <div className="px-3 py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                      {t('header.switch_company')}
+                    </div>
+                    {companies.map((c) => (
+                      <button
+                        key={c.company_id}
+                        type="button"
+                        onClick={() => {
+                          if (!c.is_current) {
+                            setCompanyDropdownOpen(false);
+                            handleSwitch(c.company_id);
+                          }
+                        }}
+                        disabled={c.is_current}
+                        className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                          c.is_current
+                            ? 'bg-primary/5 text-foreground cursor-default'
+                            : 'text-foreground hover:bg-accent'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="truncate font-medium">{c.company_name}</span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-[10px] text-muted-foreground">{t(`enum.${c.role}`)}</span>
+                            {c.is_current && (
+                              <span className="text-[10px] font-medium text-primary">{t('header.current_company')}</span>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex max-w-[280px] items-center gap-2 rounded-md border border-border bg-secondary px-3 py-1.5">
+                <svg className="h-4 w-4 shrink-0 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21h18M5 21V7a2 2 0 012-2h10a2 2 0 012 2v14M9 9h1m4 0h1M9 13h1m4 0h1M9 17h1m4 0h1" />
+                </svg>
+                <div className="flex min-w-0 items-center gap-1 text-xs font-semibold text-secondary-foreground">
+                  <span className="truncate" title={companyName}>
+                    {companyName}
+                  </span>
+                </div>
+              </div>
+            )}
+            {sectionLabel && (
+              <div className="flex items-center gap-1 text-xs font-semibold text-secondary-foreground">
+                <span className="text-muted-foreground">/</span>
+                <span className="truncate" title={sectionLabel}>
+                  {sectionLabel}
+                </span>
+              </div>
+            )}
           </div>
         )}
       </div>

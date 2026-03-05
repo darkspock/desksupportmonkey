@@ -16,6 +16,12 @@ VALID_TRANSITIONS: dict[CompanyStatus, list[CompanyStatus]] = {
 }
 
 
+class AuthMode(str, Enum):
+    """Authentication mode for a company."""
+    DOMAIN = "domain"
+    MEMBERSHIP_ONLY = "membership_only"
+
+
 class CompanySector(str, Enum):
     FINANCIAL_SERVICES = "financial_services"
     HEALTHCARE = "healthcare"

@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass
+from typing import Optional
 
 from core.config import OAuthSettings
 from src.auth_bc.company_lookup.domain.service import CompanyLookupInterface
@@ -37,6 +38,7 @@ class MicrosoftMissingEmail(Exception):
 @dataclass
 class MicrosoftOAuthLoginRequest:
     id_token: str
+    company_id: Optional[str] = None
 
 
 class MicrosoftOAuthLoginService:
@@ -78,4 +80,4 @@ class MicrosoftOAuthLoginService:
             provider_id=user_info.oid,
             provider_field="microsoft_id",
         )
-        return service.login_or_create(info)
+        return service.login_or_create(info, company_id=request.company_id)

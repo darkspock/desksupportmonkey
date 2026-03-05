@@ -41,6 +41,9 @@ dependencies = [
     "google-auth>=2.38.0",
     "requests>=2.32.5",
     "stripe>=14.3.0",
+    # AI Support Assistant
+    "anthropic>=0.40.0",
+    "openai>=1.0.0",
 ]
 
 [project.optional-dependencies]

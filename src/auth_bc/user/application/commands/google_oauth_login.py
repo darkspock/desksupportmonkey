@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass
+from typing import Optional
 
 from core.config import OAuthSettings
 from src.auth_bc.company_lookup.domain.service import CompanyLookupInterface
@@ -37,6 +38,7 @@ class GoogleEmailNotVerified(Exception):
 @dataclass
 class GoogleOAuthLoginRequest:
     id_token: str
+    company_id: Optional[str] = None
 
 
 class GoogleOAuthLoginService:
@@ -75,4 +77,4 @@ class GoogleOAuthLoginService:
             provider_id=user_info.sub,
             provider_field="google_id",
         )
-        return service.login_or_create(info)
+        return service.login_or_create(info, company_id=request.company_id)

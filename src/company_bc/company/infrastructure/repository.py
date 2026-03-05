@@ -2,12 +2,12 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 import ulid
-from sqlalchemy import ColumnElement, and_, case, delete, func, select
+from sqlalchemy import ColumnElement, and_, case, delete, exists, func, select
 from sqlalchemy.orm import Session
 
 from src.company_bc.company.domain.billing_enums import BillingStatus, PlanTier
 from src.company_bc.company.domain.entities import Company
-from src.company_bc.company.domain.enums import CompanyStatus
+from src.company_bc.company.domain.enums import AuthMode, CompanyStatus
 from src.company_bc.company.domain.repository import CompanyRepositoryInterface
 from src.company_bc.company.infrastructure.models import (
     CompanyEmailDomainModel,
@@ -26,8 +26,10 @@ class CompanyRepository(CompanyRepositoryInterface):
         ).scalar_one_or_none()
         if existing:
             existing.name = company.name
+            existing.slug = company.slug or ""
             existing.status = company.status.value
             existing.is_active = company.is_active
+            existing.auth_mode = company.auth_mode.value
             existing.plan = company.plan.value
             existing.billing_status = company.billing_status.value
             existing.stripe_customer_id = company.stripe_customer_id
@@ -46,8 +48,10 @@ class CompanyRepository(CompanyRepositoryInterface):
             model = CompanyModel(
                 id=company.id,
                 name=company.name,
+                slug=company.slug,
                 status=company.status.value,
                 is_active=company.is_active,
+                auth_mode=company.auth_mode.value,
                 plan=company.plan.value,
                 billing_status=company.billing_status.value,
                 stripe_customer_id=company.stripe_customer_id,
@@ -357,6 +361,29 @@ class CompanyRepository(CompanyRepositoryInterface):
         ).scalar_one_or_none()
         return result is not None
 
+    def find_by_ids(self, ids: list[str]) -> list[Company]:
+        if not ids:
+            return []
+        models = self.session.execute(
+            select(CompanyModel).where(CompanyModel.id.in_(ids))
+        ).scalars().all()
+        return [self._to_entity(m) for m in models]
+
+    def find_by_slug(self, slug: str) -> Optional[Company]:
+        model = self.session.execute(
+            select(CompanyModel).where(CompanyModel.slug == slug)
+        ).scalar_one_or_none()
+        if not model:
+            return None
+        return self._to_entity(model)
+
+    def slug_exists(self, slug: str, exclude_company_id: Optional[str] = None) -> bool:
+        conditions = [CompanyModel.slug == slug]
+        if exclude_company_id:
+            conditions.append(CompanyModel.id != exclude_company_id)
+        stmt = select(exists().where(*conditions))
+        return self.session.execute(stmt).scalar() or False
+
     def _to_entity(self, model: CompanyModel) -> Company:
         domains = self.session.execute(
             select(CompanyEmailDomainModel.domain)
@@ -365,9 +392,11 @@ class CompanyRepository(CompanyRepositoryInterface):
         return Company(
             id=model.id,
             name=model.name,
+            slug=model.slug,
             status=CompanyStatus(model.status),
             email_domains=list(domains),
             is_active=model.is_active,
+            auth_mode=AuthMode(model.auth_mode),
             created_at=model.created_at,
             updated_at=model.updated_at,
             plan=PlanTier(model.plan),

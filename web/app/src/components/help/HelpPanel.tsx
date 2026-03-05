@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
-import { HelpCircle, X, Mail } from 'lucide-react';
+import { HelpCircle, X, Bot, Ticket } from 'lucide-react';
 import { useI18n } from '../../lib/i18n';
+import { useAuth } from '../../contexts/AuthContext';
 import { getHelpKeyForPath } from '../../config/helpContent';
 
 export function HelpPanel() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const { t } = useI18n();
+  const { isRole } = useAuth();
 
   const helpKey = getHelpKeyForPath(location.pathname);
 
@@ -70,17 +72,32 @@ export function HelpPanel() {
             </div>
 
             {/* Contact footer */}
-            <div className="border-t border-border p-4">
-              <p className="text-sm text-muted-foreground">
-                {t('help.contact_label')}
-              </p>
-              <a
-                href={`mailto:${t('help.contact_email')}`}
-                className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-              >
-                <Mail className="h-4 w-4" />
-                {t('help.contact_email')}
-              </a>
+            <div className="border-t border-border p-4 space-y-3">
+              {isRole('admin', 'technician') && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      close();
+                      window.dispatchEvent(new CustomEvent('open-ai-chat'));
+                    }}
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-violet-600 hover:text-violet-700 hover:underline"
+                  >
+                    <Bot className="h-4 w-4" />
+                    {t('ai_chat.title')}
+                  </button>
+                </div>
+              )}
+              <div>
+                <a
+                  href="/support/tickets/new"
+                  onClick={close}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                >
+                  <Ticket className="h-4 w-4" />
+                  {t('help.contact_support')}
+                </a>
+              </div>
             </div>
           </div>
         </div>

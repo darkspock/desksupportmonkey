@@ -109,3 +109,73 @@ class TestPasswordLoginService:
 
         with pytest.raises(AccountInactiveError):
             handler.handle(PasswordLoginRequest(email="admin@example.com", password="password"))
+
+
+class TestPasswordLoginWithMembership:
+    """Tests for password login with scoped auth (membership resolution)."""
+
+    def test_scoped_login_resolves_membership(self):
+        user = _make_admin()
+        repo = MagicMock()
+        repo.find_by_email.return_value = user
+
+        membership_auth = MagicMock()
+        membership_auth.resolve_membership.return_value = user
+
+        company_repo = MagicMock()
+        company = MagicMock()
+        company.auth_mode = MagicMock()
+        company.auth_mode.value = "domain"
+        company_repo.find_by_id.return_value = company
+
+        handler = PasswordLoginService(
+            user_repo=repo,
+            company_lookup=MagicMock(find_company_by_email_domain=MagicMock(return_value=("comp1", True))),
+            jwt_service=MagicMock(create_token=MagicMock(return_value="jwt_scoped")),
+            password_service=MagicMock(verify_password=MagicMock(return_value=True)),
+            membership_auth=membership_auth,
+            company_repo=company_repo,
+        )
+
+        token = handler.handle(PasswordLoginRequest(
+            email="admin@example.com", password="password", company_id="comp1"
+        ))
+
+        assert token == "jwt_scoped"
+        membership_auth.resolve_membership.assert_called_once_with(
+            user, "comp1", "domain"
+        )
+
+    def test_unscoped_login_skips_membership(self):
+        user = _make_admin()
+        repo = MagicMock()
+        repo.find_by_email.return_value = user
+
+        membership_auth = MagicMock()
+        handler = PasswordLoginService(
+            user_repo=repo,
+            company_lookup=MagicMock(find_company_by_email_domain=MagicMock(return_value=("comp1", True))),
+            jwt_service=MagicMock(create_token=MagicMock(return_value="jwt_unscoped")),
+            password_service=MagicMock(verify_password=MagicMock(return_value=True)),
+            membership_auth=membership_auth,
+            company_repo=MagicMock(),
+        )
+
+        token = handler.handle(PasswordLoginRequest(
+            email="admin@example.com", password="password"
+        ))
+
+        assert token == "jwt_unscoped"
+        membership_auth.resolve_membership.assert_not_called()
+
+    def test_scoped_login_without_membership_service_skips(self):
+        user = _make_admin()
+        repo = MagicMock()
+        repo.find_by_email.return_value = user
+        handler = _make_handler(repo)
+
+        token = handler.handle(PasswordLoginRequest(
+            email="admin@example.com", password="password", company_id="comp1"
+        ))
+
+        assert token == "jwt_token"

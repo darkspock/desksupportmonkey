@@ -20,6 +20,7 @@ import dataclasses
 
 from adapters.http.api.companies.schemas import (
     CompanyBillingResponse,
+    CompanyBySlugResponse,
     CompanyDetailResponse,
     CompanyResponse,
     CreateCompanyRequest,
@@ -28,6 +29,7 @@ from adapters.http.api.companies.schemas import (
     OverridePlanRequest,
     UpdateCompanyRequest,
     UpdateCompanyStatusRequest,
+    UpdateSlugRequest,
 )
 from adapters.http.schemas.responses import PaginationMeta
 from core.email import get_email_service
@@ -104,8 +106,19 @@ from src.company_bc.company.application.queries.billing.get_company_invoices imp
     GetCompanyInvoicesQuery,
     GetCompanyInvoicesQueryHandler,
 )
+from src.company_bc.company.application.commands.update_company_slug import (
+    CompanyNotFoundError as SlugCompanyNotFoundError,
+    UpdateCompanySlugCommand,
+    UpdateCompanySlugCommandHandler,
+)
+from src.company_bc.company.application.queries.get_company_by_slug import (
+    CompanyBySlugDto,
+    CompanyNotFoundError as SlugResolveNotFoundError,
+    GetCompanyBySlugQuery,
+    GetCompanyBySlugQueryHandler,
+)
 from src.company_bc.company.domain.billing_enums import PlanTier
-from src.company_bc.company.domain.entities import Company, InvalidStatusTransitionError
+from src.company_bc.company.domain.entities import Company, InvalidStatusTransitionError, SlugAlreadyTakenError
 from src.company_bc.company.infrastructure.repository import CompanyRepository
 
 logger = logging.getLogger(__name__)
@@ -117,9 +130,11 @@ def _to_response(company: Company) -> CompanyResponse:
     return CompanyResponse(
         id=company.id,
         name=company.name,
+        slug=company.slug,
         status=company.status.value,
         email_domains=company.email_domains,
         is_active=company.is_active,
+        auth_mode=company.auth_mode.value,
         created_at=company.created_at,
         updated_at=company.updated_at,
     )
@@ -202,6 +217,65 @@ def create_company(
         id=company_id,
     )
     _handle_create_company_errors(handler, command)
+    return _get_company_response(company_repo, company_id)
+
+
+@router.get("/by-slug/{slug}", response_model=dict)
+def get_company_by_slug(
+    slug: str,
+    company_repo: CompanyRepository = Depends(get_company_repo),
+):
+    """Public endpoint: resolve company slug to company info for login page."""
+    from core.config import settings as app_settings
+
+    handler = GetCompanyBySlugQueryHandler(
+        company_repo=company_repo,
+        oauth_settings=app_settings.oauth,
+    )
+    try:
+        dto = handler.handle(GetCompanyBySlugQuery(slug=slug))
+    except SlugResolveNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Company not found",
+        )
+    return {
+        "data": CompanyBySlugResponse(
+            id=dto.id,
+            name=dto.name,
+            slug=dto.slug,
+            auth_mode=dto.auth_mode,
+            google_enabled=dto.google_enabled,
+            microsoft_enabled=dto.microsoft_enabled,
+        ).model_dump(mode="json")
+    }
+
+
+@router.patch("/{company_id}/slug")
+def update_company_slug_super_admin(
+    company_id: str,
+    body: UpdateSlugRequest,
+    current_user: User = Depends(require_role(UserRole.SUPER_ADMIN)),
+    company_repo: CompanyRepository = Depends(get_company_repo),
+):
+    """Super admin updates any company's slug."""
+    handler = UpdateCompanySlugCommandHandler(company_repo=company_repo)
+    try:
+        handler.handle(
+            UpdateCompanySlugCommand(company_id=company_id, slug=body.slug)
+        )
+    except SlugCompanyNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Company not found"
+        )
+    except SlugAlreadyTakenError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Slug is already taken"
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
+        )
     return _get_company_response(company_repo, company_id)
 
 

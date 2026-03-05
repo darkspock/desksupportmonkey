@@ -10,8 +10,9 @@ export async function fetchOAuthProviders(): Promise<OAuthProviders> {
   return data.data;
 }
 
-export async function loginWithGoogle(idToken: string): Promise<string> {
-  const { data } = await api.post<{ data: { access_token: string } }>('/auth/oauth/google', {
+export async function loginWithGoogle(idToken: string, slug?: string): Promise<string> {
+  const path = slug ? `/auth/${slug}/oauth/google` : '/auth/oauth/google';
+  const { data } = await api.post<{ data: { access_token: string } }>(path, {
     id_token: idToken,
   });
   return data.data.access_token;
@@ -73,8 +74,9 @@ export function loginWithMicrosoftPopup(
   });
 }
 
-export async function loginWithMicrosoft(idToken: string): Promise<string> {
-  const { data } = await api.post<{ data: { access_token: string } }>('/auth/oauth/microsoft', {
+export async function loginWithMicrosoft(idToken: string, slug?: string): Promise<string> {
+  const path = slug ? `/auth/${slug}/oauth/microsoft` : '/auth/oauth/microsoft';
+  const { data } = await api.post<{ data: { access_token: string } }>(path, {
     id_token: idToken,
   });
   return data.data.access_token;

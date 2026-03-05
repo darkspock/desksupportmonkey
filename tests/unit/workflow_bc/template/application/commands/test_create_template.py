@@ -23,7 +23,7 @@ class TestCreateWorkflowTemplateCommandHandler:
                 company_id="01COMP",
                 name="Incident",
                 description="Report an incident",
-                icon="alert-circle",
+                icon="circle-alert",
             )
         )
 

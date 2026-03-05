@@ -153,6 +153,8 @@ export const sections: NavSection[] = [
     items: [
       { to: '/overview', labelKey: 'nav.overview', roles: ['super_admin'] },
       { to: '/companies', labelKey: 'nav.companies', roles: ['super_admin'] },
+      { to: '/resellers', labelKey: 'nav.resellers', roles: ['super_admin'] },
+      { to: '/platform/support-tickets', labelKey: 'nav.platform_support_tickets', roles: ['super_admin'] },
       { to: '/super-admin/audit', labelKey: 'nav.super_admin_audit', roles: ['super_admin'] },
     ],
   },

@@ -33,3 +33,27 @@ class CompanyLookupService(CompanyLookupInterface):
         if result is None:
             return None
         return (result[0], result[1])
+
+    def is_email_allowed_in_company(self, email: str, company_id: str) -> bool:
+        domain = self.extract_domain(email)
+        result = self.session.execute(
+            select(CompanyEmailDomainModel.id)
+            .where(CompanyEmailDomainModel.company_id == company_id)
+            .where(CompanyEmailDomainModel.domain == domain)
+        ).first()
+        return result is not None
+
+    def find_companies_by_email_domain(
+        self, email: str
+    ) -> list[tuple[str, str, bool]]:
+        domain = self.extract_domain(email)
+        results = self.session.execute(
+            select(
+                CompanyEmailDomainModel.company_id,
+                CompanyModel.slug,
+                CompanyModel.is_active,
+            )
+            .join(CompanyModel, CompanyEmailDomainModel.company_id == CompanyModel.id)
+            .where(CompanyEmailDomainModel.domain == domain)
+        ).all()
+        return [(r[0], r[1], r[2]) for r in results]

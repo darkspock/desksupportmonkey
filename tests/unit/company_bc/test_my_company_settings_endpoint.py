@@ -53,8 +53,10 @@ class TestMyCompanySettingsEndpoint:
             company=SimpleNamespace(
                 id="comp1",
                 name="Acme Corp",
+                slug="acme-corp",
                 email_domains=["company.com", "company.org"],
                 sector=None,
+                auth_mode=SimpleNamespace(value="domain"),
             )
         )
 
@@ -73,8 +75,10 @@ class TestMyCompanySettingsEndpoint:
             company=SimpleNamespace(
                 id="comp1",
                 name="Acme Corp",
+                slug="acme-corp",
                 email_domains=["company.com", "new.company.com"],
                 sector=None,
+                auth_mode=SimpleNamespace(value="domain"),
             )
         )
 

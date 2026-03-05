@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy.orm import Session
 
 from adapters.http.api.auth.dependencies import require_role
 from adapters.http.api.billing.dependencies import (
@@ -8,6 +9,7 @@ from adapters.http.api.billing.dependencies import (
     get_company_repo,
     get_stripe_client,
 )
+from core.database import get_db
 from adapters.http.api.billing.schemas import (
     BillingOverviewResponse,
     CheckoutRequest,
@@ -29,6 +31,9 @@ from src.company_bc.company.application.services.stripe_webhook_dispatcher impor
 )
 from src.company_bc.company.domain.billing_enums import PlanTier
 from src.company_bc.company.infrastructure.repository import CompanyRepository
+from src.reseller_bc.client.infrastructure.repository import ResellerClientRepository
+from src.reseller_bc.commission.infrastructure.repository import ResellerCommissionRepository
+from src.reseller_bc.reseller.infrastructure.repository import ResellerRepository
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +45,7 @@ async def stripe_webhook(
     request: Request,
     company_repo: CompanyRepository = Depends(get_company_repo),
     stripe_client: StripeClient = Depends(get_stripe_client),
+    db: Session = Depends(get_db),
 ):
     """Public endpoint — Stripe webhook receiver. Validates signature and dispatches events."""
     body = await request.body()
@@ -57,7 +63,12 @@ async def stripe_webhook(
             detail="invalid_stripe_signature",
         )
 
-    dispatcher = StripeWebhookDispatcher(company_repo=company_repo)
+    dispatcher = StripeWebhookDispatcher(
+        company_repo=company_repo,
+        client_repo=ResellerClientRepository(db),
+        commission_repo=ResellerCommissionRepository(db),
+        reseller_repo=ResellerRepository(db),
+    )
     dispatcher.dispatch(event)
 
     return {"status": "ok"}

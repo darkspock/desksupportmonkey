@@ -13,8 +13,10 @@ class CompanyModel(ULIDMixin, TimestampMixin, Base):
     __tablename__ = "companies"
 
     name: Mapped[str] = mapped_column(String(255))
+    slug: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     status: Mapped[str] = mapped_column(String(20), server_default="active")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    auth_mode: Mapped[str] = mapped_column(String(20), nullable=False, server_default="domain")
 
     # Billing fields
     plan: Mapped[str] = mapped_column(String(20), nullable=False, server_default="free")

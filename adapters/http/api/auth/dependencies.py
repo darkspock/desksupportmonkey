@@ -31,6 +31,10 @@ def get_current_user(
     except InvalidTokenError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
+    token_type = payload.get("type", "user")
+    if token_type != "user":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
+
     user_id = payload.get("sub")
     if not user_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
@@ -42,6 +46,14 @@ def get_current_user(
 
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User account is deactivated")
+
+    # Session invalidation: JWT company_id must match user row's company_id
+    jwt_company_id = payload.get("company_id")
+    if jwt_company_id is not None and user.company_id != jwt_company_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired — please log in again",
+        )
 
     # Check company status (skip for super admins with no company)
     if user.company_id:
@@ -191,3 +203,19 @@ def get_magic_link_repo(db: Session = Depends(get_db)) -> MagicLinkRepository:
 
 def get_company_repo(db: Session = Depends(get_db)) -> CompanyRepository:
     return CompanyRepository(db)
+
+
+def get_company_user_repo(db: Session = Depends(get_db)):
+    from src.auth_bc.company_user.infrastructure.repository import CompanyUserRepository
+    return CompanyUserRepository(db)
+
+
+def get_membership_auth_service(db: Session = Depends(get_db)):
+    from src.auth_bc.company_user.infrastructure.repository import CompanyUserRepository
+    from src.auth_bc.company_user.domain.membership_auth_service import MembershipAuthService
+    from src.auth_bc.company_lookup.infrastructure.service import CompanyLookupService
+    return MembershipAuthService(
+        company_user_repo=CompanyUserRepository(db),
+        company_lookup=CompanyLookupService(db),
+        user_repo=UserRepository(db),
+    )

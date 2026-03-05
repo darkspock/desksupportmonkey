@@ -23,6 +23,7 @@ class MagicLinkRepository(MagicLinkRepositoryInterface):
             token=magic_link.token,
             expires_at=magic_link.expires_at,
             used_at=magic_link.used_at,
+            company_id=magic_link.company_id,
             created_at=magic_link.created_at,
         )
         self.session.add(model)
@@ -74,4 +75,5 @@ class MagicLinkRepository(MagicLinkRepositoryInterface):
             expires_at=model.expires_at,
             used_at=model.used_at,
             created_at=model.created_at,
+            company_id=model.company_id,
         )

@@ -13,7 +13,7 @@ class TestWorkflowTemplate:
             company_id="01COMP",
             name="Incident",
             description="Report an incident",
-            icon="alert-circle",
+            icon="circle-alert",
         )
         assert t.name == "Incident"
         assert t.company_id == "01COMP"

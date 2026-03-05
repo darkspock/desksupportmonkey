@@ -39,15 +39,25 @@ def mock_magic_link_repo():
 
 
 @pytest.fixture
-def admin_client(mock_user_repo, mock_company_repo, mock_magic_link_repo):
+def mock_company_user_repo():
+    repo = MagicMock()
+    repo.find_by_user_and_company.return_value = None
+    return repo
+
+
+@pytest.fixture
+def admin_client(mock_user_repo, mock_company_repo, mock_magic_link_repo, mock_company_user_repo):
     admin = _admin_user()
     app.dependency_overrides[auth_dependencies.get_current_user] = lambda: admin
     app.dependency_overrides[get_db] = lambda: MagicMock()
     app.dependency_overrides[get_user_repo] = lambda: mock_user_repo
     app.dependency_overrides[get_company_repo] = lambda: mock_company_repo
     app.dependency_overrides[get_magic_link_repo] = lambda: mock_magic_link_repo
-    client = TestClient(app)
-    yield client
+
+    # Patch CompanyUserRepository constructor to return our mock
+    with patch("adapters.http.api.users.routers.CompanyUserRepository", return_value=mock_company_user_repo):
+        client = TestClient(app)
+        yield client
     app.dependency_overrides.clear()
 
 

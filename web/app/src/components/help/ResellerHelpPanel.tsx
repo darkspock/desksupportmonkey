@@ -1,0 +1,113 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
+import { HelpCircle, X, Mail } from 'lucide-react';
+import { useI18n } from '../../lib/i18n';
+
+const RESELLER_HELP_CONTENT: Record<string, string> = {
+  '/reseller/dashboard': 'reseller.help.dashboard',
+  '/reseller/clients': 'reseller.help.clients',
+  '/reseller/invitations': 'reseller.help.invitations',
+  '/reseller/commissions': 'reseller.help.commissions',
+  '/reseller/payouts': 'reseller.help.payouts',
+  '/reseller/profile': 'reseller.help.profile',
+};
+
+function getResellerHelpKey(pathname: string): string {
+  if (RESELLER_HELP_CONTENT[pathname]) {
+    return RESELLER_HELP_CONTENT[pathname];
+  }
+
+  let bestMatch = '';
+  let bestKey = 'reseller.help.default';
+
+  for (const [pattern, key] of Object.entries(RESELLER_HELP_CONTENT)) {
+    if (pathname.startsWith(pattern + '/') && pattern.length > bestMatch.length) {
+      bestMatch = pattern;
+      bestKey = key;
+    }
+  }
+
+  return bestKey;
+}
+
+export function ResellerHelpPanel() {
+  const [open, setOpen] = useState(false);
+  const location = useLocation();
+  const { t } = useI18n();
+
+  const helpKey = getResellerHelpKey(location.pathname);
+
+  const close = useCallback(() => setOpen(false), []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open, close]);
+
+  return (
+    <>
+      {/* Floating help button */}
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="fixed bottom-6 right-6 z-[80] flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        aria-label={t('help.title')}
+      >
+        <HelpCircle className="h-6 w-6" />
+      </button>
+
+      {/* Slide-in panel */}
+      {open && (
+        <div className="fixed inset-0 z-[85] flex justify-end">
+          {/* Backdrop */}
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/30"
+            onClick={close}
+            aria-label={t('common.close')}
+          />
+
+          {/* Panel */}
+          <div className="relative z-10 flex h-full w-full max-w-md flex-col border-l border-border bg-card shadow-xl animate-in slide-in-from-right duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-border p-4">
+              <h2 className="text-lg font-semibold text-foreground">
+                {t('help.title')}
+              </h2>
+              <button
+                type="button"
+                onClick={close}
+                className="text-muted-foreground hover:text-foreground text-xl leading-none"
+                aria-label={t('common.close')}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Contextual content */}
+            <div className="flex-1 overflow-y-auto p-4">
+              <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
+                {t(helpKey)}
+              </p>
+            </div>
+
+            {/* Contact footer — email only, no AI bot */}
+            <div className="border-t border-border p-4">
+              <a
+                href={`mailto:${t('help.contact_email')}`}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+              >
+                <Mail className="h-4 w-4" />
+                {t('help.contact_email')}
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

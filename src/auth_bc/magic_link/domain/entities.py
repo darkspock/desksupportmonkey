@@ -14,9 +14,10 @@ class MagicLink:
     expires_at: datetime
     used_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
+    company_id: Optional[str] = None
 
     @classmethod
-    def create(cls, email: str, ttl_hours: int = 24) -> "MagicLink":
+    def create(cls, email: str, ttl_hours: int = 24, company_id: Optional[str] = None) -> "MagicLink":
         now = datetime.now(timezone.utc)
         return cls(
             id=str(ulid.new()),
@@ -24,6 +25,7 @@ class MagicLink:
             token=secrets.token_urlsafe(48),
             expires_at=now + timedelta(hours=ttl_hours),
             created_at=now,
+            company_id=company_id,
         )
 
     def mark_used(self) -> None:

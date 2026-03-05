@@ -78,3 +78,17 @@ class CompanyRepositoryInterface(ABC):
     @abstractmethod
     def is_stripe_event_processed(self, event_id: str) -> bool:
         ...
+
+    @abstractmethod
+    def find_by_ids(self, ids: list[str]) -> list[Company]:
+        ...
+
+    @abstractmethod
+    def find_by_slug(self, slug: str) -> Optional[Company]:
+        """Find company by slug (returns company regardless of status)."""
+        ...
+
+    @abstractmethod
+    def slug_exists(self, slug: str, exclude_company_id: Optional[str] = None) -> bool:
+        """Check if slug is already taken, optionally excluding a company ID (for updates)."""
+        ...

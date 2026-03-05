@@ -24,6 +24,7 @@ PLAN_FEATURES: dict[PlanTier, set[str]] = {
     PlanTier.PREMIUM: _PREMIUM_FEATURES,
     PlanTier.ENTERPRISE: _ENTERPRISE_FEATURES,
     PlanTier.OPEN_SOURCE: _ENTERPRISE_FEATURES,
+    PlanTier.DEMO: _ENTERPRISE_FEATURES,
 }
 
 PLAN_USER_LIMITS: dict[PlanTier, Optional[int]] = {
@@ -32,6 +33,7 @@ PLAN_USER_LIMITS: dict[PlanTier, Optional[int]] = {
     PlanTier.PREMIUM: 100,
     PlanTier.ENTERPRISE: None,
     PlanTier.OPEN_SOURCE: 20,
+    PlanTier.DEMO: 10,
 }
 
 PLAN_ASSET_LIMITS: dict[PlanTier, Optional[int]] = {
@@ -40,6 +42,7 @@ PLAN_ASSET_LIMITS: dict[PlanTier, Optional[int]] = {
     PlanTier.PREMIUM: None,
     PlanTier.ENTERPRISE: None,
     PlanTier.OPEN_SOURCE: None,
+    PlanTier.DEMO: 50,
 }
 
 PLAN_PRICE_CENTS: dict[PlanTier, int] = {
@@ -48,6 +51,7 @@ PLAN_PRICE_CENTS: dict[PlanTier, int] = {
     PlanTier.PREMIUM: 9900,       # €99/month (Growth)
     PlanTier.ENTERPRISE: 19900,   # €199/month (Scale)
     PlanTier.OPEN_SOURCE: 0,
+    PlanTier.DEMO: 0,
 }
 
 MILESTONE_TARGETS_CENTS: list[dict[str, object]] = [

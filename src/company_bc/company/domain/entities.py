@@ -1,3 +1,5 @@
+import re
+import unicodedata
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -5,7 +7,7 @@ from typing import Optional
 import ulid
 
 from src.company_bc.company.domain.billing_enums import BillingStatus, PlanTier
-from src.company_bc.company.domain.enums import VALID_TRANSITIONS, CompanyStatus, CompanySector
+from src.company_bc.company.domain.enums import AuthMode, VALID_TRANSITIONS, CompanyStatus, CompanySector
 
 
 class InvalidStatusTransitionError(Exception):
@@ -14,6 +16,21 @@ class InvalidStatusTransitionError(Exception):
 
 class InvalidSectorError(Exception):
     pass
+
+
+class InvalidSlugError(Exception):
+    pass
+
+
+class NoAdminMembershipError(Exception):
+    """Cannot switch to membership_only with no admin memberships."""
+    pass
+
+
+class SlugAlreadyTakenError(Exception):
+    def __init__(self, slug: str):
+        self.slug = slug
+        super().__init__(f"Slug '{slug}' is already taken")
 
 
 BLOCKED_DOMAINS = frozenset({
@@ -61,6 +78,9 @@ class Company:
     # Onboarding fields
     sector: Optional[str] = None
     onboarding_completed_at: Optional[datetime] = None
+    # Auth fields
+    slug: Optional[str] = None
+    auth_mode: AuthMode = AuthMode.DOMAIN
 
     def is_in_trial(self) -> bool:
         if self.trial_ends_at is None:
@@ -71,6 +91,40 @@ class Company:
             trial_end = self.trial_ends_at
         return datetime.now(timezone.utc) < trial_end
 
+    @property
+    def is_demo_account(self) -> bool:
+        return self.plan == PlanTier.DEMO
+
+    @property
+    def demo_days_remaining(self) -> Optional[int]:
+        """Days remaining in the demo period, or None if not a demo."""
+        if self.plan != PlanTier.DEMO or self.trial_ends_at is None:
+            return None
+        trial_end = self.trial_ends_at
+        if trial_end.tzinfo is None:
+            trial_end = trial_end.replace(tzinfo=timezone.utc)
+        remaining = (trial_end - datetime.now(timezone.utc)).days
+        return max(0, remaining)
+
+    def activate_from_demo(
+        self,
+        name: Optional[str] = None,
+        email_domains: Optional[list[str]] = None,
+    ) -> None:
+        """Convert a demo company to a real FREE account."""
+        if self.plan != PlanTier.DEMO:
+            raise ValueError("Company is not a demo account")
+        self.plan = PlanTier.FREE
+        self.trial_ends_at = datetime.now(timezone.utc) + timedelta(days=15)
+        if name is not None:
+            if not name.strip():
+                raise ValueError("Company name is required")
+            self.name = name.strip()
+        if email_domains is not None:
+            if not email_domains:
+                raise ValueError("At least one email domain is required")
+            self.email_domains = [_normalize_domain(d) for d in email_domains]
+
     @classmethod
     def create(
         cls,
@@ -78,12 +132,19 @@ class Company:
         email_domains: list[str],
         id: Optional[str] = None,
         open_source_mode: bool = False,
+        slug: Optional[str] = None,
+        is_demo: bool = False,
     ) -> "Company":
         if not name or not name.strip():
             raise ValueError("Company name is required")
         if not email_domains:
             raise ValueError("At least one email domain is required")
-        if open_source_mode:
+        if slug:
+            cls.validate_slug(slug)
+        if is_demo:
+            plan = PlanTier.DEMO
+            trial_ends_at = datetime.now(timezone.utc) + timedelta(days=14)
+        elif open_source_mode:
             plan = PlanTier.OPEN_SOURCE
             trial_ends_at = None
         else:
@@ -97,6 +158,7 @@ class Company:
             is_active=True,
             plan=plan,
             trial_ends_at=trial_ends_at,
+            slug=slug,
         )
 
     def update(
@@ -178,3 +240,46 @@ class Company:
 
     def complete_onboarding(self) -> None:
         self.onboarding_completed_at = datetime.now(timezone.utc)
+
+    # ------------------------------------------------------------------
+    # Slug domain methods
+    # ------------------------------------------------------------------
+
+    RESERVED_SLUGS = frozenset({
+        'admin', 'api', 'login', 'register', 'reseller', 'app', 'auth', 'super-admin',
+    })
+
+    @staticmethod
+    def generate_slug(name: str) -> str:
+        """Generate URL-safe slug from company name. NFKD normalization -> ASCII -> lowercase + hyphens."""
+        normalized = unicodedata.normalize('NFKD', name)
+        ascii_name = normalized.encode('ascii', 'ignore').decode('ascii')
+        slug = re.sub(r'[^a-z0-9]+', '-', ascii_name.lower()).strip('-')
+        if len(slug) < 3:
+            slug = slug + '-co'
+        return slug[:50]
+
+    @staticmethod
+    def validate_slug(slug: str) -> None:
+        """Validate slug format. Raises ValueError if invalid."""
+        if not slug:
+            raise ValueError("Slug is required")
+        if len(slug) < 3 or len(slug) > 50:
+            raise ValueError("Slug must be between 3 and 50 characters")
+        if not re.match(r'^[a-z0-9]+(-[a-z0-9]+)*$', slug):
+            raise ValueError("Slug must be lowercase alphanumeric with hyphens only")
+        if slug in Company.RESERVED_SLUGS:
+            raise ValueError(f"Slug '{slug}' is reserved")
+
+    def update_slug(self, slug: str) -> None:
+        """Update the company slug after validation."""
+        Company.validate_slug(slug)
+        self.slug = slug
+
+    # ------------------------------------------------------------------
+    # Auth mode methods
+    # ------------------------------------------------------------------
+
+    def set_auth_mode(self, mode: AuthMode) -> None:
+        """Change the company's authentication mode."""
+        self.auth_mode = mode

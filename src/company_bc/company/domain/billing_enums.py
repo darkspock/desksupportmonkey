@@ -7,6 +7,7 @@ class PlanTier(str, Enum):
     PREMIUM = "premium"
     ENTERPRISE = "enterprise"
     OPEN_SOURCE = "open_source"
+    DEMO = "demo"
 
 
 class BillingStatus(str, Enum):

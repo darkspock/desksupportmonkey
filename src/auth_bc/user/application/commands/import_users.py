@@ -4,6 +4,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Optional
 
+from src.auth_bc.company_user.domain.entities import CompanyUser
+from src.auth_bc.company_user.domain.repository import CompanyUserRepositoryInterface
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
 from src.auth_bc.user.domain.repository import UserRepositoryInterface
@@ -74,11 +76,13 @@ class ImportUsersService:
         department_repo: DepartmentRepositoryInterface,
         company_repo: CompanyRepositoryInterface,
         employee_role_repo: Optional[EmployeeRoleRepositoryInterface] = None,
+        company_user_repo: Optional[CompanyUserRepositoryInterface] = None,
     ):
         self.user_repo = user_repo
         self.department_repo = department_repo
         self.company_repo = company_repo
         self.employee_role_repo = employee_role_repo
+        self.company_user_repo = company_user_repo
 
     def preview(self, csv_content: str, company_id: str) -> PreviewResult:
         rows, _ = self._parse_csv(csv_content)
@@ -87,6 +91,7 @@ class ImportUsersService:
         if not company:
             raise InvalidCSVError("Company not found")
         allowed_domains = [d.lower() for d in company.email_domains]
+        skip_domain = company.auth_mode.value == "membership_only" if hasattr(company, 'auth_mode') else False
 
         errors: list[ImportRowError] = []
         seen_emails: set[str] = set()
@@ -96,7 +101,7 @@ class ImportUsersService:
 
         for idx, row in enumerate(rows, start=2):
             row = self._normalize_row(row)
-            error = self._validate_row(row, seen_emails, allowed_domains, company_id)
+            error = self._validate_row(row, seen_emails, allowed_domains, company_id, skip_domain_check=skip_domain)
             if error:
                 errors.append(ImportRowError(row=idx, error=error))
             else:
@@ -168,6 +173,7 @@ class ImportUsersService:
         if not company:
             raise InvalidCSVError("Company not found")
         allowed_domains = [d.lower() for d in company.email_domains]
+        skip_domain = company.auth_mode.value == "membership_only" if hasattr(company, 'auth_mode') else False
 
         # Process department mapping: create new departments first
         departments_created: list[str] = []
@@ -209,7 +215,7 @@ class ImportUsersService:
 
         for idx, row in enumerate(rows, start=2):
             row = self._normalize_row(row)
-            error = self._validate_row(row, seen_emails, allowed_domains, company_id)
+            error = self._validate_row(row, seen_emails, allowed_domains, company_id, skip_domain_check=skip_domain)
             if error:
                 errors.append(ImportRowError(row=idx, error=error))
                 continue
@@ -258,10 +264,29 @@ class ImportUsersService:
         # Save new users
         for user in users_to_save:
             self.user_repo.save(user)
+            # Create CompanyUser membership for new users
+            if self.company_user_repo:
+                membership = CompanyUser.create(
+                    user_id=user.id,
+                    company_id=company_id,
+                    role=user.role,
+                    department_id=user.department_id,
+                    employee_role_id=user.employee_role_id,
+                )
+                self.company_user_repo.save(membership)
 
         # Update existing users
         for user in users_to_update:
             self.user_repo.save(user)
+            # Dual-write: update CompanyUser membership
+            if self.company_user_repo:
+                existing_membership = self.company_user_repo.find_by_user_and_company(
+                    user.id, company_id
+                )
+                if existing_membership:
+                    existing_membership.assign_department(user.department_id)
+                    existing_membership.assign_employee_role(user.employee_role_id)
+                    self.company_user_repo.save(existing_membership)
 
         # Send magic link invitations (only for new users)
         invitations_sent = 0
@@ -344,6 +369,7 @@ class ImportUsersService:
         seen_emails: set[str],
         allowed_domains: list[str],
         company_id: str,
+        skip_domain_check: bool = False,
     ) -> Optional[str]:
         # Email required
         email = row.get("email", "").strip()
@@ -355,9 +381,10 @@ class ImportUsersService:
             return "Invalid email format"
 
         # Domain check
-        domain = email.split("@", 1)[-1].lower()
-        if domain not in allowed_domains:
-            return f"Email domain '{domain}' is not allowed for this company"
+        if not skip_domain_check:
+            domain = email.split("@", 1)[-1].lower()
+            if domain not in allowed_domains:
+                return f"Email domain '{domain}' is not allowed for this company"
 
         # Duplicate in CSV
         if email.lower() in seen_emails:

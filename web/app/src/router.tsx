@@ -1,7 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
 import { lazy, Suspense } from 'react';
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Navigate, useParams } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
+import { ResellerLayout } from './components/layout/ResellerLayout';
+import { ResellerAuthProvider } from './contexts/ResellerAuthContext';
 import { PageLoading } from './components/ui/Loading';
 import { RequireRole } from './components/auth/RequireRole';
 import { RouteErrorBoundary } from './components/ui/RouteErrorBoundary';
@@ -99,6 +101,30 @@ const ChangeListPage = lazy(() => import('./pages/admin/ChangeListPage'));
 const ChangeDetailPage = lazy(() => import('./pages/admin/ChangeDetailPage'));
 const ChangeDashboardPage = lazy(() => import('./pages/admin/ChangeDashboardPage'));
 const OnboardingWizardPage = lazy(() => import('./pages/admin/OnboardingWizardPage'));
+const ActivateDemoPage = lazy(() => import('./pages/admin/ActivateDemoPage'));
+const ResellerLoginPage = lazy(() => import('./pages/reseller/ResellerLoginPage'));
+const ResellerRegisterPage = lazy(() => import('./pages/reseller/RegisterPage'));
+const ResellerTermsPage = lazy(() => import('./pages/reseller/ResellerTermsPage'));
+const ResellerForgotPasswordPage = lazy(() => import('./pages/reseller/ForgotPasswordPage'));
+const ResellerResetPasswordPage = lazy(() => import('./pages/reseller/ResetPasswordPage'));
+const ResellerDashboardPage = lazy(() => import('./pages/reseller/ResellerDashboardPage'));
+const ResellerProfilePage = lazy(() => import('./pages/reseller/ResellerProfilePage'));
+const CommissionsPage = lazy(() => import('./pages/reseller/CommissionsPage'));
+const PayoutsPage = lazy(() => import('./pages/reseller/PayoutsPage'));
+const ResellerClientsPage = lazy(() => import('./pages/reseller/ClientsPage'));
+const ResellerInvitationsPage = lazy(() => import('./pages/reseller/InvitationsPage'));
+const ResellersPage = lazy(() => import('./pages/superadmin/ResellersPage'));
+const PayoutManagementPage = lazy(() => import('./pages/superadmin/PayoutManagementPage'));
+const MyTicketsPage = lazy(() => import('./pages/support/MyTicketsPage'));
+const CreateTicketPage = lazy(() => import('./pages/support/CreateTicketPage'));
+const TicketDetailPage = lazy(() => import('./pages/support/TicketDetailPage'));
+const SupportDashboardPage = lazy(() => import('./pages/support/SupportDashboardPage'));
+const SupportTicketDetailPage = lazy(() => import('./pages/support/SupportTicketDetailPage'));
+
+function SlugRedirect() {
+  const { slug } = useParams<{ slug: string }>();
+  return <Navigate to={`/auth/login/${slug}`} replace />;
+}
 
 function S({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoading />}>{children}</Suspense>;
@@ -108,12 +134,33 @@ const routeErrorElement = <RouteErrorBoundary />;
 
 export const router = createBrowserRouter([
   { path: '/auth/login', element: <S><LoginPage /></S>, errorElement: routeErrorElement },
+  { path: '/auth/login/:slug', element: <S><LoginPage /></S>, errorElement: routeErrorElement },
   { path: '/auth/register', element: <S><RegisterPage /></S>, errorElement: routeErrorElement },
   { path: '/auth/verify', element: <S><VerifyPage /></S>, errorElement: routeErrorElement },
   { path: '/auth/set-password', element: <S><SetPasswordPage /></S>, errorElement: routeErrorElement },
   { path: '/auth/change-password', element: <S><ChangePasswordPage /></S>, errorElement: routeErrorElement },
+  // Reseller portal (separate auth)
+  { path: '/reseller/login', element: <S><ResellerAuthProvider><ResellerLoginPage /></ResellerAuthProvider></S>, errorElement: routeErrorElement },
+  { path: '/reseller/register', element: <S><ResellerRegisterPage /></S>, errorElement: routeErrorElement },
+  { path: '/reseller/terms', element: <S><ResellerTermsPage /></S>, errorElement: routeErrorElement },
+  { path: '/reseller/forgot-password', element: <S><ResellerForgotPasswordPage /></S>, errorElement: routeErrorElement },
+  { path: '/reseller/reset-password', element: <S><ResellerResetPasswordPage /></S>, errorElement: routeErrorElement },
+  {
+    path: '/reseller',
+    element: <ResellerAuthProvider><ResellerLayout /></ResellerAuthProvider>,
+    errorElement: routeErrorElement,
+    children: [
+      { path: 'dashboard', element: <S><ResellerDashboardPage /></S> },
+      { path: 'clients', element: <S><ResellerClientsPage /></S> },
+      { path: 'invitations', element: <S><ResellerInvitationsPage /></S> },
+      { path: 'commissions', element: <S><CommissionsPage /></S> },
+      { path: 'payouts', element: <S><PayoutsPage /></S> },
+      { path: 'profile', element: <S><ResellerProfilePage /></S> },
+    ],
+  },
   // Legacy routes (redirect)
   { path: '/login', element: <Navigate to="/auth/login" replace />, errorElement: routeErrorElement },
+  { path: '/login/:slug', element: <SlugRedirect />, errorElement: routeErrorElement },
   { path: '/verify', element: <Navigate to="/auth/verify" replace />, errorElement: routeErrorElement },
   {
     path: '/',
@@ -130,6 +177,19 @@ export const router = createBrowserRouter([
       { path: 'my/shipments', element: <S><MyShipmentsPage /></S> },
       { path: 'my/incidents', element: <S><MyIncidentsPage /></S> },
       { path: 'knowledge-base', element: <S><KnowledgeBasePage /></S> },
+      // Support Tickets (TECHNICIAN+)
+      {
+        path: 'support/tickets',
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><MyTicketsPage /></S></RequireRole>,
+      },
+      {
+        path: 'support/tickets/new',
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><CreateTicketPage /></S></RequireRole>,
+      },
+      {
+        path: 'support/tickets/:id',
+        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><TicketDetailPage /></S></RequireRole>,
+      },
       { path: 'my/report-incident', element: <S><ReportIncidentPage /></S> },
       {
         path: 'my/maintenance',
@@ -327,6 +387,11 @@ export const router = createBrowserRouter([
         path: 'onboarding',
         element: <RequireRole roles={['admin']}><S><OnboardingWizardPage /></S></RequireRole>,
       },
+      // Demo activation (admin only)
+      {
+        path: 'activate-demo',
+        element: <RequireRole roles={['admin']}><S><ActivateDemoPage /></S></RequireRole>,
+      },
       // Admin+
       {
         path: 'dashboard',
@@ -445,6 +510,22 @@ export const router = createBrowserRouter([
       {
         path: 'companies',
         element: <RequireRole roles={['super_admin']}><S><CompaniesPage /></S></RequireRole>,
+      },
+      {
+        path: 'resellers',
+        element: <RequireRole roles={['super_admin']}><S><ResellersPage /></S></RequireRole>,
+      },
+      {
+        path: 'payouts',
+        element: <RequireRole roles={['super_admin']}><S><PayoutManagementPage /></S></RequireRole>,
+      },
+      {
+        path: 'platform/support-tickets',
+        element: <RequireRole roles={['super_admin']}><S><SupportDashboardPage /></S></RequireRole>,
+      },
+      {
+        path: 'platform/support-tickets/:id',
+        element: <RequireRole roles={['super_admin']}><S><SupportTicketDetailPage /></S></RequireRole>,
       },
       {
         path: 'super-admin/audit',

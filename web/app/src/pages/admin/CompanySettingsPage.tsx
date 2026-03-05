@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
@@ -19,6 +19,13 @@ export default function CompanySettingsPage() {
   const [sectorValue, setSectorValue] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [sectorDirty, setSectorDirty] = useState(false);
+  const [slugInput, setSlugInput] = useState('');
+  const [slugDirty, setSlugDirty] = useState(false);
+  const [slugError, setSlugError] = useState('');
+  const [slugCopied, setSlugCopied] = useState(false);
+  const slugTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [authModeConfirmOpen, setAuthModeConfirmOpen] = useState(false);
+  const [pendingAuthMode, setPendingAuthMode] = useState<string | null>(null);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['my-company-settings'],
@@ -60,6 +67,77 @@ export default function CompanySettingsPage() {
       showToast({ title: t('page.company_settings.error_update_title'), description: detail, variant: 'error' });
     },
   });
+
+  const currentSlug = slugDirty ? slugInput : (data?.slug ?? '');
+  const loginUrl = `${window.location.origin}/login/${data?.slug ?? ''}`;
+
+  const saveSlug = useMutation({
+    mutationFn: (slug: string) => api.patch('/my/company-settings/slug', { slug }),
+    onSuccess: (res) => {
+      const next = res.data.data as CompanySettings;
+      queryClient.setQueryData(['my-company-settings'], next);
+      setSlugInput(next.slug);
+      setSlugDirty(false);
+      setSlugError('');
+      showToast({ title: t('page.company_settings.slug_updated'), variant: 'success' });
+    },
+    onError: (err: unknown) => {
+      const resp = err as { response?: { status?: number; data?: { detail?: string } } };
+      if (resp.response?.status === 409) {
+        setSlugError(t('page.company_settings.slug_taken'));
+      } else if (resp.response?.status === 422) {
+        setSlugError(t('page.company_settings.slug_invalid'));
+      } else {
+        setSlugError(resp.response?.data?.detail || t('page.company_settings.error_update'));
+      }
+    },
+  });
+
+  const updateAuthMode = useMutation({
+    mutationFn: (authMode: string) => api.patch('/my/company-settings/auth-mode', { auth_mode: authMode }),
+    onSuccess: (res) => {
+      const next = res.data.data;
+      queryClient.setQueryData(['my-company-settings'], (old: CompanySettings | undefined) =>
+        old ? { ...old, auth_mode: next.auth_mode } : old,
+      );
+      showToast({ title: t('page.company_settings.auth_mode_updated'), variant: 'success' });
+      setAuthModeConfirmOpen(false);
+      setPendingAuthMode(null);
+    },
+    onError: (err: unknown) => {
+      const resp = err as { response?: { status?: number; data?: { detail?: string } } };
+      if (resp.response?.status === 409) {
+        showToast({ title: t('page.company_settings.auth_mode_no_admin_error'), variant: 'error' });
+      } else {
+        showToast({ title: resp.response?.data?.detail || 'Error', variant: 'error' });
+      }
+      setAuthModeConfirmOpen(false);
+      setPendingAuthMode(null);
+    },
+  });
+
+  const handleAuthModeClick = (mode: string) => {
+    if (mode === data?.auth_mode) return;
+    setPendingAuthMode(mode);
+    setAuthModeConfirmOpen(true);
+  };
+
+  const handleSlugSave = () => {
+    setSlugError('');
+    const trimmed = currentSlug.trim().toLowerCase();
+    if (!trimmed || trimmed.length < 3) {
+      setSlugError(t('page.company_settings.slug_invalid'));
+      return;
+    }
+    saveSlug.mutate(trimmed);
+  };
+
+  const handleCopyLoginUrl = () => {
+    void navigator.clipboard.writeText(loginUrl);
+    setSlugCopied(true);
+    if (slugTimeoutRef.current) clearTimeout(slugTimeoutRef.current);
+    slugTimeoutRef.current = setTimeout(() => setSlugCopied(false), 2000);
+  };
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,6 +183,110 @@ export default function CompanySettingsPage() {
                 className="w-full bg-secondary"
               />
             </div>
+
+            <div>
+              <label htmlFor="company-slug" className="block mb-1.5 text-muted-foreground">{t('page.company_settings.slug_label')}</label>
+              <div className="flex gap-2">
+                <input
+                  id="company-slug"
+                  value={currentSlug}
+                  onChange={(e) => {
+                    setSlugInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''));
+                    setSlugDirty(true);
+                    setSlugError('');
+                  }}
+                  placeholder="my-company"
+                  className="flex-1 bg-card"
+                />
+                <button
+                  type="button"
+                  onClick={handleSlugSave}
+                  disabled={saveSlug.isPending || !slugDirty}
+                  className="inline-flex items-center justify-center rounded-md h-9 px-3 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+                >
+                  {saveSlug.isPending ? t('page.company_settings.saving') : t('page.company_settings.save')}
+                </button>
+              </div>
+              {slugError && <p className="mt-1 text-xs text-destructive">{slugError}</p>}
+              <p className="mt-1 text-xs text-muted-foreground">{t('page.company_settings.slug_desc')}</p>
+            </div>
+
+            <div>
+              <label className="block mb-1.5 text-muted-foreground">{t('page.company_settings.login_url_label')}</label>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 rounded-md border border-border bg-secondary px-3 py-2 text-xs text-foreground truncate">{loginUrl}</code>
+                <button
+                  type="button"
+                  onClick={handleCopyLoginUrl}
+                  className="inline-flex items-center justify-center rounded-md h-9 px-3 text-sm font-medium border border-border bg-card text-foreground shadow-xs transition-all hover:bg-secondary"
+                >
+                  {slugCopied ? t('common.copied') : t('common.copy')}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block mb-1.5 text-muted-foreground">{t('page.company_settings.auth_mode_label')}</label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleAuthModeClick('domain')}
+                  disabled={updateAuthMode.isPending}
+                  className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-all ${
+                    data?.auth_mode === 'domain'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border bg-card text-muted-foreground hover:bg-secondary cursor-pointer'
+                  }`}
+                >
+                  {t('page.company_settings.auth_mode_domain')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAuthModeClick('membership_only')}
+                  disabled={updateAuthMode.isPending}
+                  className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-all ${
+                    data?.auth_mode === 'membership_only'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border bg-card text-muted-foreground hover:bg-secondary cursor-pointer'
+                  }`}
+                >
+                  {t('page.company_settings.auth_mode_membership')}
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">{t('page.company_settings.auth_mode_desc')}</p>
+            </div>
+
+            {authModeConfirmOpen && pendingAuthMode && (
+              <div className="rounded-md border border-border bg-secondary/50 p-4 space-y-3">
+                <p className="text-sm text-foreground">
+                  {pendingAuthMode === 'membership_only'
+                    ? t('page.company_settings.auth_mode_confirm_membership')
+                    : t('page.company_settings.auth_mode_confirm_domain')}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => updateAuthMode.mutate(pendingAuthMode)}
+                    disabled={updateAuthMode.isPending}
+                    className="inline-flex items-center justify-center rounded-md h-9 px-4 text-sm font-medium bg-primary text-primary-foreground shadow-xs transition-all hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+                  >
+                    {updateAuthMode.isPending
+                      ? t('page.company_settings.saving')
+                      : pendingAuthMode === 'membership_only'
+                        ? t('page.company_settings.auth_mode_switch_to_membership')
+                        : t('page.company_settings.auth_mode_switch_to_domain')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setAuthModeConfirmOpen(false); setPendingAuthMode(null); }}
+                    disabled={updateAuthMode.isPending}
+                    className="inline-flex items-center justify-center rounded-md h-9 px-4 text-sm font-medium border border-border bg-card text-foreground shadow-xs transition-all hover:bg-secondary disabled:pointer-events-none disabled:opacity-50"
+                  >
+                    {t('common.cancel')}
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div>
               <label htmlFor="company-sector" className="block mb-1.5 text-muted-foreground">{t('company_settings.sector')}</label>
