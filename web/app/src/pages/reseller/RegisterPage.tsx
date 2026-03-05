@@ -160,8 +160,18 @@ function ResellerRegisterContent() {
     );
   }
 
+  const resellerBrand = {
+    tagline: t('reseller.register.brand_tagline'),
+    subtitle: t('reseller.register.brand_subtitle'),
+    metrics: [
+      { value: '40%', label: t('reseller.register.brand_m1_label'), description: t('reseller.register.brand_m1_desc') },
+      { value: '∞', label: t('reseller.register.brand_m2_label'), description: t('reseller.register.brand_m2_desc') },
+      { value: '24h', label: t('reseller.register.brand_m3_label'), description: t('reseller.register.brand_m3_desc') },
+    ],
+  };
+
   return (
-    <AuthShell title={t('reseller.register.title')} subtitle={t('reseller.register.subtitle')} showBackToLogin={false}>
+    <AuthShell title={t('reseller.register.title')} subtitle={t('reseller.register.subtitle')} showBackToLogin={false} brandOverride={resellerBrand}>
       <div className="space-y-4">
         {error && (
           <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">

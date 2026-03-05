@@ -3,16 +3,26 @@ import { Link } from 'react-router-dom';
 import { useI18n } from '../../lib/i18n';
 import { brand, getBrandMessages } from '../../config/brand';
 
+interface BrandPanelOverride {
+  tagline: string;
+  subtitle: string;
+  metrics: { value: string; label: string; description: string }[];
+}
+
 interface AuthShellProps {
   title: string;
   subtitle: string;
   children: ReactNode;
   showBackToLogin?: boolean;
+  brandOverride?: BrandPanelOverride;
 }
 
-export function AuthShell({ title, subtitle, children, showBackToLogin = false }: AuthShellProps) {
+export function AuthShell({ title, subtitle, children, showBackToLogin = false, brandOverride }: AuthShellProps) {
   const { t, language } = useI18n();
   const msg = getBrandMessages(language);
+  const panelTagline = brandOverride?.tagline ?? msg.tagline;
+  const panelSubtitle = brandOverride?.subtitle ?? msg.subtitle;
+  const panelMetrics = brandOverride?.metrics ?? msg.metrics;
 
   return (
     <div className="auth-shell-bg min-h-screen">
@@ -36,15 +46,15 @@ export function AuthShell({ title, subtitle, children, showBackToLogin = false }
 
             <div className="mt-10 max-w-xl">
               <h2 className="text-balance text-4xl font-semibold leading-tight [font-family:var(--dsm-font-display)]">
-                {msg.tagline}
+                {panelTagline}
               </h2>
               <p className="mt-5 text-base leading-relaxed text-slate-300">
-                {msg.subtitle}
+                {panelSubtitle}
               </p>
             </div>
 
             <div className="mt-8 grid gap-3 sm:grid-cols-3">
-              {msg.metrics.map((metric) => (
+              {panelMetrics.map((metric) => (
                 <div key={metric.label} className="rounded-2xl border border-white/15 bg-card/5 p-4 backdrop-blur-sm">
                   <p className="text-2xl font-semibold text-white">{metric.value}</p>
                   <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-300">{metric.label}</p>
