@@ -8,7 +8,8 @@ export function setAuthRedirectHandler(handler: RedirectHandler | null) {
   redirectHandler = handler;
 }
 
-export function redirectToLogin(returnTo?: string | null, loginPath = '/auth/login') {
+export function redirectToLogin(returnTo?: string | null) {
+  const loginPath = '/auth/login';
   const safeReturnTo = getSafeReturnTo(returnTo);
   const next = safeReturnTo
     ? `${loginPath}?returnTo=${encodeURIComponent(safeReturnTo)}`

@@ -1,130 +1,120 @@
 /* eslint-disable react-refresh/only-export-components */
 import { lazy, Suspense } from 'react';
-import { createBrowserRouter, Navigate, useParams } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
-import { ResellerLayout } from './components/layout/ResellerLayout';
-import { ResellerAuthProvider } from './contexts/ResellerAuthContext';
 import { PageLoading } from './components/ui/Loading';
 import { RequireRole } from './components/auth/RequireRole';
 import { RouteErrorBoundary } from './components/ui/RouteErrorBoundary';
 
-// Lazy-loaded pages
-const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
-const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
-const VerifyPage = lazy(() => import('./pages/auth/VerifyPage'));
-const SetPasswordPage = lazy(() => import('./pages/auth/SetPasswordPage'));
-const ChangePasswordPage = lazy(() => import('./pages/auth/ChangePasswordPage'));
-const MyEquipmentPage = lazy(() => import('./pages/employee/MyEquipmentPage'));
-const MyRequestsPage = lazy(() => import('./pages/employee/MyRequestsPage'));
-const NewRequestPage = lazy(() => import('./pages/employee/NewRequestPage'));
-const NotificationsPage = lazy(() => import('./pages/employee/NotificationsPage'));
-const RequestQueuePage = lazy(() => import('./pages/technician/RequestQueuePage'));
-const RequestDetailPage = lazy(() => import('./pages/technician/RequestDetailPage'));
-const AssetListPage = lazy(() => import('./pages/technician/AssetListPage'));
-const AssetDetailPage = lazy(() => import('./pages/technician/AssetDetailPage'));
-const AssetFormPage = lazy(() => import('./pages/technician/AssetFormPage'));
-const AssetImportPage = lazy(() => import('./pages/technician/AssetImportPage'));
-const DashboardPage = lazy(() => import('./pages/admin/DashboardPage'));
-const UsersPage = lazy(() => import('./pages/admin/UsersPage'));
-const DepartmentsPage = lazy(() => import('./pages/admin/DepartmentsPage'));
-const ReportsPage = lazy(() => import('./pages/admin/ReportsPage'));
-const CompanySettingsPage = lazy(() => import('./pages/admin/CompanySettingsPage'));
-const ApiKeysPage = lazy(() => import('./pages/admin/ApiKeysPage'));
-const EquipmentProfilesPage = lazy(() => import('./pages/admin/EquipmentProfilesPage'));
-const EmployeeRolesPage = lazy(() => import('./pages/admin/EmployeeRolesPage'));
-const AssignmentAISettingsPage = lazy(() => import('./pages/admin/AssignmentAISettingsPage'));
-const ClassificationSettingsPage = lazy(() => import('./pages/admin/ClassificationSettingsPage'));
-const ProcurementSettingsPage = lazy(() => import('./pages/admin/ProcurementSettingsPage'));
-const VendorListPage = lazy(() => import('./pages/admin/VendorListPage'));
-const VendorDetailPage = lazy(() => import('./pages/admin/VendorDetailPage'));
-const PurchaseOrderListPage = lazy(() => import('./pages/admin/PurchaseOrderListPage'));
-const PurchaseOrderDetailPage = lazy(() => import('./pages/admin/PurchaseOrderDetailPage'));
-const PurchaseOrderFormPage = lazy(() => import('./pages/admin/PurchaseOrderFormPage'));
-const CalendarPage = lazy(() => import('./pages/technician/CalendarPage'));
-const AvailabilitySettingsPage = lazy(() => import('./pages/technician/AvailabilitySettingsPage'));
-const MyAppointmentsPage = lazy(() => import('./pages/employee/MyAppointmentsPage'));
-const MyRequestDetailPage = lazy(() => import('./pages/employee/MyRequestDetailPage'));
-const MyShipmentsPage = lazy(() => import('./pages/employee/MyShipmentsPage'));
-const ShipmentsPage = lazy(() => import('./pages/technician/ShipmentsPage'));
-const ShipmentDetailPage = lazy(() => import('./pages/technician/ShipmentDetailPage'));
-const ShipmentCreatePage = lazy(() => import('./pages/technician/ShipmentCreatePage'));
-const AddressesPage = lazy(() => import('./pages/technician/AddressesPage'));
-const MaintenancePage = lazy(() => import('./pages/technician/MaintenancePage'));
-const MaintenanceDetailPage = lazy(() => import('./pages/technician/MaintenanceDetailPage'));
-const MaintenanceFormPage = lazy(() => import('./pages/technician/MaintenanceFormPage'));
-const MyMaintenancePage = lazy(() => import('./pages/technician/MyMaintenancePage'));
-const MyAssignedRequestsPage = lazy(() => import('./pages/technician/MyAssignedRequestsPage'));
-const MyTaskAppointmentsPage = lazy(() => import('./pages/technician/MyTaskAppointmentsPage'));
-const MaintenanceTemplatesPage = lazy(() => import('./pages/admin/MaintenanceTemplatesPage'));
-const ReportIncidentPage = lazy(() => import('./pages/employee/ReportIncidentPage'));
-const MyIncidentsPage = lazy(() => import('./pages/employee/MyIncidentsPage'));
-const IncidentDashboardPage = lazy(() => import('./pages/technician/IncidentDashboardPage'));
-const IncidentsListPage = lazy(() => import('./pages/technician/IncidentsList'));
-const IncidentDetailPage = lazy(() => import('./pages/technician/IncidentDetail'));
-const CreateIncidentPage = lazy(() => import('./pages/technician/CreateIncidentPage'));
-const RiskListPage = lazy(() => import('./pages/technician/RiskListPage'));
-const RiskDetailPage = lazy(() => import('./pages/technician/RiskDetailPage'));
-const CreateRiskPage = lazy(() => import('./pages/technician/CreateRiskPage'));
-const EditRiskPage = lazy(() => import('./pages/technician/EditRiskPage'));
-const RiskDashboardPage = lazy(() => import('./pages/technician/RiskDashboardPage'));
-const KBCategoriesPage = lazy(() => import('./pages/admin/KBCategoriesPage'));
-const KBArticleListPage = lazy(() => import('./pages/technician/KBArticleListPage'));
-const KBArticleDetailPage = lazy(() => import('./pages/technician/KBArticleDetailPage'));
-const CreateArticlePage = lazy(() => import('./pages/technician/CreateArticlePage'));
-const EditArticlePage = lazy(() => import('./pages/technician/EditArticlePage'));
-const KBArticleVersionsPage = lazy(() => import('./pages/technician/KBArticleVersionsPage'));
-const KnowledgeBasePage = lazy(() => import('./pages/employee/KnowledgeBasePage'));
-const UserImportPage = lazy(() => import('./pages/admin/UserImportPage'));
-const CompaniesPage = lazy(() => import('./pages/superadmin/CompaniesPage'));
-const FounderDashboardPage = lazy(() => import('./pages/superadmin/FounderDashboardPage'));
-const BillingPage = lazy(() => import('./pages/admin/BillingPage'));
-const BillingProcessingPage = lazy(() => import('./pages/admin/BillingProcessingPage'));
-const SlaPoliciesPage = lazy(() => import('./pages/admin/SlaPoliciesPage'));
-const SlaDashboardPage = lazy(() => import('./pages/admin/SlaDashboardPage'));
-const LocationsPage = lazy(() => import('./pages/admin/LocationsPage'));
-const AuditLogPage = lazy(() => import('./pages/admin/AuditLogPage'));
-const AuditEntryDetailPage = lazy(() => import('./pages/admin/AuditEntryDetailPage'));
-const ComplianceControlsPage = lazy(() => import('./pages/admin/ComplianceControlsPage'));
-const CrossCompanyAuditPage = lazy(() => import('./pages/superadmin/CrossCompanyAuditPage'));
-const GdprRequestsPage = lazy(() => import('./pages/admin/GdprRequestsPage'));
-const ComplianceDashboardPage = lazy(() => import('./pages/admin/ComplianceDashboardPage'));
-const CustomFieldsPage = lazy(() => import('./pages/admin/CustomFieldsPage'));
-const AssetTypesPage = lazy(() => import('./pages/admin/AssetTypesPage'));
-const WorkflowTemplatesPage = lazy(() => import('./pages/admin/WorkflowTemplatesPage'));
-const NavVisibilitySettingsPage = lazy(() => import('./pages/admin/NavVisibilitySettingsPage'));
-const SupplyChainDashboardPage = lazy(() => import('./pages/admin/SupplyChainDashboardPage'));
-const VulnerabilitiesPage = lazy(() => import('./pages/admin/VulnerabilitiesPage'));
-const VulnerabilityDetailPage = lazy(() => import('./pages/admin/VulnerabilityDetailPage'));
-const CMDBDashboardPage = lazy(() => import('./pages/admin/CMDBDashboardPage'));
-const VulnerabilityDashboardPage = lazy(() => import('./pages/admin/VulnerabilityDashboardPage'));
-const ChangeListPage = lazy(() => import('./pages/admin/ChangeListPage'));
-const ChangeDetailPage = lazy(() => import('./pages/admin/ChangeDetailPage'));
-const ChangeDashboardPage = lazy(() => import('./pages/admin/ChangeDashboardPage'));
-const OnboardingWizardPage = lazy(() => import('./pages/admin/OnboardingWizardPage'));
-const ActivateDemoPage = lazy(() => import('./pages/admin/ActivateDemoPage'));
-const ResellerLoginPage = lazy(() => import('./pages/reseller/ResellerLoginPage'));
-const ResellerRegisterPage = lazy(() => import('./pages/reseller/RegisterPage'));
-const ResellerTermsPage = lazy(() => import('./pages/reseller/ResellerTermsPage'));
-const ResellerForgotPasswordPage = lazy(() => import('./pages/reseller/ForgotPasswordPage'));
-const ResellerResetPasswordPage = lazy(() => import('./pages/reseller/ResetPasswordPage'));
-const ResellerDashboardPage = lazy(() => import('./pages/reseller/ResellerDashboardPage'));
-const ResellerProfilePage = lazy(() => import('./pages/reseller/ResellerProfilePage'));
-const CommissionsPage = lazy(() => import('./pages/reseller/CommissionsPage'));
-const PayoutsPage = lazy(() => import('./pages/reseller/PayoutsPage'));
-const ResellerClientsPage = lazy(() => import('./pages/reseller/ClientsPage'));
-const ResellerInvitationsPage = lazy(() => import('./pages/reseller/InvitationsPage'));
-const ResellersPage = lazy(() => import('./pages/superadmin/ResellersPage'));
-const PayoutManagementPage = lazy(() => import('./pages/superadmin/PayoutManagementPage'));
-const MyTicketsPage = lazy(() => import('./pages/support/MyTicketsPage'));
-const CreateTicketPage = lazy(() => import('./pages/support/CreateTicketPage'));
-const TicketDetailPage = lazy(() => import('./pages/support/TicketDetailPage'));
-const SupportDashboardPage = lazy(() => import('./pages/support/SupportDashboardPage'));
-const SupportTicketDetailPage = lazy(() => import('./pages/support/SupportTicketDetailPage'));
-
-function SlugRedirect() {
-  const { slug } = useParams<{ slug: string }>();
-  return <Navigate to={`/auth/login/${slug}`} replace />;
+// Auto-reload once on stale chunk after deployment (no infinite loop — sessionStorage guard)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function lazyWithRetry(importFn: () => Promise<{ default: React.ComponentType<any> }>) {
+  return lazy(() =>
+    importFn().catch(() => {
+      const key = 'chunk_reload';
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, '1');
+        window.location.reload();
+        return new Promise(() => {}); // never resolves — reload in progress
+      }
+      sessionStorage.removeItem(key);
+      return importFn(); // second attempt: let it fail naturally to show error boundary
+    }),
+  );
 }
+
+// Lazy-loaded pages
+const LoginPage = lazyWithRetry(() => import('./pages/auth/LoginPage'));
+const RegisterPage = lazyWithRetry(() => import('./pages/auth/RegisterPage'));
+const VerifyPage = lazyWithRetry(() => import('./pages/auth/VerifyPage'));
+const SetPasswordPage = lazyWithRetry(() => import('./pages/auth/SetPasswordPage'));
+const ChangePasswordPage = lazyWithRetry(() => import('./pages/auth/ChangePasswordPage'));
+const MyEquipmentPage = lazyWithRetry(() => import('./pages/employee/MyEquipmentPage'));
+const MyRequestsPage = lazyWithRetry(() => import('./pages/employee/MyRequestsPage'));
+const NewRequestPage = lazyWithRetry(() => import('./pages/employee/NewRequestPage'));
+const NotificationsPage = lazyWithRetry(() => import('./pages/employee/NotificationsPage'));
+const RequestQueuePage = lazyWithRetry(() => import('./pages/technician/RequestQueuePage'));
+const RequestDetailPage = lazyWithRetry(() => import('./pages/technician/RequestDetailPage'));
+const AssetListPage = lazyWithRetry(() => import('./pages/technician/AssetListPage'));
+const AssetDetailPage = lazyWithRetry(() => import('./pages/technician/AssetDetailPage'));
+const AssetFormPage = lazyWithRetry(() => import('./pages/technician/AssetFormPage'));
+const AssetImportPage = lazyWithRetry(() => import('./pages/technician/AssetImportPage'));
+const DashboardPage = lazyWithRetry(() => import('./pages/admin/DashboardPage'));
+const UsersPage = lazyWithRetry(() => import('./pages/admin/UsersPage'));
+const DepartmentsPage = lazyWithRetry(() => import('./pages/admin/DepartmentsPage'));
+const ReportsPage = lazyWithRetry(() => import('./pages/admin/ReportsPage'));
+const CompanySettingsPage = lazyWithRetry(() => import('./pages/admin/CompanySettingsPage'));
+const ApiKeysPage = lazyWithRetry(() => import('./pages/admin/ApiKeysPage'));
+const EquipmentProfilesPage = lazyWithRetry(() => import('./pages/admin/EquipmentProfilesPage'));
+const EmployeeRolesPage = lazyWithRetry(() => import('./pages/admin/EmployeeRolesPage'));
+const AssignmentAISettingsPage = lazyWithRetry(() => import('./pages/admin/AssignmentAISettingsPage'));
+const ClassificationSettingsPage = lazyWithRetry(() => import('./pages/admin/ClassificationSettingsPage'));
+const ProcurementSettingsPage = lazyWithRetry(() => import('./pages/admin/ProcurementSettingsPage'));
+const VendorListPage = lazyWithRetry(() => import('./pages/admin/VendorListPage'));
+const VendorDetailPage = lazyWithRetry(() => import('./pages/admin/VendorDetailPage'));
+const PurchaseOrderListPage = lazyWithRetry(() => import('./pages/admin/PurchaseOrderListPage'));
+const PurchaseOrderDetailPage = lazyWithRetry(() => import('./pages/admin/PurchaseOrderDetailPage'));
+const PurchaseOrderFormPage = lazyWithRetry(() => import('./pages/admin/PurchaseOrderFormPage'));
+const CalendarPage = lazyWithRetry(() => import('./pages/technician/CalendarPage'));
+const AvailabilitySettingsPage = lazyWithRetry(() => import('./pages/technician/AvailabilitySettingsPage'));
+const MyAppointmentsPage = lazyWithRetry(() => import('./pages/employee/MyAppointmentsPage'));
+const MyRequestDetailPage = lazyWithRetry(() => import('./pages/employee/MyRequestDetailPage'));
+const MyShipmentsPage = lazyWithRetry(() => import('./pages/employee/MyShipmentsPage'));
+const ShipmentsPage = lazyWithRetry(() => import('./pages/technician/ShipmentsPage'));
+const ShipmentDetailPage = lazyWithRetry(() => import('./pages/technician/ShipmentDetailPage'));
+const ShipmentCreatePage = lazyWithRetry(() => import('./pages/technician/ShipmentCreatePage'));
+const AddressesPage = lazyWithRetry(() => import('./pages/technician/AddressesPage'));
+const MaintenancePage = lazyWithRetry(() => import('./pages/technician/MaintenancePage'));
+const MaintenanceDetailPage = lazyWithRetry(() => import('./pages/technician/MaintenanceDetailPage'));
+const MaintenanceFormPage = lazyWithRetry(() => import('./pages/technician/MaintenanceFormPage'));
+const MyMaintenancePage = lazyWithRetry(() => import('./pages/technician/MyMaintenancePage'));
+const MyAssignedRequestsPage = lazyWithRetry(() => import('./pages/technician/MyAssignedRequestsPage'));
+const MyTaskAppointmentsPage = lazyWithRetry(() => import('./pages/technician/MyTaskAppointmentsPage'));
+const MaintenanceTemplatesPage = lazyWithRetry(() => import('./pages/admin/MaintenanceTemplatesPage'));
+const ReportIncidentPage = lazyWithRetry(() => import('./pages/employee/ReportIncidentPage'));
+const MyIncidentsPage = lazyWithRetry(() => import('./pages/employee/MyIncidentsPage'));
+const IncidentDashboardPage = lazyWithRetry(() => import('./pages/technician/IncidentDashboardPage'));
+const IncidentsListPage = lazyWithRetry(() => import('./pages/technician/IncidentsList'));
+const IncidentDetailPage = lazyWithRetry(() => import('./pages/technician/IncidentDetail'));
+const CreateIncidentPage = lazyWithRetry(() => import('./pages/technician/CreateIncidentPage'));
+const RiskListPage = lazyWithRetry(() => import('./pages/technician/RiskListPage'));
+const RiskDetailPage = lazyWithRetry(() => import('./pages/technician/RiskDetailPage'));
+const CreateRiskPage = lazyWithRetry(() => import('./pages/technician/CreateRiskPage'));
+const EditRiskPage = lazyWithRetry(() => import('./pages/technician/EditRiskPage'));
+const RiskDashboardPage = lazyWithRetry(() => import('./pages/technician/RiskDashboardPage'));
+const KBCategoriesPage = lazyWithRetry(() => import('./pages/admin/KBCategoriesPage'));
+const KBArticleListPage = lazyWithRetry(() => import('./pages/technician/KBArticleListPage'));
+const KBArticleDetailPage = lazyWithRetry(() => import('./pages/technician/KBArticleDetailPage'));
+const CreateArticlePage = lazyWithRetry(() => import('./pages/technician/CreateArticlePage'));
+const EditArticlePage = lazyWithRetry(() => import('./pages/technician/EditArticlePage'));
+const KBArticleVersionsPage = lazyWithRetry(() => import('./pages/technician/KBArticleVersionsPage'));
+const KnowledgeBasePage = lazyWithRetry(() => import('./pages/employee/KnowledgeBasePage'));
+const UserImportPage = lazyWithRetry(() => import('./pages/admin/UserImportPage'));
+const CompaniesPage = lazyWithRetry(() => import('./pages/superadmin/CompaniesPage'));
+const FounderDashboardPage = lazyWithRetry(() => import('./pages/superadmin/FounderDashboardPage'));
+const BillingPage = lazyWithRetry(() => import('./pages/admin/BillingPage'));
+const SlaPoliciesPage = lazyWithRetry(() => import('./pages/admin/SlaPoliciesPage'));
+const SlaDashboardPage = lazyWithRetry(() => import('./pages/admin/SlaDashboardPage'));
+const LocationsPage = lazyWithRetry(() => import('./pages/admin/LocationsPage'));
+const AuditLogPage = lazyWithRetry(() => import('./pages/admin/AuditLogPage'));
+const AuditEntryDetailPage = lazyWithRetry(() => import('./pages/admin/AuditEntryDetailPage'));
+const ComplianceControlsPage = lazyWithRetry(() => import('./pages/admin/ComplianceControlsPage'));
+const CrossCompanyAuditPage = lazyWithRetry(() => import('./pages/superadmin/CrossCompanyAuditPage'));
+const GdprRequestsPage = lazyWithRetry(() => import('./pages/admin/GdprRequestsPage'));
+const ComplianceDashboardPage = lazyWithRetry(() => import('./pages/admin/ComplianceDashboardPage'));
+const CustomFieldsPage = lazyWithRetry(() => import('./pages/admin/CustomFieldsPage'));
+const AssetTypesPage = lazyWithRetry(() => import('./pages/admin/AssetTypesPage'));
+const WorkflowTemplatesPage = lazyWithRetry(() => import('./pages/admin/WorkflowTemplatesPage'));
+const NavVisibilitySettingsPage = lazyWithRetry(() => import('./pages/admin/NavVisibilitySettingsPage'));
+const SupplyChainDashboardPage = lazyWithRetry(() => import('./pages/admin/SupplyChainDashboardPage'));
+const VulnerabilitiesPage = lazyWithRetry(() => import('./pages/admin/VulnerabilitiesPage'));
+const VulnerabilityDetailPage = lazyWithRetry(() => import('./pages/admin/VulnerabilityDetailPage'));
+const CMDBDashboardPage = lazyWithRetry(() => import('./pages/admin/CMDBDashboardPage'));
+const VulnerabilityDashboardPage = lazyWithRetry(() => import('./pages/admin/VulnerabilityDashboardPage'));
+const ChangeListPage = lazyWithRetry(() => import('./pages/admin/ChangeListPage'));
+const ChangeDetailPage = lazyWithRetry(() => import('./pages/admin/ChangeDetailPage'));
+const ChangeDashboardPage = lazyWithRetry(() => import('./pages/admin/ChangeDashboardPage'));
+const OnboardingWizardPage = lazyWithRetry(() => import('./pages/admin/OnboardingWizardPage'));
 
 function S({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoading />}>{children}</Suspense>;
@@ -134,33 +124,12 @@ const routeErrorElement = <RouteErrorBoundary />;
 
 export const router = createBrowserRouter([
   { path: '/auth/login', element: <S><LoginPage /></S>, errorElement: routeErrorElement },
-  { path: '/auth/login/:slug', element: <S><LoginPage /></S>, errorElement: routeErrorElement },
   { path: '/auth/register', element: <S><RegisterPage /></S>, errorElement: routeErrorElement },
   { path: '/auth/verify', element: <S><VerifyPage /></S>, errorElement: routeErrorElement },
   { path: '/auth/set-password', element: <S><SetPasswordPage /></S>, errorElement: routeErrorElement },
   { path: '/auth/change-password', element: <S><ChangePasswordPage /></S>, errorElement: routeErrorElement },
-  // Reseller portal (separate auth)
-  { path: '/reseller/login', element: <S><ResellerAuthProvider><ResellerLoginPage /></ResellerAuthProvider></S>, errorElement: routeErrorElement },
-  { path: '/reseller/register', element: <S><ResellerRegisterPage /></S>, errorElement: routeErrorElement },
-  { path: '/reseller/terms', element: <S><ResellerTermsPage /></S>, errorElement: routeErrorElement },
-  { path: '/reseller/forgot-password', element: <S><ResellerForgotPasswordPage /></S>, errorElement: routeErrorElement },
-  { path: '/reseller/reset-password', element: <S><ResellerResetPasswordPage /></S>, errorElement: routeErrorElement },
-  {
-    path: '/reseller',
-    element: <ResellerAuthProvider><ResellerLayout /></ResellerAuthProvider>,
-    errorElement: routeErrorElement,
-    children: [
-      { path: 'dashboard', element: <S><ResellerDashboardPage /></S> },
-      { path: 'clients', element: <S><ResellerClientsPage /></S> },
-      { path: 'invitations', element: <S><ResellerInvitationsPage /></S> },
-      { path: 'commissions', element: <S><CommissionsPage /></S> },
-      { path: 'payouts', element: <S><PayoutsPage /></S> },
-      { path: 'profile', element: <S><ResellerProfilePage /></S> },
-    ],
-  },
   // Legacy routes (redirect)
   { path: '/login', element: <Navigate to="/auth/login" replace />, errorElement: routeErrorElement },
-  { path: '/login/:slug', element: <SlugRedirect />, errorElement: routeErrorElement },
   { path: '/verify', element: <Navigate to="/auth/verify" replace />, errorElement: routeErrorElement },
   {
     path: '/',
@@ -177,19 +146,6 @@ export const router = createBrowserRouter([
       { path: 'my/shipments', element: <S><MyShipmentsPage /></S> },
       { path: 'my/incidents', element: <S><MyIncidentsPage /></S> },
       { path: 'knowledge-base', element: <S><KnowledgeBasePage /></S> },
-      // Support Tickets (TECHNICIAN+)
-      {
-        path: 'support/tickets',
-        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><MyTicketsPage /></S></RequireRole>,
-      },
-      {
-        path: 'support/tickets/new',
-        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><CreateTicketPage /></S></RequireRole>,
-      },
-      {
-        path: 'support/tickets/:id',
-        element: <RequireRole roles={['technician', 'procurement_manager', 'admin', 'super_admin']}><S><TicketDetailPage /></S></RequireRole>,
-      },
       { path: 'my/report-incident', element: <S><ReportIncidentPage /></S> },
       {
         path: 'my/maintenance',
@@ -387,11 +343,6 @@ export const router = createBrowserRouter([
         path: 'onboarding',
         element: <RequireRole roles={['admin']}><S><OnboardingWizardPage /></S></RequireRole>,
       },
-      // Demo activation (admin only)
-      {
-        path: 'activate-demo',
-        element: <RequireRole roles={['admin']}><S><ActivateDemoPage /></S></RequireRole>,
-      },
       // Admin+
       {
         path: 'dashboard',
@@ -445,14 +396,10 @@ export const router = createBrowserRouter([
         path: 'maintenance-templates',
         element: <RequireRole roles={['admin', 'super_admin']}><S><MaintenanceTemplatesPage /></S></RequireRole>,
       },
-      // Admin billing
+      // Admin billing (Community Edition info)
       {
         path: 'billing',
         element: <RequireRole roles={['admin']}><S><BillingPage /></S></RequireRole>,
-      },
-      {
-        path: 'billing/processing',
-        element: <RequireRole roles={['admin']}><S><BillingProcessingPage /></S></RequireRole>,
       },
       {
         path: 'sla/policies',
@@ -510,22 +457,6 @@ export const router = createBrowserRouter([
       {
         path: 'companies',
         element: <RequireRole roles={['super_admin']}><S><CompaniesPage /></S></RequireRole>,
-      },
-      {
-        path: 'resellers',
-        element: <RequireRole roles={['super_admin']}><S><ResellersPage /></S></RequireRole>,
-      },
-      {
-        path: 'payouts',
-        element: <RequireRole roles={['super_admin']}><S><PayoutManagementPage /></S></RequireRole>,
-      },
-      {
-        path: 'platform/support-tickets',
-        element: <RequireRole roles={['super_admin']}><S><SupportDashboardPage /></S></RequireRole>,
-      },
-      {
-        path: 'platform/support-tickets/:id',
-        element: <RequireRole roles={['super_admin']}><S><SupportTicketDetailPage /></S></RequireRole>,
       },
       {
         path: 'super-admin/audit',

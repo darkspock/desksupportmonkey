@@ -246,7 +246,7 @@ class Company:
     # ------------------------------------------------------------------
 
     RESERVED_SLUGS = frozenset({
-        'admin', 'api', 'login', 'register', 'reseller', 'app', 'auth', 'super-admin',
+        'admin', 'api', 'login', 'register', 'app', 'auth', 'super-admin',
     })
 
     @staticmethod

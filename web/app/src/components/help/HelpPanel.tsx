@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
-import { HelpCircle, X, Bot, Ticket } from 'lucide-react';
+import { HelpCircle, X, Bot } from 'lucide-react';
 import { useI18n } from '../../lib/i18n';
 import { useAuth } from '../../contexts/AuthContext';
 import { getHelpKeyForPath } from '../../config/helpContent';
@@ -88,16 +88,6 @@ export function HelpPanel() {
                   </button>
                 </div>
               )}
-              <div>
-                <a
-                  href="/support/tickets/new"
-                  onClick={close}
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-                >
-                  <Ticket className="h-4 w-4" />
-                  {t('help.contact_support')}
-                </a>
-              </div>
             </div>
           </div>
         </div>

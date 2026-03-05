@@ -16,15 +16,10 @@ from adapters.http.api.my.dependencies import (
     get_maintenance_record_repo,
     get_notification_repo,
     get_request_repo,
-    get_reseller_client_repo,
     get_shipment_repo,
-    get_stripe_client,
     get_user_repo,
 )
-from adapters.http.api.companies.schemas import UpdateSlugRequest
 from adapters.http.api.my.schemas import (
-    ActivateDemoRequest,
-    AuthModeUpdateRequest,
     CompleteOnboardingRequest,
     MyCustodyHistoryResponse,
     MyCustodyResponse,
@@ -162,10 +157,8 @@ def _to_company_settings(detail: object) -> dict:
         "data": MyCompanySettingsResponse(
             id=detail.company.id,
             name=detail.company.name,
-            slug=detail.company.slug,
             email_domains=detail.company.email_domains,
             sector=detail.company.sector,
-            auth_mode=detail.company.auth_mode.value if hasattr(detail.company.auth_mode, 'value') else detail.company.auth_mode,
         ).model_dump(mode="json")
     }
 
@@ -493,86 +486,6 @@ def update_my_company_settings(
     return _to_company_settings(detail)
 
 
-@router.patch("/company-settings/slug")
-def update_my_company_slug(
-    body: UpdateSlugRequest,
-    current_user: User = Depends(require_role(UserRole.ADMIN)),
-    company_repo: CompanyRepository = Depends(get_company_repo),
-):
-    from src.company_bc.company.application.commands.update_company_slug import (
-        CompanyNotFoundError as SlugCompanyNotFoundError,
-        UpdateCompanySlugCommand,
-        UpdateCompanySlugCommandHandler,
-    )
-    from src.company_bc.company.domain.entities import SlugAlreadyTakenError
-
-    _validate_admin_with_company(current_user)
-
-    handler = UpdateCompanySlugCommandHandler(company_repo=company_repo)
-    try:
-        handler.handle(
-            UpdateCompanySlugCommand(
-                company_id=current_user.company_id,
-                slug=body.slug,
-            )
-        )
-    except SlugCompanyNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Company not found"
-        )
-    except SlugAlreadyTakenError:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="Slug is already taken"
-        )
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
-        )
-
-    query_handler = GetCompanyQueryHandler(company_repo=company_repo)
-    detail = query_handler.handle(GetCompanyQuery(company_id=current_user.company_id))
-    return _to_company_settings(detail)
-
-
-@router.patch("/company-settings/auth-mode")
-def update_my_company_auth_mode(
-    body: AuthModeUpdateRequest,
-    current_user: User = Depends(require_role(UserRole.ADMIN)),
-    company_repo: CompanyRepository = Depends(get_company_repo),
-):
-    from src.auth_bc.company_user.infrastructure.repository import CompanyUserRepository
-    from src.company_bc.company.application.commands.update_auth_mode import (
-        UpdateAuthModeCommand,
-        UpdateAuthModeCommandHandler,
-    )
-    from src.company_bc.company.domain.entities import NoAdminMembershipError
-
-    _validate_admin_with_company(current_user)
-
-    company_user_repo = CompanyUserRepository(company_repo.session)
-    handler = UpdateAuthModeCommandHandler(
-        company_repo=company_repo, company_user_repo=company_user_repo,
-    )
-    try:
-        handler.handle(
-            UpdateAuthModeCommand(
-                company_id=current_user.company_id,
-                auth_mode=body.auth_mode,
-            )
-        )
-    except NoAdminMembershipError:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Cannot switch to membership-only mode: no admin memberships found",
-        )
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e),
-        )
-
-    return {"data": {"auth_mode": body.auth_mode}}
-
-
 @router.get("/onboarding/status")
 def get_onboarding_status(
     current_user: User = Depends(require_role(UserRole.ADMIN)),
@@ -889,62 +802,3 @@ def my_incidents(
     }
 
 
-# ---------------------------------------------------------------------------
-# Demo Account Activation
-# ---------------------------------------------------------------------------
-
-
-@router.post("/activate-demo", status_code=status.HTTP_200_OK)
-def activate_demo(
-    body: ActivateDemoRequest,
-    current_user: User = Depends(require_role(UserRole.ADMIN)),
-    company_repo: CompanyRepository = Depends(get_company_repo),
-    reseller_client_repo=Depends(get_reseller_client_repo),
-    stripe_client=Depends(get_stripe_client),
-):
-    from src.company_bc.company.application.commands.activate_demo import (
-        ActivateDemoCommand,
-        ActivateDemoCommandHandler,
-        CompanyNotFoundError as DemoCompanyNotFoundError,
-        NotDemoAccountError,
-    )
-
-    _validate_admin_with_company(current_user)
-
-    handler = ActivateDemoCommandHandler(
-        company_repo=company_repo,
-        stripe_client=stripe_client,
-    )
-    try:
-        handler.handle(
-            ActivateDemoCommand(
-                company_id=current_user.company_id,
-                company_name=body.company_name,
-                email_domains=body.email_domains,
-                keep_demo_data=body.keep_demo_data,
-            )
-        )
-    except DemoCompanyNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Company not found"
-        )
-    except NotDemoAccountError:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Company is not a demo account",
-        )
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
-        )
-
-    # Cross-BC side-effect: mark reseller client as no longer demo
-    try:
-        client = reseller_client_repo.find_by_company_id(current_user.company_id)
-        if client and client.is_demo:
-            client.is_demo = False
-            reseller_client_repo.save(client)
-    except Exception:
-        pass
-
-    return {"data": {"message": "Demo account activated successfully"}}

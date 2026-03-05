@@ -42,7 +42,6 @@ from adapters.http.api.maintenance.routers import router as maintenance_router
 from adapters.http.api.maintenance_templates.routers import (
     router as maintenance_templates_router,
 )
-from adapters.http.api.billing.routers import router as billing_router
 from adapters.http.api.incidents.routers import router as incidents_router
 from adapters.http.api.risks.routers import router as risks_router
 from adapters.http.api.changes.routers import router as changes_router
@@ -57,12 +56,6 @@ from adapters.http.api.checkouts.routers import router as checkouts_router
 from adapters.http.api.checklist.routers import router as checklist_router
 from adapters.http.api.brand import router as brand_router
 from adapters.http.api.super_admin.routers import router as super_admin_router
-from adapters.http.api.reseller.routers import router as reseller_router
-from adapters.http.api.admin.reseller_routers import router as admin_reseller_router
-from adapters.http.api.admin.payout_routers import router as admin_payout_router
-from adapters.http.api.my.ai_support_router import router as ai_support_router
-from adapters.http.api.my.support_router import router as my_support_router
-from adapters.http.api.support.router import router as support_router
 from adapters.http.ws.websocket import router as ws_router
 from adapters.http.middleware.audit import AuditMiddleware
 from adapters.http.middleware.error_handler import register_error_handlers
@@ -149,7 +142,6 @@ def create_app() -> FastAPI:
     application.include_router(budgets_router)
     application.include_router(maintenance_router)
     application.include_router(maintenance_templates_router)
-    application.include_router(billing_router)
     application.include_router(incidents_router)
     application.include_router(risks_router)
     application.include_router(changes_router)
@@ -163,12 +155,6 @@ def create_app() -> FastAPI:
     application.include_router(checkouts_router)
     application.include_router(checklist_router)
     application.include_router(super_admin_router)
-    application.include_router(reseller_router)
-    application.include_router(admin_reseller_router)
-    application.include_router(admin_payout_router)
-    application.include_router(ai_support_router)
-    application.include_router(my_support_router)
-    application.include_router(support_router)
     application.include_router(ws_router)
 
     # MCP SSE transport (conditional)

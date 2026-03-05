@@ -10,8 +10,6 @@ from adapters.http.api.registration.dependencies import (
     get_company_repo,
     get_magic_link_repo,
     get_maint_template_repo,
-    get_reseller_client_repo,
-    get_reseller_repo,
     get_stripe_client,
     get_user_repo,
     get_workflow_template_repo,
@@ -37,12 +35,6 @@ from src.company_bc.company.application.commands.create_company import (
     UserAlreadyExistsError,
 )
 from src.company_bc.company.infrastructure.repository import CompanyRepository
-from src.reseller_bc.client.application.commands.create_referral_attribution import (
-    CreateReferralAttributionCommand,
-    CreateReferralAttributionCommandHandler,
-)
-from src.reseller_bc.client.infrastructure.repository import ResellerClientRepository
-from src.reseller_bc.reseller.infrastructure.repository import ResellerRepository
 
 logger = logging.getLogger(__name__)
 
@@ -60,8 +52,6 @@ def register_company(
     asset_type_repo: AssetTypeDefinitionRepository = Depends(get_asset_type_repo),
     workflow_template_repo: WorkflowTemplateRepository = Depends(get_workflow_template_repo),
     maint_template_repo: MaintenanceTemplateRepository = Depends(get_maint_template_repo),
-    reseller_repo: ResellerRepository = Depends(get_reseller_repo),
-    reseller_client_repo: ResellerClientRepository = Depends(get_reseller_client_repo),
 ):
     """Public endpoint for self-service company registration."""
     company_id = str(ulid.new())
@@ -93,52 +83,5 @@ def register_company(
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="stripe_unavailable")
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-    # Referral attribution (after successful company creation)
-    if body.referral_code:
-        try:
-            attribution_handler = CreateReferralAttributionCommandHandler(
-                reseller_repo=reseller_repo,
-                client_repo=reseller_client_repo,
-            )
-            attribution_handler.handle(
-                CreateReferralAttributionCommand(
-                    referral_code=body.referral_code,
-                    company_id=company_id,
-                )
-            )
-        except Exception:
-            logger.warning(
-                "Referral attribution failed for code=%s company=%s",
-                body.referral_code, company_id, exc_info=True,
-            )
-
-    # Invitation claim (after referral — referral takes priority)
-    if not body.referral_code:
-        try:
-            from src.reseller_bc.invitation.application.commands.claim_invitation import (
-                ClaimInvitationCommand,
-                ClaimInvitationCommandHandler,
-            )
-            from src.reseller_bc.invitation.infrastructure.repository import (
-                ResellerInvitationRepository,
-            )
-
-            invitation_repo = ResellerInvitationRepository(
-                reseller_client_repo.session,
-            )
-            claim_handler = ClaimInvitationCommandHandler(
-                invitation_repo=invitation_repo,
-                client_repo=reseller_client_repo,
-            )
-            claim_handler.handle(ClaimInvitationCommand(
-                email=body.admin_email,
-                company_id=company_id,
-            ))
-        except Exception:
-            logger.warning(
-                "Invitation claim failed for email=%s",
-                body.admin_email, exc_info=True,
-            )
 
     return {"data": {"message": "Company registered. Check your email for the magic link."}}

@@ -2,13 +2,12 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import api from '../lib/api';
 import { AUTH_UNAUTHORIZED_EVENT } from '../lib/authEvents';
-import type { User, CompanyMembership } from '../types';
+import type { User } from '../types';
 
 interface AuthState {
   user: User | null;
   token: string | null;
   loading: boolean;
-  companies: CompanyMembership[];
 }
 
 interface AuthContextType extends AuthState {
@@ -16,7 +15,6 @@ interface AuthContextType extends AuthState {
   logout: () => void;
   refreshUser: () => Promise<void>;
   isRole: (...roles: string[]) => boolean;
-  switchCompany: (companyId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -26,28 +24,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user: null,
     token: localStorage.getItem('token'),
     loading: true,
-    companies: [],
   });
-
-  const fetchCompanies = useCallback(async () => {
-    try {
-      const { data } = await api.get('/auth/my-companies');
-      setState((s) => ({ ...s, companies: data.data }));
-    } catch {
-      setState((s) => ({ ...s, companies: [] }));
-    }
-  }, []);
 
   const fetchUser = useCallback(async (token: string) => {
     try {
       const { data } = await api.get('/auth/me');
-      setState({ user: data.data, token, loading: false, companies: [] });
-      fetchCompanies();
+      setState({ user: data.data, token, loading: false });
     } catch {
       localStorage.removeItem('token');
-      setState({ user: null, token: null, loading: false, companies: [] });
+      setState({ user: null, token: null, loading: false });
     }
-  }, [fetchCompanies]);
+  }, []);
 
   useEffect(() => {
     if (state.token) {
@@ -61,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (typeof window === 'undefined') return;
 
     const handleUnauthorized = () => {
-      setState({ user: null, token: null, loading: false, companies: [] });
+      setState({ user: null, token: null, loading: false });
     };
 
     window.addEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
@@ -84,14 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     localStorage.removeItem('token');
-    setState({ user: null, token: null, loading: false, companies: [] });
-  };
-
-  const switchCompany = async (companyId: string) => {
-    const { data } = await api.post('/auth/switch-company', { company_id: companyId });
-    const newToken = data.data.access_token;
-    localStorage.setItem('token', newToken);
-    await fetchUser(newToken);
+    setState({ user: null, token: null, loading: false });
   };
 
   const isRole = (...roles: string[]) => {
@@ -100,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, refreshUser, isRole, switchCompany }}>
+    <AuthContext.Provider value={{ ...state, login, logout, refreshUser, isRole }}>
       {children}
     </AuthContext.Provider>
   );

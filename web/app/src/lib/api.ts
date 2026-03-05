@@ -34,7 +34,6 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  // Don't override an explicitly provided Authorization header (e.g. reseller token)
   if (config.headers.Authorization) {
     return config;
   }
@@ -59,21 +58,13 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401) {
       const current = currentPathWithQuery();
-      const isResellerPath = current.startsWith('/reseller/');
-      const isAuthPath = current.startsWith('/auth/') || current.startsWith('/reseller/login');
+      const isAuthPath = current.startsWith('/auth/');
 
-      if (!isResellerPath) {
-        localStorage.removeItem('token');
-        emitAuthUnauthorized();
-      }
+      localStorage.removeItem('token');
+      emitAuthUnauthorized();
 
       if (!isAuthPath) {
-        if (isResellerPath) {
-          localStorage.removeItem('reseller_token');
-          redirectToLogin(current, '/reseller/login');
-        } else {
-          redirectToLogin(current);
-        }
+        redirectToLogin(current);
       }
     }
 

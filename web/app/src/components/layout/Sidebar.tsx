@@ -7,7 +7,7 @@ import {
   Store, Share2, ShoppingCart, MapPin, BookOpen, Tag, Clock, ChartColumn,
   FileSearch, ShieldCheck, ShieldAlert, BadgeCheck, Users, Building2, Building,
   Key, UserCog, SlidersHorizontal, Sparkles, Banknote, ListChecks,
-  ArrowLeftRight, CreditCard, Eye, ChartPie, ListOrdered,
+  ArrowLeftRight, Eye, ChartPie, ListOrdered,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { cn } from '../../lib/cn';
@@ -80,7 +80,6 @@ const icons: Record<string, ReactNode> = {
   '/maintenance-templates':          <ListChecks className={cls} />,
   '/changes':                        <ArrowLeftRight className={cls} />,
   '/changes/dashboard':              <ChartColumn className={cls} />,
-  '/billing':                        <CreditCard className={cls} />,
   '/settings/locations':             <MapPin className={cls} />,
   '/settings/compliance':            <BadgeCheck className={cls} />,
   '/settings/gdpr':                  <ShieldCheck className={cls} />,
@@ -93,7 +92,6 @@ const icons: Record<string, ReactNode> = {
   // Platform
   '/overview':              <ChartPie className={cls} />,
   '/companies':             <Building className={cls} />,
-  '/resellers':             <Users className={cls} />,
 };
 
 /* ------------------------------------------------------------------ */
@@ -189,7 +187,7 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
     .map((section) => ({ ...section, items: filterEntries(section.items) }))
     .filter((section) => section.items.length > 0);
 
-  const superAdminAllowed = new Set(['/overview', '/companies', '/resellers', '/settings/api-keys', '/super-admin/audit']);
+  const superAdminAllowed = new Set(['/overview', '/companies', '/settings/api-keys', '/super-admin/audit']);
   const visibleSections = role === 'super_admin'
     ? baseSections
       .map((section) => ({
@@ -276,6 +274,9 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           <span className="text-sm font-semibold leading-none text-sidebar-foreground">{brand.shortName}</span>
           <span className="max-w-[140px] truncate text-[10px] text-sidebar-foreground/60 leading-none mt-0.5" title={companyName}>
             {companyName}
+          </span>
+          <span className="text-[9px] font-medium text-sidebar-foreground/40 leading-none mt-1">
+            {t('page.billing.community_title')}
           </span>
         </div>
       </div>

@@ -77,8 +77,6 @@ from src.auth_bc.user.application.queries.get_user_detail import (
     GetUserDetailQueryHandler,
     UserNotFoundError as GetUserNotFoundError,
 )
-from src.auth_bc.company_user.domain.entities import CompanyUser
-from src.auth_bc.company_user.infrastructure.repository import CompanyUserRepository
 from src.auth_bc.user.infrastructure.repository import UserRepository
 from src.company_bc.department.infrastructure.repository import DepartmentRepository
 from src.company_bc.company.infrastructure.repository import CompanyRepository
@@ -163,10 +161,8 @@ def list_users(
 
 
 def _validate_invite_email(
-    email: str, company_id: str, company_repo: CompanyRepository, auth_mode: str = "domain",
+    email: str, company_id: str, company_repo: CompanyRepository,
 ) -> None:
-    if auth_mode == "membership_only":
-        return  # Skip domain validation — admin can invite anyone
     company = company_repo.find_by_id(company_id)
     if not company:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
@@ -178,7 +174,6 @@ def _validate_invite_email(
 def _ensure_user_for_invite(
     email: str, company_id: str, user_repo: UserRepository,
     role: UserRole = UserRole.EMPLOYEE, name: Optional[str] = None,
-    company_user_repo: Optional[CompanyUserRepository] = None,
 ) -> None:
     existing_user = user_repo.find_by_email(email)
     if existing_user:
@@ -190,25 +185,9 @@ def _ensure_user_for_invite(
         if name is not None:
             existing_user.name = name
         user_repo.save(existing_user)
-        # Ensure CompanyUser membership exists
-        if company_user_repo:
-            existing_membership = company_user_repo.find_by_user_and_company(
-                existing_user.id, company_id
-            )
-            if not existing_membership:
-                membership = CompanyUser.create(
-                    user_id=existing_user.id, company_id=company_id, role=role
-                )
-                company_user_repo.save(membership)
     else:
         user = User.create(email=email, role=role, company_id=company_id, name=name)
         user_repo.save(user)
-        # Create CompanyUser membership
-        if company_user_repo:
-            membership = CompanyUser.create(
-                user_id=user.id, company_id=company_id, role=role
-            )
-            company_user_repo.save(membership)
 
 
 def _send_invite_link(
@@ -248,11 +227,8 @@ def invite_user(
         if invite_role == UserRole.SUPER_ADMIN:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot invite super admins")
     invite_name = body.name.strip() if body.name else None
-    company = company_repo.find_by_id(company_id)
-    auth_mode = company.auth_mode.value if company else "domain"
-    _validate_invite_email(email, company_id, company_repo, auth_mode=auth_mode)
-    cu_repo = CompanyUserRepository(company_repo.session)
-    _ensure_user_for_invite(email, company_id, user_repo, role=invite_role, name=invite_name, company_user_repo=cu_repo)
+    _validate_invite_email(email, company_id, company_repo)
+    _ensure_user_for_invite(email, company_id, user_repo, role=invite_role, name=invite_name)
     _send_invite_link(email, magic_link_repo, company_repo, user_repo)
     return {"data": {"message": "Invitation sent"}}
 
@@ -348,7 +324,6 @@ async def import_users_confirm(
         result = ImportUsersService(
             user_repo=user_repo, department_repo=department_repo, company_repo=company_repo,
             employee_role_repo=employee_role_repo,
-            company_user_repo=CompanyUserRepository(company_repo.session),
         ).confirm(
             csv_content=csv_content,
             company_id=company_id,
@@ -382,9 +357,7 @@ def quick_create_employee(
     company_id = _require_company_id(current_user)
     _check_user_limit_not_reached(company_id, company_repo)
     email = body.email.lower().strip()
-    company = company_repo.find_by_id(company_id)
-    auth_mode = company.auth_mode.value if company else "domain"
-    _validate_invite_email(email, company_id, company_repo, auth_mode=auth_mode)
+    _validate_invite_email(email, company_id, company_repo)
     existing = user_repo.find_by_email(email)
     if existing:
         if existing.company_id != company_id:
@@ -405,13 +378,6 @@ def quick_create_employee(
     )
     new_user.is_active = False
     user_repo.save(new_user)
-    # Create CompanyUser membership
-    cu_repo = CompanyUserRepository(company_repo.session)
-    membership = CompanyUser.create(
-        user_id=new_user.id, company_id=company_id, role=UserRole.EMPLOYEE
-    )
-    membership.deactivate()  # Mirror the user's inactive status
-    cu_repo.save(membership)
     return {
         "data": QuickCreateEmployeeResponse(
             id=new_user.id, email=new_user.email, name=new_user.name,
@@ -473,7 +439,6 @@ def update_user(
         if target and target.role.value != body.role:
             handler = ChangeUserRoleCommandHandler(
                 user_repo=user_repo, email_service=get_email_service(),
-                company_user_repo=CompanyUserRepository(user_repo.session),
             )
             _handle_change_role_errors(lambda: handler.handle(
                 ChangeUserRoleCommand(user_id=user_id, company_id=company_id, current_user_id=current_user.id, new_role=body.role)
@@ -482,7 +447,6 @@ def update_user(
     if "department_id" in provided:
         dept_handler = AssignDepartmentCommandHandler(
             user_repo=user_repo, department_repo=department_repo,  # type: ignore[arg-type]
-            company_user_repo=CompanyUserRepository(user_repo.session),
         )
         try:
             dept_handler.handle(AssignDepartmentCommand(user_id=user_id, company_id=company_id, department_id=body.department_id))
@@ -513,7 +477,6 @@ def change_role(
     company_id = _require_company_id(current_user)
     handler = ChangeUserRoleCommandHandler(
         user_repo=user_repo, email_service=get_email_service(),
-        company_user_repo=CompanyUserRepository(user_repo.session),
     )
     _handle_change_role_errors(lambda: handler.handle(
         ChangeUserRoleCommand(user_id=user_id, company_id=company_id, current_user_id=current_user.id, new_role=body.role)
@@ -530,7 +493,6 @@ def deactivate_user(
     company_id = _require_company_id(current_user)
     handler = DeactivateUserCommandHandler(
         user_repo=user_repo,
-        company_user_repo=CompanyUserRepository(user_repo.session),
     )
     try:
         handler.handle(
@@ -558,7 +520,6 @@ def activate_user(
     company_id = _require_company_id(current_user)
     handler = ActivateUserCommandHandler(
         user_repo=user_repo,
-        company_user_repo=CompanyUserRepository(user_repo.session),
     )
     try:
         handler.handle(
@@ -580,7 +541,6 @@ def assign_department(
     company_id = _require_company_id(current_user)
     handler = AssignDepartmentCommandHandler(
         user_repo=user_repo, department_repo=department_repo,  # type: ignore[arg-type]
-        company_user_repo=CompanyUserRepository(user_repo.session),
     )
     try:
         handler.handle(AssignDepartmentCommand(user_id=user_id, company_id=company_id, department_id=body.department_id))

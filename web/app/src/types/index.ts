@@ -1,14 +1,6 @@
 // Auth
 export type UserRole = 'super_admin' | 'admin' | 'procurement_manager' | 'technician' | 'employee';
 
-export interface CompanyMembership {
-  company_id: string;
-  company_name: string;
-  slug: string;
-  role: UserRole;
-  is_current: boolean;
-}
-
 export interface User {
   id: string;
   email: string;
@@ -20,11 +12,9 @@ export interface User {
   employee_role_id?: string | null;
   is_active: boolean;
   password_set?: boolean;
-  has_oauth?: boolean;
   hidden_nav_items?: Record<string, string[]> | null;
   needs_onboarding?: boolean;
   company_plan?: string | null;
-  demo_days_remaining?: number | null;
   street_line_1?: string | null;
   street_line_2?: string | null;
   city?: string | null;
@@ -71,8 +61,6 @@ export interface Company {
 export interface CompanySettings {
   id: string;
   name: string;
-  slug: string;
-  auth_mode: string;
   email_domains: string[];
   sector?: string | null;
 }
@@ -1668,31 +1656,3 @@ export interface ChangeDashboard {
   rolled_back_90_days: number;
 }
 
-// Reseller
-export type ResellerStatus = 'pending' | 'active' | 'suspended' | 'deactivated';
-
-export interface Reseller {
-  id: string;
-  email: string;
-  name: string;
-  avatar_url: string | null;
-  company_name: string | null;
-  tax_id: string | null;
-  commission_pct: number;
-  min_payout_cents: number;
-  referral_code: string;
-  status: ResellerStatus;
-  created_at: string;
-  updated_at: string | null;
-}
-
-export interface ResellerDashboard {
-  reseller_id: string;
-  name: string;
-  referral_code: string;
-  status: string;
-  client_count: number;
-  total_commissions_cents: number;
-  available_balance_cents: number;
-  pending_payout_cents: number;
-}

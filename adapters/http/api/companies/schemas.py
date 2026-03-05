@@ -20,11 +20,9 @@ class UpdateCompanyRequest(BaseModel):
 class CompanyResponse(BaseModel):
     id: str
     name: str
-    slug: Optional[str] = None
     status: str
     email_domains: list[str]
     is_active: bool
-    auth_mode: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     plan: Optional[str] = None
@@ -78,14 +76,3 @@ class GrantComplimentaryRequest(BaseModel):
     plan: str = Field(description="Plan tier: free, premium, enterprise, or open_source")
 
 
-class CompanyBySlugResponse(BaseModel):
-    id: str
-    name: str
-    slug: str
-    auth_mode: str
-    google_enabled: bool
-    microsoft_enabled: bool
-
-
-class UpdateSlugRequest(BaseModel):
-    slug: str = Field(..., min_length=3, max_length=50, pattern=r'^[a-z0-9]+(-[a-z0-9]+)*$')

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { AuthShell } from '../../components/auth/AuthShell';
 import { useAuth } from '../../contexts/AuthContext';
@@ -22,17 +22,6 @@ export default function RegisterPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
-
-  // Set dsm_ref cookie when ref param is present (30-day expiry)
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const ref = params.get('ref');
-    if (ref) {
-      const expires = new Date();
-      expires.setDate(expires.getDate() + 30);
-      document.cookie = `dsm_ref=${ref}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
-    }
-  }, []);
 
   if (user) return <Navigate to={getDefaultRouteForRole(user.role)} replace />;
 
@@ -69,19 +58,10 @@ export default function RegisterPage() {
         return;
       }
 
-      // Read referral code from URL param (priority) or dsm_ref cookie (fallback)
-      const refParam = new URLSearchParams(window.location.search).get('ref');
-      let referralCode: string | null = refParam;
-      if (!referralCode) {
-        const match = document.cookie.match(/(?:^|;\s*)dsm_ref=([^;]*)/);
-        referralCode = match ? match[1] : null;
-      }
-
       await api.post('/register', {
         name,
         admin_email: adminEmail,
         email_domains: domains,
-        ...(referralCode ? { referral_code: referralCode } : {}),
       });
       setSent(true);
     } catch (err: unknown) {

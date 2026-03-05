@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Optional
 
 from core.email import EmailServiceInterface, send_admin_promotion_email
-from src.auth_bc.company_user.domain.repository import CompanyUserRepositoryInterface
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
 from src.auth_bc.user.domain.repository import UserRepositoryInterface
@@ -41,11 +40,9 @@ class ChangeUserRoleCommandHandler(CommandHandler[ChangeUserRoleCommand]):
         self,
         user_repo: UserRepositoryInterface,
         email_service: Optional[EmailServiceInterface] = None,
-        company_user_repo: Optional[CompanyUserRepositoryInterface] = None,
     ):
         self.user_repo = user_repo
         self.email_service = email_service
-        self.company_user_repo = company_user_repo
 
     def handle(self, command: ChangeUserRoleCommand) -> None:
         user = self.user_repo.find_by_id_and_company(command.user_id, command.company_id)
@@ -72,15 +69,6 @@ class ChangeUserRoleCommandHandler(CommandHandler[ChangeUserRoleCommand]):
 
         user.change_role(new_role)
         self.user_repo.save(user)
-
-        # Dual-write: update membership
-        if self.company_user_repo:
-            membership = self.company_user_repo.find_by_user_and_company(
-                user.id, command.company_id
-            )
-            if membership:
-                membership.change_role(new_role)
-                self.company_user_repo.save(membership)
 
         logger.info("User %s role changed to %s", user.id, new_role.value)
 

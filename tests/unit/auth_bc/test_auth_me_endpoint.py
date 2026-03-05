@@ -66,7 +66,11 @@ class TestAuthMeEndpoint:
         new_callable=_mock_nav_config_repo,
     )
     def test_includes_company_name_when_company_is_present(self, _nav_repo, company_client, mock_company_repo):
-        mock_company_repo.find_by_id.return_value = SimpleNamespace(name="Acme Corp")
+        mock_company_repo.find_by_id.return_value = SimpleNamespace(
+            name="Acme Corp",
+            plan=SimpleNamespace(value="open_source"),
+            onboarding_completed_at=None,
+        )
 
         response = company_client.get("/api/v1/auth/me")
 

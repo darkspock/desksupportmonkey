@@ -5,7 +5,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from sqlalchemy.orm import Session
 
-from core.config import OAuthSettings, settings
+from core.config import settings
 from core.database import get_db
 from core.jwt import JWTService, InvalidTokenError, ExpiredTokenError
 from core.tenant import set_tenant
@@ -151,48 +151,6 @@ def require_role(minimum_role: UserRole) -> Callable:
     return role_checker
 
 
-def get_oauth_settings() -> OAuthSettings:
-    return settings.oauth
-
-
-def get_oauth_login_service(db: Session = Depends(get_db)):
-    from src.auth_bc.user.application.services.oauth_login_service import OAuthLoginService
-    from src.auth_bc.company_lookup.infrastructure.service import CompanyLookupService
-    from core.jwt import JWTService as _JWTService
-
-    return OAuthLoginService(
-        user_repo=UserRepository(db),
-        company_lookup=CompanyLookupService(db),
-        jwt_service=_JWTService(),
-    )
-
-
-def get_microsoft_oauth_login_service(db: Session = Depends(get_db)):
-    from src.auth_bc.user.application.commands.microsoft_oauth_login import MicrosoftOAuthLoginService
-    from src.auth_bc.company_lookup.infrastructure.service import CompanyLookupService
-    from core.jwt import JWTService as _JWTService
-
-    return MicrosoftOAuthLoginService(
-        user_repo=UserRepository(db),
-        company_lookup=CompanyLookupService(db),
-        jwt_service=_JWTService(),
-        oauth_settings=settings.oauth,
-    )
-
-
-def get_google_oauth_login_service(db: Session = Depends(get_db)):
-    from src.auth_bc.user.application.commands.google_oauth_login import GoogleOAuthLoginService
-    from src.auth_bc.company_lookup.infrastructure.service import CompanyLookupService
-    from core.jwt import JWTService as _JWTService
-
-    return GoogleOAuthLoginService(
-        user_repo=UserRepository(db),
-        company_lookup=CompanyLookupService(db),
-        jwt_service=_JWTService(),
-        oauth_settings=settings.oauth,
-    )
-
-
 def get_user_repo(db: Session = Depends(get_db)) -> UserRepository:
     return UserRepository(db)
 
@@ -203,19 +161,3 @@ def get_magic_link_repo(db: Session = Depends(get_db)) -> MagicLinkRepository:
 
 def get_company_repo(db: Session = Depends(get_db)) -> CompanyRepository:
     return CompanyRepository(db)
-
-
-def get_company_user_repo(db: Session = Depends(get_db)):
-    from src.auth_bc.company_user.infrastructure.repository import CompanyUserRepository
-    return CompanyUserRepository(db)
-
-
-def get_membership_auth_service(db: Session = Depends(get_db)):
-    from src.auth_bc.company_user.infrastructure.repository import CompanyUserRepository
-    from src.auth_bc.company_user.domain.membership_auth_service import MembershipAuthService
-    from src.auth_bc.company_lookup.infrastructure.service import CompanyLookupService
-    return MembershipAuthService(
-        company_user_repo=CompanyUserRepository(db),
-        company_lookup=CompanyLookupService(db),
-        user_repo=UserRepository(db),
-    )

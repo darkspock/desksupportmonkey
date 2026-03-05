@@ -96,22 +96,6 @@ celery_app.conf.update(
             "task": "core.tasks.vendor_contracts.check_stale_assessments",
             "schedule": crontab(hour=7, minute=30),  # Daily at 07:30 UTC
         },
-        "expire-demo-accounts": {
-            "task": "core.tasks.reseller.expire_demo_accounts",
-            "schedule": crontab(hour=3, minute=0),  # Daily at 03:00 UTC
-        },
-        "expire-reseller-invitations": {
-            "task": "core.tasks.reseller_invitations.expire_pending_invitations",
-            "schedule": crontab(hour=3, minute=30),  # Daily at 03:30 UTC
-        },
-        "confirm-commissions": {
-            "task": "core.tasks.commission.confirm_commissions",
-            "schedule": crontab(hour=4, minute=0),  # Daily at 04:00 UTC
-        },
-        "auto-close-support-tickets": {
-            "task": "core.tasks.support_tickets.auto_close_stale_tickets",
-            "schedule": crontab(minute=0),  # Every hour
-        },
     },
 )
 

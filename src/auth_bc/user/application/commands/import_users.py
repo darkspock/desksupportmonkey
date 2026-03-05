@@ -4,8 +4,6 @@ import re
 from dataclasses import dataclass, field
 from typing import Optional
 
-from src.auth_bc.company_user.domain.entities import CompanyUser
-from src.auth_bc.company_user.domain.repository import CompanyUserRepositoryInterface
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
 from src.auth_bc.user.domain.repository import UserRepositoryInterface
@@ -76,13 +74,11 @@ class ImportUsersService:
         department_repo: DepartmentRepositoryInterface,
         company_repo: CompanyRepositoryInterface,
         employee_role_repo: Optional[EmployeeRoleRepositoryInterface] = None,
-        company_user_repo: Optional[CompanyUserRepositoryInterface] = None,
     ):
         self.user_repo = user_repo
         self.department_repo = department_repo
         self.company_repo = company_repo
         self.employee_role_repo = employee_role_repo
-        self.company_user_repo = company_user_repo
 
     def preview(self, csv_content: str, company_id: str) -> PreviewResult:
         rows, _ = self._parse_csv(csv_content)
@@ -264,29 +260,10 @@ class ImportUsersService:
         # Save new users
         for user in users_to_save:
             self.user_repo.save(user)
-            # Create CompanyUser membership for new users
-            if self.company_user_repo:
-                membership = CompanyUser.create(
-                    user_id=user.id,
-                    company_id=company_id,
-                    role=user.role,
-                    department_id=user.department_id,
-                    employee_role_id=user.employee_role_id,
-                )
-                self.company_user_repo.save(membership)
 
         # Update existing users
         for user in users_to_update:
             self.user_repo.save(user)
-            # Dual-write: update CompanyUser membership
-            if self.company_user_repo:
-                existing_membership = self.company_user_repo.find_by_user_and_company(
-                    user.id, company_id
-                )
-                if existing_membership:
-                    existing_membership.assign_department(user.department_id)
-                    existing_membership.assign_employee_role(user.employee_role_id)
-                    self.company_user_repo.save(existing_membership)
 
         # Send magic link invitations (only for new users)
         invitations_sent = 0

@@ -7,7 +7,7 @@ _FREE_FEATURES: set[str] = {
     "core", "assets", "requests", "dashboard", "magic_link", "password_login",
 }
 _STARTER_FEATURES: set[str] = _FREE_FEATURES | {
-    "reports", "oauth_login",
+    "reports",
 }
 _PREMIUM_FEATURES: set[str] = _STARTER_FEATURES | {
     "api_keys", "ai_classification",

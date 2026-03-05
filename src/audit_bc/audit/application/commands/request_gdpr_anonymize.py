@@ -12,7 +12,6 @@ from src.audit_bc.audit.domain.exceptions import (
     UserAlreadyAnonymizedError,
 )
 from src.audit_bc.audit.domain.repository import AuditRepositoryInterface
-from src.auth_bc.company_user.domain.repository import CompanyUserRepositoryInterface
 from src.auth_bc.user.domain.enums import UserRole
 from src.auth_bc.user.domain.repository import UserRepositoryInterface
 from src.framework.application.command_bus import Command, CommandHandler
@@ -34,11 +33,9 @@ class RequestGdprAnonymizeHandler(
         self,
         audit_repo: AuditRepositoryInterface,
         user_repo: UserRepositoryInterface,
-        company_user_repo: Optional[CompanyUserRepositoryInterface] = None,
     ):
         self.audit_repo = audit_repo
         self.user_repo = user_repo
-        self.company_user_repo = company_user_repo
 
     def handle(self, command: RequestGdprAnonymizeCommand) -> None:
         user = self.user_repo.find_by_email(command.target_user_email)
@@ -61,21 +58,6 @@ class RequestGdprAnonymizeHandler(
             raise UserAlreadyAnonymizedError(
                 f"User '{command.target_user_email}' is already anonymized"
             )
-
-        # Deactivate membership in the target company
-        if self.company_user_repo:
-            membership = self.company_user_repo.find_by_user_and_company(
-                user.id, command.company_id
-            )
-            if membership:
-                membership.deactivate()
-                self.company_user_repo.save(membership)
-
-            # Only create anonymize request if no active memberships remain
-            active_count = self.company_user_repo.count_active_memberships(user.id)
-            if active_count > 0:
-                # User still has active memberships in other companies — skip identity anonymization
-                return
 
         request = GdprRequest.create(
             company_id=command.company_id,

@@ -83,12 +83,6 @@ def tables(test_engine):
     import src.asset_type_bc.definition.infrastructure.models  # noqa: F401
     import src.vulnerability_bc.vulnerability.infrastructure.models  # noqa: F401
     import src.change_bc.change_request.infrastructure.models  # noqa: F401
-    import src.reseller_bc.reseller.infrastructure.models  # noqa: F401
-    import src.reseller_bc.client.infrastructure.models  # noqa: F401
-    import src.reseller_bc.commission.infrastructure.models  # noqa: F401
-    import src.reseller_bc.payout.infrastructure.models  # noqa: F401
-    import src.auth_bc.company_user.infrastructure.models  # noqa: F401
-    import src.support_bc.ticket.infrastructure.models  # noqa: F401
 
     Base.metadata.create_all(test_engine)
     yield

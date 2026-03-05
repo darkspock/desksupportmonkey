@@ -29,27 +29,6 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
-class OAuthLoginRequest(BaseModel):
-    id_token: str
-
-
-class OAuthProvidersResponse(BaseModel):
-    google: bool
-    microsoft: bool
-
-
-class SwitchCompanyRequest(BaseModel):
-    company_id: str
-
-
-class UserCompanyResponse(BaseModel):
-    company_id: str
-    company_name: str
-    slug: str
-    role: str
-    is_current: bool
-
-
 class UserResponse(BaseModel):
     id: str
     email: str
@@ -60,8 +39,6 @@ class UserResponse(BaseModel):
     employee_role_id: Optional[str] = None
     is_active: bool
     password_set: bool = False
-    has_oauth: bool = False
     hidden_nav_items: Optional[Dict[str, List[str]]] = None
     needs_onboarding: bool = False
     company_plan: Optional[str] = None
-    demo_days_remaining: Optional[int] = None

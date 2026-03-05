@@ -137,7 +137,6 @@ export const sections: NavSection[] = [
           { to: '/changes/dashboard', labelKey: 'nav.change_dashboard', roles: ['admin', 'super_admin'] },
         ],
       },
-      { to: '/billing', labelKey: 'nav.billing', roles: ['admin'] },
       {
         type: 'subgroup', labelKey: 'nav.subgroup_reports', roles: ['technician', 'procurement_manager', 'admin', 'super_admin'],
         items: [
@@ -153,8 +152,6 @@ export const sections: NavSection[] = [
     items: [
       { to: '/overview', labelKey: 'nav.overview', roles: ['super_admin'] },
       { to: '/companies', labelKey: 'nav.companies', roles: ['super_admin'] },
-      { to: '/resellers', labelKey: 'nav.resellers', roles: ['super_admin'] },
-      { to: '/platform/support-tickets', labelKey: 'nav.platform_support_tickets', roles: ['super_admin'] },
       { to: '/super-admin/audit', labelKey: 'nav.super_admin_audit', roles: ['super_admin'] },
     ],
   },

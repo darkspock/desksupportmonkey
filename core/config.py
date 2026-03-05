@@ -40,20 +40,10 @@ class AISettings(BaseSettings):
     OPENAI_API_KEY: str = ""
     GROQ_API_KEY: str = ""
     ANTHROPIC_API_KEY: str = ""
-    AI_SUPPORT_PROVIDER: str = "groq"
-    AI_SUPPORT_MODEL: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env", extra="ignore",
     )
-
-
-class OAuthSettings(BaseSettings):
-    GOOGLE_CLIENT_ID: str = ""
-    MICROSOFT_CLIENT_ID: str = ""
-    MICROSOFT_TENANT_ID: str = "common"
-
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
 class MCPSettings(BaseSettings):
@@ -71,7 +61,7 @@ class StripeSettings(BaseSettings):
     STRIPE_PRICE_STARTER: str = ""
     STRIPE_PRICE_PREMIUM: str = ""
     STRIPE_PRICE_ENTERPRISE: str = ""
-    OPEN_SOURCE_MODE: bool = False
+    OPEN_SOURCE_MODE: bool = True
     UPGRADE_URL: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
@@ -137,9 +127,6 @@ class Settings(BaseSettings):
 
     # MCP settings (nested)
     mcp: MCPSettings = MCPSettings()
-
-    # OAuth settings (nested)
-    oauth: OAuthSettings = OAuthSettings()
 
     # Stripe / Billing settings (nested)
     stripe: StripeSettings = StripeSettings()

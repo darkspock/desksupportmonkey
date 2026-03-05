@@ -32,7 +32,6 @@ from src.auth_bc.magic_link.domain.entities import MagicLink
 from src.auth_bc.user.domain.entities import User
 from src.auth_bc.user.domain.enums import UserRole
 from src.company_bc.company.application.ports import (
-    CompanyUserWriter,
     MagicLinkWriter,
     UserWriter,
 )
@@ -209,7 +208,6 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
         asset_type_repo: Optional[AssetTypeDefinitionRepositoryInterface] = None,
         workflow_template_repo: Optional[WorkflowTemplateRepositoryInterface] = None,
         maint_template_repo: Optional[MaintTemplateRepoInterface] = None,
-        company_user_writer: Optional[CompanyUserWriter] = None,
     ):
         self.company_repo = company_repo
         self.user_repo = user_repo
@@ -220,7 +218,6 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
         self.asset_type_repo = asset_type_repo
         self.workflow_template_repo = workflow_template_repo
         self.maint_template_repo = maint_template_repo
-        self.company_user_writer = company_user_writer
 
     def handle(self, command: CreateCompanyCommand) -> None:
         # Check name uniqueness
@@ -285,16 +282,6 @@ class CreateCompanyCommandHandler(CommandHandler[CreateCompanyCommand]):
                 company_id=company.id,
             )
             self.user_repo.save(user)
-
-            # Create CompanyUser membership for initial admin
-            if self.company_user_writer:
-                from src.auth_bc.company_user.domain.entities import CompanyUser
-                membership = CompanyUser.create(
-                    user_id=user.id,
-                    company_id=company.id,
-                    role=UserRole.ADMIN,
-                )
-                self.company_user_writer.save(membership)
 
             magic_link = MagicLink.create(email)
             self.magic_link_repo.save(magic_link)

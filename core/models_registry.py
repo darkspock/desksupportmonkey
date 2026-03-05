@@ -25,8 +25,6 @@ from src.company_bc.assignment_config.infrastructure.models import *  # noqa: F4
 # Auth BC
 from src.auth_bc.user.infrastructure.models import UserModel  # noqa: F401
 from src.auth_bc.magic_link.infrastructure.models import MagicLinkModel  # noqa: F401
-from src.auth_bc.company_user.infrastructure.models import CompanyUserModel  # noqa: F401
-
 # Asset BC
 from src.asset_bc.asset.infrastructure.models import AssetModel  # noqa: F401
 from src.asset_bc.asset.infrastructure.models import AssetEventModel  # noqa: F401
@@ -126,14 +124,3 @@ from src.workflow_bc.template.infrastructure.models import WorkflowTemplateModel
 from src.workflow_bc.template.infrastructure.models import WorkflowSubtypeModel  # noqa: F401
 from src.workflow_bc.template.infrastructure.models import ChecklistItemDefinitionModel  # noqa: F401
 from src.workflow_bc.checklist.infrastructure.models import RequestChecklistItemModel  # noqa: F401
-
-# Support BC
-from src.support_bc.ticket.infrastructure.models import SupportTicketModel  # noqa: F401
-from src.support_bc.ticket.infrastructure.models import TicketMessageModel  # noqa: F401
-
-# Reseller BC
-from src.reseller_bc.reseller.infrastructure.models import ResellerModel  # noqa: F401
-from src.reseller_bc.client.infrastructure.models import ResellerClientModel  # noqa: F401
-from src.reseller_bc.commission.infrastructure.models import ResellerCommissionModel  # noqa: F401
-from src.reseller_bc.payout.infrastructure.models import ResellerPayoutModel  # noqa: F401
-from src.reseller_bc.invitation.infrastructure.models import ResellerInvitationModel  # noqa: F401

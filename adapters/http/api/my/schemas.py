@@ -70,14 +70,8 @@ class NotificationListMeta(BaseModel):
 class MyCompanySettingsResponse(BaseModel):
     id: str
     name: str
-    slug: Optional[str] = None
     email_domains: list[str]
     sector: Optional[str] = None
-    auth_mode: Optional[str] = None
-
-
-class AuthModeUpdateRequest(BaseModel):
-    auth_mode: str
 
 
 class UpdateMyCompanySettingsRequest(BaseModel):
@@ -123,15 +117,6 @@ class MyMaintenanceResponse(BaseModel):
     completed_at: Optional[datetime] = None
 
 
-class AIChatMessage(BaseModel):
-    role: str = Field(..., pattern="^(user|assistant)$")
-    content: str = Field(..., min_length=1, max_length=4000)
-
-
-class AIChatRequest(BaseModel):
-    messages: list[AIChatMessage] = Field(..., min_length=1, max_length=50)
-
-
 class CompleteOnboardingRequest(BaseModel):
     sector: Optional[str] = None
 
@@ -142,7 +127,3 @@ class OnboardingStatusResponse(BaseModel):
     needs_onboarding: bool
 
 
-class ActivateDemoRequest(BaseModel):
-    company_name: str = Field(min_length=1, max_length=200)
-    email_domains: list[str] = Field(min_length=1)
-    keep_demo_data: bool = True
